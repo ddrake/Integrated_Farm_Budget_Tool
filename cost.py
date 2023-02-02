@@ -33,10 +33,10 @@ class Cost(object):
         Load individual revenue items from data file
         return a list with all the key/value pairs
         """
-        farm_data = self._load_textfile(f'{self.crop_year}_farm_data.txt')
-        cost_data = self._load_textfile(f'{self.crop_year}_cost_data.txt')
-
-        return (farm_data + cost_data)
+        data = []
+        for name in 'farm_data cost_data'.split():
+            data += self._load_textfile(f'{self.crop_year}_{name}.txt')
+        return data
 
     def _load_textfile(self, filename):
         """
