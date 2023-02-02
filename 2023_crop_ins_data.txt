@@ -1,0 +1,51 @@
+# 2023 crop year data required by the cost component
+
+# FILE FORMAT INFORMATION
+# Each line in this file should be either blank, a comment line
+# denoted by the '#' as the first character, or a key value pair.
+# A key cannot contain spaces, and underscores are recommended
+# A value should represent an integer or floating point value
+# Units of values should be specified in comments if ambiguous
+
+# Abbreviations
+# -------------
+# rp:    revenue protection
+# rphpe: revenue protection with harvest price exclusion
+# yo:    yield only protection
+# ent:   enterprise level coverage
+# area:  county area level coverage
+# sco:   supplemental coverage option
+# eco:   enhanced coverage option
+
+# CHOICES FOR BASE CROP INSURANCE
+# -------------------------------
+# Note: If 'Don't insure' is chosen for a crop, all other settings will be ignored.
+# choice: (0) Don't insure OR (1) Insure
+insure_corn                        1
+insure_soy                         1
+ 
+# choice: (0) County area OR (1) Enterprise
+unit_corn                          1
+unit_soy                           1
+
+# choice: (0) rp OR (1) rphpe OR (2) yo
+protection_corn                    0
+protection_soy                     0
+
+# choice: 50, 55, 60, 65, 70, 75, 80, or 85
+level_corn                        65
+level_soy                         65
+
+# CHOICES FOR COVERAGE OPTIONS
+#-----------------------------
+# Note: these settings are ignored if no base crop insurance is set above
+
+# choice: (0) Don't add sco OR (1) Add sco from selected base crop ins level to 86%
+add_sco_corn                       1
+add_sco_soy                        1
+
+# Note: this option setting is ignored if not adding SCO 
+# choice: (0) Don't add eco OR (90) add eco to 90% OR (95) add eco to 95%   
+eco_level_corn                    90
+eco_level_soy                     90
+

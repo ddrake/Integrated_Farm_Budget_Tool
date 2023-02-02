@@ -1,0 +1,205 @@
+# 2023 crop year data required by the cost component
+
+# FILE FORMAT INFORMATION
+# Each line in this file should be either blank, a comment line
+# denoted by the '#' as the first character, or a key value pair.
+# A key cannot contain spaces, and underscores are recommended
+# A value should represent an integer or floating point value
+# Units of values should be specified in comments if ambiguous
+
+# Abbreviations
+# -------------
+# rp:    revenue protection
+# rphpe: revenue protection with harvest price exclusion
+# yo:    yield only protection
+# ent:   enterprise level coverage
+# area:  county area level coverage
+# sco:   supplemental coverage option
+# eco:   enhanced coverage option
+
+# PREMIUMS AT 100% FACTOR
+# -----------------------
+
+# estimated or actual premiums in dollars per acre
+
+# ENTERPRISE COVERAGE CORN
+# ------------------------
+# rp
+ent_rp_corn_50                     2.86
+ent_rp_corn_55                     3.95
+ent_rp_corn_60                     5.51
+ent_rp_corn_65                     7.82
+ent_rp_corn_70                    10.84
+ent_rp_corn_75                    17.24
+ent_rp_corn_80                    31.33
+ent_rp_corn_85                    58.89
+
+ent_sco_rp_corn_50_86             25.98
+ent_sco_rp_corn_55_86             25.43
+ent_sco_rp_corn_60_86             24.94
+ent_sco_rp_corn_65_86             23.86
+ent_sco_rp_corn_70_86             21.51
+ent_sco_rp_corn_75_86             17.57
+ent_sco_rp_corn_80_86             11.34
+ent_sco_rp_corn_85_86              2.18
+
+ent_eco_rp_corn_86_90             16.05
+ent_eco_rp_corn_86_95             40.48
+
+# rp hpe
+ent_rphpe_corn_50                  1.86
+ent_rphpe_corn_55                  2.42
+ent_rphpe_corn_60                  3.26
+ent_rphpe_corn_65                  4.47
+ent_rphpe_corn_70                  6.20
+ent_rphpe_corn_75                 10.04
+ent_rphpe_corn_80                 18.50
+ent_rphpe_corn_85                 35.44
+
+ent_sco_rphpe_corn_50_86          18.52
+ent_sco_rphpe_corn_55_86          17.99
+ent_sco_rphpe_corn_60_86          17.73
+ent_sco_rphpe_corn_65_86          17.06
+ent_sco_rphpe_corn_70_86          15.40
+ent_sco_rphpe_corn_75_86          12.58
+ent_sco_rphpe_corn_80_86           8.14
+ent_sco_rphpe_corn_85_86           1.57
+
+ent_eco_rphpe_corn_86_90          11.39
+ent_eco_rphpe_corn_86_95          28.93
+
+# yield only
+ent_yo_corn_50                     2.13
+ent_yo_corn_55                     2.78
+ent_yo_corn_60                     3.63
+ent_yo_corn_65                     4.74
+ent_yo_corn_70                     6.12
+ent_yo_corn_75                     9.21
+ent_yo_corn_80                    16.10
+ent_yo_corn_85                    29.66
+
+ent_sco_yo_corn_50_86             10.64
+ent_sco_yo_corn_55_86             10.17
+ent_sco_yo_corn_60_86             10.00
+ent_sco_yo_corn_65_86              9.62
+ent_sco_yo_corn_70_86              8.85
+ent_sco_yo_corn_75_86              7.48
+ent_sco_yo_corn_80_86              5.04
+ent_sco_yo_corn_85_86              1.02
+
+ent_eco_yo_corn_86_90              7.90
+ent_eco_yo_corn_86_95             21.02
+
+# AREA COVERAGE CORN
+# ------------------
+# rp
+area_rp_corn_70                   18.78
+area_rp_corn_75                   27.03
+area_rp_corn_80                   35.51
+area_rp_corn_85                   51.88
+area_rp_corn_90                   72.96
+
+# rp hpe
+area_rphpe_corn_70                16.06
+area_rphpe_corn_75                22.09
+area_rphpe_corn_80                27.64
+area_rphpe_corn_85                38.67
+area_rphpe_corn_90                52.56
+
+# yield only
+area_yo_corn_70                   13.44
+area_yo_corn_75                   15.13
+area_yo_corn_80                   18.91
+area_yo_corn_85                   21.69
+area_yo_corn_90                   28.70
+
+# ENTERPRISE COVERAGE SOY
+# ------------------------
+# rp
+ent_rp_soy_50                      1.09
+ent_rp_soy_55                      1.63
+ent_rp_soy_60                      2.38
+ent_rp_soy_65                      3.40
+ent_rp_soy_70                      4.78
+ent_rp_soy_75                      7.61
+ent_rp_soy_80                     14.58
+ent_rp_soy_85                     28.50
+
+ent_sco_rp_soy_50_86              10.78
+ent_sco_rp_soy_55_86              10.78
+ent_sco_rp_soy_60_86              10.73
+ent_sco_rp_soy_65_86              10.56
+ent_sco_rp_soy_70_86               9.91
+ent_sco_rp_soy_75_86               8.40
+ent_sco_rp_soy_80_86               5.70
+ent_sco_rp_soy_85_86               1.18
+
+ent_eco_rp_soy_86_90               8.98
+ent_eco_rp_soy_86_95              23.58
+
+# rp hpe
+ent_rphpe_soy_50                   0.78
+ent_rphpe_soy_55                   1.08
+ent_rphpe_soy_60                   1.52
+ent_rphpe_soy_65                   2.10
+ent_rphpe_soy_70                   2.91
+ent_rphpe_soy_75                   4.61
+ent_rphpe_soy_80                   8.88
+ent_rphpe_soy_85                  17.49
+
+ent_sco_rphpe_soy_50_86            8.48
+ent_sco_rphpe_soy_55_86            8.48
+ent_sco_rphpe_soy_60_86            8.42
+ent_sco_rphpe_soy_65_86            8.26
+ent_sco_rphpe_soy_70_86            7.74
+ent_sco_rphpe_soy_75_86            6.51
+ent_sco_rphpe_soy_80_86            4.37
+ent_sco_rphpe_soy_85_86            0.90
+
+ent_eco_rphpe_soy_86_90            6.74
+ent_eco_rphpe_soy_86_95           17.65
+
+# yield only
+ent_yo_soy_50                      0.86
+ent_yo_soy_55                      1.19
+ent_yo_soy_60                      1.61
+ent_yo_soy_65                      2.18
+ent_yo_soy_70                      2.97
+ent_yo_soy_75                      4.63
+ent_yo_soy_80                      8.64
+ent_yo_soy_85                     16.35
+
+ent_sco_yo_soy_50_86               3.25
+ent_sco_yo_soy_55_86               3.25
+ent_sco_yo_soy_60_86               3.25
+ent_sco_yo_soy_65_86               3.24
+ent_sco_yo_soy_70_86               3.12
+ent_sco_yo_soy_75_86               2.80
+ent_sco_yo_soy_80_86               2.04
+ent_sco_yo_soy_85_86               0.47
+
+ent_eco_yo_soy_86_90               4.05
+ent_eco_yo_soy_86_95              11.74
+
+# AREA COVERAGE SOY
+# ------------------
+# rp
+area_rp_soy_70                     2.15
+area_rp_soy_75                     4.91
+area_rp_soy_80                     9.53
+area_rp_soy_85                    18.87
+area_rp_soy_90                    32.92
+
+# rp hpe
+area_rphpe_soy_70                  1.90
+area_rphpe_soy_75                  4.06
+area_rphpe_soy_80                  7.69
+area_rphpe_soy_85                 14.88
+area_rphpe_soy_90                 25.47
+
+# yield only
+area_yo_soy_70                     0.90
+area_yo_soy_75                     1.54
+area_yo_soy_80                     2.71
+area_yo_soy_85                     4.84
+area_yo_soy_90                    10.14

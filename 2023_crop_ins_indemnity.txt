@@ -1,0 +1,56 @@
+# 2023 crop year data required by the cost component
+
+# FILE FORMAT INFORMATION
+# Each line in this file should be either blank, a comment line
+# denoted by the '#' as the first character, or a key value pair.
+# A key cannot contain spaces, and underscores are recommended
+# A value should represent an integer or floating point value
+# Units of values should be specified in comments if ambiguous
+
+# Abbreviations
+# -------------
+# rp:    revenue protection
+# rphpe: revenue protection with harvest price exclusion
+# yo:    yield only protection
+# ent:   enterprise level coverage
+# area:  county area level coverage
+# sco:   supplemental coverage option
+# eco:   enhanced coverage option
+
+# CHOICES FOR BASE CROP INSURANCE
+# -------------------------------
+# Note: If 'Don't insure' is chosen for a crop, all other settings will be ignored.
+# choice: (0) Don't insure OR (1) Insure
+
+# INFO USED FOR INDEMNITY CALCULATIONS
+# ------------------------------------
+
+hist_yield_for_ins_area_corn      191.9
+hist_yield_for_ins_area_soy        56.0
+
+hist_yield_for_ins_ent_corn       216.712
+hist_yield_for_ins_ent_soy         61.974
+
+spring_proj_harv_price_corn         5.8925
+spring_proj_harv_price_soy         13.6625
+
+fall_fut_price_at_harvest_corn      5.8925
+fall_fut_price_at_harvest_soy      13.6625
+
+selected_payment_factor_corn        1.0
+selected_payment_factor_soy         1.0
+
+replant_frac_acres_assumed_corn     0.01
+replant_frac_acres_assumed_soy      0.01
+
+assumed_cty_rma_yield_corn        204.392
+assumed_cty_rma_yield_soy          60.972
+
+price_cap_factor                    2
+
+loss_limit_factor                   0.18
+
+replant_yield_loss_bpa_corn         8
+replant_yield_loss_bpa_soy          3
+
+sco_level                          86
