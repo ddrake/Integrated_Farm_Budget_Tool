@@ -35,12 +35,14 @@ class Indemnity(object):
     DO NOT construct an instance of this class.  Instead get an instance of one
     of the six concrete derived classes
     """
-    def __init__(self, crop_year):
+    def __init__(self, crop_year, kind='base'):
         """
+        The optional argument kind should be 'base', 'sco' or 'eco'
         Get an instance for the given crop year and set attributes from
         key/value pairs read from text files.
         """
         self.crop_year = crop_year
+        self.kind = kind
         for k, v in self._load_required_data():
             setattr(self, k, float(v) if '.' in v else int(v))
         for crop in ['corn', 'soy']:
@@ -180,8 +182,8 @@ class IndemnityArea(Indemnity):
     DO NOT construct an instance of this class.  Instead get an instance of one
     of the six concrete derived classes
     """
-    def __init__(self, crop_year):
-        super(IndemnityArea, self).__init__(crop_year)
+    def __init__(self, *args, **kwargs):
+        super(IndemnityArea, self).__init__(*args, **kwargs)
 
     def yield_trigger(self, crop):
         """
@@ -228,10 +230,6 @@ class IndemnityArea(Indemnity):
         return (self.minimum_dollars_protection(crop) *
                 self.payment_factor(crop, pf, yf))
 
-    # TODO: add a method total_indemnity(crop, pf=1, yf=1)
-    # that returns the harvest indemnity plus indemnities from
-    # any options such as SCO or ECO which are configured
-
     # SCO/ECO methods - Only avaliable for Area
     # -----------------------------------------
 
@@ -246,8 +244,8 @@ class IndemnityArea(Indemnity):
         """
         J79 For RP and RP-HPE
         """
-        return (self.opt_ins_harvest_price(crop, pf) *
-                self.opt_sensitized_cty_rma_yield(crop, yf))
+        return (self.ins_harvest_price(crop, pf) *
+                self.sensitized_cty_rma_yield(crop, yf))
 
     def opt_cty_rev_as_ratio(self, crop, pf=1, yf=1):
         """
@@ -271,10 +269,11 @@ class IndemnityArea(Indemnity):
         return (self.c('hist_yield_for_ins_ent', crop) *
                 self.c('spring_proj_harv_price', crop) * diff)
 
-    def opt_harvest_indemnity_per_acre(self, is_eco, crop, pf=1, yf=1):
+    def opt_harvest_indemnity_per_acre(self, crop, pf=1, yf=1):
         """
         J84 same for all
         """
+        is_eco = self.kind == 'eco'
         lvl = (self.c('eco_level', crop) if is_eco else self.sco_level)/100
         diff = ((lvl - self.sco_level/100)
                 if is_eco else (self.sco_level - self.c('level', crop)/100))
@@ -282,11 +281,11 @@ class IndemnityArea(Indemnity):
         return (self.opt_farm_crop_value(diff, crop, pf) *
                 self.opt_payment_factor(lvl, diff, crop, pf, yf))
 
-    def opt_harvest_indemnity(self, is_eco, crop, pf=1, yf=1):
+    def opt_harvest_indemnity_pmt(self, crop, pf=1, yf=1):
         """
         J86 same for all
         """
-        return (self.opt_harvest_indemnity_per_acre(is_eco, crop, pf, yf) *
+        return (self.opt_harvest_indemnity_per_acre(crop, pf, yf) *
                 self.acres_insured(crop))
 
 
@@ -295,8 +294,8 @@ class IndemnityEnt(Indemnity):
     DO NOT construct an instance of this class.  Instead get an instance of one
     of the six concrete derived classes
     """
-    def __init__(self, crop_year):
-        super(IndemnityEnt, self).__init__(crop_year)
+    def __init__(self, *args, **kwargs):
+        super(IndemnityEnt, self).__init__(*args, **kwargs)
 
     def yield_trigger(self, crop):
         """
@@ -359,8 +358,8 @@ class IndemnityAreaRp(IndemnityArea):
     This class is designed to be instantiated by the CropIns class.
     """
 
-    def __init__(self, crop_year):
-        super(IndemnityAreaRp, self).__init__(crop_year)
+    def __init__(self, *args, **kwargs):
+        super(IndemnityAreaRp, self).__init__(*args, **kwargs)
 
     def limiting_revenue_factor(self, crop, pf=1):
         """
@@ -403,7 +402,7 @@ class IndemnityAreaRp(IndemnityArea):
         J80 Only for RP
         """
         return (self.c('hist_yield_for_ins_area', crop) *
-                max(self.opt_ins_harvest_price(crop, pf),
+                max(self.ins_harvest_price(crop, pf),
                     self.c('spring_proj_harv_price', crop)))
 
     def opt_farm_crop_value(self, diff, crop, pf=1):
@@ -411,7 +410,7 @@ class IndemnityAreaRp(IndemnityArea):
         J83 Only for RP
         """
         return (self.c('hist_yield_for_ins_ent', crop) *
-                max(self.opt_ins_harvest_price(crop, pf),
+                max(self.ins_harvest_price(crop, pf),
                     self.c('spring_proj_harv_price', crop)) * diff)
 
 
@@ -423,8 +422,8 @@ class IndemnityAreaRpHpe(IndemnityArea):
     This class is designed to be instantiated by the CropIns class.
     """
 
-    def __init__(self, crop_year):
-        super(IndemnityAreaRpHpe, self).__init__(crop_year)
+    def __init__(self, *args, **kwargs):
+        super(IndemnityAreaRpHpe, self).__init__(*args, **kwargs)
 
     def revenue_loss(self, crop, pf=1, yf=1):
         """
@@ -459,8 +458,8 @@ class IndemnityAreaYo(IndemnityArea):
     This class is designed to be instantiated by the CropIns class.
     """
 
-    def __init__(self, crop_year):
-        super(IndemnityAreaYo, self).__init__(crop_year)
+    def __init__(self, *args, **kwargs):
+        super(IndemnityAreaYo, self).__init__(*args, **kwargs)
 
     def limiting_revenue_factor(self, crop):
         """
@@ -498,7 +497,7 @@ class IndemnityAreaYo(IndemnityArea):
         J79
         """
         return (self.c('spring_proj_harv_price', crop) *
-                self.opt_sensitized_cty_rma_yield(crop, yf))
+                self.sensitized_cty_rma_yield(crop, yf))
 
 
 class IndemnityEntRp(IndemnityEnt):
@@ -508,9 +507,8 @@ class IndemnityEntRp(IndemnityEnt):
     corresponding to arbitrary sensitivity factors for yield and price.
     This class is designed to be instantiated by the CropIns class.
     """
-
-    def __init__(self, crop_year):
-        super(IndemnityEntRp, self).__init__(crop_year)
+    def __init__(self, *args, **kwargs):
+        super(IndemnityEntRp, self).__init__(*args, **kwargs)
 
 
 class IndemnityEntRpHpe(IndemnityEnt):
@@ -520,9 +518,8 @@ class IndemnityEntRpHpe(IndemnityEnt):
     corresponding to arbitrary sensitivity factors for yield and price.
     This class is designed to be instantiated by the CropIns class.
     """
-
-    def __init__(self, crop_year):
-        super(IndemnityEntRpHpe, self).__init__(crop_year)
+    def __init__(self, *args, **kwargs):
+        super(IndemnityEntRpHpe, self).__init__(*args, **kwargs)
 
     def revised_revenue_trigger(self, crop, pf=1, yf=1):
         """
@@ -541,9 +538,8 @@ class IndemnityEntYo(IndemnityEnt):
     corresponding to arbitrary sensitivity factors for yield and price.
     This class is designed to be instantiated by the CropIns class.
     """
-
-    def __init__(self, crop_year):
-        super(IndemnityEntYo, self).__init__(crop_year)
+    def __init__(self, *args, **kwargs):
+        super(IndemnityEntYo, self).__init__(*args, **kwargs)
 
     def yield_shortfall(self, crop, yf=1):
         """

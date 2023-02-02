@@ -19,7 +19,7 @@ class Cost(object):
       print(c.total_cost()    # yield factor defaults to 1
       print(c.total_cost(yf=.7) # specifies yield factor
     """
-    def __init__(self, crop_year):
+    def __init__(self, crop_year, overrides=None):
         """
         Get an instance for the given crop year and set attributes from
         key/value pairs read from text files.
@@ -27,6 +27,9 @@ class Cost(object):
         self.crop_year = crop_year
         for k, v in self._load_required_data():
             setattr(self, k, float(v) if '.' in v else int(v))
+        if overrides is not None:
+            for k, v in overrides.items():
+                setattr(self, k, float(v) if '.' in v else int(v))
 
     def _load_required_data(self):
         """

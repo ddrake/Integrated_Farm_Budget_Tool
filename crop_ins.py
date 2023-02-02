@@ -19,13 +19,17 @@ class CropIns(object):
     Computes total net (after payout) crop insurance cost for the farm crop year
     corresponding to an arbitrary sensitivity factor for yield.
 
+    The optional argument 'overrides' is a dict intended to override settings
+    from the data file(s).  It is primarily used to ensure that changes to key
+    settings in the data files(s) do not cause tests to fail.
+
     Sample usage in a python or ipython console:
       from crop_ins import CropIns
       c = CropIns(2023)
       print(c.total_cost(pf=.7)        # yield factor defaults to 1
       print(c.total_cost(pf=.7, yf=.8) # specifies both price and yield factors
     """
-    def __init__(self, crop_year):
+    def __init__(self, crop_year, overrides=None):
         """
         Get an instance for the given crop year and set attributes from
         key/value pairs read from text files.
@@ -33,6 +37,9 @@ class CropIns(object):
         self.crop_year = crop_year
         for k, v in self._load_required_data():
             setattr(self, k, float(v) if '.' in v else int(v))
+        if overrides is not None:
+            for k, v in overrides.items():
+                setattr(self, k, float(v) if '.' in v else int(v))
         for crop in ['corn', 'soy']:
             self.validate_settings(crop)
         self.indemnity_factory()
@@ -62,24 +69,49 @@ class CropIns(object):
 
     def indemnity_factory(self):
         """
-        Provides instances with attributes: indemnity_corn and indemnity_soy
-        which are in turn instances of subclasses of Indemnity
+        Provides CropIns instances with attributes such as
+        indemnity_corn and sco_soy which are instances of concrete
+        Indemnity classes.
+
+        Note: ECO/SCO options can only be added to an enterprise base policy.
+        In order to use the SCO option, the gov_pmt program must be PLC, but
+        This rule is not enforced through validation yet.
         """
-        for crop in ['corn', 'soy']:
-            unit = self.c('unit', crop)
-            prot = self.c('protection', crop)
-            setattr(self, f'indemnity_{crop}',
-                    (IndemnityAreaRp(self.crop_year)
+        def add_indemnity_attr(kind, attr_name, unit, prot, crop_year):
+            setattr(self, attr_name,
+                    (IndemnityAreaRp(crop_year, kind=kind)
                      if unit == 0 and prot == 0 else
-                     IndemnityAreaRpHpe(self.crop_year)
+                     IndemnityAreaRpHpe(crop_year, kind=kind)
                      if unit == 0 and prot == 1 else
-                     IndemnityAreaYo(self.crop_year)
+                     IndemnityAreaYo(crop_year, kind=kind)
                      if unit == 0 and prot == 2 else
-                     IndemnityEntRp(self.crop_year)
+                     IndemnityEntRp(crop_year, kind=kind)
                      if unit == 1 and prot == 0 else
-                     IndemnityEntRpHpe(self.crop_year)
+                     IndemnityEntRpHpe(crop_year, kind=kind)
                      if unit == 1 and prot == 1 else
-                     IndemnityEntYo(self.crop_year)))
+                     IndemnityEntYo(crop_year, kind=kind)))
+            return None
+
+        for crop in ['corn', 'soy']:
+            ins = self.c('insure', crop)
+            add_sco = self.c('add_sco', crop)
+            eco_level = self.c('eco_level', crop)
+            base_unit = self.c('unit', crop)
+            base_protection = self.c('protection', crop)
+            if ins:
+                add_indemnity_attr(
+                    'base', f'indemnity_{crop}', base_unit,
+                    base_protection, self.crop_year)
+            if ins and add_sco:
+                if base_unit != 1:
+                    raise ValueError('Cannot add SCO because base unit is Area')
+                add_indemnity_attr(
+                    'sco', f'sco_{crop}', 0, base_protection, self.crop_year)
+            if ins and eco_level > 0:
+                if not add_sco:
+                    raise ValueError('Cannot add ECO unless using SCO')
+                add_indemnity_attr(
+                    'eco', f'eco_{crop}', 0, base_protection, self.crop_year)
 
     def c(self, s, crop):
         """
@@ -221,8 +253,27 @@ class CropIns(object):
         """
         Return the total indemnity for the crop
         """
-        return self.c('indemnity', crop).total_indemnity_crop(crop, pf, yf)
+        return sum([
+            self.c('indemnity', crop).harvest_indemnity_pmt(crop, pf, yf),
+            (self.c('sco', crop).opt_harvest_indemnity_pmt(False, crop, pf, yf)
+             if hasattr(self, self.c, 'sco', crop) else 0)
+            (self.c('eco', crop).opt_harvest_indemnity_pmt(True, crop, pf, yf)
+             if hasattr(self, self.c, 'eco', crop) else 0)])
 
     def total_indemnity(self, pf=1, yf=1):
-        return sum([self.total_indemnity_crop(crop, yf)
+        """
+        Return the total indemnity
+        """
+        return sum([self.total_indemnity_crop(crop, pf, yf)
                     for crop in ['corn', 'soy']])
+
+    def net_crop_ins_expense_crop(self, crop, pf=1, yf=1):
+        """
+        Return the net crop insurance expense (subtracting indemnity)
+        for the crop with given sensitivity factors
+        """
+        return (self.total_premium_crop(crop) -
+                self.total_indemnity_crop(crop, pf, yf))
+
+    def total_net_crop_ins_expense(self, pf=1, yf=1):
+        return (self.total_premium() - self.total_indemnity(pf, yf))

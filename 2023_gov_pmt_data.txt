@@ -32,6 +32,11 @@ farm_base_acres_corn               4219.62
 farm_base_acres_soy                4149.67
 farm_base_acres_wheat               317.12
 
+# Official farm Yields
+farm_plc_yield_corn                 160.2760
+farm_plc_yield_soy                   49.7045
+farm_plc_yield_wheat                 64.3180
+
 # Conversion from base acres to net payment acres
 base_to_net_pmt_frac                  0.85
 
@@ -56,10 +61,6 @@ stat_ref_rate_farm_bill_wheat         5.50
 stat_ref_rate_new_escal_corn          2.9835
 stat_ref_rate_new_escal_soy           7.7548
 stat_ref_rate_new_escal_wheat         4.0651
-
-farm_plc_bu_corn                 676303.80
-farm_plc_bu_soy                  206257.40
-farm_plc_bu_wheat                 20396.51
 
 rate_cap_factor_new_escal             1.15
 

@@ -21,7 +21,7 @@ class Revenue(object):
       print(r.total_revenue(yf=1.2)  # uses default for pf
     """
 
-    def __init__(self, crop_year):
+    def __init__(self, crop_year, overrides=None):
         """
         Get an instance for the given crop year, then get a list of
         key/value pairs from the text file and make object attributes from it.
@@ -29,6 +29,9 @@ class Revenue(object):
         self.crop_year = crop_year
         for k, v in self._load_required_data():
             setattr(self, k, float(v) if '.' in v else int(v))
+        if overrides is not None:
+            for k, v in overrides.items():
+                setattr(self, k, float(v) if '.' in v else int(v))
 
     def _load_required_data(self):
         """

@@ -24,7 +24,7 @@ class GovPmt(object):
     PLC = 1
     ARC_CO = 2
 
-    def __init__(self, crop_year):
+    def __init__(self, crop_year, overrides=None):
         """
         Get an instance for the given crop year, then get a list of
         key/value pairs from the text file and make object attributes from it.
@@ -32,6 +32,9 @@ class GovPmt(object):
         self.crop_year = crop_year
         for k, v in self._load_required_data():
             setattr(self, k, float(v) if '.' in v else int(v))
+        if overrides is not None:
+            for k, v in overrides.items():
+                setattr(self, k, float(v) if '.' in v else int(v))
 
     def _load_required_data(self):
         """
@@ -120,19 +123,12 @@ class GovPmt(object):
         return min(self.plc_payment_rate1(crop, pf),
                    self.max_plc_payment_rate(crop))
 
-    def farm_plc_yield(self, crop):
-        """
-        Farm PLC yield (bushels/base acres) [156 Farm Records](L56, O56, R56)
-        """
-        return (self.c('farm_plc_bu', crop) /
-                self.c('farm_base_acres', crop))
-
     def plc_pmt_pre_sequest(self, crop, pf=1):
         """
         PLC payment for crop, pre-sequestration (Y23:AA23)
         """
         return (self.plc_payment_rate(crop, pf) * self.net_payment_acres(crop) *
-                self.farm_plc_yield(crop))
+                self.c('farm_plc_yield', crop))
 
     # ARC-CO
     # ------

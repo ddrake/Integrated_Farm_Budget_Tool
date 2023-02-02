@@ -8,6 +8,7 @@ from tabulate import tabulate
 from cost import Cost
 from gov_pmt import GovPmt
 from revenue import Revenue
+from crop_ins import CropIns
 
 yield_pcts = "40 55 70 80 90 95 100 105".split()
 price_pcts = "60 75 90 95 100 105 110 125 140 165 180".split()
@@ -96,5 +97,23 @@ def sens_gov_pmt(crop_year=2023):
             for p in price_pcts]
 
     table = setup_table(data, r, 'GOV_PMT')
+
+    print(tabulate(table, tablefmt="simple_grid"))
+
+
+def sens_crop_ins(crop_year=2023):
+    """
+    Display a sensitivity table for the specified crop year
+    for straightforward comparison with the crop insurance table
+    in 'benchmarks.xls!KeyInputs'
+    """
+    r = Revenue(crop_year)
+    c = CropIns(crop_year)
+
+    data = [['']*3 + [round(c.total_net_crop_ins_expense(p, y)/1000)
+                      for y in yield_pcts]
+            for p in price_pcts]
+
+    table = setup_table(data, r, 'CROP_INS_NET_EXPENSE')
 
     print(tabulate(table, tablefmt="simple_grid"))
