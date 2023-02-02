@@ -253,12 +253,13 @@ class CropIns(object):
         """
         Return the total indemnity for the crop
         """
-        return sum([
-            self.c('indemnity', crop).harvest_indemnity_pmt(crop, pf, yf),
+        return (
+            (self.c('indemnity', crop).harvest_indemnity_pmt(crop, pf, yf)
+             if hasattr(self, f'sco_{crop}') else 0) +
             (self.c('sco', crop).opt_harvest_indemnity_pmt(False, crop, pf, yf)
-             if hasattr(self, self.c, 'sco', crop) else 0)
+             if hasattr(self, f'sco_{crop}') else 0) +
             (self.c('eco', crop).opt_harvest_indemnity_pmt(True, crop, pf, yf)
-             if hasattr(self, self.c, 'eco', crop) else 0)])
+             if hasattr(self, f'eco_{crop}') else 0))
 
     def total_indemnity(self, pf=1, yf=1):
         """
