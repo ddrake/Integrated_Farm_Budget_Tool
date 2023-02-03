@@ -217,12 +217,6 @@ class IndemnityArea(Indemnity):
                 self.c('spring_proj_harv_price', crop) *
                 self.c('selected_payment_factor', crop))
 
-    def tot_indemnity_pmt_received(self, crop, yf=1):
-        """
-        F61
-        """
-        return self.harvest_indemnity_pmt(crop, yf)
-
     def harvest_indemnity_pmt_per_acre(self, crop, pf=1, yf=1):
         """
         F52 (in dollars per acre)
@@ -230,15 +224,14 @@ class IndemnityArea(Indemnity):
         return (self.minimum_dollars_protection(crop) *
                 self.payment_factor(crop, pf, yf))
 
+    def tot_indemnity_pmt_received(self, crop, pf=1, yf=1):
+        """
+        F61
+        """
+        return self.harvest_indemnity_pmt(crop, pf, yf)
+
     # SCO/ECO methods - Only avaliable for Area
     # -----------------------------------------
-
-    def opt_county_insured_revenue(self, crop, pf=1):
-        """
-        J80 for RP-HPE and YO
-        """
-        return (self.c('spring_proj_harv_price', crop) *
-                self.c('hist_yield_for_ins_area', crop))
 
     def opt_county_actual_revenue(self, crop, pf=1, yf=1):
         """
@@ -246,6 +239,13 @@ class IndemnityArea(Indemnity):
         """
         return (self.ins_harvest_price(crop, pf) *
                 self.sensitized_cty_rma_yield(crop, yf))
+
+    def opt_county_insured_revenue(self, crop, pf=1):
+        """
+        J80 for RP-HPE and YO
+        """
+        return (self.c('spring_proj_harv_price', crop) *
+                self.c('hist_yield_for_ins_area', crop))
 
     def opt_cty_rev_as_ratio(self, crop, pf=1, yf=1):
         """
@@ -259,7 +259,7 @@ class IndemnityArea(Indemnity):
         J82 same for all
         """
         return (
-            0 if self.opt_cty_rev_as_ratio(crop, pf, yf) > self.sco_level/100 else
+            0 if self.opt_cty_rev_as_ratio(crop, pf, yf) > lvl else
             min((lvl - self.opt_cty_rev_as_ratio(crop, pf, yf)) / diff, 1))
 
     def opt_farm_crop_value(self, diff, crop, pf=1):
@@ -276,7 +276,7 @@ class IndemnityArea(Indemnity):
         is_eco = self.kind == 'eco'
         lvl = (self.c('eco_level', crop) if is_eco else self.sco_level)/100
         diff = ((lvl - self.sco_level/100)
-                if is_eco else (self.sco_level - self.c('level', crop)/100))
+                if is_eco else (self.sco_level - self.c('level', crop))/100)
 
         return (self.opt_farm_crop_value(diff, crop, pf) *
                 self.opt_payment_factor(lvl, diff, crop, pf, yf))
@@ -332,18 +332,18 @@ class IndemnityEnt(Indemnity):
         return (self.replant_bushels(crop) *
                 self.c('spring_proj_harv_price', crop))
 
-    def tot_indemnity_pmt_received(self, crop, yf=1):
-        """
-        F61
-        """
-        return (self.harvest_indemnity_pmt(crop, yf) +
-                self.replant_indemnity_pmt(crop))
-
     def harvest_indemnity_pmt_per_acre(self, crop, pf=1, yf=1):
         """
         F52 (in dollars per acre)
         """
         return self.revenue_loss(crop, pf, yf)
+
+    def tot_indemnity_pmt_received(self, crop, pf=1, yf=1):
+        """
+        F61
+        """
+        return (self.harvest_indemnity_pmt(crop, pf, yf) +
+                self.replant_indemnity_pmt(crop))
 
 
 # CONCRETE INDEMNITY CLASSES

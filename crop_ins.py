@@ -254,7 +254,7 @@ class CropIns(object):
         Return the total indemnity for the crop
         """
         return (
-            (self.c('indemnity', crop).harvest_indemnity_pmt(crop, pf, yf)
+            (self.c('indemnity', crop).tot_indemnity_pmt_received(crop, pf, yf)
              if hasattr(self, f'sco_{crop}') else 0) +
             (self.c('sco', crop).opt_harvest_indemnity_pmt(crop, pf, yf)
              if hasattr(self, f'sco_{crop}') else 0) +
