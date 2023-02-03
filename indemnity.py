@@ -35,13 +35,14 @@ class Indemnity(object):
     DO NOT construct an instance of this class.  Instead get an instance of one
     of the six concrete derived classes
     """
-    def __init__(self, crop_year, kind='base'):
+    def __init__(self, crop_year, crop, kind='base'):
         """
         The optional argument kind should be 'base', 'sco' or 'eco'
         Get an instance for the given crop year and set attributes from
         key/value pairs read from text files.
         """
         self.crop_year = crop_year
+        self.crop = crop
         self.kind = kind
         for k, v in self._load_required_data():
             setattr(self, k, float(v) if '.' in v else int(v))
@@ -96,85 +97,82 @@ class Indemnity(object):
         if len(msg) > 0:
             raise ValueError(f'Invalid setting(s) in text file: {msg}.')
 
-    def proj_yield_farm_crop(self, crop):
+    def proj_yield_farm(self):
         """
         Helper method providing projected yields for all crops
         """
-        if crop not in ['corn', 'soy']:
-            raise ValueError("crop must be 'corn' or 'soy'")
-
         return (
             ((self.acres_wheat_dc_soy *
               self.proj_yield_farm_dc_soy +
               (self.acres_soy -
                self.acres_wheat_dc_soy) *
               self.proj_yield_farm_full_soy) / self.acres_soy)
-            if crop == 'soy' else self.proj_yield_farm_corn)
+            if self.crop == 'soy' else self.proj_yield_farm_corn)
 
-    def revenue_trigger_feb_price(self, crop):
+    def revenue_trigger_feb_price(self):
         """
         F41
         """
-        return (self.yield_trigger(crop) *
-                self.c('spring_proj_harv_price', crop))
+        return (self.yield_trigger() *
+                self.c('spring_proj_harv_price', self.crop))
 
-    def sensitized_fall_price(self, crop, pf=1):
+    def sensitized_fall_price(self, pf=1):
         """
         F12
         """
-        return self.c('fall_fut_price_at_harvest', crop) * pf
+        return self.c('fall_fut_price_at_harvest', self.crop) * pf
 
-    def ins_harvest_price(self, crop, pf=1):
+    def ins_harvest_price(self, pf=1):
         """
         F13
         """
-        return min((self.c('spring_proj_harv_price', crop) *
+        return min((self.c('spring_proj_harv_price', self.crop) *
                     self.price_cap_factor),
-                   self.sensitized_fall_price(crop, pf))
+                   self.sensitized_fall_price(pf))
 
-    def sensitized_yield(self, crop, yf=1):
+    def sensitized_yield(self, yf=1):
         """
         F14  Leave in base class, not needed for Area logic, but nice to have
         """
-        return self.proj_yield_farm_crop(crop) * yf
+        return self.proj_yield_farm() * yf
 
-    def acres_insured(self, crop):
+    def acres_insured(self):
         """
         F53
         For now, we assume that all crop acres or none are applied
         This is not always the case and may change in the future.
         """
-        return self.c('acres', crop)
+        return self.c('acres', self.crop)
 
-    def harvest_indemnity_pmt(self, crop, pf=1, yf=1):
+    def harvest_indemnity_pmt(self, pf=1, yf=1):
         """
         F54 in dollars
         """
-        return (self.harvest_indemnity_pmt_per_acre(crop, pf, yf) *
-                self.acres_insured(crop))
+        return (self.harvest_indemnity_pmt_per_acre(pf, yf) *
+                self.acres_insured())
 
-    def rev_trigger_condition(self, crop, pf=1, yf=1):
+    def rev_trigger_condition(self, pf=1, yf=1):
         """
         Helper used by two methods
         """
-        return (self.ins_harvest_price(crop, pf)
-                if (self.ins_harvest_price(crop, pf) >
-                    self.c('spring_proj_harv_price', crop))
+        return (self.ins_harvest_price(pf)
+                if (self.ins_harvest_price(pf) >
+                    self.c('spring_proj_harv_price', self.crop))
                 else 0)
 
-    def revised_revenue_trigger(self, crop, pf=1, yf=1):
+    def revised_revenue_trigger(self, pf=1, yf=1):
         """
         F43
         """
-        return self.yield_trigger(crop) * self.rev_trigger_condition(crop, pf, yf)
+        return self.yield_trigger() * self.rev_trigger_condition(pf, yf)
 
-    def revenue_loss(self, crop, pf=1, yf=1):
+    def revenue_loss(self, pf=1, yf=1):
         """
         F46
         """
-        return max(max(self.revenue_trigger_feb_price(crop),
-                       self.revised_revenue_trigger(crop, pf, yf)) -
-                   self.actual_revenue(crop, pf, yf), 0)
+        return max(max(self.revenue_trigger_feb_price(),
+                       self.revised_revenue_trigger(pf, yf)) -
+                   self.actual_revenue(pf, yf), 0)
 
 
 class IndemnityArea(Indemnity):
@@ -185,108 +183,108 @@ class IndemnityArea(Indemnity):
     def __init__(self, *args, **kwargs):
         super(IndemnityArea, self).__init__(*args, **kwargs)
 
-    def yield_trigger(self, crop):
+    def yield_trigger(self):
         """
         F40
         """
-        return (self.c('hist_yield_for_ins_area', crop) *
-                self.c('level', crop) / 100)
+        return (self.c('hist_yield_for_ins_area', self.crop) *
+                self.c('level', self.crop) / 100)
 
-    def sensitized_cty_rma_yield(self, crop, yf=1):
-        return self.c('assumed_cty_rma_yield', crop) * yf
+    def sensitized_cty_rma_yield(self, yf=1):
+        return self.c('assumed_cty_rma_yield', self.crop) * yf
 
-    def actual_revenue(self, crop, pf=1, yf=1):
+    def actual_revenue(self, pf=1, yf=1):
         """
         F45
         """
-        return (self.sensitized_cty_rma_yield(crop, yf) *
-                self.ins_harvest_price(crop, pf))
+        return (self.sensitized_cty_rma_yield(yf) *
+                self.ins_harvest_price(pf))
 
-    def payment_factor(self, crop, pf=1, yf=1):
+    def payment_factor(self, pf=1, yf=1):
         """
         F50
         """
-        return min(1, (self.revenue_loss(crop, pf, yf) /
-                       self.maximum_loss_payment(crop, yf)))
+        return min(1, (self.revenue_loss(pf, yf) /
+                       self.maximum_loss_payment(yf)))
 
-    def minimum_dollars_protection(self, crop):
+    def minimum_dollars_protection(self):
         """
         F42
         """
-        return (self.c('hist_yield_for_ins_area', crop) *
-                self.c('spring_proj_harv_price', crop) *
-                self.c('selected_payment_factor', crop))
+        return (self.c('hist_yield_for_ins_area', self.crop) *
+                self.c('spring_proj_harv_price', self.crop) *
+                self.c('selected_payment_factor', self.crop))
 
-    def harvest_indemnity_pmt_per_acre(self, crop, pf=1, yf=1):
+    def harvest_indemnity_pmt_per_acre(self, pf=1, yf=1):
         """
         F52 (in dollars per acre)
         """
-        return (self.minimum_dollars_protection(crop) *
-                self.payment_factor(crop, pf, yf))
+        return (self.minimum_dollars_protection() *
+                self.payment_factor(pf, yf))
 
-    def tot_indemnity_pmt_received(self, crop, pf=1, yf=1):
+    def tot_indemnity_pmt_received(self, pf=1, yf=1):
         """
         F61
         """
-        return self.harvest_indemnity_pmt(crop, pf, yf)
+        return self.harvest_indemnity_pmt(pf, yf)
 
     # SCO/ECO methods - Only avaliable for Area
     # -----------------------------------------
 
-    def opt_county_actual_revenue(self, crop, pf=1, yf=1):
+    def opt_county_actual_revenue(self, pf=1, yf=1):
         """
         J79 For RP and RP-HPE
         """
-        return (self.ins_harvest_price(crop, pf) *
-                self.sensitized_cty_rma_yield(crop, yf))
+        return (self.ins_harvest_price(pf) *
+                self.sensitized_cty_rma_yield(yf))
 
-    def opt_county_insured_revenue(self, crop, pf=1):
+    def opt_county_insured_revenue(self, pf=1):
         """
         J80 for RP-HPE and YO
         """
-        return (self.c('spring_proj_harv_price', crop) *
-                self.c('hist_yield_for_ins_area', crop))
+        return (self.c('spring_proj_harv_price', self.crop) *
+                self.c('hist_yield_for_ins_area', self.crop))
 
-    def opt_cty_rev_as_ratio(self, crop, pf=1, yf=1):
+    def opt_cty_rev_as_ratio(self, pf=1, yf=1):
         """
         J81 same for all
         """
-        return (self.opt_county_actual_revenue(crop, pf, yf) /
-                self.opt_county_insured_revenue(crop, pf))
+        return (self.opt_county_actual_revenue(pf, yf) /
+                self.opt_county_insured_revenue(pf))
 
-    def opt_payment_factor(self, lvl, diff, crop, pf=1, yf=1):
+    def opt_payment_factor(self, pf=1, yf=1):
         """
         J82 same for all
         """
         return (
-            0 if self.opt_cty_rev_as_ratio(crop, pf, yf) > lvl else
-            min((lvl - self.opt_cty_rev_as_ratio(crop, pf, yf)) / diff, 1))
+            0 if self.opt_cty_rev_as_ratio(pf, yf) > self.lvl else
+            min((self.lvl - self.opt_cty_rev_as_ratio(pf, yf)) / self.diff, 1))
 
-    def opt_farm_crop_value(self, diff, crop, pf=1):
+    def opt_farm_crop_value(self, pf=1):
         """
         J83 for RP-HPE and YO
         """
-        return (self.c('hist_yield_for_ins_ent', crop) *
-                self.c('spring_proj_harv_price', crop) * diff)
+        return (self.c('hist_yield_for_ins_ent', self.crop) *
+                self.c('spring_proj_harv_price', self.crop) * self.diff)
 
-    def opt_harvest_indemnity_per_acre(self, crop, pf=1, yf=1):
+    def opt_harvest_indemnity_per_acre(self, pf=1, yf=1):
         """
         J84 same for all
         """
         is_eco = self.kind == 'eco'
-        lvl = (self.c('eco_level', crop) if is_eco else self.sco_level)/100
-        diff = ((lvl - self.sco_level/100)
-                if is_eco else (self.sco_level - self.c('level', crop))/100)
+        self.lvl = (self.c('eco_level', self.crop) if is_eco else self.sco_level)/100
+        self.diff = ((self.lvl - self.sco_level/100)
+                     if is_eco else (self.sco_level - self.c('level', self.crop))/100)
 
-        return (self.opt_farm_crop_value(diff, crop, pf) *
-                self.opt_payment_factor(lvl, diff, crop, pf, yf))
+        return (self.opt_farm_crop_value(pf) *
+                self.opt_payment_factor(pf, yf))
 
-    def opt_harvest_indemnity_pmt(self, crop, pf=1, yf=1):
+    def opt_harvest_indemnity_pmt(self, pf=1, yf=1):
         """
         J86 same for all
         """
-        return (self.opt_harvest_indemnity_per_acre(crop, pf, yf) *
-                self.acres_insured(crop))
+        return (self.opt_harvest_indemnity_per_acre(pf, yf) *
+                self.acres_insured())
 
 
 class IndemnityEnt(Indemnity):
@@ -297,53 +295,53 @@ class IndemnityEnt(Indemnity):
     def __init__(self, *args, **kwargs):
         super(IndemnityEnt, self).__init__(*args, **kwargs)
 
-    def yield_trigger(self, crop):
+    def yield_trigger(self):
         """
         F40
         """
-        return (self.c('hist_yield_for_ins_ent', crop) *
-                self.c('level', crop) / 100)
+        return (self.c('hist_yield_for_ins_ent', self.crop) *
+                self.c('level', self.crop) / 100)
 
-    def actual_revenue(self, crop, pf=1, yf=1):
+    def actual_revenue(self, pf=1, yf=1):
         """
         J45 all classes excep yo  (Ent version)
         """
-        return (self.sensitized_yield(crop, yf) *
-                self.ins_harvest_price(crop, pf))
+        return (self.sensitized_yield(yf) *
+                self.ins_harvest_price(pf))
 
-    def replant_acres(self, crop):
+    def replant_acres(self):
         """
         J57
         """
-        return (self.c('replant_frac_acres_assumed', crop) *
-                self.c('acres', crop))
+        return (self.c('replant_frac_acres_assumed', self.crop) *
+                self.c('acres', self.crop))
 
-    def replant_bushels(self, crop):
+    def replant_bushels(self):
         """
         J58
         """
-        return (self.replant_acres(crop) *
-                self.c('replant_yield_loss_bpa', crop))
+        return (self.replant_acres() *
+                self.c('replant_yield_loss_bpa', self.crop))
 
-    def replant_indemnity_pmt(self, crop):
+    def replant_indemnity_pmt(self):
         """
         J59
         """
-        return (self.replant_bushels(crop) *
-                self.c('spring_proj_harv_price', crop))
+        return (self.replant_bushels() *
+                self.c('spring_proj_harv_price', self.crop))
 
-    def harvest_indemnity_pmt_per_acre(self, crop, pf=1, yf=1):
+    def harvest_indemnity_pmt_per_acre(self, pf=1, yf=1):
         """
         F52 (in dollars per acre)
         """
-        return self.revenue_loss(crop, pf, yf)
+        return self.revenue_loss(pf, yf)
 
-    def tot_indemnity_pmt_received(self, crop, pf=1, yf=1):
+    def tot_indemnity_pmt_received(self, pf=1, yf=1):
         """
         F61
         """
-        return (self.harvest_indemnity_pmt(crop, pf, yf) +
-                self.replant_indemnity_pmt(crop))
+        return (self.harvest_indemnity_pmt(pf, yf) +
+                self.replant_indemnity_pmt())
 
 
 # CONCRETE INDEMNITY CLASSES
@@ -361,57 +359,57 @@ class IndemnityAreaRp(IndemnityArea):
     def __init__(self, *args, **kwargs):
         super(IndemnityAreaRp, self).__init__(*args, **kwargs)
 
-    def limiting_revenue_factor(self, crop, pf=1):
+    def limiting_revenue_factor(self, pf=1):
         """
         F48 different for all three Area classes
         """
-        return (self.c('hist_yield_for_ins_area', crop) *
-                max(self.c('spring_proj_harv_price', crop),
-                    self.ins_harvest_price(crop, pf)) *
+        return (self.c('hist_yield_for_ins_area', self.crop) *
+                max(self.c('spring_proj_harv_price', self.crop),
+                    self.ins_harvest_price(pf)) *
                 self.loss_limit_factor)
 
-    def maximum_loss_payment(self, crop, pf=1, yf=1):
+    def maximum_loss_payment(self, pf=1, yf=1):
         """
         F49  different for all three concrete Area classes
         """
-        return (max(self.revenue_trigger_feb_price(crop),
-                    self.revised_revenue_trigger(crop, pf, yf)) -
-                self.limiting_revenue_factor(crop))
+        return (max(self.revenue_trigger_feb_price(),
+                    self.revised_revenue_trigger(pf, yf)) -
+                self.limiting_revenue_factor())
 
-    def revised_dollars_of_protection(self, crop, pf=1, yf=1):
+    def revised_dollars_of_protection(self, pf=1, yf=1):
         """
         F44 method exists for this concrete class only
         """
-        return (self.c('hist_yield_for_ins_area', crop) *
-                self.c('selected_payment_factor', crop) *
-                self.rev_trigger_condition(crop, pf, yf))
+        return (self.c('hist_yield_for_ins_area', self.crop) *
+                self.c('selected_payment_factor', self.crop) *
+                self.rev_trigger_condition(pf, yf))
 
-    def harvest_indemnity_pmt_per_acre(self, crop, pf=1, yf=1):
+    def harvest_indemnity_pmt_per_acre(self, pf=1, yf=1):
         """
         F52 (in dollars per acre) overrides method in IndemnityArea
         """
-        return (max(self.minimum_dollars_protection(crop),
-                    self.revised_dollars_of_protection(crop, pf, yf)) *
-                self.payment_factor(crop, pf, yf))
+        return (max(self.minimum_dollars_protection(),
+                    self.revised_dollars_of_protection(pf, yf)) *
+                self.payment_factor(pf, yf))
 
     # SCO/ECO overrides
     # -----------------
 
-    def opt_county_insured_revenue(self, crop, pf=1):
+    def opt_county_insured_revenue(self, pf=1):
         """
         J80 Only for RP
         """
-        return (self.c('hist_yield_for_ins_area', crop) *
-                max(self.ins_harvest_price(crop, pf),
-                    self.c('spring_proj_harv_price', crop)))
+        return (self.c('hist_yield_for_ins_area', self.crop) *
+                max(self.ins_harvest_price(pf),
+                    self.c('spring_proj_harv_price', self.crop)))
 
-    def opt_farm_crop_value(self, diff, crop, pf=1):
+    def opt_farm_crop_value(self, pf=1):
         """
         J83 Only for RP
         """
-        return (self.c('hist_yield_for_ins_ent', crop) *
-                max(self.ins_harvest_price(crop, pf),
-                    self.c('spring_proj_harv_price', crop)) * diff)
+        return (self.c('hist_yield_for_ins_ent', self.crop) *
+                max(self.ins_harvest_price(pf),
+                    self.c('spring_proj_harv_price', self.crop)) * self.diff)
 
 
 class IndemnityAreaRpHpe(IndemnityArea):
@@ -425,29 +423,29 @@ class IndemnityAreaRpHpe(IndemnityArea):
     def __init__(self, *args, **kwargs):
         super(IndemnityAreaRpHpe, self).__init__(*args, **kwargs)
 
-    def revenue_loss(self, crop, pf=1, yf=1):
+    def revenue_loss(self, pf=1, yf=1):
         """
         F46 Overrides method in Area RP-HPE
         """
-        return max((self.revenue_trigger_feb_price(crop) -
-                    self.actual_revenue(crop, pf, yf)), 0)
+        return max((self.revenue_trigger_feb_price() -
+                    self.actual_revenue(pf, yf)), 0)
 
-    def limiting_revenue_factor(self, crop, pf=1):
+    def limiting_revenue_factor(self, pf=1):
         """
         F48 different for all three Area classes
         """
-        return (self.c('hist_yield_for_ins_area', crop) *
-                self.ins_harvest_price(crop, pf) *
+        return (self.c('hist_yield_for_ins_area', self.crop) *
+                self.ins_harvest_price(pf) *
                 self.loss_limit_factor)
 
-    def maximum_loss_payment(self, crop, yf=1):
+    def maximum_loss_payment(self, yf=1):
         """
         F49  different for all three concrete Area classes
         we don't use yf here, but payment_factor needs to pass it
         because the RP class needs it.
         """
-        return (self.revenue_trigger_feb_price(crop) -
-                self.limiting_revenue_factor(crop))
+        return (self.revenue_trigger_feb_price() -
+                self.limiting_revenue_factor())
 
 
 class IndemnityAreaYo(IndemnityArea):
@@ -461,43 +459,43 @@ class IndemnityAreaYo(IndemnityArea):
     def __init__(self, *args, **kwargs):
         super(IndemnityAreaYo, self).__init__(*args, **kwargs)
 
-    def limiting_revenue_factor(self, crop):
+    def limiting_revenue_factor(self):
         """
         F48 different for all three Area classes
         """
-        return (self.c('hist_yield_for_ins_area', crop) *
+        return (self.c('hist_yield_for_ins_area', self.crop) *
                 self.loss_limit_factor)
 
-    def yield_shortfall(self, crop, yf=1):
+    def yield_shortfall(self, yf=1):
         """
         47  different for both AreaYo and EntYo
         """
-        return max((self.yield_trigger(crop) -
-                    self.sensitized_cty_rma_yield(crop, yf)), 0)
+        return max((self.yield_trigger() -
+                    self.sensitized_cty_rma_yield(yf)), 0)
 
-    def payment_factor(self, crop, pf=1, yf=1):
+    def payment_factor(self, pf=1, yf=1):
         """
         F50 Overrides method in IndemnityArea
         """
-        return min(1, (self.yield_shortfall(crop, yf) /
-                       self.maximum_loss_payment(crop, yf)))
+        return min(1, (self.yield_shortfall(yf) /
+                       self.maximum_loss_payment(yf)))
 
-    def maximum_loss_payment(self, crop, yf=1):
+    def maximum_loss_payment(self, yf=1):
         """
         F49
         """
-        return (self.yield_trigger(crop) -
-                self.limiting_revenue_factor(crop))
+        return (self.yield_trigger() -
+                self.limiting_revenue_factor())
 
     # SCO/ECO overrides
     # -----------------
 
-    def opt_county_actual_revenue(self, crop, pf=1, yf=1):
+    def opt_county_actual_revenue(self, pf=1, yf=1):
         """
         J79
         """
-        return (self.c('spring_proj_harv_price', crop) *
-                self.sensitized_cty_rma_yield(crop, yf))
+        return (self.c('spring_proj_harv_price', self.crop) *
+                self.sensitized_cty_rma_yield(yf))
 
 
 class IndemnityEntRp(IndemnityEnt):
@@ -521,14 +519,14 @@ class IndemnityEntRpHpe(IndemnityEnt):
     def __init__(self, *args, **kwargs):
         super(IndemnityEntRpHpe, self).__init__(*args, **kwargs)
 
-    def revised_revenue_trigger(self, crop, pf=1, yf=1):
+    def revised_revenue_trigger(self, pf=1, yf=1):
         """
         F43
         """
-        return (self.yield_trigger(crop) *
-                (0 if (self.ins_harvest_price(crop, pf) >
-                       self.c('spring_proj_harv_price', crop))
-                else self.c('spring_proj_harv_price', crop)))
+        return (self.yield_trigger() *
+                (0 if (self.ins_harvest_price(pf) >
+                       self.c('spring_proj_harv_price', self.crop))
+                else self.c('spring_proj_harv_price', self.crop)))
 
 
 class IndemnityEntYo(IndemnityEnt):
@@ -541,16 +539,16 @@ class IndemnityEntYo(IndemnityEnt):
     def __init__(self, *args, **kwargs):
         super(IndemnityEntYo, self).__init__(*args, **kwargs)
 
-    def yield_shortfall(self, crop, yf=1):
+    def yield_shortfall(self, yf=1):
         """
         47
         """
-        return max((self.yield_trigger(crop) -
-                    self.sensitized_yield(crop, yf)), 0)
+        return max((self.yield_trigger() -
+                    self.sensitized_yield(yf)), 0)
 
-    def harvest_indemnity_pmt_per_acre(self, crop, pf=1, yf=1):
+    def harvest_indemnity_pmt_per_acre(self, pf=1, yf=1):
         """
         F52 (in dollars per acre)
         """
-        return (self.yield_shortfall(crop, yf) *
-                self.c('spring_proj_harv_price', crop))
+        return (self.yield_shortfall(yf) *
+                self.c('spring_proj_harv_price', self.crop))

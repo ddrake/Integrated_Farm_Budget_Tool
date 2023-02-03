@@ -31,11 +31,11 @@ def test_total_crop_ins():
     crop = 'corn'
     assert c.crop_ins_premium_crop(crop) == pytest.approx(72847.62, tol)
 
-    assert (c.indemnity_corn.harvest_indemnity_pmt(crop, pf=.7, yf=.75)
+    assert (c.indemnity_corn.harvest_indemnity_pmt(pf=.7, yf=.75)
             == pytest.approx(587057.954, tol))
 
     # there should be an SCO indemnity
-    assert (c.sco_corn.opt_harvest_indemnity_pmt(crop, pf=.7, yf=.75)
+    assert (c.sco_corn.opt_harvest_indemnity_pmt(pf=.7, yf=.75)
             == pytest.approx(1133130.559, tol))
 
     # there should not be an ECO indemnity
@@ -98,9 +98,9 @@ def test_indemnity_and_its_parts_cannot_be_less_than_zero():
 
     c = CropIns(2023, overrides)
     crop = 'corn'
-    assert c.indemnity_corn.harvest_indemnity_pmt(crop, pf=1, yf=1) == 0
-    assert (c.indemnity_corn.tot_indemnity_pmt_received(crop, pf=1, yf=1) ==
+    assert c.indemnity_corn.harvest_indemnity_pmt(pf=1, yf=1) == 0
+    assert (c.indemnity_corn.tot_indemnity_pmt_received(pf=1, yf=1) ==
             pytest.approx(1991.901))
-    assert c.sco_corn.opt_harvest_indemnity_pmt(crop, pf=1, yf=1) == 0
-    assert c.eco_corn.opt_harvest_indemnity_pmt(crop, pf=1, yf=1) == 0
+    assert c.sco_corn.opt_harvest_indemnity_pmt(pf=1, yf=1) == 0
+    assert c.eco_corn.opt_harvest_indemnity_pmt(pf=1, yf=1) == 0
     assert c.total_indemnity_crop(crop, pf=1, yf=1) == pytest.approx(1991.901)

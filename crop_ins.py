@@ -77,19 +77,19 @@ class CropIns(object):
         In order to use the SCO option, the gov_pmt program must be PLC, but
         This rule is not enforced through validation yet.
         """
-        def add_indemnity_attr(kind, attr_name, unit, prot, crop_year):
+        def add_indemnity_attr(crop_year, crop, kind, attr_name, unit, prot):
             setattr(self, attr_name,
-                    (IndemnityAreaRp(crop_year, kind=kind)
+                    (IndemnityAreaRp(crop_year, crop, kind=kind)
                      if unit == 0 and prot == 0 else
-                     IndemnityAreaRpHpe(crop_year, kind=kind)
+                     IndemnityAreaRpHpe(crop_year, crop, kind=kind)
                      if unit == 0 and prot == 1 else
-                     IndemnityAreaYo(crop_year, kind=kind)
+                     IndemnityAreaYo(crop_year, crop, kind=kind)
                      if unit == 0 and prot == 2 else
-                     IndemnityEntRp(crop_year, kind=kind)
+                     IndemnityEntRp(crop_year, crop, kind=kind)
                      if unit == 1 and prot == 0 else
-                     IndemnityEntRpHpe(crop_year, kind=kind)
+                     IndemnityEntRpHpe(crop_year, crop, kind=kind)
                      if unit == 1 and prot == 1 else
-                     IndemnityEntYo(crop_year, kind=kind)))
+                     IndemnityEntYo(crop_year, crop, kind=kind)))
             return None
 
         for crop in ['corn', 'soy']:
@@ -98,20 +98,23 @@ class CropIns(object):
             eco_level = self.c('eco_level', crop)
             base_unit = self.c('unit', crop)
             base_protection = self.c('protection', crop)
+            AREA_UNIT = 0
             if ins:
                 add_indemnity_attr(
-                    'base', f'indemnity_{crop}', base_unit,
-                    base_protection, self.crop_year)
+                    self.crop_year, crop, 'base', f'indemnity_{crop}',
+                    base_unit, base_protection)
             if ins and add_sco:
                 if base_unit != 1:
                     raise ValueError('Cannot add SCO because base unit is Area')
                 add_indemnity_attr(
-                    'sco', f'sco_{crop}', 0, base_protection, self.crop_year)
+                    self.crop_year, crop, 'sco', f'sco_{crop}',
+                    AREA_UNIT, base_protection)
             if ins and eco_level > 0:
                 if not add_sco:
                     raise ValueError('Cannot add ECO unless using SCO')
                 add_indemnity_attr(
-                    'eco', f'eco_{crop}', 0, base_protection, self.crop_year)
+                    self.crop_year, crop, 'eco', f'eco_{crop}',
+                    AREA_UNIT, base_protection)
 
     def c(self, s, crop):
         """
@@ -254,11 +257,11 @@ class CropIns(object):
         Return the total indemnity for the crop
         """
         return (
-            (self.c('indemnity', crop).tot_indemnity_pmt_received(crop, pf, yf)
+            (self.c('indemnity', crop).tot_indemnity_pmt_received(pf, yf)
              if hasattr(self, f'sco_{crop}') else 0) +
-            (self.c('sco', crop).opt_harvest_indemnity_pmt(crop, pf, yf)
+            (self.c('sco', crop).opt_harvest_indemnity_pmt(pf, yf)
              if hasattr(self, f'sco_{crop}') else 0) +
-            (self.c('eco', crop).opt_harvest_indemnity_pmt(crop, pf, yf)
+            (self.c('eco', crop).opt_harvest_indemnity_pmt(pf, yf)
              if hasattr(self, f'eco_{crop}') else 0))
 
     def total_indemnity(self, pf=1, yf=1):
