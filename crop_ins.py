@@ -256,9 +256,9 @@ class CropIns(object):
         return (
             (self.c('indemnity', crop).harvest_indemnity_pmt(crop, pf, yf)
              if hasattr(self, f'sco_{crop}') else 0) +
-            (self.c('sco', crop).opt_harvest_indemnity_pmt(False, crop, pf, yf)
+            (self.c('sco', crop).opt_harvest_indemnity_pmt(crop, pf, yf)
              if hasattr(self, f'sco_{crop}') else 0) +
-            (self.c('eco', crop).opt_harvest_indemnity_pmt(True, crop, pf, yf)
+            (self.c('eco', crop).opt_harvest_indemnity_pmt(crop, pf, yf)
              if hasattr(self, f'eco_{crop}') else 0))
 
     def total_indemnity(self, pf=1, yf=1):
@@ -268,13 +268,13 @@ class CropIns(object):
         return sum([self.total_indemnity_crop(crop, pf, yf)
                     for crop in ['corn', 'soy']])
 
-    def net_crop_ins_expense_crop(self, crop, pf=1, yf=1):
+    def net_crop_ins_indemnity_crop(self, crop, pf=1, yf=1):
         """
         Return the net crop insurance expense (subtracting indemnity)
         for the crop with given sensitivity factors
         """
-        return (self.total_premium_crop(crop) -
-                self.total_indemnity_crop(crop, pf, yf))
+        return (self.total_indemnity_crop(crop, pf, yf) -
+                self.total_premium_crop(crop))
 
-    def total_net_crop_ins_expense(self, pf=1, yf=1):
-        return (self.total_premium() - self.total_indemnity(pf, yf))
+    def total_net_crop_ins_indemnity(self, pf=1, yf=1):
+        return (self.total_indemnity(pf, yf) - self.total_premium())

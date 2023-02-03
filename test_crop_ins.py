@@ -87,3 +87,18 @@ def test_cannot_add_eco_unless_sco_is_added():
 
     with pytest.raises(ValueError):
         CropIns(2023, overrides)
+
+
+def test_indemnity_and_its_parts_cannot_be_less_than_zero():
+    # insure corn with an enterprise unit, rp protection at a 65% level
+    # with supplemental coverage option and enhanced coverage to 90%
+    # in a scenario of normal yields and prices (no indemnity)
+    overrides = {'insure_corn': '1', 'unit_corn': '1', 'protection_corn': '0',
+                 'level_corn': '65', 'add_sco_corn': '1', 'eco_level_corn': '90'}
+
+    c = CropIns(2023, overrides)
+    crop = 'corn'
+    assert c.indemnity_corn.harvest_indemnity_pmt(crop, pf=1, yf=1) == 0
+    assert c.sco_corn.opt_harvest_indemnity_pmt(crop, pf=1, yf=1) == 0
+    assert c.eco_corn.opt_harvest_indemnity_pmt(crop, pf=1, yf=1) == 0
+    assert c.total_indemnity_crop(crop, pf=1, yf=1) == 0

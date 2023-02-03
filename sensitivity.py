@@ -110,7 +110,7 @@ def sens_crop_ins(crop_year=2023):
     r = Revenue(crop_year)
     c = CropIns(crop_year)
 
-    data = [['']*3 + [round(c.total_net_crop_ins_expense(p, y)/1000)
+    data = [['']*3 + [round(c.total_net_crop_ins_indemnity(p, y)/1000)
                       for y in yield_pcts]
             for p in price_pcts]
 

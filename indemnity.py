@@ -259,7 +259,7 @@ class IndemnityArea(Indemnity):
         J82 same for all
         """
         return (
-            0 if self.opt_cty_rev_as_ratio(crop, pf, yf) > self.sco_level else
+            0 if self.opt_cty_rev_as_ratio(crop, pf, yf) > self.sco_level/100 else
             min((lvl - self.opt_cty_rev_as_ratio(crop, pf, yf)) / diff, 1))
 
     def opt_farm_crop_value(self, diff, crop, pf=1):
