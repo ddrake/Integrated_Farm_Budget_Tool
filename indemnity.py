@@ -286,66 +286,8 @@ class IndemnityArea(Indemnity):
         return (self.opt_harvest_indemnity_per_acre(pf, yf) *
                 self.acres_insured())
 
-
-class IndemnityEnt(Indemnity):
-    """
-    DO NOT construct an instance of this class.  Instead get an instance of one
-    of the six concrete derived classes
-    """
-    def __init__(self, *args, **kwargs):
-        super(IndemnityEnt, self).__init__(*args, **kwargs)
-
-    def yield_trigger(self):
-        """
-        F40
-        """
-        return (self.c('hist_yield_for_ins_ent', self.crop) *
-                self.c('level', self.crop) / 100)
-
-    def actual_revenue(self, pf=1, yf=1):
-        """
-        J45 all classes excep yo  (Ent version)
-        """
-        return (self.sensitized_yield(yf) *
-                self.ins_harvest_price(pf))
-
-    def replant_acres(self):
-        """
-        J57
-        """
-        return (self.c('replant_frac_acres_assumed', self.crop) *
-                self.c('acres', self.crop))
-
-    def replant_bushels(self):
-        """
-        J58
-        """
-        return (self.replant_acres() *
-                self.c('replant_yield_loss_bpa', self.crop))
-
-    def replant_indemnity_pmt(self):
-        """
-        J59
-        """
-        return (self.replant_bushels() *
-                self.c('spring_proj_harv_price', self.crop))
-
-    def harvest_indemnity_pmt_per_acre(self, pf=1, yf=1):
-        """
-        F52 (in dollars per acre)
-        """
-        return self.revenue_loss(pf, yf)
-
-    def tot_indemnity_pmt_received(self, pf=1, yf=1):
-        """
-        F61
-        """
-        return (self.harvest_indemnity_pmt(pf, yf) +
-                self.replant_indemnity_pmt())
-
-
-# CONCRETE INDEMNITY CLASSES
-# --------------------------
+# CONCRETE INDEMNITY AREA CLASSES
+# -------------------------------
 
 
 class IndemnityAreaRp(IndemnityArea):
@@ -496,6 +438,63 @@ class IndemnityAreaYo(IndemnityArea):
         """
         return (self.c('spring_proj_harv_price', self.crop) *
                 self.sensitized_cty_rma_yield(yf))
+
+
+class IndemnityEnt(Indemnity):
+    """
+    DO NOT construct an instance of this class.  Instead get an instance of one
+    of the six concrete derived classes
+    """
+    def __init__(self, *args, **kwargs):
+        super(IndemnityEnt, self).__init__(*args, **kwargs)
+
+    def yield_trigger(self):
+        """
+        F40
+        """
+        return (self.c('hist_yield_for_ins_ent', self.crop) *
+                self.c('level', self.crop) / 100)
+
+    def actual_revenue(self, pf=1, yf=1):
+        """
+        J45 all classes excep yo  (Ent version)
+        """
+        return (self.sensitized_yield(yf) *
+                self.ins_harvest_price(pf))
+
+    def replant_acres(self):
+        """
+        J57
+        """
+        return (self.c('replant_frac_acres_assumed', self.crop) *
+                self.c('acres', self.crop))
+
+    def replant_bushels(self):
+        """
+        J58
+        """
+        return (self.replant_acres() *
+                self.c('replant_yield_loss_bpa', self.crop))
+
+    def replant_indemnity_pmt(self):
+        """
+        J59
+        """
+        return (self.replant_bushels() *
+                self.c('spring_proj_harv_price', self.crop))
+
+    def harvest_indemnity_pmt_per_acre(self, pf=1, yf=1):
+        """
+        F52 (in dollars per acre)
+        """
+        return self.revenue_loss(pf, yf)
+
+    def tot_indemnity_pmt_received(self, pf=1, yf=1):
+        """
+        F61
+        """
+        return (self.harvest_indemnity_pmt(pf, yf) +
+                self.replant_indemnity_pmt())
 
 
 class IndemnityEntRp(IndemnityEnt):

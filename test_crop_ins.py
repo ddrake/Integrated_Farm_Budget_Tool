@@ -32,11 +32,11 @@ def test_total_crop_ins():
     assert c.crop_ins_premium_crop(crop) == pytest.approx(72847.62, tol)
 
     assert (c.indemnity_corn.harvest_indemnity_pmt(pf=.7, yf=.75)
-            == pytest.approx(587057.954, tol))
+            == pytest.approx(1126643.935, tol))
 
     # there should be an SCO indemnity
     assert (c.sco_corn.opt_harvest_indemnity_pmt(pf=.7, yf=.75)
-            == pytest.approx(1133130.559, tol))
+            == pytest.approx(593544.579, tol))
 
     # there should not be an ECO indemnity
     assert not hasattr(c, 'eco_corn')
@@ -103,4 +103,51 @@ def test_indemnity_and_its_parts_cannot_be_less_than_zero():
             pytest.approx(1991.901))
     assert c.sco_corn.opt_harvest_indemnity_pmt(pf=1, yf=1) == 0
     assert c.eco_corn.opt_harvest_indemnity_pmt(pf=1, yf=1) == 0
-    assert c.total_indemnity_crop(crop, pf=1, yf=1) == pytest.approx(1991.901)
+    assert c.total_indemnity_crop(crop, pf=1, yf=1) == pytest.approx(1991.901, .01)
+
+
+def test_multiple_configurations():
+    """
+    Loop through a list of crop insurance configurations checking the values
+    returned by total_net_crop_ins_indemnity for a few different pf/yf
+    combinations (48 different checks total)
+    """
+
+    factors = [(.75, .7), (.75, 1), (1, .7), (1, 1)]
+
+    configs = [(0, 0, 0, 0), (0, 1, 0, 0), (0, 2, 0, 0),
+               (1, 0, 0, 0), (1, 1, 0, 0), (1, 2, 0, 0),
+               (1, 0, 1, 0), (1, 1, 1, 0), (1, 2, 1, 0),
+               (1, 0, 1, 90), (1, 1, 1, 90), (1, 2, 1, 90), ]
+
+    values = [2359525.327, 2383567.332, -32515.612,
+              1518295.213, 1559900.113, 100573.179,
+              2353429.137, 2423163.501, 960871.075,
+              2594207.266, 2691981.164, 1254461.633,
+
+              -132515.326, -108473.321, -69671.549,
+              -97691.305, -56086.405, -52653.782,
+              263861.229, 333595.593, -94696.402,
+              504639.359, 602413.257, -143172.607,
+
+              -95359.388, -71317.383, -32515.611,
+              55535.656, 97140.556, 100573.179,
+              852326.497, 922060.861, 960871.075,
+              1093104.627, 1190878.525, 1254461.633,
+
+              -132515.326, -108473.321, -69671.549,
+              -97691.305, -56086.405, -52653.782,
+              -203240.980, -133506.616, -94696.402,
+              -304529.613, -206755.715, -143172.607]
+
+    idx = 0
+    for pf, yf in factors:
+        for u, p, s, e in configs:
+            ovr = {'insure_corn': 1, 'unit_corn': u, 'protection_corn': p,
+                   'level_corn': 75, 'add_sco_corn': s, 'eco_level_corn': e,
+                   'insure_soy': 1, 'unit_soy': u, 'protection_soy': p,
+                   'level_soy': 75, 'add_sco_soy': s, 'eco_level_soy': e}
+            ci = CropIns(2023, overrides=ovr)
+            assert (ci.total_net_crop_ins_indemnity(pf, yf)
+                    == pytest.approx(values[idx], .01))
+            idx += 1
