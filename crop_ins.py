@@ -39,7 +39,9 @@ class CropIns(object):
             setattr(self, k, float(v) if '.' in v else int(v))
         if overrides is not None:
             for k, v in overrides.items():
-                setattr(self, k, float(v) if '.' in v else int(v))
+                vnum = (v if isinstance(v, (int, float)) else
+                        float(v) if '.' in v else int(v))
+                setattr(self, k, vnum)
         for crop in ['corn', 'soy']:
             self.validate_settings(crop)
         self.indemnity_factory()

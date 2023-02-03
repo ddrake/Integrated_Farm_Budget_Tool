@@ -23,8 +23,8 @@ tol = .01
 def test_total_crop_ins():
     # insure corn with an enterprise unit, rp protection at a 75% level
     # with supplemental coverage option, but no enhanced coverage
-    overrides = {'insure_corn': '1', 'unit_corn': '1', 'protection_corn': '0',
-                 'level_corn': '75', 'add_sco_corn': '1', 'eco_level_corn': '0'}
+    overrides = {'insure_corn': 1, 'unit_corn': 1, 'protection_corn': 0,
+                 'level_corn': 75, 'add_sco_corn': 1, 'eco_level_corn': 0}
 
     c = CropIns(2023, overrides)
 
@@ -45,8 +45,8 @@ def test_total_crop_ins():
 def test_premiums_and_revenue_are_zero_for_a_crop_without_insurance():
     # DON'T insure corn, but set an enterprise unit, rp protection at a 75% level
     # with no optional coverage.
-    overrides = {'insure_corn': '0', 'unit_corn': '1', 'protection_corn': '0',
-                 'level_corn': '75', 'add_sco_corn': '0', 'eco_level_corn': '0'}
+    overrides = {'insure_corn': 0, 'unit_corn': 1, 'protection_corn': 0,
+                 'level_corn': 75, 'add_sco_corn': 0, 'eco_level_corn': 0}
 
     c = CropIns(2023, overrides)
     crop = 'corn'
@@ -58,8 +58,8 @@ def test_premiums_and_revenue_are_zero_for_a_crop_without_insurance():
 def test_no_indemnity_attribute_is_added_without_base_insurance():
     # DON'T insure corn, but set an enterprise unit, rp protection at a 75% level
     # with supplemental coverage option, and no enhanced coverage
-    overrides = {'insure_corn': '0', 'unit_corn': '1', 'protection_corn': '0',
-                 'level_corn': '75', 'add_sco_corn': '1', 'eco_level_corn': '0'}
+    overrides = {'insure_corn': 0, 'unit_corn': 1, 'protection_corn': 0,
+                 'level_corn': 75, 'add_sco_corn': 1, 'eco_level_corn': 0}
     c = CropIns(2023, overrides)
     assert not hasattr(c, 'indemnity_corn')
 
@@ -67,8 +67,8 @@ def test_no_indemnity_attribute_is_added_without_base_insurance():
 def test_cannot_add_sco_if_base_insurance_is_area():
     # insure corn with an enterprise unit, rp protection at a 75% level
     # with supplemental coverage option, but no enhanced coverage
-    overrides = {'insure_corn': '1', 'unit_corn': '0', 'protection_corn': '0',
-                 'level_corn': '75', 'add_sco_corn': '1', 'eco_level_corn': '0'}
+    overrides = {'insure_corn': 1, 'unit_corn': 0, 'protection_corn': 0,
+                 'level_corn': 75, 'add_sco_corn': 1, 'eco_level_corn': 0}
 
     with pytest.raises(ValueError):
         CropIns(2023, overrides)
@@ -82,8 +82,8 @@ def test_cannot_add_eco_unless_sco_is_added():
     """
     # insure corn with an enterprise unit, rp protection at a 75% level
     # with supplemental coverage option, but no enhanced coverage
-    overrides = {'insure_corn': '1', 'unit_corn': '0', 'protection_corn': '1',
-                 'level_corn': '75', 'add_sco_corn': '0', 'eco_level_corn': '90'}
+    overrides = {'insure_corn': 1, 'unit_corn': 0, 'protection_corn': 1,
+                 'level_corn': 75, 'add_sco_corn': 0, 'eco_level_corn': 90}
 
     with pytest.raises(ValueError):
         CropIns(2023, overrides)
@@ -93,8 +93,8 @@ def test_indemnity_and_its_parts_cannot_be_less_than_zero():
     # insure corn with an enterprise unit, rp protection at a 65% level
     # with supplemental coverage option and enhanced coverage to 90%
     # in a scenario of normal yields and prices (no indemnity)
-    overrides = {'insure_corn': '1', 'unit_corn': '1', 'protection_corn': '0',
-                 'level_corn': '65', 'add_sco_corn': '1', 'eco_level_corn': '90'}
+    overrides = {'insure_corn': 1, 'unit_corn': 1, 'protection_corn': 0,
+                 'level_corn': 65, 'add_sco_corn': 1, 'eco_level_corn': 90}
 
     c = CropIns(2023, overrides)
     crop = 'corn'

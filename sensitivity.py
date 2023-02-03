@@ -101,14 +101,14 @@ def sens_gov_pmt(crop_year=2023):
     print(tabulate(table, tablefmt="simple_grid"))
 
 
-def sens_crop_ins(crop_year=2023):
+def sens_crop_ins(crop_year=2023, overrides=None):
     """
     Display a sensitivity table for the specified crop year
     for straightforward comparison with the crop insurance table
     in 'benchmarks.xls!KeyInputs'
     """
     r = Revenue(crop_year)
-    c = CropIns(crop_year)
+    c = CropIns(crop_year, overrides)
 
     data = [['']*3 + [round(c.total_net_crop_ins_indemnity(p, y)/1000)
                       for y in yield_pcts]
