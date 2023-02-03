@@ -110,7 +110,7 @@ def test_multiple_configurations():
     """
     Loop through a list of crop insurance configurations checking the values
     returned by total_net_crop_ins_indemnity for a few different pf/yf
-    combinations (48 different checks total)
+    combinations (48 different checks total) all verified against Excel
     """
 
     factors = [(.75, .7), (.75, 1), (1, .7), (1, 1)]
