@@ -79,7 +79,8 @@ class CropIns(object):
         In order to use the SCO option, the gov_pmt program must be PLC, but
         This rule is not enforced through validation yet.
         """
-        def add_indemnity_attr(crop_year, crop, kind, attr_name, unit, prot):
+        def add_indemnity_attr(crop_year, crop, kind, attr_name, unit,
+                               prot, level, add_sco, eco_level, pmt_factor):
             setattr(self, attr_name,
                     (IndemnityAreaRp(crop_year, crop, kind=kind)
                      if unit == 0 and prot == 0 else
@@ -92,6 +93,15 @@ class CropIns(object):
                      IndemnityEntRpHpe(crop_year, crop, kind=kind)
                      if unit == 1 and prot == 1 else
                      IndemnityEntYo(crop_year, crop, kind=kind)))
+
+            # Ensure commonly overridden properties are passed to indemnity instances
+            new_attr = getattr(self, attr_name)
+            setattr(new_attr, f'unit_{crop}', unit)
+            setattr(new_attr, f'prot_{crop}', prot)
+            setattr(new_attr, f'level_{crop}', level)
+            setattr(new_attr, f'add_sco_{crop}', add_sco)
+            setattr(new_attr, f'eco_level_{crop}', eco_level)
+            setattr(new_attr, f'selected_payment_factor_{crop}', base_pmt_factor)
             return None
 
         for crop in ['corn', 'soy']:
@@ -106,28 +116,22 @@ class CropIns(object):
             if ins:
                 add_indemnity_attr(
                     self.crop_year, crop, 'base', f'indemnity_{crop}',
-                    base_unit, base_protection)
-                setattr(getattr(self, f'indemnity_{crop}'), f'level_{crop}', base_level)
-                setattr(getattr(self, f'indemnity_{crop}'),
-                        f'selected_payment_factor_{crop}', base_pmt_factor)
+                    base_unit, base_protection, base_level, add_sco,
+                    eco_level, base_pmt_factor)
             if ins and add_sco:
                 if base_unit != 1:
                     raise ValueError('Cannot add SCO because base unit is Area')
                 add_indemnity_attr(
                     self.crop_year, crop, 'sco', f'sco_{crop}',
-                    AREA_UNIT, base_protection)
-                setattr(getattr(self, f'sco_{crop}'), f'level_{crop}', base_level)
-                setattr(getattr(self, f'sco_{crop}'),
-                        f'selected_payment_factor_{crop}', base_pmt_factor)
+                    AREA_UNIT, base_protection, base_level, add_sco,
+                    eco_level, base_pmt_factor)
             if ins and eco_level > 0:
                 if not add_sco:
                     raise ValueError('Cannot add ECO unless using SCO')
                 add_indemnity_attr(
                     self.crop_year, crop, 'eco', f'eco_{crop}',
-                    AREA_UNIT, base_protection)
-                setattr(getattr(self, f'eco_{crop}'), f'level_{crop}', base_level)
-                setattr(getattr(self, f'eco_{crop}'),
-                        f'selected_payment_factor_{crop}', base_pmt_factor)
+                    AREA_UNIT, base_protection, base_level, add_sco,
+                    eco_level, base_pmt_factor)
 
     def c(self, s, crop):
         """
@@ -200,10 +204,14 @@ class CropIns(object):
         """
         Crop insurance per-acre premium based on choices of
         'unit', 'protection' and 'level' for the crop
+        Note: payment factor used only for area unit as far as we know
         """
+        unit = self.c('unit', crop)
         return (self.c4(
-            self.c('unit', crop), self.c('protection', crop),
-            self.c('level', crop), crop) * self.c('selected_payment_factor', crop)
+            unit, self.c('protection', crop),
+            self.c('level', crop), crop) *
+                (self.c('selected_payment_factor', crop)
+                 if unit == 0 else 1)
                 if self.c('insure', crop) == 1 else 0)
 
     def crop_ins_premium_crop(self, crop):
