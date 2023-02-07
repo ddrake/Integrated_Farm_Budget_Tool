@@ -48,3 +48,7 @@ add_sco_soy                        1
 # choice: (0) Don't add eco OR (90) add eco to 90% OR (95) add eco to 95%   
 eco_level_corn                    90
 eco_level_soy                     90
+
+selected_payment_factor_corn       1.0
+selected_payment_factor_soy        1.0
+

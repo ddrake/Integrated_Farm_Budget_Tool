@@ -37,9 +37,6 @@ spring_proj_harv_price_soy         13.6625
 fall_fut_price_at_harvest_corn      5.8925
 fall_fut_price_at_harvest_soy      13.6625
 
-selected_payment_factor_corn        1.0
-selected_payment_factor_soy         1.0
-
 replant_frac_acres_assumed_corn     0.01
 replant_frac_acres_assumed_soy      0.01
 
