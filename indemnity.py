@@ -205,7 +205,7 @@ class IndemnityArea(Indemnity):
         F50
         """
         return min(1, (self.revenue_loss(pf, yf) /
-                       self.maximum_loss_payment(yf)))
+                       self.maximum_loss_payment(pf, yf)))
 
     def minimum_dollars_protection(self):
         """
@@ -316,7 +316,7 @@ class IndemnityAreaRp(IndemnityArea):
         """
         return (max(self.revenue_trigger_feb_price(),
                     self.revised_revenue_trigger(pf, yf)) -
-                self.limiting_revenue_factor())
+                self.limiting_revenue_factor(pf))
 
     def revised_dollars_of_protection(self, pf=1, yf=1):
         """
@@ -372,18 +372,18 @@ class IndemnityAreaRpHpe(IndemnityArea):
         return max((self.revenue_trigger_feb_price() -
                     self.actual_revenue(pf, yf)), 0)
 
-    def limiting_revenue_factor(self, pf=1):
+    def limiting_revenue_factor(self):
         """
         F48 different for all three Area classes
         """
         return (self.c('hist_yield_for_ins_area', self.crop) *
-                self.ins_harvest_price(pf) *
+                self.c('spring_proj_harv_price', self.crop) *
                 self.loss_limit_factor)
 
-    def maximum_loss_payment(self, yf=1):
+    def maximum_loss_payment(self, pf=1, yf=1):
         """
         F49  different for all three concrete Area classes
-        we don't use yf here, but payment_factor needs to pass it
+        we don't use yf or pf here, but payment_factor needs to pass them
         because the RP class needs it.
         """
         return (self.revenue_trigger_feb_price() -
@@ -420,9 +420,9 @@ class IndemnityAreaYo(IndemnityArea):
         F50 Overrides method in IndemnityArea
         """
         return min(1, (self.yield_shortfall(yf) /
-                       self.maximum_loss_payment(yf)))
+                       self.maximum_loss_payment(pf, yf)))
 
-    def maximum_loss_payment(self, yf=1):
+    def maximum_loss_payment(self, pf=1, yf=1):
         """
         F49
         """

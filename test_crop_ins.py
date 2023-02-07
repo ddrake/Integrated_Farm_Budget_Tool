@@ -119,7 +119,7 @@ def test_multiple_configurations():
     combinations (48 different checks total) all verified against Excel
     """
 
-    factors = [(.75, .7), (.75, 1), (1, .7), (1, 1)]
+    factors = [(.75, .7), (.75, 1), (1, .7), (1, 1), (2.5, .7)]
 
     configs = [(0, 0, 0, 0), (0, 1, 0, 0), (0, 2, 0, 0),
                (1, 0, 0, 0), (1, 1, 0, 0), (1, 2, 0, 0),
@@ -144,7 +144,13 @@ def test_multiple_configurations():
               -132515.326, -108473.321, -69671.549,
               -97691.305, -56086.405, -52653.782,
               -203240.980, -133506.616, -94696.402,
-              -304529.613, -206755.715, -143172.607]
+              -304529.613, -206755.715, -143172.607,
+
+              -58203.451, -108473.321, -32515.611,
+              208762.617, -56086.405, 100573.179,
+              1907893.974, -133506.616, 960871.075,
+              2490738.868, -206755.715, 1254461.633,
+              ]
 
     idx = 0
     for pf, yf in factors:
@@ -160,7 +166,7 @@ def test_multiple_configurations():
             idx += 1
 
 
-def test_payment_factor_scales_premiums_and_indemnities():
+def test_payment_factor_scales_premiums_and_indemnities_for_area_unit():
     """
     Check that the premiums and indemnities match Excel when a payment factor
     other than 1 is used
@@ -171,9 +177,9 @@ def test_payment_factor_scales_premiums_and_indemnities():
                (1, 0, 1, 90), (1, 1, 1, 90), (1, 2, 1, 90), ]
 
     premiums = [119263.793, 97625.988, 62704.394,
-                91089.765, 53645.355, 50555.995,
-                196639.440, 131065.566, 92598.615,
-                297928.073, 204314.665, 141074.820,]
+                101210.851, 59605.951, 56173.328,
+                206760.526, 137026.162, 98215.948,
+                308049.159, 210275.261, 146692.153,]
 
     indemnities = [2242836.588, 2242836.588, 33440.343,
                    1619506.064, 1619506.064, 156746.507,
