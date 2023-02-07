@@ -101,12 +101,15 @@ class CropIns(object):
             base_unit = self.c('unit', crop)
             base_protection = self.c('protection', crop)
             base_level = self.c('level', crop)
+            base_pmt_factor = self.c('selected_payment_factor', crop)
             AREA_UNIT = 0
             if ins:
                 add_indemnity_attr(
                     self.crop_year, crop, 'base', f'indemnity_{crop}',
                     base_unit, base_protection)
                 setattr(getattr(self, f'indemnity_{crop}'), f'level_{crop}', base_level)
+                setattr(getattr(self, f'indemnity_{crop}'),
+                        f'selected_payment_factor_{crop}', base_pmt_factor)
             if ins and add_sco:
                 if base_unit != 1:
                     raise ValueError('Cannot add SCO because base unit is Area')
@@ -114,6 +117,8 @@ class CropIns(object):
                     self.crop_year, crop, 'sco', f'sco_{crop}',
                     AREA_UNIT, base_protection)
                 setattr(getattr(self, f'sco_{crop}'), f'level_{crop}', base_level)
+                setattr(getattr(self, f'sco_{crop}'),
+                        f'selected_payment_factor_{crop}', base_pmt_factor)
             if ins and eco_level > 0:
                 if not add_sco:
                     raise ValueError('Cannot add ECO unless using SCO')
@@ -121,6 +126,8 @@ class CropIns(object):
                     self.crop_year, crop, 'eco', f'eco_{crop}',
                     AREA_UNIT, base_protection)
                 setattr(getattr(self, f'eco_{crop}'), f'level_{crop}', base_level)
+                setattr(getattr(self, f'eco_{crop}'),
+                        f'selected_payment_factor_{crop}', base_pmt_factor)
 
     def c(self, s, crop):
         """
@@ -196,7 +203,7 @@ class CropIns(object):
         """
         return (self.c4(
             self.c('unit', crop), self.c('protection', crop),
-            self.c('level', crop), crop)
+            self.c('level', crop), crop) * self.c('selected_payment_factor', crop)
                 if self.c('insure', crop) == 1 else 0)
 
     def crop_ins_premium_crop(self, crop):
