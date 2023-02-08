@@ -187,11 +187,12 @@ class Revenue(object):
         """
         E24, F25, F26
         Total revenue attained by each crop
+        Note: wheat is considered a component of soy for revenue and cost
         """
-        if crop not in ['corn', 'soy', 'wheat']:
-            raise ValueError("crop must be 'corn', 'soy' or 'wheat'")
+        if crop not in ['corn', 'soy']:
+            raise ValueError("crop must be 'corn' or 'soy'")
 
-        return (self.revenue_wheat if crop == 'wheat' else
+        return ((self.revenue_wheat if crop == 'soy' else 0) +
                 self.tot_revenue_before_deducts_crop(crop, pf, yf) -
                 self.est_deducts_crop(crop, pf, yf))
 
@@ -201,7 +202,7 @@ class Revenue(object):
         """
         return round(sum(
             [self.total_revenue_crop(crop, pf, yf)
-             for crop in ['corn', 'soy', 'wheat']]))
+             for crop in ['corn', 'soy']]))
 
     def avg_realized_price_per_bu(self, crop, pf=1, yf=1):
         """
