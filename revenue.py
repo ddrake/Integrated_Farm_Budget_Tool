@@ -26,11 +26,11 @@ class Revenue(Analysis):
     def __init__(self, *args, **kwargs):
         super(Revenue, self).__init__(*args, **kwargs)
 
-    def projected_yield_soy(self):
+    def projected_yield_soy(self, yf=1):
         """
         F11: Convenience method providing estimated overall soy yield
         """
-        return self.est_soy_bushels() / self.acres_soy
+        return self.projected_bu_soy(yf) / self.acres_soy
 
     def projected_bu_corn(self, yf=1):
         """
