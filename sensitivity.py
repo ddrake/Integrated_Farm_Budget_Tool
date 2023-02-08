@@ -9,6 +9,7 @@ from cost import Cost
 from gov_pmt import GovPmt
 from revenue import Revenue
 from crop_ins import CropIns
+from cash_flow import CashFlow
 
 yield_pcts = "40 55 70 80 90 95 100 105".split()
 price_pcts = "60 75 90 95 100 105 110 125 140 165 180".split()
@@ -115,5 +116,23 @@ def sens_crop_ins(crop_year=2023, overrides=None):
             for p in price_pcts]
 
     table = setup_table(data, r, 'CROP_INS_NET_EXPENSE')
+
+    print(tabulate(table, tablefmt="simple_grid"))
+
+
+def sens_cash_flow(crop_year=2023, overrides=None):
+    """
+    Display a sensitivity table for the specified crop year
+    for straightforward comparison with the crop insurance table
+    in 'benchmarks.xls!KeyInputs'
+    """
+    r = Revenue(crop_year)
+    c = CashFlow(crop_year, overrides)
+
+    data = [['']*3 + [round(c.total_cash_flow(p, y)/1000)
+                      for y in yield_pcts]
+            for p in price_pcts]
+
+    table = setup_table(data, r, 'CASH_FLOW_AFTER_DEBT_SERVICE')
 
     print(tabulate(table, tablefmt="simple_grid"))
