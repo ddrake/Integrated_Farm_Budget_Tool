@@ -6,6 +6,7 @@ for a given crop year when an instance is created.  Its main function
 is to return total estimated net insurance cost for the farm for the given
 crop year corresponding to an arbitrary sensitivity factor for yield.
 """
+from analysis import Analysis
 from indemnity import (IndemnityAreaRp, IndemnityAreaRpHpe, IndemnityAreaYo,
                        IndemnityEntRp, IndemnityEntRpHpe, IndemnityEntYo)
 
@@ -14,7 +15,7 @@ UNITS = 'area ent'.split()
 PROTS = 'rp rphpe yo'.split()
 
 
-class CropIns(object):
+class CropIns(Analysis):
     """
     Computes total net (after payout) crop insurance cost for the farm crop year
     corresponding to an arbitrary sensitivity factor for yield.
@@ -29,45 +30,33 @@ class CropIns(object):
       print(c.total_cost(pf=.7)        # yield factor defaults to 1
       print(c.total_cost(pf=.7, yf=.8) # specifies both price and yield factors
     """
-    def __init__(self, crop_year, overrides=None):
-        """
-        Get an instance for the given crop year and set attributes from
-        key/value pairs read from text files.
-        """
-        self.crop_year = crop_year
-        for k, v in self._load_required_data():
-            setattr(self, k, float(v) if '.' in v else int(v))
-        if overrides is not None:
-            for k, v in overrides.items():
-                vnum = (v if isinstance(v, (int, float)) else
-                        float(v) if '.' in v else int(v))
-                setattr(self, k, vnum)
+    DATA_FILES = 'farm_data crop_ins_data crop_ins_premiums'
+
+    def __init__(self, *args, **kwargs):
+        super(CropIns, self).__init__(*args, **kwargs)
         for crop in ['corn', 'soy']:
             self.validate_settings(crop)
         self.indemnity_factory()
 
-    def _load_required_data(self):
+    def validate_settings(self, crop):
         """
-        Load individual revenue items from data file
-        return a list with all the key/value pairs
+        Perform basic validation (sanity check) on the input data
         """
-        data = []
-        for name in 'farm_data crop_ins_data crop_ins_premiums'.split():
-            data += self._load_textfile(f'{self.crop_year}_{name}.txt')
-        return data
-
-    def _load_textfile(self, filename):
-        """
-        Load a textfile with the given name into a list of key/value pairs,
-        ignoring blank lines and comment lines that begin with '#'
-        """
-        with open(filename) as f:
-            contents = f.read()
-
-        lines = contents.strip().split('\n')
-        lines = filter(lambda line: len(line) > 0 and line[0] != '#',
-                       [line.strip() for line in lines])
-        return [line.split() for line in lines]
+        msg = (f'insure_{crop} must be either 0 or 1'
+               if self.c('insure', crop) not in (0, 1) else
+               f'unit_{crop} must be either 0 or 1'
+               if self.c('unit', crop) not in (0, 1) else
+               f'protection_{crop} must be 0, 1 or 2'
+               if self.c('protection', crop) not in [0, 1, 2] else
+               f'level_{crop} must be one of: 50, 55, ..., or 85'
+               if self.c('level', crop) not in
+               [50 + 5*i for i in range(8)] else
+               f'add_sco_{crop} must be 0 or 1'
+               if self.c('add_sco', crop) not in [0, 1] else
+               f'eco_{crop} must be 0, 90 or 95'
+               if self.c('eco_level', crop) not in [0, 90, 95] else '')
+        if len(msg) > 0:
+            raise ValueError(f'Invalid setting(s) in text file: {msg}.')
 
     def indemnity_factory(self):
         """
@@ -82,17 +71,17 @@ class CropIns(object):
         def add_indemnity_attr(crop_year, crop, kind, attr_name, unit,
                                prot, level, add_sco, eco_level, pmt_factor):
             setattr(self, attr_name,
-                    (IndemnityAreaRp(crop_year, crop, kind=kind)
+                    (IndemnityAreaRp(crop_year, crop=crop, kind=kind)
                      if unit == 0 and prot == 0 else
-                     IndemnityAreaRpHpe(crop_year, crop, kind=kind)
+                     IndemnityAreaRpHpe(crop_year, crop=crop, kind=kind)
                      if unit == 0 and prot == 1 else
-                     IndemnityAreaYo(crop_year, crop, kind=kind)
+                     IndemnityAreaYo(crop_year, crop=crop, kind=kind)
                      if unit == 0 and prot == 2 else
-                     IndemnityEntRp(crop_year, crop, kind=kind)
+                     IndemnityEntRp(crop_year, crop=crop, kind=kind)
                      if unit == 1 and prot == 0 else
-                     IndemnityEntRpHpe(crop_year, crop, kind=kind)
+                     IndemnityEntRpHpe(crop_year, crop=crop, kind=kind)
                      if unit == 1 and prot == 1 else
-                     IndemnityEntYo(crop_year, crop, kind=kind)))
+                     IndemnityEntYo(crop_year, crop=crop, kind=kind)))
 
             # Ensure commonly overridden properties are passed to indemnity instances
             new_attr = getattr(self, attr_name)
@@ -133,13 +122,6 @@ class CropIns(object):
                     AREA_UNIT, base_protection, base_level, add_sco,
                     eco_level, base_pmt_factor)
 
-    def c(self, s, crop):
-        """
-        Helper to simplify syntax for reading crop-dependent attributes
-        imported from textfile
-        """
-        return getattr(self, f'{s}_{crop}')
-
     def c4(self, unit, prot, level, crop):
         """
         Helper to concatentate four values for insurance premiums
@@ -162,26 +144,6 @@ class CropIns(object):
         lvl = f'86_{str(eco_level)}'
         return getattr(
             self, f'{UNITS[unit]}_eco_{PROTS[prot]}_{crop}_{lvl}')
-
-    def validate_settings(self, crop):
-        """
-        Perform basic validation (sanity check) on the input data
-        """
-        msg = (f'insure_{crop} must be either 0 or 1'
-               if self.c('insure', crop) not in (0, 1) else
-               f'unit_{crop} must be either 0 or 1'
-               if self.c('unit', crop) not in (0, 1) else
-               f'protection_{crop} must be 0, 1 or 2'
-               if self.c('protection', crop) not in [0, 1, 2] else
-               f'level_{crop} must be one of: 50, 55, ..., or 85'
-               if self.c('level', crop) not in
-               [50 + 5*i for i in range(8)] else
-               f'add_sco_{crop} must be 0 or 1'
-               if self.c('add_sco', crop) not in [0, 1] else
-               f'eco_{crop} must be 0, 90 or 95'
-               if self.c('eco_level', crop) not in [0, 90, 95] else '')
-        if len(msg) > 0:
-            raise ValueError(f'Invalid setting(s) in text file: {msg}.')
 
     def proj_yield_farm_crop(self, crop):
         """

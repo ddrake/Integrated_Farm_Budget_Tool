@@ -25,59 +25,26 @@ any duplication of functionality
 Note: Some docstrings currently reference cells on the Crop Insurance sheet
 This may be helpful for debugging and testing in the short run.
 """
+from analysis import Analysis
+
 
 UNITS = 'area ent'.split()
 PROTS = 'rp rphpe yo'.split()
 
 
-class Indemnity(object):
+class Indemnity(Analysis):
     """
     DO NOT construct an instance of this class.  Instead get an instance of one
     of the six concrete derived classes
     """
-    def __init__(self, crop_year, crop, kind='base'):
-        """
-        The optional argument kind should be 'base', 'sco' or 'eco'
-        Get an instance for the given crop year and set attributes from
-        key/value pairs read from text files.
-        """
-        self.crop_year = crop_year
+    DATA_FILES = 'farm_data crop_ins_data crop_ins_indemnity'
+
+    def __init__(self, crop_year, overrides=None, crop=None, kind='base'):
+        super(Indemnity, self).__init__(crop_year, overrides)
         self.crop = crop
         self.kind = kind
-        for k, v in self._load_required_data():
-            setattr(self, k, float(v) if '.' in v else int(v))
         for crop in ['corn', 'soy']:
             self.validate_settings(crop)
-
-    def _load_required_data(self):
-        """
-        Load individual revenue items from data file
-        return a list with all the key/value pairs
-        """
-        data = []
-        for name in 'farm_data crop_ins_data crop_ins_indemnity'.split():
-            data += self._load_textfile(f'{self.crop_year}_{name}.txt')
-        return data
-
-    def _load_textfile(self, filename):
-        """
-        Load a textfile with the given name into a list of key/value pairs,
-        ignoring blank lines and comment lines that begin with '#'
-        """
-        with open(filename) as f:
-            contents = f.read()
-
-        lines = contents.strip().split('\n')
-        lines = filter(lambda line: len(line) > 0 and line[0] != '#',
-                       [line.strip() for line in lines])
-        return [line.split() for line in lines]
-
-    def c(self, s, crop):
-        """
-        Helper to simplify syntax for reading crop-dependent attributes
-        created via import from textfile
-        """
-        return getattr(self, f'{s}_{crop}')
 
     def validate_settings(self, crop):
         """
