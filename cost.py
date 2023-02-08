@@ -308,6 +308,13 @@ class Cost(Analysis):
         return sum([self.total_prod_costs_before_land_exp_crop(crop, yf)
                     for crop in ['corn', 'soy']])
 
+    def total_land_expenses(self, yf=1):
+        """
+        Helper for cash flow
+        """
+        return sum([self.c('total_land_expenses', crop)
+                    for crop in ['corn', 'soy']])
+
     def total_cost_crop(self, crop, yf=1):
         """
         M48, N48
