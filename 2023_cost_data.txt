@@ -9,30 +9,42 @@
 
 # VARIABLE COSTS (EXLUDING GOV CROP INS)
 # --------------------------------------
-# SEED
+# --------------------------------------
+
+# YIELD-INDEPENDENT
+# -----------------
+# SEED: FullyBurdenedEstimate M15, N15
 seed_plus_treatment_corn              383220
 seed_plus_treatment_soy               297328
 
+# PESTICIDES: FullyBurdenedEstimate M18, N18
+chemicals_corn                        320882
+chemicals_soy                         272825
+
+# INCREMENTAL WHEAT COST: FullyBurdenedEstimate M25, N25
+incremental_wheat_cost                135410
+
+# WIND/PERIL INSURANCE: M21, N21, M22, N22
+wind_peril_premium_corn                    0
+minus_wind_peril_indemnity_corn            0
+wind_peril_premium_soy                     0
+minus_wind_peril_indemnity_soy             0
+
+# YIELD-DEPENDENT
+# ---------------
 # FERTILIZER
 # yield-dependent replacement fertilizer
-dap_corn                              345946
-dap_soy                               187392
+# Fertilizer F46, G46
+dap_corn                              322883
+dap_soy                               174899
+# Fertilizer F59, G59
 repl_potash_corn                      132157
 repl_potash_soy                       170140
 
-# yield-independent replacement and buildup fertilizer
-buildup_potash_corn                        0
-buildup_potash_soy                         0
-anhydrous_corn                        661430
-
-# total fertilizer costs (sum of above fertilizer items + micronutrients + lime)
-# based on current yield estimate
-cur_est_fertiilizer_cost_corn        1181473
-cur_est_fertiilizer_cost_soy          394525
-
-# PESTICIDES
-chemicals_corn                        320882
-chemicals_soy                         272825
+# total fertilizer costs FullyBurdenedEstimate M16+M17, N16
+# sum of above fertilizer items + micronutrients + lime
+cur_est_fertiilizer_cost_corn        1097141
+cur_est_fertiilizer_cost_soy          382032
 
 # DIESEL FUEL
 # 2018 gallons per acre benchmarks
@@ -51,38 +63,39 @@ fuel_alloc_soy                             0.45
 est_haul_alloc                             0.85
 
 # current fuel prices dollars per gallon
+# Diesel Fuel F20, G20
 clear_diesel_price                         5.12
+# Diesel Fuel F39, G39
 dyed_diesel_price                          4.36
 
-# GAS / ELECTRIC (drying, aerating, distributing grain) yield-dependent
+# GAS / ELECTRIC: M20, N20
+# (drying, aerating, distributing grain) yield-dependent
 gas_electric_corn                      61674
 gas_electric_soy                        7285
 
-# WIND/PERIL INSURANCE
-wind_peril_premium_corn                    0
-minus_wind_peril_indemnity_corn            0
-wind_peril_premium_soy                     0
-minus_wind_peril_indemnity_soy             0
-
-# incremental wheat costs
-
-# the incremental wheat cost based on expected yield (including hauling)
-incremental_wheat_cost_base           135335
-
-# wheat hauling cost based on expected yield (the hauling component is sensitized to yield)
-wheat_hauling_base                      5038
 
 # OVERHEAD
 # --------
+# --------
 
-# PAYROLL
-est_payroll                           645645
+# PAYROLL:
+
+# Payroll Allocation H12
+tot_annual_payroll                    645645
+
+# Payroll Allocation F10, G10
 payroll_alloc_corn                         0.55
 payroll_alloc_soy                          0.45
 
+# Payroll Allocation F18, G18
+budgetted_yield_corn                     221.0
+budgetted_yield_soy                       74.8
+
 # overtime as fraction of payroll
+# Payroll Allocation F23
 payroll_frac_ot                            0.1
 
+# Fully Burdened Estimate M30:36, N30:36
 replacement_capital_corn              583104
 replacement_capital_soy               437298
 building_equip_repairs_corn           159401
@@ -97,5 +110,7 @@ professional_fees_corn                 47820
 professional_fees_soy                  42180
 other_operating_expense_corn           63760
 other_operating_expense_soy            56240
+
+# Land Expenses: M46, N46
 total_land_expenses_corn              443606
 total_land_expenses_soy               391283
