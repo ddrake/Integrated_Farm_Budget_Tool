@@ -8,14 +8,15 @@
 # Units of values should be specified in comments if ambiguous
 
 # Farm program choices: (PLC=1, ARC-CO=2)
-program_wheat                         2
-program_corn                          2
-program_soy                           2
+program_wheat                         1
+program_corn                          1
+program_soy                           1
 
 # 2023 Harvest futures prices:  Dec 23 (corn), Nov 23 (soy), Jul 23 (wheat)
-fut_price_corn                        5.985
-fut_price_soy                         13.930
-fut_price_wheat                       7.5325
+# TODO: move to farm_data.txt?
+fut_price_corn                        5.8925
+fut_price_soy                         13.6625
+fut_price_wheat                       7.6600
 
 # Decrement from Futures harvest price to MYA Price
 decrement_from_futures_to_mya_corn    0.30
@@ -50,9 +51,9 @@ fsa_pmt_cap                      375000
 # -------------------------
 
 # Estimated county yields
-est_county_yield_corn               204.39
-est_county_yield_soy                 60.97
-est_county_yield_wheat               80.0
+est_county_yield_corn               204.3916
+est_county_yield_soy                 60.9715
+est_county_yield_wheat               85.0000
 
 stat_ref_rate_farm_bill_corn          3.70
 stat_ref_rate_farm_bill_soy           8.40
@@ -68,14 +69,14 @@ rate_cap_factor_new_escal             1.15
 # -------------------------
 
 # ARC price used in benchmark
-arc_price_corn                        3.9767
-arc_price_soy                         9.5667
-arc_price_wheat                       5.5000
+arc_price_corn                        3.97667
+arc_price_soy                         9.56667
+arc_price_wheat                       5.50000
 
 # Trend_adjusted_arc_yield
-arc_yield_corn                      201.2333
-arc_yield_soy                        61.4467
-arc_yield_wheat                      76.2267
+arc_yield_corn                      201.2833
+arc_yield_soy                        60.9167
+arc_yield_wheat                      75.6433
 
 # 10% cap on benchmark county revenue
 cap_on_bmk_cty_rev                    0.1
