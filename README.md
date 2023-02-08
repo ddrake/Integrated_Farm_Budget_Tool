@@ -43,6 +43,12 @@ r = Revenue(2023)
 r.total_revenue(pf=.95, yf=1.05)
 ```
 
+## Testing
+
+- You will need pytest for now.  Install it via `pip install pytest`.
+- To run all tests, open a terminal in the project directory and enter `pytest`; the test files will be found automatically.  If you get a message that pytest is not found, you may need to add the location of the pytest executable to your PATH.
+- Note: many of the tests depend on the data text files, which take their values from a slightly modified copy of the 1/30/2023 'benchmarks.xslx' workbook.  If you are a collaborator and would like a copy of that workbook for testing purposes, please contact Dow.
+
 ## Project collaborators
 
 - Kelley Drake
@@ -50,4 +56,3 @@ r.total_revenue(pf=.95, yf=1.05)
 - Bennett Drake
 - Varun Sadasivam
 - Danny Huang
-
