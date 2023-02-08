@@ -6,7 +6,7 @@ Based on farm specific inputs, this tool will assist an operator in 1) evaluatin
 
 The current implementation is just beginning development with a goal of verifying this Python codebase against Kelley's benchmarking.xlsx Excel workbook.  Once the logic has been validated and a detailed roadmap proposed, the plan is to build a publicly available web application, possibly in Django.  Having registered to use this application, an operator could enter/upload farm-specific data and then use the tool to evaluate various alternatives across various price and yield scenarios to both maximize profitability while also minimizing risks.
 
-At this point the revenue, cost, gov_pmt and crop_ins components are complete and tested.  The last component: cash_flow will be built and tested shortly.
+At this point, all the components (revenue, cost, gov_pmt, crop_ins, and cash_flow) are complete and reasonably well tested, but there is more refactoring and testing to do.
 
 ## Prerequisites 
 
@@ -26,11 +26,13 @@ In Python console or ipython console:
 To see the revenue, cost, gov_pmt and crp_ins sensitivity tables for 2023:
 
 ```
-from sensitivity import sens_revenue, sens_cost, sens_gov_pmt, sens_crp_ins
+from sensitivity import (sens_revenue, sens_cost, sens_gov_pmt,
+                         sens_crp_ins, sens_cash_flow)
 sens_revenue(2023)
 sens_cost(2023)
 sens_gov_pmt(2023)
 sens_crp_ins(2023)
+sens_cash_flow(2023)
 ```
 
 To compute a single cell of the table (or test wih arbitrary sensitivity factors): 
