@@ -63,8 +63,10 @@ class Indemnity(Analysis):
                f'level_{crop} must be one of: 50, 55, ..., or 85'
                if self.c('level', crop) not in
                [50 + 5*i for i in range(8)] else
-               f'add_sco_{crop} must be 0 or 1'
-               if self.c('add_sco', crop) not in [0, 1] else
+               (f'sco_level_{crop} must be 0 or 1 OR one of: 50, 55, ..., or 85 ' +
+                'equalling or exceeding base level')
+               if (self.c('sco_level', crop) not in [0, 1] and
+                   self.c('sco_level', crop) < self.c('level', crop)) else
                f'eco_{crop} must be 0, 90 or 95'
                if self.c('eco_level', crop) not in [0, 90, 95] else '')
         if len(msg) > 0:
@@ -251,9 +253,15 @@ class IndemnityArea(Indemnity):
         Used by all derived classes.
         """
         is_eco = self.kind == 'eco'
-        self.lvl = (self.c('eco_level', self.crop) if is_eco else self.sco_level)/100
-        self.diff = ((self.lvl - self.sco_level/100)
-                     if is_eco else (self.sco_level - self.c('level', self.crop))/100)
+        level = self.c('level', self.crop)/100
+        sco_top_level = self.sco_top_level/100
+        eco_level = self.c('eco_level', self.crop)/100
+        sco_bot_level = (level if self.c('sco_level', self.crop) == 1 else
+                         self.c('sco_level', self.crop)/100)
+
+        self.lvl = eco_level if is_eco else sco_top_level
+        self.diff = ((eco_level - sco_top_level) if is_eco else
+                     (sco_top_level - sco_bot_level))
 
         return (self.opt_farm_crop_value(pf) *
                 self.opt_payment_factor(pf, yf))

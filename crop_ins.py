@@ -51,8 +51,10 @@ class CropIns(Analysis):
                f'level_{crop} must be one of: 50, 55, ..., or 85'
                if self.c('level', crop) not in
                [50 + 5*i for i in range(8)] else
-               f'add_sco_{crop} must be 0 or 1'
-               if self.c('add_sco', crop) not in [0, 1] else
+               (f'sco_level_{crop} must be 0 or 1 OR one of: 50, 55, ..., 85 ' +
+                'equalling or exceeding base level')
+               if (self.c('sco_level', crop) not in [0, 1] and
+                   self.c('sco_level', crop) < self.c('level', crop)) else
                f'eco_{crop} must be 0, 90 or 95'
                if self.c('eco_level', crop) not in [0, 90, 95] else '')
         if len(msg) > 0:
@@ -69,7 +71,7 @@ class CropIns(Analysis):
         that rule cannot be enforced at this level.
         """
         def add_indemnity_attr(crop_year, crop, kind, attr_name, unit,
-                               prot, level, add_sco, eco_level, pmt_factor):
+                               prot, level, sco_level, eco_level, pmt_factor):
             """
             Helper to select the appropriate class, get an instance,
             set that instance as a property of the CropInsurance instance,
@@ -93,14 +95,14 @@ class CropIns(Analysis):
             setattr(new_attr, f'unit_{crop}', unit)
             setattr(new_attr, f'prot_{crop}', prot)
             setattr(new_attr, f'level_{crop}', level)
-            setattr(new_attr, f'add_sco_{crop}', add_sco)
+            setattr(new_attr, f'sco_level_{crop}', sco_level)
             setattr(new_attr, f'eco_level_{crop}', eco_level)
             setattr(new_attr, f'selected_payment_factor_{crop}', pmt_factor)
             return None
 
         for crop in ['corn', 'soy']:
             ins = self.c('insure', crop)
-            add_sco = self.c('add_sco', crop)
+            sco_level = self.c('sco_level', crop)
             eco_level = self.c('eco_level', crop)
             base_unit = self.c('unit', crop)
             base_protection = self.c('protection', crop)
@@ -110,21 +112,19 @@ class CropIns(Analysis):
             if ins:
                 add_indemnity_attr(
                     self.crop_year, crop, 'base', f'indemnity_{crop}',
-                    base_unit, base_protection, base_level, add_sco,
+                    base_unit, base_protection, base_level, sco_level,
                     eco_level, base_pmt_factor)
-            if ins and add_sco:
+            if ins and sco_level > 0:
                 if base_unit != 1:
                     raise ValueError('Cannot add SCO because base unit is Area')
                 add_indemnity_attr(
                     self.crop_year, crop, 'sco', f'sco_{crop}',
-                    AREA_UNIT, base_protection, base_level, add_sco,
+                    AREA_UNIT, base_protection, base_level, sco_level,
                     eco_level, base_pmt_factor)
             if ins and eco_level > 0:
-                if not add_sco:
-                    raise ValueError('Cannot add ECO unless using SCO')
                 add_indemnity_attr(
                     self.crop_year, crop, 'eco', f'eco_{crop}',
-                    AREA_UNIT, base_protection, base_level, add_sco,
+                    AREA_UNIT, base_protection, base_level, sco_level,
                     eco_level, base_pmt_factor)
 
     def c4(self, unit, prot, level, crop):
@@ -134,21 +134,21 @@ class CropIns(Analysis):
         return getattr(
             self, f'{UNITS[unit]}_{PROTS[prot]}_{crop}_{str(level)}')
 
-    def c5(self, unit, prot, level, crop):
+    def c5(self, prot, level, crop):
         """
         Helper for SCO premium lookup
         """
-        lvl = f'{str(level)}_86'
-        return getattr(
-            self, f'{UNITS[unit]}_sco_{PROTS[prot]}_{crop}_{lvl}')
+        lvl = f'{str(level)}_86' if level > 1 else 0
+        return (0 if lvl == 0 else
+                getattr(self, f'sco_{PROTS[prot]}_{crop}_{lvl}'))
 
-    def c6(self, unit, prot, level, crop, eco_level):
+    def c6(self, prot, level, crop, eco_level):
         """
         Helper for ECO premium lookup
         """
         lvl = f'86_{str(eco_level)}'
         return getattr(
-            self, f'{UNITS[unit]}_eco_{PROTS[prot]}_{crop}_{lvl}')
+            self, f'eco_{PROTS[prot]}_{crop}_{lvl}')
 
     @crop_in('corn', 'soy')
     def crop_ins_premium_per_acre_crop(self, crop):
@@ -177,13 +177,17 @@ class CropIns(Analysis):
     def sco_ins_premium_per_acre_crop(self, crop):
         """
         If the crop is not insured, return zero, otherwise, get the
-        sco premium to bring coverage to 86%
+        sco premium to bring coverage from the specified sco_level to 86%.
+        sco_level=1 specifies that the SCO coverage should begin at the base
+        level.  This avoids leaving a gap in the coverage.
         """
+        sco_level = self.c('sco_level', crop)
+        insure = self.c('insure', crop) == 1
         return (self.c5(
-            self.c('unit', crop), self.c('protection', crop),
-            self.c('level', crop), crop)
-                if self.c('insure', crop) == 1
-                and self.c('add_sco', crop) == 1 else 0)
+            self.c('protection', crop),
+            (self.c('level', crop) if (insure and sco_level == 1) else
+             sco_level if (insure and sco_level > 1) else 0),
+            crop))
 
     @crop_in('corn', 'soy')
     def sco_ins_premium_crop(self, crop):
@@ -196,14 +200,13 @@ class CropIns(Analysis):
     @crop_in('corn', 'soy')
     def eco_ins_premium_per_acre_crop(self, crop):
         """
-        If the crop is not insured or sco has not been added, return zero.
+        If the crop is not insured or eco has not been added, return zero.
         Otherwise return premium for the specified eco level
         """
         return (self.c6(
-            self.c('unit', crop), self.c('protection', crop),
+            self.c('protection', crop),
             self.c('level', crop), crop, self.c('eco_level', crop))
                 if self.c('insure', crop) == 1
-                and self.c('add_sco', crop) == 1
                 and self.c('eco_level', crop) > 0 else 0)
 
     @crop_in('corn', 'soy')

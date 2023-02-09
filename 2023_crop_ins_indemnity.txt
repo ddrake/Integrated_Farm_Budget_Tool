@@ -51,5 +51,5 @@ loss_limit_factor                   0.18
 replant_yield_loss_bpa_corn         8
 replant_yield_loss_bpa_soy          3
 
-sco_level                          86
+sco_top_level                       86
 

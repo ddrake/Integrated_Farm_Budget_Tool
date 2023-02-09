@@ -34,17 +34,17 @@ ent_rp_corn_75                    17.24
 ent_rp_corn_80                    31.33
 ent_rp_corn_85                    58.89
 
-ent_sco_rp_corn_50_86             25.98
-ent_sco_rp_corn_55_86             25.43
-ent_sco_rp_corn_60_86             24.94
-ent_sco_rp_corn_65_86             23.86
-ent_sco_rp_corn_70_86             21.51
-ent_sco_rp_corn_75_86             17.57
-ent_sco_rp_corn_80_86             11.34
-ent_sco_rp_corn_85_86              2.18
+sco_rp_corn_50_86                 25.98
+sco_rp_corn_55_86                 25.43
+sco_rp_corn_60_86                 24.94
+sco_rp_corn_65_86                 23.86
+sco_rp_corn_70_86                 21.51
+sco_rp_corn_75_86                 17.57
+sco_rp_corn_80_86                 11.34
+sco_rp_corn_85_86                  2.18
 
-ent_eco_rp_corn_86_90             16.05
-ent_eco_rp_corn_86_95             40.48
+eco_rp_corn_86_90                 16.05
+eco_rp_corn_86_95                 40.48
 
 # rp hpe
 ent_rphpe_corn_50                  1.86
@@ -56,17 +56,17 @@ ent_rphpe_corn_75                 10.04
 ent_rphpe_corn_80                 18.50
 ent_rphpe_corn_85                 35.44
 
-ent_sco_rphpe_corn_50_86          18.52
-ent_sco_rphpe_corn_55_86          17.99
-ent_sco_rphpe_corn_60_86          17.73
-ent_sco_rphpe_corn_65_86          17.06
-ent_sco_rphpe_corn_70_86          15.40
-ent_sco_rphpe_corn_75_86          12.58
-ent_sco_rphpe_corn_80_86           8.14
-ent_sco_rphpe_corn_85_86           1.57
+sco_rphpe_corn_50_86              18.52
+sco_rphpe_corn_55_86              17.99
+sco_rphpe_corn_60_86              17.73
+sco_rphpe_corn_65_86              17.06
+sco_rphpe_corn_70_86              15.40
+sco_rphpe_corn_75_86              12.58
+sco_rphpe_corn_80_86               8.14
+sco_rphpe_corn_85_86               1.57
 
-ent_eco_rphpe_corn_86_90          11.39
-ent_eco_rphpe_corn_86_95          28.93
+eco_rphpe_corn_86_90              11.39
+eco_rphpe_corn_86_95              28.93
 
 # yield only
 ent_yo_corn_50                     2.13
@@ -78,17 +78,17 @@ ent_yo_corn_75                     9.21
 ent_yo_corn_80                    16.10
 ent_yo_corn_85                    29.66
 
-ent_sco_yo_corn_50_86             10.64
-ent_sco_yo_corn_55_86             10.17
-ent_sco_yo_corn_60_86             10.00
-ent_sco_yo_corn_65_86              9.62
-ent_sco_yo_corn_70_86              8.85
-ent_sco_yo_corn_75_86              7.48
-ent_sco_yo_corn_80_86              5.04
-ent_sco_yo_corn_85_86              1.02
+sco_yo_corn_50_86             10.64
+sco_yo_corn_55_86             10.17
+sco_yo_corn_60_86             10.00
+sco_yo_corn_65_86              9.62
+sco_yo_corn_70_86              8.85
+sco_yo_corn_75_86              7.48
+sco_yo_corn_80_86              5.04
+sco_yo_corn_85_86              1.02
 
-ent_eco_yo_corn_86_90              7.90
-ent_eco_yo_corn_86_95             21.02
+eco_yo_corn_86_90              7.90
+eco_yo_corn_86_95             21.02
 
 # AREA COVERAGE CORN
 # ------------------
@@ -125,17 +125,17 @@ ent_rp_soy_75                      7.61
 ent_rp_soy_80                     14.58
 ent_rp_soy_85                     28.50
 
-ent_sco_rp_soy_50_86              10.78
-ent_sco_rp_soy_55_86              10.78
-ent_sco_rp_soy_60_86              10.73
-ent_sco_rp_soy_65_86              10.56
-ent_sco_rp_soy_70_86               9.91
-ent_sco_rp_soy_75_86               8.40
-ent_sco_rp_soy_80_86               5.70
-ent_sco_rp_soy_85_86               1.18
+sco_rp_soy_50_86              10.78
+sco_rp_soy_55_86              10.78
+sco_rp_soy_60_86              10.73
+sco_rp_soy_65_86              10.56
+sco_rp_soy_70_86               9.91
+sco_rp_soy_75_86               8.40
+sco_rp_soy_80_86               5.70
+sco_rp_soy_85_86               1.18
 
-ent_eco_rp_soy_86_90               8.98
-ent_eco_rp_soy_86_95              23.58
+eco_rp_soy_86_90               8.98
+eco_rp_soy_86_95              23.58
 
 # rp hpe
 ent_rphpe_soy_50                   0.78
@@ -147,17 +147,17 @@ ent_rphpe_soy_75                   4.61
 ent_rphpe_soy_80                   8.88
 ent_rphpe_soy_85                  17.49
 
-ent_sco_rphpe_soy_50_86            8.48
-ent_sco_rphpe_soy_55_86            8.48
-ent_sco_rphpe_soy_60_86            8.42
-ent_sco_rphpe_soy_65_86            8.26
-ent_sco_rphpe_soy_70_86            7.74
-ent_sco_rphpe_soy_75_86            6.51
-ent_sco_rphpe_soy_80_86            4.37
-ent_sco_rphpe_soy_85_86            0.90
+sco_rphpe_soy_50_86            8.48
+sco_rphpe_soy_55_86            8.48
+sco_rphpe_soy_60_86            8.42
+sco_rphpe_soy_65_86            8.26
+sco_rphpe_soy_70_86            7.74
+sco_rphpe_soy_75_86            6.51
+sco_rphpe_soy_80_86            4.37
+sco_rphpe_soy_85_86            0.90
 
-ent_eco_rphpe_soy_86_90            6.74
-ent_eco_rphpe_soy_86_95           17.65
+eco_rphpe_soy_86_90            6.74
+eco_rphpe_soy_86_95           17.65
 
 # yield only
 ent_yo_soy_50                      0.86
@@ -169,17 +169,17 @@ ent_yo_soy_75                      4.63
 ent_yo_soy_80                      8.64
 ent_yo_soy_85                     16.35
 
-ent_sco_yo_soy_50_86               3.25
-ent_sco_yo_soy_55_86               3.25
-ent_sco_yo_soy_60_86               3.25
-ent_sco_yo_soy_65_86               3.24
-ent_sco_yo_soy_70_86               3.12
-ent_sco_yo_soy_75_86               2.80
-ent_sco_yo_soy_80_86               2.04
-ent_sco_yo_soy_85_86               0.47
+sco_yo_soy_50_86               3.25
+sco_yo_soy_55_86               3.25
+sco_yo_soy_60_86               3.25
+sco_yo_soy_65_86               3.24
+sco_yo_soy_70_86               3.12
+sco_yo_soy_75_86               2.80
+sco_yo_soy_80_86               2.04
+sco_yo_soy_85_86               0.47
 
-ent_eco_yo_soy_86_90               4.05
-ent_eco_yo_soy_86_95              11.74
+eco_yo_soy_86_90               4.05
+eco_yo_soy_86_95              11.74
 
 # AREA COVERAGE SOY
 # ------------------

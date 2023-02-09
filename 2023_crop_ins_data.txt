@@ -41,8 +41,10 @@ level_soy                         65
 # Note: these settings are ignored if no base crop insurance is set above
 
 # choice: (0) Don't add sco OR (1) Add sco from selected base crop ins level to 86%
-add_sco_corn                       1
-add_sco_soy                        1
+# OR a value in {50, 55, 60, 65, 70, 80, 85} greater than or equal to the
+# base level selected for the crop.
+sco_level_corn                     1
+sco_level_soy                      1
 
 # Note: this option setting is ignored if not adding SCO 
 # choice: (0) Don't add eco OR (90) add eco to 90% OR (95) add eco to 95%   
