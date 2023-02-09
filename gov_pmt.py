@@ -121,7 +121,7 @@ class GovPmt(Analysis):
         on Benchmark County Revenue for the crop.
         """
         return (self.arc_bmk_county_revenue(crop) *
-                self.cap_on_bmk_cty_rev)
+                self.cap_on_bmk_county_rev)
 
     @crop_in('corn', 'soy', 'wheat')
     def arc_guar_revenue(self, crop):

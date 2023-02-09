@@ -157,7 +157,7 @@ class IndemnityArea(Indemnity):
             raise ValueError("crop must be 'corn', 'soy' or 'wheat'")
 
         return (self.projected_yield_crop(crop, yf) /
-                (1 + self.c('farm_yield_premium_to_cty', crop)))
+                (1 + self.c('farm_yield_premium_to_county', crop)))
 
     def yield_trigger(self):
         """
@@ -179,7 +179,7 @@ class IndemnityArea(Indemnity):
         Government Crop Insurance F50: Sensiized payment factor.
         """
         return min(1, (self.revenue_loss(pf, yf) /
-                       self.maximum_loss_payment(pf, yf)))
+                       self.maximum_loss_pmt(pf, yf)))
 
     def minimum_dollars_protection(self):
         """
@@ -187,7 +187,7 @@ class IndemnityArea(Indemnity):
         """
         return (self.c('hist_yield_for_ins_area', self.crop) *
                 self.c('fall_futures_price', self.crop) *
-                self.c('selected_payment_factor', self.crop))
+                self.c('selected_pmt_factor', self.crop))
 
     def harvest_indemnity_pmt_per_acre(self, pf=1, yf=1):
         """
@@ -222,7 +222,7 @@ class IndemnityArea(Indemnity):
         return (self.c('fall_futures_price', self.crop) *
                 self.c('hist_yield_for_ins_area', self.crop))
 
-    def opt_cty_rev_as_ratio(self, pf=1, yf=1):
+    def opt_county_rev_as_ratio(self, pf=1, yf=1):
         """
         Government Crop Insurance J81: Sensitized ratio of actual to insured
         county revenue.  Used by all derived classes.
@@ -230,14 +230,14 @@ class IndemnityArea(Indemnity):
         return (self.opt_county_actual_revenue(pf, yf) /
                 self.opt_county_insured_revenue(pf))
 
-    def opt_payment_factor(self, pf=1, yf=1):
+    def opt_pmt_factor(self, pf=1, yf=1):
         """
         Government Crop Insurance J82: Sensitized payment factor.
         Used by all derived classes.
         """
         return (
-            0 if self.opt_cty_rev_as_ratio(pf, yf) > self.lvl else
-            min((self.lvl - self.opt_cty_rev_as_ratio(pf, yf)) / self.diff, 1))
+            0 if self.opt_county_rev_as_ratio(pf, yf) > self.lvl else
+            min((self.lvl - self.opt_county_rev_as_ratio(pf, yf)) / self.diff, 1))
 
     def opt_farm_crop_value(self, pf=1):
         """
@@ -264,7 +264,7 @@ class IndemnityArea(Indemnity):
                      (sco_top_level - sco_bot_level))
 
         return (self.opt_farm_crop_value(pf) *
-                self.opt_payment_factor(pf, yf))
+                self.opt_pmt_factor(pf, yf))
 
     def opt_harvest_indemnity_pmt(self, pf=1, yf=1):
         """
@@ -298,7 +298,7 @@ class IndemnityAreaRp(IndemnityArea):
                     self.ins_harvest_price(pf)) *
                 self.loss_limit_factor)
 
-    def maximum_loss_payment(self, pf=1, yf=1):
+    def maximum_loss_pmt(self, pf=1, yf=1):
         """
         Government Crop Insurance F49: Sensitized maximum loss payment.
         """
@@ -311,7 +311,7 @@ class IndemnityAreaRp(IndemnityArea):
         Government Crop Insurance F44: Sensitized revised dollars of protection.
         """
         return (self.c('hist_yield_for_ins_area', self.crop) *
-                self.c('selected_payment_factor', self.crop) *
+                self.c('selected_pmt_factor', self.crop) *
                 self.rev_trigger_condition(pf, yf))
 
     def harvest_indemnity_pmt_per_acre(self, pf=1, yf=1):
@@ -369,7 +369,7 @@ class IndemnityAreaRpHpe(IndemnityArea):
                 self.c('fall_futures_price', self.crop) *
                 self.loss_limit_factor)
 
-    def maximum_loss_payment(self, pf=1, yf=1):
+    def maximum_loss_pmt(self, pf=1, yf=1):
         """
         Government Crop Insurance G49: Sensitized maximum loss payment.
         yf and pf are not used here (see note in module docstring), but
@@ -409,9 +409,9 @@ class IndemnityAreaYo(IndemnityArea):
         Government Crop Insurance H50: Sensitized payment factor.
         """
         return min(1, (self.yield_shortfall(yf) /
-                       self.maximum_loss_payment(pf, yf)))
+                       self.maximum_loss_pmt(pf, yf)))
 
-    def maximum_loss_payment(self, pf=1, yf=1):
+    def maximum_loss_pmt(self, pf=1, yf=1):
         """
         Government Crop Insurance H49: Maximum loss payment.
         """

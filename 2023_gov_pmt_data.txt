@@ -74,7 +74,7 @@ arc_yield_soy                        60.9167
 arc_yield_wheat                      75.6433
 
 # 10% cap on benchmark county revenue
-cap_on_bmk_cty_rev                    0.1
+cap_on_bmk_county_rev                    0.1
 
 # Guaranteed revenue fraction for ARC
 guar_rev_frac                         0.86

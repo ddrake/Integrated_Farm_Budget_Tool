@@ -33,9 +33,9 @@ hist_yield_for_ins_ent_soy         61.974
 
 # Farm yield premium fraction to county yield
 # Note: in years when no wheat is planted, a higher premium for soy may be used
-farm_yield_premium_to_cty_corn      0.093000
-farm_yield_premium_to_cty_soy       0.151849
-farm_yield_premium_to_cty_wheat     0.200000
+farm_yield_premium_to_county_corn   0.093000
+farm_yield_premium_to_county_soy    0.151849
+farm_yield_premium_to_county_wheat  0.200000
 
 # These default to fall_futures_price in farm data, but can override it
 fall_fut_price_at_harvest_corn      5.8925

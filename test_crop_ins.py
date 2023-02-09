@@ -27,7 +27,7 @@ def test_total_crop_ins():
     # with supplemental coverage option, but no enhanced coverage
     overrides = {'insure_corn': 1, 'unit_corn': 1, 'protection_corn': 0,
                  'level_corn': 75, 'sco_level_corn': 1, 'eco_level_corn': 0,
-                 'selected_payment_factor_corn': 1}
+                 'selected_pmt_factor_corn': 1}
 
     c = CropIns(2023, overrides)
 
@@ -50,7 +50,7 @@ def test_premiums_and_revenue_are_zero_for_a_crop_without_insurance():
     # with no optional coverage.
     overrides = {'insure_corn': 0, 'unit_corn': 1, 'protection_corn': 0,
                  'level_corn': 75, 'sco_level_corn': 0, 'eco_level_corn': 0,
-                 'selected_payment_factor_corn': 1}
+                 'selected_pmt_factor_corn': 1}
 
     c = CropIns(2023, overrides)
     crop = 'corn'
@@ -64,7 +64,7 @@ def test_no_indemnity_attribute_is_added_without_base_insurance():
     # with supplemental coverage option, and no enhanced coverage
     overrides = {'insure_corn': 0, 'unit_corn': 1, 'protection_corn': 0,
                  'level_corn': 75, 'sco_level_corn': 1, 'eco_level_corn': 0,
-                 'selected_payment_factor_corn': 1}
+                 'selected_pmt_factor_corn': 1}
     c = CropIns(2023, overrides)
     assert not hasattr(c, 'indemnity_corn')
 
@@ -74,7 +74,7 @@ def test_cannot_add_sco_if_base_insurance_is_area():
     # with supplemental coverage option, but no enhanced coverage
     overrides = {'insure_corn': 1, 'unit_corn': 0, 'protection_corn': 0,
                  'level_corn': 75, 'sco_level_corn': 1, 'eco_level_corn': 0,
-                 'selected_payment_factor_corn': 1}
+                 'selected_pmt_factor_corn': 1}
 
     with pytest.raises(ValueError):
         CropIns(2023, overrides)
@@ -89,7 +89,7 @@ def test_can_add_eco_without_sco():
     # with supplemental coverage option, but no enhanced coverage
     overrides = {'insure_corn': 1, 'unit_corn': 1, 'protection_corn': 0,
                  'level_corn': 75, 'sco_level_corn': 0, 'eco_level_corn': 90,
-                 'selected_payment_factor_corn': 1}
+                 'selected_pmt_factor_corn': 1}
 
     ci = CropIns(2023, overrides)
     assert (ci.total_indemnity_crop('corn', pf=.8, yf=.8) ==
@@ -106,7 +106,7 @@ def test_eco_with_no_sco_works_with_area_unit():
     # with supplemental coverage option, but no enhanced coverage
     overrides = {'insure_corn': 1, 'unit_corn': 0, 'protection_corn': 0,
                  'level_corn': 75, 'sco_level_corn': 0, 'eco_level_corn': 90,
-                 'selected_payment_factor_corn': 1}
+                 'selected_pmt_factor_corn': 1}
 
     ci = CropIns(2023, overrides)
     assert (ci.total_indemnity_crop('corn', pf=.8, yf=.8) ==
@@ -124,7 +124,7 @@ def test_sco_level_greater_than_base_level_is_ok():
     # with supplemental coverage option, but no enhanced coverage
     overrides = {'insure_corn': 1, 'unit_corn': 1, 'protection_corn': 0,
                  'level_corn': 75, 'sco_level_corn': 80, 'eco_level_corn': 90,
-                 'selected_payment_factor_corn': 1}
+                 'selected_pmt_factor_corn': 1}
 
     ci = CropIns(2023, overrides)
     assert (ci.total_indemnity_crop('corn', pf=.8, yf=.8) ==
@@ -140,7 +140,7 @@ def test_sco_level_equal_to_base_level_is_ok():
     # with supplemental coverage option, but no enhanced coverage
     overrides = {'insure_corn': 1, 'unit_corn': 1, 'protection_corn': 0,
                  'level_corn': 75, 'sco_level_corn': 75, 'eco_level_corn': 90,
-                 'selected_payment_factor_corn': 1}
+                 'selected_pmt_factor_corn': 1}
 
     ci = CropIns(2023, overrides)
     assert (ci.total_net_crop_ins_indemnity(pf=.8, yf=.8) ==
@@ -155,7 +155,7 @@ def test_sco_level_less_than__base_level_throws():
     # with supplemental coverage option, but no enhanced coverage
     overrides = {'insure_corn': 1, 'unit_corn': 1, 'protection_corn': 1,
                  'level_corn': 75, 'sco_level_corn': 65, 'eco_level_corn': 90,
-                 'selected_payment_factor_corn': 1}
+                 'selected_pmt_factor_corn': 1}
 
     with pytest.raises(ValueError):
         CropIns(2023, overrides)
@@ -167,7 +167,7 @@ def test_indemnity_and_its_parts_cannot_be_less_than_zero():
     # in a scenario of normal yields and prices (no indemnity)
     overrides = {'insure_corn': 1, 'unit_corn': 1, 'protection_corn': 0,
                  'level_corn': 65, 'sco_level_corn': 1, 'eco_level_corn': 90,
-                 'selected_payment_factor_corn': 1}
+                 'selected_pmt_factor_corn': 1}
 
     c = CropIns(2023, overrides)
     crop = 'corn'
@@ -226,14 +226,14 @@ def test_multiple_configurations():
                    'level_corn': 75, 'sco_level_corn': s, 'eco_level_corn': e,
                    'insure_soy': 1, 'unit_soy': u, 'protection_soy': p,
                    'level_soy': 75, 'sco_level_soy': s, 'eco_level_soy': e,
-                   'selected_payment_factor_corn': 1, 'selected_payment_factor_soy': 1}
+                   'selected_pmt_factor_corn': 1, 'selected_pmt_factor_soy': 1}
             ci = CropIns(2023, overrides=ovr)
             assert (ci.total_net_crop_ins_indemnity(pf, yf)
                     == pytest.approx(values[idx], .01))
             idx += 1
 
 
-def test_payment_factor_scales_premiums_and_indemnities_for_area_unit():
+def test_pmt_factor_scales_premiums_and_indemnities_for_area_unit():
     """
     Check that the premiums and indemnities match Excel when a payment factor
     other than 1 is used
@@ -259,7 +259,7 @@ def test_payment_factor_scales_premiums_and_indemnities_for_area_unit():
                'level_corn': 75, 'sco_level_corn': s, 'eco_level_corn': e,
                'insure_soy': 1, 'unit_soy': u, 'protection_soy': p,
                'level_soy': 75, 'sco_level_soy': s, 'eco_level_soy': e,
-               'selected_payment_factor_corn': .9, 'selected_payment_factor_soy': .9}
+               'selected_pmt_factor_corn': .9, 'selected_pmt_factor_soy': .9}
         ci = CropIns(2023, overrides=ovr)
         assert (ci.total_premium() == pytest.approx(premiums[idx]))
         assert (ci.total_indemnity(pf=.75, yf=.7) ==

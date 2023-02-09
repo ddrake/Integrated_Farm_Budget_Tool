@@ -97,7 +97,7 @@ class CropIns(Analysis):
             setattr(new_attr, f'level_{crop}', level)
             setattr(new_attr, f'sco_level_{crop}', sco_level)
             setattr(new_attr, f'eco_level_{crop}', eco_level)
-            setattr(new_attr, f'selected_payment_factor_{crop}', pmt_factor)
+            setattr(new_attr, f'selected_pmt_factor_{crop}', pmt_factor)
             return None
 
         for crop in ['corn', 'soy']:
@@ -107,7 +107,7 @@ class CropIns(Analysis):
             base_unit = self.c('unit', crop)
             base_protection = self.c('protection', crop)
             base_level = self.c('level', crop)
-            base_pmt_factor = self.c('selected_payment_factor', crop)
+            base_pmt_factor = self.c('selected_pmt_factor', crop)
             AREA_UNIT = 0
             if ins:
                 add_indemnity_attr(
@@ -161,7 +161,7 @@ class CropIns(Analysis):
         return (self.c4(
             unit, self.c('protection', crop),
             self.c('level', crop), crop) *
-                (self.c('selected_payment_factor', crop)
+                (self.c('selected_pmt_factor', crop)
                  if unit == 0 else 1)
                 if self.c('insure', crop) == 1 else 0)
 
