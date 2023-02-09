@@ -66,9 +66,7 @@ def show_table(r, method, title, takes_pf=True):
 
 def sens_revenue(crop_year=2023, overrides=None):
     """
-    Display a sensitivity table for the specified crop year
-    for straightforward comparison with the revenue table
-    in 'benchmarks.xls!KeyInputs'.
+    Display a revenue sensitivity table for the specified crop year
     Optionally override some textfile settings by passing a dict.
     """
     r = Revenue(crop_year)
@@ -77,9 +75,7 @@ def sens_revenue(crop_year=2023, overrides=None):
 
 def sens_cost(crop_year=2023, overrides=None):
     """
-    Display a sensitivity table for the specified crop year
-    for straightforward comparison with the cost table
-    in 'benchmarks.xls!KeyInputs'.
+    Display a cost sensitivity table for the specified crop year
     Optionally override some textfile settings by passing a dict.
     """
     c = Cost(crop_year)
@@ -88,9 +84,7 @@ def sens_cost(crop_year=2023, overrides=None):
 
 def sens_gov_pmt(crop_year=2023, overrides=None):
     """
-    Display a sensitivity table for the specified crop year
-    for straightforward comparison with the cost table
-    in 'benchmarks.xls!KeyInputs'.
+    Display a government payment sensitivity table for the specified crop year
     Optionally override some textfile settings by passing a dict.
     """
     g = GovPmt(crop_year)
@@ -99,9 +93,7 @@ def sens_gov_pmt(crop_year=2023, overrides=None):
 
 def sens_crop_ins(crop_year=2023, overrides=None):
     """
-    Display a sensitivity table for the specified crop year
-    for straightforward comparison with the crop insurance table
-    in 'benchmarks.xls!KeyInputs'.
+    Display a crop insurance sensitivity table for the specified crop year
     Optionally override some textfile settings by passing a dict.
     """
     c = CropIns(crop_year, overrides)
@@ -110,9 +102,7 @@ def sens_crop_ins(crop_year=2023, overrides=None):
 
 def sens_cash_flow(crop_year=2023, overrides=None):
     """
-    Display a sensitivity table for the specified crop year
-    for straightforward comparison with the crop insurance table
-    in 'benchmarks.xls!KeyInputs'.
+    Display a cash flow sensitivity table for the specified crop year
     Optionally override some textfile settings by passing a dict.
     """
     c = CashFlow(crop_year, overrides)
