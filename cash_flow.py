@@ -25,7 +25,7 @@ class CashFlow(Analysis):
       print(c.total_cash_flow(.9, 1.1)          # specifies both price and yield factors
       print(c.total_cash_flow(yield_factor=1.2) # uses default for pf
     """
-    DATA_FILES = 'farm_data cash_flow_data'
+    DATA_FILES = 'farm_data'
 
     def __init__(self, *args, **kwargs):
         super(CashFlow, self).__init__(*args, **kwargs)

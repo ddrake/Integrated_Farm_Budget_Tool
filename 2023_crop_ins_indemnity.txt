@@ -31,17 +31,18 @@ hist_yield_for_ins_area_soy        56.0
 hist_yield_for_ins_ent_corn       216.712
 hist_yield_for_ins_ent_soy         61.974
 
-spring_proj_harv_price_corn         5.8925
-spring_proj_harv_price_soy         13.6625
+# Farm yield premium fraction to county yield
+# Note: in years when no wheat is planted, a higher premium for soy may be used
+farm_yield_premium_to_cty_corn      0.093000
+farm_yield_premium_to_cty_soy       0.151849
+farm_yield_premium_to_cty_wheat     0.200000
 
+# These default to fall_futures_price in farm data, but can override it
 fall_fut_price_at_harvest_corn      5.8925
 fall_fut_price_at_harvest_soy      13.6625
 
 replant_frac_acres_assumed_corn     0.01
 replant_frac_acres_assumed_soy      0.01
-
-assumed_cty_rma_yield_corn        204.392
-assumed_cty_rma_yield_soy          60.972
 
 price_cap_factor                    2
 
@@ -51,3 +52,4 @@ replant_yield_loss_bpa_corn         8
 replant_yield_loss_bpa_soy          3
 
 sco_level                          86
+

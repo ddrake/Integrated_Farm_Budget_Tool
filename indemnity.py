@@ -64,24 +64,12 @@ class Indemnity(Analysis):
         if len(msg) > 0:
             raise ValueError(f'Invalid setting(s) in text file: {msg}.')
 
-    def proj_yield_farm(self):
-        """
-        Helper method providing projected yields for all crops
-        """
-        return (
-            ((self.acres_wheat_dc_soy *
-              self.proj_yield_farm_dc_soy +
-              (self.acres_soy -
-               self.acres_wheat_dc_soy) *
-              self.proj_yield_farm_full_soy) / self.acres_soy)
-            if self.crop == 'soy' else self.proj_yield_farm_corn)
-
     def revenue_trigger_feb_price(self):
         """
         F41
         """
         return (self.yield_trigger() *
-                self.c('spring_proj_harv_price', self.crop))
+                self.c('fall_futures_price', self.crop))
 
     def sensitized_fall_price(self, pf=1):
         """
@@ -93,15 +81,9 @@ class Indemnity(Analysis):
         """
         F13
         """
-        return min((self.c('spring_proj_harv_price', self.crop) *
+        return min((self.c('fall_futures_price', self.crop) *
                     self.price_cap_factor),
                    self.sensitized_fall_price(pf))
-
-    def sensitized_yield(self, yf=1):
-        """
-        F14  Leave in base class, not needed for Area logic, but nice to have
-        """
-        return self.proj_yield_farm() * yf
 
     def acres_insured(self):
         """
@@ -124,7 +106,7 @@ class Indemnity(Analysis):
         """
         return (self.ins_harvest_price(pf)
                 if (self.ins_harvest_price(pf) >
-                    self.c('spring_proj_harv_price', self.crop))
+                    self.c('fall_futures_price', self.crop))
                 else 0)
 
     def revised_revenue_trigger(self, pf=1, yf=1):
@@ -150,6 +132,17 @@ class IndemnityArea(Indemnity):
     def __init__(self, *args, **kwargs):
         super(IndemnityArea, self).__init__(*args, **kwargs)
 
+    def county_rma_yield(self, crop, yf=1):
+        """
+        TODO: I think we need to be able to override this calculated yield with
+        an actual yield from the textfile once it is known.
+        """
+        if crop not in ['corn', 'soy', 'wheat']:
+            raise ValueError("crop must be 'corn', 'soy' or 'wheat'")
+
+        return (self.projected_yield_crop(crop, yf) /
+                (1 + self.c('farm_yield_premium_to_cty', crop)))
+
     def yield_trigger(self):
         """
         F40
@@ -157,14 +150,11 @@ class IndemnityArea(Indemnity):
         return (self.c('hist_yield_for_ins_area', self.crop) *
                 self.c('level', self.crop) / 100)
 
-    def sensitized_cty_rma_yield(self, yf=1):
-        return self.c('assumed_cty_rma_yield', self.crop) * yf
-
     def actual_revenue(self, pf=1, yf=1):
         """
         F45
         """
-        return (self.sensitized_cty_rma_yield(yf) *
+        return (self.county_rma_yield(self.crop, yf) *
                 self.ins_harvest_price(pf))
 
     def payment_factor(self, pf=1, yf=1):
@@ -179,7 +169,7 @@ class IndemnityArea(Indemnity):
         F42
         """
         return (self.c('hist_yield_for_ins_area', self.crop) *
-                self.c('spring_proj_harv_price', self.crop) *
+                self.c('fall_futures_price', self.crop) *
                 self.c('selected_payment_factor', self.crop))
 
     def harvest_indemnity_pmt_per_acre(self, pf=1, yf=1):
@@ -203,13 +193,13 @@ class IndemnityArea(Indemnity):
         J79 For RP and RP-HPE
         """
         return (self.ins_harvest_price(pf) *
-                self.sensitized_cty_rma_yield(yf))
+                self.county_rma_yield(self.crop, yf))
 
     def opt_county_insured_revenue(self, pf=1):
         """
         J80 for RP-HPE and YO
         """
-        return (self.c('spring_proj_harv_price', self.crop) *
+        return (self.c('fall_futures_price', self.crop) *
                 self.c('hist_yield_for_ins_area', self.crop))
 
     def opt_cty_rev_as_ratio(self, pf=1, yf=1):
@@ -232,7 +222,7 @@ class IndemnityArea(Indemnity):
         J83 for RP-HPE and YO
         """
         return (self.c('hist_yield_for_ins_ent', self.crop) *
-                self.c('spring_proj_harv_price', self.crop) * self.diff)
+                self.c('fall_futures_price', self.crop) * self.diff)
 
     def opt_harvest_indemnity_per_acre(self, pf=1, yf=1):
         """
@@ -273,7 +263,7 @@ class IndemnityAreaRp(IndemnityArea):
         F48 different for all three Area classes
         """
         return (self.c('hist_yield_for_ins_area', self.crop) *
-                max(self.c('spring_proj_harv_price', self.crop),
+                max(self.c('fall_futures_price', self.crop),
                     self.ins_harvest_price(pf)) *
                 self.loss_limit_factor)
 
@@ -310,7 +300,7 @@ class IndemnityAreaRp(IndemnityArea):
         """
         return (self.c('hist_yield_for_ins_area', self.crop) *
                 max(self.ins_harvest_price(pf),
-                    self.c('spring_proj_harv_price', self.crop)))
+                    self.c('fall_futures_price', self.crop)))
 
     def opt_farm_crop_value(self, pf=1):
         """
@@ -318,7 +308,7 @@ class IndemnityAreaRp(IndemnityArea):
         """
         return (self.c('hist_yield_for_ins_ent', self.crop) *
                 max(self.ins_harvest_price(pf),
-                    self.c('spring_proj_harv_price', self.crop)) * self.diff)
+                    self.c('fall_futures_price', self.crop)) * self.diff)
 
 
 class IndemnityAreaRpHpe(IndemnityArea):
@@ -344,7 +334,7 @@ class IndemnityAreaRpHpe(IndemnityArea):
         F48 different for all three Area classes
         """
         return (self.c('hist_yield_for_ins_area', self.crop) *
-                self.c('spring_proj_harv_price', self.crop) *
+                self.c('fall_futures_price', self.crop) *
                 self.loss_limit_factor)
 
     def maximum_loss_payment(self, pf=1, yf=1):
@@ -380,7 +370,7 @@ class IndemnityAreaYo(IndemnityArea):
         47  different for both AreaYo and EntYo
         """
         return max((self.yield_trigger() -
-                    self.sensitized_cty_rma_yield(yf)), 0)
+                    self.county_rma_yield(self.crop, yf)), 0)
 
     def payment_factor(self, pf=1, yf=1):
         """
@@ -403,8 +393,8 @@ class IndemnityAreaYo(IndemnityArea):
         """
         J79
         """
-        return (self.c('spring_proj_harv_price', self.crop) *
-                self.sensitized_cty_rma_yield(yf))
+        return (self.c('fall_futures_price', self.crop) *
+                self.county_rma_yield(self.crop, yf))
 
 
 class IndemnityEnt(Indemnity):
@@ -426,7 +416,7 @@ class IndemnityEnt(Indemnity):
         """
         J45 all classes excep yo  (Ent version)
         """
-        return (self.sensitized_yield(yf) *
+        return (self.projected_yield_crop(self.crop, yf) *
                 self.ins_harvest_price(pf))
 
     def replant_acres(self):
@@ -448,7 +438,7 @@ class IndemnityEnt(Indemnity):
         J59
         """
         return (self.replant_bushels() *
-                self.c('spring_proj_harv_price', self.crop))
+                self.c('fall_futures_price', self.crop))
 
     def harvest_indemnity_pmt_per_acre(self, pf=1, yf=1):
         """
@@ -491,8 +481,8 @@ class IndemnityEntRpHpe(IndemnityEnt):
         """
         return (self.yield_trigger() *
                 (0 if (self.ins_harvest_price(pf) >
-                       self.c('spring_proj_harv_price', self.crop))
-                else self.c('spring_proj_harv_price', self.crop)))
+                       self.c('fall_futures_price', self.crop))
+                else self.c('fall_futures_price', self.crop)))
 
 
 class IndemnityEntYo(IndemnityEnt):
@@ -510,11 +500,11 @@ class IndemnityEntYo(IndemnityEnt):
         47
         """
         return max((self.yield_trigger() -
-                    self.sensitized_yield(yf)), 0)
+                    self.projected_yield_crop(self.crop, yf)), 0)
 
     def harvest_indemnity_pmt_per_acre(self, pf=1, yf=1):
         """
         F52 (in dollars per acre)
         """
         return (self.yield_shortfall(yf) *
-                self.c('spring_proj_harv_price', self.crop))
+                self.c('fall_futures_price', self.crop))

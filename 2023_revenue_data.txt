@@ -24,10 +24,6 @@ revenue_wheat             300341
 avg_contract_price_corn        6.297083
 avg_contract_price_soy        13.777115
 
-# TODO: move to farm_data.txt
-fall_futures_price_corn        5.8925
-fall_futures_price_soy        13.6625
-
 # estimated basis for uncontracted corn and soy
 est_basis_corn                 0.35
 est_basis_soy                  0.35

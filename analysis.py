@@ -45,3 +45,41 @@ class Analysis(object):
         imported from textfile
         """
         return getattr(self, f'{s}_{crop}')
+
+    def projected_bu_soy(self, yf=1):
+        """
+        F12:
+        Compute estimated raw total soy bushels considering wheat/dc soy acres
+        """
+        return ((self.acres_dc_soy *
+                 self.proj_yield_farm_dc_soy +
+                 (self.acres_soy -
+                  self.acres_dc_soy) *
+                 self.proj_yield_farm_full_soy) * yf)
+
+    def projected_bu_crop(self, crop, yf=1):
+        """
+        GVBudget E12, F12
+        """
+        if crop not in ['corn', 'soy']:
+            raise ValueError("crop must be 'corn' or 'soy'")
+
+        return (self.projected_bu_soy(yf) if crop == 'soy' else
+                self.c('proj_yield_farm', crop) * self.c('acres', crop) * yf)
+
+    def projected_yield_soy(self, yf=1):
+        """
+        Convenience method providing estimated overall soy yield
+        """
+        return self.projected_bu_soy(yf) / self.acres_soy
+
+    def projected_yield_crop(self, crop, yf=1):
+        """
+        Projected and sensitized yield for any crop
+        """
+        if crop not in ['corn', 'soy', 'full_soy', 'dc_soy', 'wheat']:
+            raise ValueError(
+                "crop must be 'corn', 'soy', 'full_soy', 'dc_soy' or 'wheat'")
+
+        return (self.projected_yield_soy(yf) if crop == 'soy' else
+                self.c('proj_yield_farm', crop) * yf)

@@ -35,7 +35,7 @@ class GovPmt(Analysis):
         Marketing Year Avg Price with price factor (Y38:AA38 -> AR16:AT16)
         """
 
-        return (self.c('fut_price', crop) * pf -
+        return (self.c('fall_futures_price', crop) * pf -
                 self.c('decrement_from_futures_to_mya', crop))
 
     def net_payment_acres(self, crop):
@@ -116,9 +116,10 @@ class GovPmt(Analysis):
         """
         return (self.arc_bmk_county_revenue(crop) * self.guar_rev_frac)
 
-    def county_rma_yield(self, crop, yf=1):
+    def arc_county_rma_yield(self, crop, yf=1):
         """
         County actual/est yield (RMA) (Y40:AA40) -> (AR25:AT25)
+        Note: this is not the same as the county_rma_yield in the base class
         """
         return self.c('est_county_yield', crop) * yf
 
@@ -128,7 +129,7 @@ class GovPmt(Analysis):
         """
         return (max(self.assumed_mya_price(crop, pf),
                     self.c('natl_loan_rate', crop)) *
-                self.county_rma_yield(crop, yf))
+                self.arc_county_rma_yield(crop, yf))
 
     def revenue_shortfall(self, crop, pf=1, yf=1):
         """

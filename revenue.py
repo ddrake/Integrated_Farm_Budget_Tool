@@ -26,39 +26,6 @@ class Revenue(Analysis):
     def __init__(self, *args, **kwargs):
         super(Revenue, self).__init__(*args, **kwargs)
 
-    def projected_yield_soy(self, yf=1):
-        """
-        F11: Convenience method providing estimated overall soy yield
-        """
-        return self.projected_bu_soy(yf) / self.acres_soy
-
-    def projected_bu_corn(self, yf=1):
-        """
-        E12
-        """
-        return self.acres_corn * self.proj_yield_farm_corn * yf
-
-    def projected_bu_soy(self, yf=1):
-        """
-        F12:
-        Compute estimated raw total soy bushels considering wheat/dc soy acres
-        """
-        return ((self.acres_wheat_dc_soy *
-                 self.proj_yield_farm_dc_soy +
-                 (self.acres_soy -
-                  self.acres_wheat_dc_soy) *
-                 self.proj_yield_farm_full_soy) * yf)
-
-    def projected_bu_crop(self, crop, yf=1):
-        """
-        E12, F12
-        """
-        if crop not in ['corn', 'soy']:
-            raise ValueError("crop must be 'corn' or 'soy'")
-
-        return (self.projected_bu_corn(yf) if crop == 'corn' else
-                self.projected_bu_soy(yf))
-
     def projected_shrink_bu_crop(self, crop, yf=1):
         """
         E13, F13

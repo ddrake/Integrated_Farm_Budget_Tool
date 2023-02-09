@@ -12,12 +12,6 @@ program_wheat                         1
 program_corn                          1
 program_soy                           1
 
-# 2023 Harvest futures prices:  Dec 23 (corn), Nov 23 (soy), Jul 23 (wheat)
-# TODO: move to farm_data.txt?
-fut_price_corn                        5.8925
-fut_price_soy                         13.6625
-fut_price_wheat                       7.6600
-
 # Decrement from Futures harvest price to MYA Price
 decrement_from_futures_to_mya_corn    0.30
 decrement_from_futures_to_mya_soy     0.50
@@ -50,7 +44,8 @@ fsa_pmt_cap                      375000
 # Used for PLC calculations
 # -------------------------
 
-# Estimated county yields
+# Estimated county yields used by gov_pmt (ARC)
+# NOT the same as county_rma_yield in base class
 est_county_yield_corn               204.3916
 est_county_yield_soy                 60.9715
 est_county_yield_wheat               85.0000

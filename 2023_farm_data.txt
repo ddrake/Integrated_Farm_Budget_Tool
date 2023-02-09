@@ -7,11 +7,11 @@
 # A value should represent an integer or floating point value
 # Units of values should be specified in comments if ambiguous
 
-acres_corn                              4225.5
-
 # Note: acres_soy includes wheat/dc soy acres
 acres_soy                               3727.1
-acres_wheat_dc_soy                       407.6
+acres_wheat                              407.6
+acres_dc_soy                             407.6
+acres_corn                              4225.5
 
 # yields in bu/acre
 proj_yield_farm_corn                     223.4
@@ -20,3 +20,8 @@ proj_yield_farm_dc_soy                    49.3
 
 # wheat yield is not used by the application, but provided for reference
 proj_yield_farm_wheat                     88.4
+
+# Board of trade pricing data used by several modules
+fall_futures_price_corn                    5.8925
+fall_futures_price_soy                    13.6625
+fall_futures_price_wheat                   7.6600

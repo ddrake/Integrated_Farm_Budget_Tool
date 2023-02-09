@@ -37,6 +37,7 @@ minus_wind_peril_indemnity_soy             0
 # Fertilizer F46, G46
 dap_corn                              322883
 dap_soy                               174899
+
 # Fertilizer F59, G59
 repl_potash_corn                      132157
 repl_potash_soy                       170140
@@ -65,6 +66,7 @@ est_haul_alloc                             0.85
 # current fuel prices dollars per gallon
 # Diesel Fuel F20, G20
 clear_diesel_price                         5.12
+
 # Diesel Fuel F39, G39
 dyed_diesel_price                          4.36
 

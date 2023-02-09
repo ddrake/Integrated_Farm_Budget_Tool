@@ -25,23 +25,6 @@ class Cost(Analysis):
     def __init__(self, *args, **kwargs):
         super(Cost, self).__init__(*args, **kwargs)
 
-    def proj_yield_farm_crop(self, crop):
-        """
-        Helper method providing projected yields for all crops
-        used in calculating fuel and payroll costs
-        """
-        if crop not in ['corn', 'soy', 'wheat']:
-            raise ValueError("crop must be 'corn', 'soy' or 'wheat'")
-
-        return (
-            ((self.acres_wheat_dc_soy *
-              self.proj_yield_farm_dc_soy +
-              (self.acres_soy -
-               self.acres_wheat_dc_soy) *
-              self.proj_yield_farm_full_soy) / self.acres_soy)
-            if crop == 'soy' else self.proj_yield_farm_corn
-            if crop == 'corn' else self.proj_yield_farm_wheat)
-
     # VARIABLE COSTS
     # --------------
 
@@ -127,8 +110,8 @@ class Cost(Analysis):
         return round(
             self.clear_diesel_base_cost_crop(crop) *
             ((1 - self.est_haul_alloc) +
-             self.est_haul_alloc * self.proj_yield_farm_crop(crop) /
-             self.c('yield_2018', crop) * yf))
+             self.est_haul_alloc * self.projected_yield_crop(crop, yf) /
+             self.c('yield_2018', crop)))
 
     def dyed_diesel_cost_crop(self, crop):
         """
@@ -226,7 +209,7 @@ class Cost(Analysis):
         if crop not in ['corn', 'soy']:
             raise ValueError("crop must be 'corn' or 'soy'")
 
-        return (self.proj_yield_farm_crop(crop) * yf /
+        return (self.projected_yield_crop(crop, yf) /
                 self.c('budgetted_yield', crop))
 
     def overtime_at_budgetted_yield(self, crop):
