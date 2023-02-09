@@ -6,7 +6,7 @@ for a given crop year when an instance is created.  Its main function
 is to return total estimated revenue for the farm for the given crop year
 corresponding to arbitrary sensitivity factors for price and yield.
 """
-from analysis import Analysis
+from analysis import Analysis, crop_in
 
 
 class Revenue(Analysis):
@@ -26,6 +26,7 @@ class Revenue(Analysis):
     def __init__(self, *args, **kwargs):
         super(Revenue, self).__init__(*args, **kwargs)
 
+    @crop_in('corn', 'soy')
     def projected_shrink_bu_crop(self, crop, yf=1):
         """
         E13, F13
@@ -33,93 +34,77 @@ class Revenue(Analysis):
         return (self.projected_bu_crop(crop, yf) *
                 self.c('est_shrink', crop)/100.)
 
+    @crop_in('corn', 'soy')
     def deliverable_bu_crop(self, crop, yf=1):
         """
         E14, F14
         """
-        if crop not in ['corn', 'soy']:
-            raise ValueError("crop must be 'corn' or 'soy'")
-
         return (self.projected_bu_crop(crop, yf) -
                 self.projected_shrink_bu_crop(crop, yf))
 
+    @crop_in('corn', 'soy')
     def sold_under_contract_crop(self, crop):
         """
         E18, F18:
         Gross revenue from contracted corn or soy assuming contracts can be filled
         rounded to whole dollars
         """
-        if crop not in ['corn', 'soy']:
-            raise ValueError("crop must be 'corn' or 'soy'")
-
         return round(
             self.c('contract_bu', crop) *
             self.c('avg_contract_price', crop))
 
+    @crop_in('corn', 'soy')
     def unsold_bushels_crop(self, crop, yf=1):
         """
         E19, F19: Unsold (or oversold) bushels
         """
-        if crop not in ['corn', 'soy']:
-            raise ValueError("crop must be 'corn' or 'soy'")
-
         return (self.deliverable_bu_crop(crop, yf) -
                 self.c('contract_bu', crop))
 
+    @crop_in('corn', 'soy')
     def est_price_crop_uncontracted(self, crop, pf=1):
         """
         E20, F20: Harvest price plus basis
         """
-        if crop not in ['corn', 'soy']:
-            raise ValueError("crop must be 'corn' or 'soy'")
-
         return (self.c('fall_futures_price', crop) * pf +
                 self.c('est_basis', crop))
 
+    @crop_in('corn', 'soy')
     def revenue_uncontracted_crop(self, crop, pf=1, yf=1):
         """
         E21, F21:
         Estimated revenue (buyout) of uncontracted (oversold) corn or soy
         for specified pf and yf rounded to whole dollars
         """
-        if crop not in ['corn', 'soy']:
-            raise ValueError("crop must be 'corn' or 'soy'")
-
         return round(
             self.unsold_bushels_crop(crop, yf) *
             self.est_price_crop_uncontracted(crop, pf))
 
+    @crop_in('corn', 'soy')
     def tot_revenue_before_deducts_crop(self, crop, pf=1, yf=1):
         """
         E22, F22: Total revenue before deducts/penalties
         """
-        if crop not in ['corn', 'soy']:
-            raise ValueError("crop must be 'corn' or 'soy'")
-
         return (self.sold_under_contract_crop(crop) +
                 self.revenue_uncontracted_crop(crop, pf, yf))
 
+    @crop_in('corn', 'soy')
     def est_deducts_crop(self, crop, pf=1, yf=1):
         """
         E23, F23:
         Estimated deducts/penalties in dollars
         """
-        if crop not in ['corn', 'soy']:
-            raise ValueError("crop must be 'corn' or 'soy'")
-
         return ((self.sold_under_contract_crop(crop) +
                  abs(self.revenue_uncontracted_crop(crop, pf, yf))) *
                 self.c('est_deduct', crop)/100)
 
+    @crop_in('corn', 'soy')
     def total_revenue_crop(self, crop, pf=1, yf=1):
         """
         E24, F25, F26
         Total revenue attained by each crop
         Note: wheat is considered a component of soy for revenue and cost
         """
-        if crop not in ['corn', 'soy']:
-            raise ValueError("crop must be 'corn' or 'soy'")
-
         return ((self.revenue_wheat if crop == 'soy' else 0) +
                 self.tot_revenue_before_deducts_crop(crop, pf, yf) -
                 self.est_deducts_crop(crop, pf, yf))
@@ -132,16 +117,15 @@ class Revenue(Analysis):
             [self.total_revenue_crop(crop, pf, yf)
              for crop in ['corn', 'soy']]))
 
+    @crop_in('corn', 'soy')
     def avg_realized_price_per_bu(self, crop, pf=1, yf=1):
         """
         E25, F25
         """
-        if crop not in ['corn', 'soy']:
-            raise ValueError("crop must be 'corn' or 'soy'")
-
         return (self.total_revenue_crop(crop, pf, yf) /
                 self.projected_bu_crop(crop, yf))
 
+    @crop_in('corn', 'soy')
     def revenue_other_crop(self, crop):
         """
         E35, F35: Total of other revenue by crop *excluding* govt program

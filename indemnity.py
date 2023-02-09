@@ -25,7 +25,7 @@ any duplication of functionality
 Note: Some docstrings currently reference cells on the Crop Insurance sheet
 This may be helpful for debugging and testing in the short run.
 """
-from analysis import Analysis
+from analysis import Analysis, crop_in
 
 
 UNITS = 'area ent'.split()
@@ -46,6 +46,7 @@ class Indemnity(Analysis):
         for crop in ['corn', 'soy']:
             self.validate_settings(crop)
 
+    @crop_in('corn', 'soy')
     def validate_settings(self, crop):
         """
         Perform basic validation (sanity check) on the input data

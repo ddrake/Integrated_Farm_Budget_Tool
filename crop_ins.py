@@ -6,7 +6,7 @@ for a given crop year when an instance is created.  Its main function
 is to return total estimated net insurance cost for the farm for the given
 crop year corresponding to an arbitrary sensitivity factor for yield.
 """
-from analysis import Analysis
+from analysis import Analysis, crop_in
 from indemnity import (IndemnityAreaRp, IndemnityAreaRpHpe, IndemnityAreaYo,
                        IndemnityEntRp, IndemnityEntRpHpe, IndemnityEntYo)
 
@@ -90,7 +90,7 @@ class CropIns(Analysis):
             setattr(new_attr, f'level_{crop}', level)
             setattr(new_attr, f'add_sco_{crop}', add_sco)
             setattr(new_attr, f'eco_level_{crop}', eco_level)
-            setattr(new_attr, f'selected_payment_factor_{crop}', base_pmt_factor)
+            setattr(new_attr, f'selected_payment_factor_{crop}', pmt_factor)
             return None
 
         for crop in ['corn', 'soy']:
@@ -145,23 +145,7 @@ class CropIns(Analysis):
         return getattr(
             self, f'{UNITS[unit]}_eco_{PROTS[prot]}_{crop}_{lvl}')
 
-    def proj_yield_farm_crop(self, crop):
-        """
-        Helper method providing projected yields for all crops
-        used in calculating fuel and payroll costs
-        """
-        if crop not in ['corn', 'soy']:
-            raise ValueError("crop must be 'corn' or 'soy'")
-
-        return (
-            ((self.acres_wheat_dc_soy *
-              self.proj_yield_farm_dc_soy +
-              (self.acres_soy -
-               self.acres_wheat_dc_soy) *
-              self.proj_yield_farm_full_soy) / self.acres_soy)
-            if crop == 'soy' else self.proj_yield_farm_corn
-            if crop == 'corn' else self.proj_yield_farm_wheat)
-
+    @crop_in('corn', 'soy')
     def crop_ins_premium_per_acre_crop(self, crop):
         """
         Crop insurance per-acre premium based on choices of
@@ -176,6 +160,7 @@ class CropIns(Analysis):
                  if unit == 0 else 1)
                 if self.c('insure', crop) == 1 else 0)
 
+    @crop_in('corn', 'soy')
     def crop_ins_premium_crop(self, crop):
         """
         Crop insurance premium in dollars
@@ -183,6 +168,7 @@ class CropIns(Analysis):
         return (self.crop_ins_premium_per_acre_crop(crop) *
                 self.c('acres', crop))
 
+    @crop_in('corn', 'soy')
     def sco_ins_premium_per_acre_crop(self, crop):
         """
         If the crop is not insured, return zero, otherwise, get the
@@ -194,6 +180,7 @@ class CropIns(Analysis):
                 if self.c('insure', crop) == 1
                 and self.c('add_sco', crop) == 1 else 0)
 
+    @crop_in('corn', 'soy')
     def sco_ins_premium_crop(self, crop):
         """
         SCO premium in dollars
@@ -201,6 +188,7 @@ class CropIns(Analysis):
         return (self.sco_ins_premium_per_acre_crop(crop) *
                 self.c('acres', crop))
 
+    @crop_in('corn', 'soy')
     def eco_ins_premium_per_acre_crop(self, crop):
         """
         If the crop is not insured or sco has not been added, return zero.
@@ -213,6 +201,7 @@ class CropIns(Analysis):
                 and self.c('add_sco', crop) == 1
                 and self.c('eco_level', crop) > 0 else 0)
 
+    @crop_in('corn', 'soy')
     def eco_ins_premium_crop(self, crop):
         """
         ECO premium in dollars
@@ -220,6 +209,7 @@ class CropIns(Analysis):
         return (self.eco_ins_premium_per_acre_crop(crop) *
                 self.c('acres', crop))
 
+    @crop_in('corn', 'soy')
     def total_premium_crop(self, crop):
         """
         Return the premium for the crop insurance and option selection
@@ -235,6 +225,7 @@ class CropIns(Analysis):
         """
         return sum([self.total_premium_crop(crop) for crop in ['corn', 'soy']])
 
+    @crop_in('corn', 'soy')
     def total_indemnity_crop(self, crop, pf=1, yf=1):
         """
         Return the total indemnity for the crop
@@ -254,13 +245,18 @@ class CropIns(Analysis):
         return sum([self.total_indemnity_crop(crop, pf, yf)
                     for crop in ['corn', 'soy']])
 
+    @crop_in('corn', 'soy')
     def net_crop_ins_indemnity_crop(self, crop, pf=1, yf=1):
         """
-        Return the net crop insurance expense (subtracting indemnity)
+        Return the net crop insurance payment (subtracting premium)
         for the crop with given sensitivity factors
         """
         return (self.total_indemnity_crop(crop, pf, yf) -
                 self.total_premium_crop(crop))
 
     def total_net_crop_ins_indemnity(self, pf=1, yf=1):
+        """
+        Return the net crop insurance payment over all crops
+        with given sensitivity factors
+        """
         return (self.total_indemnity(pf, yf) - self.total_premium())

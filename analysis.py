@@ -1,3 +1,15 @@
+def crop_in(*crops):
+    def decorator(f):
+        def new_f(*args, **kwds):
+            if args[1] not in crops:
+                crop_msg = ', '.join([f"'{c}'" for c in crops])
+                raise ValueError(f'Crop must be one of: {crop_msg}')
+            else:
+                return f(*args, **kwds)
+        return new_f
+    return decorator
+
+
 class Analysis(object):
     """
     Base class for all components of the integrated farm budget tool
@@ -57,13 +69,11 @@ class Analysis(object):
                   self.acres_dc_soy) *
                  self.proj_yield_farm_full_soy) * yf)
 
+    @crop_in('corn', 'soy')
     def projected_bu_crop(self, crop, yf=1):
         """
         GVBudget E12, F12
         """
-        if crop not in ['corn', 'soy']:
-            raise ValueError("crop must be 'corn' or 'soy'")
-
         return (self.projected_bu_soy(yf) if crop == 'soy' else
                 self.c('proj_yield_farm', crop) * self.c('acres', crop) * yf)
 
@@ -73,13 +83,10 @@ class Analysis(object):
         """
         return self.projected_bu_soy(yf) / self.acres_soy
 
+    @crop_in('corn', 'soy', 'full_soy', 'dc_soy', 'wheat')
     def projected_yield_crop(self, crop, yf=1):
         """
         Projected and sensitized yield for any crop
         """
-        if crop not in ['corn', 'soy', 'full_soy', 'dc_soy', 'wheat']:
-            raise ValueError(
-                "crop must be 'corn', 'soy', 'full_soy', 'dc_soy' or 'wheat'")
-
         return (self.projected_yield_soy(yf) if crop == 'soy' else
                 self.c('proj_yield_farm', crop) * yf)

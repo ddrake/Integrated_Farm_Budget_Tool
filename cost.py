@@ -6,7 +6,7 @@ for a given crop year when an instance is created.  Its main function
 is to return total estimated cost for the farm for the given crop year
 corresponding to an arbitrary sensitivity factor for yield.
 """
-from analysis import Analysis
+from analysis import Analysis, crop_in
 
 
 class Cost(Analysis):
@@ -30,14 +30,12 @@ class Cost(Analysis):
 
     # FERTILIZER
     # ----------
+    @crop_in('corn', 'soy')
     def yield_dep_repl_fert_crop(self, crop, yf=1):
         """
         Yield-dependent replacement fertilizer for corn or soy
         scaled by yf
         """
-        if crop not in ['corn', 'soy']:
-            raise ValueError("crop must be 'corn' or 'soy'")
-
         return round(
             (self.c('dap', crop) +
              self.c('repl_potash', crop)) * yf)
@@ -49,13 +47,11 @@ class Cost(Analysis):
         return sum([self.yield_dep_repl_fert_crop(crop, yf)
                     for crop in ['corn', 'soy']])
 
+    @crop_in('corn', 'soy')
     def yield_indep_repl_fert_crop(self, crop):
         """
         Yield-dependent replacement fertilizer for corn or soy
         """
-        if crop not in ['corn', 'soy']:
-            raise ValueError("crop must be 'corn' or 'soy'")
-
         return round(
             self.c('cur_est_fertiilizer_cost', crop) -
             self.yield_dep_repl_fert_crop(crop, yf=1))
@@ -67,13 +63,11 @@ class Cost(Analysis):
         return sum([self.yield_indep_repl_fert_crop(crop)
                     for crop in ['corn', 'soy']])
 
+    @crop_in('corn', 'soy')
     def total_fert_crop(self, crop, yf=1):
         """
         M16, N16: Total fertilizer cost for specified crop and optional yf
         """
-        if crop not in ['corn', 'soy']:
-            raise ValueError("crop must be 'corn' or 'soy'")
-
         return (self.yield_indep_repl_fert_crop(crop) +
                 self.yield_dep_repl_fert_crop(crop, yf))
 
@@ -87,50 +81,42 @@ class Cost(Analysis):
 
     # DIESEL FUEL
     # -----------
+    @crop_in('corn', 'soy')
     def clear_diesel_base_cost_crop(self, crop):
         """
         The base cost of clear diesel for the specified crop
         used to compute the clear diesel cost for the crop
         """
-        if crop not in ['corn', 'soy']:
-            raise ValueError("crop must be 'corn' or 'soy'")
-
         return (
             self.clear_gpa_2018 * self.c('acres', crop) *
             self.clear_diesel_price * self.c('fuel_alloc', crop))
 
+    @crop_in('corn', 'soy')
     def clear_diesel_cost_crop(self, crop, yf=1):
         """
         The clear diesel cost for the specified crop.  Only the part
         of clear diesel allocated to hauling is scaled by yield.
         """
-        if crop not in ['corn', 'soy']:
-            raise ValueError("crop must be 'corn' or 'soy'")
-
         return round(
             self.clear_diesel_base_cost_crop(crop) *
             ((1 - self.est_haul_alloc) +
              self.est_haul_alloc * self.projected_yield_crop(crop, yf) /
              self.c('yield_2018', crop)))
 
+    @crop_in('corn', 'soy')
     def dyed_diesel_cost_crop(self, crop):
         """
         The dyed diesel cost for the specified crop
         """
-        if crop not in ['corn', 'soy']:
-            raise ValueError("crop must be 'corn' or 'soy'")
-
         return round(
             self.dyed_gpa_2018 * self.c('acres', crop) *
             self.dyed_diesel_price * self.c('fuel_alloc', crop))
 
+    @crop_in('corn', 'soy')
     def diesel_cost_crop(self, crop, yf=1):
         """
         M19, N19: The diesel cost for the specified crop with optional yf
         """
-        if crop not in ['corn', 'soy']:
-            raise ValueError("crop must be 'corn' or 'soy'")
-
         return (self.clear_diesel_cost_crop(crop, yf) +
                 self.dyed_diesel_cost_crop(crop))
 
@@ -143,13 +129,11 @@ class Cost(Analysis):
 
     # GAS AND ELECTRICITY
     # -------------------
+    @crop_in('corn', 'soy')
     def gas_electric_cost_crop(self, crop, yf=1):
         """
         M20, N20: The gas and electric cost for the crop, scaled by yield
         """
-        if crop not in ['corn', 'soy']:
-            raise ValueError("crop must be 'corn' or 'soy'")
-
         return round(self.c('gas_electric', crop) * yf)
 
     def gas_electric_cost(self, yf=1):
@@ -161,6 +145,7 @@ class Cost(Analysis):
 
     # TOTALS
     # ------
+    @crop_in('corn', 'soy')
     def total_variable_cost_crop(self, crop, yf=1):
         """
         M26, N26
@@ -168,9 +153,6 @@ class Cost(Analysis):
         with some components scaled by yield.
         Note: wheat is considered a component of soy for revenue and cost
         """
-        if crop not in ['corn', 'soy']:
-            raise ValueError("crop must be 'corn' or 'soy'")
-
         return (
             (self.incremental_wheat_cost if crop == 'soy' else 0) +
             self.c('seed_plus_treatment', crop) +
@@ -193,51 +175,41 @@ class Cost(Analysis):
 
     # PAYROLL
     # -------
+    @crop_in('corn', 'soy')
     def annual_payroll_crop(self, crop):
         """
         Payroll Allocation F12, G12
         """
-        if crop not in ['corn', 'soy']:
-            raise ValueError("crop must be 'corn' or 'soy'")
-
         return self.tot_annual_payroll * self.c('payroll_alloc', crop)
 
+    @crop_in('corn', 'soy')
     def frac_projected_yield_crop(self, crop, yf=1):
         """
         Payroll Allocation F21, G21
         """
-        if crop not in ['corn', 'soy']:
-            raise ValueError("crop must be 'corn' or 'soy'")
-
         return (self.projected_yield_crop(crop, yf) /
                 self.c('budgetted_yield', crop))
 
+    @crop_in('corn', 'soy')
     def overtime_at_budgetted_yield(self, crop):
         """
         Payroll Allocation F23, G23
         """
-        if crop not in ['corn', 'soy']:
-            raise ValueError("crop must be 'corn' or 'soy'")
-
         return self.annual_payroll_crop(crop) * self.payroll_frac_ot
 
+    @crop_in('corn', 'soy')
     def overtime_at_actual_yield(self, crop, yf=1):
         """
         Payroll Allocation F25, G25
         """
-        if crop not in ['corn', 'soy']:
-            raise ValueError("crop must be 'corn' or 'soy'")
-
         return (self.overtime_at_budgetted_yield(crop) *
                 self.frac_projected_yield_crop(crop, yf))
 
+    @crop_in('corn', 'soy')
     def payroll_yield_adjusted_crop(self, crop, yf=1):
         """
         Payroll Allocation F27, G27
         """
-        if crop not in ['corn', 'soy']:
-            raise ValueError("crop must be 'corn' or 'soy'")
-
         return round(
             self.annual_payroll_crop(crop) +
             self.overtime_at_actual_yield(crop, yf) -
@@ -252,14 +224,12 @@ class Cost(Analysis):
 
     # TOTALS
     # ------
+    @crop_in('corn', 'soy')
     def total_overhead_crop(self, crop, yf=1):
         """
         M37, N37
         The total of all overhead items for the given crop, scaled by yield
         """
-        if crop not in ['corn', 'soy']:
-            raise ValueError("crop must be 'corn' or 'soy'")
-
         return (
             self.payroll_yield_adjusted_crop(crop, yf) +
             self.c('replacement_capital', crop) +
@@ -277,6 +247,7 @@ class Cost(Analysis):
         return sum([self.total_overhead_crop(crop, yf)
                     for crop in ['corn', 'soy']])
 
+    @crop_in('corn', 'soy')
     def total_prod_costs_before_land_exp_crop(self, crop, yf=1):
         """
         M39, N39
@@ -298,6 +269,7 @@ class Cost(Analysis):
         return sum([self.c('total_land_expenses', crop)
                     for crop in ['corn', 'soy']])
 
+    @crop_in('corn', 'soy')
     def total_cost_crop(self, crop, yf=1):
         """
         M48, N48
