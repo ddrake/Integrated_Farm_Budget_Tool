@@ -105,7 +105,7 @@ def test_indemnity_and_its_parts_cannot_be_less_than_zero():
     c = CropIns(2023, overrides)
     crop = 'corn'
     assert c.indemnity_corn.harvest_indemnity_pmt(pf=1, yf=1) == 0
-    assert (c.indemnity_corn.tot_indemnity_pmt_received(pf=1, yf=1) ==
+    assert (c.indemnity_corn.total_indemnity_pmt_received(pf=1, yf=1) ==
             pytest.approx(1991.901))
     assert c.sco_corn.opt_harvest_indemnity_pmt(pf=1, yf=1) == 0
     assert c.eco_corn.opt_harvest_indemnity_pmt(pf=1, yf=1) == 0

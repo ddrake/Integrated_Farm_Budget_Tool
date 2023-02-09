@@ -1,4 +1,7 @@
 def crop_in(*crops):
+    """
+    Decorator for simplifying validation of permitted crops
+    """
     def decorator(f):
         def new_f(*args, **kwds):
             if args[1] not in crops:
@@ -60,8 +63,8 @@ class Analysis(object):
 
     def projected_bu_soy(self, yf=1):
         """
-        F12:
-        Compute estimated raw total soy bushels considering wheat/dc soy acres
+        Compute the projected, sensitized raw total soy bushels
+        considering wheat/dc soy acres
         """
         return ((self.acres_dc_soy *
                  self.proj_yield_farm_dc_soy +
@@ -72,21 +75,21 @@ class Analysis(object):
     @crop_in('corn', 'soy')
     def projected_bu_crop(self, crop, yf=1):
         """
-        GVBudget E12, F12
+        Compute the projected, sensitized total bushels for the given crop
         """
         return (self.projected_bu_soy(yf) if crop == 'soy' else
                 self.c('proj_yield_farm', crop) * self.c('acres', crop) * yf)
 
     def projected_yield_soy(self, yf=1):
         """
-        Convenience method providing estimated overall soy yield
+        Compute the projected, sensitized overall soy yield
         """
         return self.projected_bu_soy(yf) / self.acres_soy
 
     @crop_in('corn', 'soy', 'full_soy', 'dc_soy', 'wheat')
     def projected_yield_crop(self, crop, yf=1):
         """
-        Projected and sensitized yield for any crop
+        Compute the projected, sensitized yield for any crop
         """
         return (self.projected_yield_soy(yf) if crop == 'soy' else
                 self.c('proj_yield_farm', crop) * yf)

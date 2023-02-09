@@ -83,7 +83,7 @@ gas_electric_soy                        7285
 # PAYROLL:
 
 # Payroll Allocation H12
-tot_annual_payroll                    645645
+total_annual_payroll                  645645
 
 # Payroll Allocation F10, G10
 payroll_alloc_corn                         0.55

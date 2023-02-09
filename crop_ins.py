@@ -66,10 +66,15 @@ class CropIns(Analysis):
 
         Note: ECO/SCO options can only be added to an enterprise base policy.
         In order to use the SCO option, the gov_pmt program must be PLC, but
-        This rule is not enforced through validation yet.
+        that rule cannot be enforced at this level.
         """
         def add_indemnity_attr(crop_year, crop, kind, attr_name, unit,
                                prot, level, add_sco, eco_level, pmt_factor):
+            """
+            Helper to select the appropriate class, get an instance,
+            set that instance as a property of the CropInsurance instance,
+            Then set some key properties on it for consistency.
+            """
             setattr(self, attr_name,
                     (IndemnityAreaRp(crop_year, crop=crop, kind=kind)
                      if unit == 0 and prot == 0 else
@@ -83,7 +88,7 @@ class CropIns(Analysis):
                      if unit == 1 and prot == 1 else
                      IndemnityEntYo(crop_year, crop=crop, kind=kind)))
 
-            # Ensure commonly overridden properties are passed to indemnity instances
+            # Ensure commonly overridden properties are set on indemnity instances
             new_attr = getattr(self, attr_name)
             setattr(new_attr, f'unit_{crop}', unit)
             setattr(new_attr, f'prot_{crop}', prot)
@@ -124,7 +129,7 @@ class CropIns(Analysis):
 
     def c4(self, unit, prot, level, crop):
         """
-        Helper to concatentate four values for insurance premiums
+        Helper for base insurance premium lookup
         """
         return getattr(
             self, f'{UNITS[unit]}_{PROTS[prot]}_{crop}_{str(level)}')
@@ -150,7 +155,7 @@ class CropIns(Analysis):
         """
         Crop insurance per-acre premium based on choices of
         'unit', 'protection' and 'level' for the crop
-        Note: payment factor used only for area unit as far as we know
+        Note: payment factor is used only for area unit as far as we know
         """
         unit = self.c('unit', crop)
         return (self.c4(
@@ -221,17 +226,17 @@ class CropIns(Analysis):
 
     def total_premium(self):
         """
-        Return the premium for the crop insurance and selected options
+        Return the premium for the crop insurance and selected options.
         """
         return sum([self.total_premium_crop(crop) for crop in ['corn', 'soy']])
 
     @crop_in('corn', 'soy')
     def total_indemnity_crop(self, crop, pf=1, yf=1):
         """
-        Return the total indemnity for the crop
+        Return the price/yield sensitized total indemnity for the crop.
         """
         return (
-            (self.c('indemnity', crop).tot_indemnity_pmt_received(pf, yf)
+            (self.c('indemnity', crop).total_indemnity_pmt_received(pf, yf)
              if hasattr(self, f'indemnity_{crop}') else 0) +
             (self.c('sco', crop).opt_harvest_indemnity_pmt(pf, yf)
              if hasattr(self, f'sco_{crop}') else 0) +
@@ -240,7 +245,7 @@ class CropIns(Analysis):
 
     def total_indemnity(self, pf=1, yf=1):
         """
-        Return the total indemnity
+        Return the price/yield sensitized total indemnity.
         """
         return sum([self.total_indemnity_crop(crop, pf, yf)
                     for crop in ['corn', 'soy']])
@@ -248,15 +253,14 @@ class CropIns(Analysis):
     @crop_in('corn', 'soy')
     def net_crop_ins_indemnity_crop(self, crop, pf=1, yf=1):
         """
-        Return the net crop insurance payment (subtracting premium)
-        for the crop with given sensitivity factors
+        Return the sensitized net crop insurance payment (subtracting premium)
+        for the crop.
         """
         return (self.total_indemnity_crop(crop, pf, yf) -
                 self.total_premium_crop(crop))
 
     def total_net_crop_ins_indemnity(self, pf=1, yf=1):
         """
-        Return the net crop insurance payment over all crops
-        with given sensitivity factors
+        Return the sensiztized net crop insurance payment over all crops.
         """
         return (self.total_indemnity(pf, yf) - self.total_premium())

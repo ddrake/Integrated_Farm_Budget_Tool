@@ -22,8 +22,8 @@ class GovPmt(Analysis):
       print(p.total_pmt(yf=1.2) # uses default for pf
     """
 
-    PLC = 1
-    ARC_CO = 2
+    PLC = 0
+    ARC_CO = 1
 
     DATA_FILES = 'farm_data gov_pmt_data'
 
@@ -33,7 +33,8 @@ class GovPmt(Analysis):
     @crop_in('corn', 'soy', 'wheat')
     def assumed_mya_price(self, crop, pf=1):
         """
-        Marketing Year Avg Price with price factor (Y38:AA38 -> AR16:AT16)
+        Government Payments Y38:AA38 -> AR16:AT16:
+        Price-sensitized marketing Year Avg Price for the crop.
         """
 
         return (self.c('fall_futures_price', crop) * pf -
@@ -42,7 +43,8 @@ class GovPmt(Analysis):
     @crop_in('corn', 'soy', 'wheat')
     def net_payment_acres(self, crop):
         """
-        Net Payment Acres (85 percent of base) (Y10:AA10)
+        Government Payments Y10:AA10: Net Payment Acres (85 percent of base)
+        for the crop.
         """
         return (self.base_to_net_pmt_frac *
                 self.c('farm_base_acres', crop))
@@ -52,8 +54,8 @@ class GovPmt(Analysis):
     @crop_in('corn', 'soy', 'wheat')
     def effective_price(self, crop, pf=1):
         """
-        The effective price (Y18:AA18)
-        The maximum of the national MYA price and the loan rate
+        Government Payments Y18:AA18: The price-sensitized effective price
+        for the crop.
         """
         return max(self.c('natl_loan_rate', crop),
                    self.assumed_mya_price(crop, pf))
@@ -61,10 +63,7 @@ class GovPmt(Analysis):
     @crop_in('corn', 'soy', 'wheat')
     def effective_ref_rate(self, crop):
         """
-        The effective reference rate (Y15:AA15)
-        max(statutory reference rate (farm bill),
-            min(statutory reference rate with new escalator,
-                statutory reference rate (farm bill) * rate_cap_factor))
+        Government Payments Y15:AA15: The effective reference rate for the crop.
         """
         return max(self.c('stat_ref_rate_farm_bill', crop),
                    min(self.c('stat_ref_rate_new_escal', crop),
@@ -74,14 +73,15 @@ class GovPmt(Analysis):
     @crop_in('corn', 'soy', 'wheat')
     def plc_payment_rate1(self, crop, pf=1):
         """
-        Helper for plc_payment rate (Y19:AA19)
+        Government Payments Y19:AA19: Price-sensitized helper for plc_payment rate
+        for the crop
         """
         return max(self.effective_ref_rate(crop) - self.effective_price(crop, pf), 0)
 
     @crop_in('corn', 'soy', 'wheat')
     def max_plc_payment_rate(self, crop):
         """
-        The maximum PLC payment rate (Y20:AA20)
+        Government Payments Y20:AA20: The maximum PLC payment rate for the crop
         """
         return (self.c('stat_ref_rate_farm_bill', crop) -
                 self.c('natl_loan_rate', crop))
@@ -89,7 +89,8 @@ class GovPmt(Analysis):
     @crop_in('corn', 'soy', 'wheat')
     def plc_payment_rate(self, crop, pf=1):
         """
-        the PLC payment rate (Y21:AA21)
+        Government Payments Y21:AA21: The price-sensitized PLC payment rate
+        for the crop
         """
         return min(self.plc_payment_rate1(crop, pf),
                    self.max_plc_payment_rate(crop))
@@ -97,7 +98,8 @@ class GovPmt(Analysis):
     @crop_in('corn', 'soy', 'wheat')
     def plc_pmt_pre_sequest(self, crop, pf=1):
         """
-        PLC payment for crop, pre-sequestration (Y23:AA23)
+        Government Payments Y23:AA23: Price-sensitized pre-sequestration PLC payment
+        for the crop.
         """
         return (self.plc_payment_rate(crop, pf) * self.net_payment_acres(crop) *
                 self.c('farm_plc_yield', crop))
@@ -107,7 +109,7 @@ class GovPmt(Analysis):
     @crop_in('corn', 'soy', 'wheat')
     def arc_bmk_county_revenue(self, crop):
         """
-        Arc Benchmark County Revenue (Y35:AA35)
+        Government Payments Y35:AA35: ARC Benchmark County Revenue for the crop.
         """
         return (self.c('arc_price', crop) *
                 self.c('arc_yield', crop))
@@ -115,7 +117,8 @@ class GovPmt(Analysis):
     @crop_in('corn', 'soy', 'wheat')
     def arc_capped_bmk_revenue(self, crop):
         """
-        Arc 10 percent cap on Benchmark County Revenue (Y43:AA43)
+        Government Payments Y43:AA43: ARC 10 percent cap
+        on Benchmark County Revenue for the crop.
         """
         return (self.arc_bmk_county_revenue(crop) *
                 self.cap_on_bmk_cty_rev)
@@ -123,22 +126,25 @@ class GovPmt(Analysis):
     @crop_in('corn', 'soy', 'wheat')
     def arc_guar_revenue(self, crop):
         """
-        Guarantee Revenue 86 percent of Benchmark County (Y36:AA36)
+        Government Payments Y36:AA36: ARC Guarantee Revenue
+        (86 percent of Benchmark County revenue)
         """
         return (self.arc_bmk_county_revenue(crop) * self.guar_rev_frac)
 
     @crop_in('corn', 'soy', 'wheat')
     def arc_county_rma_yield(self, crop, yf=1):
         """
-        County actual/est yield (RMA) (Y40:AA40) -> (AR25:AT25)
-        Note: this is not the same as the county_rma_yield in the base class
+        Government Payments Y40:AA40 -> AR25:AT25: Yield-sensitized County
+        actual/est yield (RMA) for the crop.
+        Note: this is NOT the same as the county_rma_yield in the base class
         """
         return self.c('est_county_yield', crop) * yf
 
     @crop_in('corn', 'soy', 'wheat')
     def actual_crop_revenue(self, crop, pf=1, yf=1):
         """
-        Actual crop revenue (Y41:AA41)
+        Government Payments Y41:AA41: price/yield-sensitized actual
+        revenue for the crop.
         """
         return (max(self.assumed_mya_price(crop, pf),
                     self.c('natl_loan_rate', crop)) *
@@ -147,7 +153,8 @@ class GovPmt(Analysis):
     @crop_in('corn', 'soy', 'wheat')
     def revenue_shortfall(self, crop, pf=1, yf=1):
         """
-        Revenue shortfall (Y42:AA42)
+        Government Payments Y42:AA42: Sensitized revenue shortfall
+        for the crop.
         """
         return max(0, (self.arc_guar_revenue(crop) -
                        self.actual_crop_revenue(crop, pf, yf)))
@@ -155,7 +162,8 @@ class GovPmt(Analysis):
     @crop_in('corn', 'soy', 'wheat')
     def arc_pmt_rate(self, crop, pf=1, yf=1):
         """
-        ARC Payment rate (Y44:AA44)
+        Government Payments Y44:AA44: Sensitized ARC Payment rate
+        for the crop.
         """
         return min(self.arc_capped_bmk_revenue(crop),
                    self.revenue_shortfall(crop, pf, yf))
@@ -163,7 +171,8 @@ class GovPmt(Analysis):
     @crop_in('corn', 'soy', 'wheat')
     def arc_pmt_pre_sequest(self, crop, pf=1, yf=1):
         """
-        ARC payment pre-sequestration (Y48:AA48)
+        Government Payments Y48:AA48: Sensitized ARC payment pre-sequestration
+        for the crop.
         """
         return self.net_payment_acres(crop) * self.arc_pmt_rate(crop, pf, yf)
 
@@ -172,7 +181,8 @@ class GovPmt(Analysis):
     @crop_in('corn', 'soy', 'wheat')
     def prog_pmt_pre_sequest_crop(self, crop, pf=1, yf=1):
         """
-        Government program pre-sequestration payment for crop (Y56:AA56)
+        Government Payments Y56:AA56: Sensitized pre-sequestration payment
+        for the selected program and specified crop.
         """
         return (self.arc_pmt_pre_sequest(crop, pf, yf)
                 if self.c('program', crop) == GovPmt.ARC_CO else
@@ -180,20 +190,23 @@ class GovPmt(Analysis):
 
     def prog_pmt_pre_sequest(self, pf=1, yf=1):
         """
-        Government program pre-sequestration payment total (AB56)
+        Government Payments AB56: Sensitized, pre-sequestration
+        government program payment total
         """
         return sum([self.prog_pmt_pre_sequest_crop(crop, pf, yf)
                     for crop in ['corn', 'soy', 'wheat']])
 
     def prog_pmt_post_sequest(self, pf=1, yf=1):
         """
-        Government program post-sequestration payment total (AB58)
+        Government Payments AB58: Sensitized, post-sequestration government
+        program payment total.
         """
         return self.prog_pmt_pre_sequest(pf, yf) * (1 - self.sequest_frac)
 
     def total_gov_pmt(self, pf=1, yf=1):
         """
-        Total government payment after cap (AB60)
+        Government Payments AB60: Sensitized total government payment after
+        application of cap
         """
         return round(
             min(self.prog_pmt_post_sequest(pf, yf), self.fsa_pmt_cap))

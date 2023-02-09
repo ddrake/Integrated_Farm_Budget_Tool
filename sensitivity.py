@@ -23,12 +23,24 @@ price_pcts = [int(p)/100 for p in price_pcts]
 ny = len(yield_pcts)
 
 
-def setup_table(data, r, title):
+def show_table(r, method, title, takes_pf=True):
+    """
+    Given a model instance, a method to call and a title, Show a sensitivity
+    table by passing a range of yield and price factors to the given method.
+    The optional argument is used to handle the case of the total_cost
+    method, which takes only a yield factor.
+    """
+    data = [
+        ['']*3 +
+        [round((method(pf=p, yf=y) if takes_pf else method(yf=y))/1000)
+            for y in yield_pcts]
+        for p in price_pcts]
+
     # add 3 empty rows for headers
     table = [['']*(3+ny)] + [['']*(3+ny)] + [['']*(3+ny)] + data
 
     # add header text
-    table[0][0] = 'REVENUE'
+    table[0][0] = title
     table[0][1] = 'Yield'
     table[1][0] = 'Price'
     table[0][2] = 'Corn'
@@ -49,90 +61,59 @@ def setup_table(data, r, title):
         table[1][3+i] = round(p * r.projected_yield_soy(), 1)
         table[2][3+i] = yield_pct_labels[i]
 
-    return table
+    print(tabulate(table, tablefmt="simple_grid"))
 
 
-def sens_revenue(crop_year=2023):
+def sens_revenue(crop_year=2023, overrides=None):
     """
     Display a sensitivity table for the specified crop year
     for straightforward comparison with the revenue table
-    in 'benchmarks.xls!KeyInputs'
+    in 'benchmarks.xls!KeyInputs'.
+    Optionally override some textfile settings by passing a dict.
     """
     r = Revenue(crop_year)
-
-    data = [['']*3 + [round(r.total_revenue(p, y)/1000) for y in yield_pcts]
-            for p in price_pcts]
-
-    table = setup_table(data, r, 'REVENUE')
-
-    print(tabulate(table, tablefmt="simple_grid"))
+    show_table(r, r.total_revenue, 'REVENUE')
 
 
-def sens_cost(crop_year=2023):
+def sens_cost(crop_year=2023, overrides=None):
     """
     Display a sensitivity table for the specified crop year
     for straightforward comparison with the cost table
-    in 'benchmarks.xls!KeyInputs'
+    in 'benchmarks.xls!KeyInputs'.
+    Optionally override some textfile settings by passing a dict.
     """
-    r = Revenue(crop_year)
     c = Cost(crop_year)
-
-    data = [['']*3 + [round(c.total_cost(y)/1000) for y in yield_pcts]
-            for p in price_pcts]
-
-    table = setup_table(data, r, 'COST')
-
-    print(tabulate(table, tablefmt="simple_grid"))
+    show_table(c, c.total_cost, 'COST', takes_pf=False)
 
 
-def sens_gov_pmt(crop_year=2023):
+def sens_gov_pmt(crop_year=2023, overrides=None):
     """
     Display a sensitivity table for the specified crop year
     for straightforward comparison with the cost table
-    in 'benchmarks.xls!KeyInputs'
+    in 'benchmarks.xls!KeyInputs'.
+    Optionally override some textfile settings by passing a dict.
     """
-    r = Revenue(crop_year)
     g = GovPmt(crop_year)
-
-    data = [['']*3 + [round(g.total_gov_pmt(p, y)/1000) for y in yield_pcts]
-            for p in price_pcts]
-
-    table = setup_table(data, r, 'GOV_PMT')
-
-    print(tabulate(table, tablefmt="simple_grid"))
+    show_table(g, g.total_gov_pmt, 'GOV_PMT')
 
 
 def sens_crop_ins(crop_year=2023, overrides=None):
     """
     Display a sensitivity table for the specified crop year
     for straightforward comparison with the crop insurance table
-    in 'benchmarks.xls!KeyInputs'
+    in 'benchmarks.xls!KeyInputs'.
+    Optionally override some textfile settings by passing a dict.
     """
-    r = Revenue(crop_year)
     c = CropIns(crop_year, overrides)
-
-    data = [['']*3 + [round(c.total_net_crop_ins_indemnity(p, y)/1000)
-                      for y in yield_pcts]
-            for p in price_pcts]
-
-    table = setup_table(data, r, 'CROP_INS_NET_EXPENSE')
-
-    print(tabulate(table, tablefmt="simple_grid"))
+    show_table(c, c.total_net_crop_ins_indemnity, 'CROP INS REV')
 
 
 def sens_cash_flow(crop_year=2023, overrides=None):
     """
     Display a sensitivity table for the specified crop year
     for straightforward comparison with the crop insurance table
-    in 'benchmarks.xls!KeyInputs'
+    in 'benchmarks.xls!KeyInputs'.
+    Optionally override some textfile settings by passing a dict.
     """
-    r = Revenue(crop_year)
     c = CashFlow(crop_year, overrides)
-
-    data = [['']*3 + [round(c.total_cash_flow(p, y)/1000)
-                      for y in yield_pcts]
-            for p in price_pcts]
-
-    table = setup_table(data, r, 'CASH_FLOW_AFTER_DEBT_SERVICE')
-
-    print(tabulate(table, tablefmt="simple_grid"))
+    show_table(c, c.total_cash_flow, 'CASH FLOW')

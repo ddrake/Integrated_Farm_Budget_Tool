@@ -7,10 +7,10 @@
 # A value should represent an integer or floating point value
 # Units of values should be specified in comments if ambiguous
 
-# Farm program choices: (PLC=1, ARC-CO=2)
-program_wheat                         1
-program_corn                          1
-program_soy                           1
+# Farm program choices: (PLC=0, ARC-CO=1)
+program_wheat                         0
+program_corn                          0
+program_soy                           0
 
 # Decrement from Futures harvest price to MYA Price
 decrement_from_futures_to_mya_corn    0.30
