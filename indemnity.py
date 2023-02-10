@@ -24,7 +24,7 @@ Note: Some methods have unused optional arguments.  This is intentional and
 nessary to support the object hierarchy, the purpose of which is to eliminate
 any duplication of functionality
 """
-from analysis import Analysis, crop_in
+from analysis import Analysis
 
 
 UNITS = 'area ent'.split()
@@ -45,32 +45,9 @@ class Indemnity(Analysis):
         correspond to the kind of Indemnity the instance represents.
         The 'crop' argument allows an Indemnity instance to know its crop.
         """
-        super(Indemnity, self).__init__(crop_year, overrides)
+        super(Indemnity, self).__init__(crop_year, overrides=None)
         self.crop = crop
         self.kind = kind
-        for crop in ['corn', 'soy']:
-            self.validate_settings(crop)
-
-    @crop_in('corn', 'soy')
-    def validate_settings(self, crop):
-        """
-        Perform basic validation (sanity check) on the input data for the crop.
-        """
-        msg = (f'insure_{crop} must be either 0 or 1'
-               if self.c('insure', crop) not in (0, 1) else
-               f'protection_{crop} must be 0, 1 or 2'
-               if self.c('protection', crop) not in [0, 1, 2] else
-               f'level_{crop} must be one of: 50, 55, ..., or 85'
-               if self.c('level', crop) not in
-               [50 + 5*i for i in range(8)] else
-               (f'sco_level_{crop} must be 0 or 1 OR one of: 50, 55, ..., or 85 ' +
-                'equalling or exceeding base level')
-               if (self.c('sco_level', crop) not in [0, 1] and
-                   self.c('sco_level', crop) < self.c('level', crop)) else
-               f'eco_{crop} must be 0, 90 or 95'
-               if self.c('eco_level', crop) not in [0, 90, 95] else '')
-        if len(msg) > 0:
-            raise ValueError(f'Invalid setting(s) in text file: {msg}.')
 
     def revenue_trigger_feb_price(self):
         """

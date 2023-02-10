@@ -49,8 +49,11 @@ class CropIns(Analysis):
                f'protection_{crop} must be 0, 1 or 2'
                if self.c('protection', crop) not in [0, 1, 2] else
                f'level_{crop} must be one of: 50, 55, ..., or 85'
-               if self.c('level', crop) not in
-               [50 + 5*i for i in range(8)] else
+               if (self.c('unit', crop) == 1 and self.c('level', crop)
+                   not in range(50, 86, 5)) else
+               f'level_{crop} must be one of: 70, 75, ..., or 90'
+               if (self.c('unit', crop) == 0 and self.c('level', crop)
+                   not in range(70, 91, 5)) else
                (f'sco_level_{crop} must be 0 or 1 OR one of: 50, 55, ..., 85 ' +
                 'equalling or exceeding base level')
                if (self.c('sco_level', crop) not in [0, 1] and
@@ -122,6 +125,8 @@ class CropIns(Analysis):
                     AREA_UNIT, base_protection, base_level, sco_level,
                     eco_level, base_pmt_factor)
             if ins and eco_level > 0:
+                if base_unit != 1:
+                    raise ValueError('Cannot add ECO because base unit is Area')
                 add_indemnity_attr(
                     self.crop_year, crop, 'eco', f'eco_{crop}',
                     AREA_UNIT, base_protection, base_level, sco_level,

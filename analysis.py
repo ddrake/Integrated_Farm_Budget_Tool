@@ -17,7 +17,7 @@ class Analysis(object):
     """
     Base class for all components of the integrated farm budget tool
     """
-    def __init__(self, crop_year, overrides=None):
+    def __init__(self, crop_year, **kwargs):
         """
         Get an instance for the given crop year, then get a list of
         key/value pairs from the text file and make object attributes from it.
@@ -25,8 +25,8 @@ class Analysis(object):
         self.crop_year = crop_year
         for k, v in self._load_required_data():
             setattr(self, k, float(v) if '.' in v else int(v))
-        if overrides is not None:
-            for k, v in overrides.items():
+        if kwargs.get('overrides', None) is not None:
+            for k, v in kwargs['overrides'].items():
                 vnum = (v if isinstance(v, (int, float)) else
                         float(v) if '.' in v else int(v))
                 setattr(self, k, vnum)
