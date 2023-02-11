@@ -1,15 +1,12 @@
-from gov_pmt import GovPmt
+from gov_pmt import GovPmt, PLC, ARC_CO
 
 # Note: tests may fail if changes are made to the data textfile,
 # but changes to program selections are OK.
 
 
 def test_total_gov_pmt_arco():
-    g = GovPmt(2023)
-
-    g.program_corn = GovPmt.ARC_CO
-    g.program_soy = GovPmt.ARC_CO
-    g.program_wheat = GovPmt.ARC_CO
+    ovr = {'program_corn': ARC_CO, 'program_soy': ARC_CO, 'program_wheat': ARC_CO}
+    g = GovPmt(2023, overrides=ovr)
 
     total_gov_pmt = g.total_gov_pmt(pf=1, yf=1)
     assert total_gov_pmt == 0
@@ -25,11 +22,8 @@ def test_total_gov_pmt_arco():
 
 
 def test_total_gov_pmt_plc():
-    g = GovPmt(2023)
-
-    g.program_corn = GovPmt.PLC
-    g.program_soy = GovPmt.PLC
-    g.program_wheat = GovPmt.PLC
+    ovr = {'program_corn': PLC, 'program_soy': PLC, 'program_wheat': PLC}
+    g = GovPmt(2023, overrides=ovr)
 
     total_gov_pmt = g.total_gov_pmt(pf=1, yf=1)
     assert total_gov_pmt == 0

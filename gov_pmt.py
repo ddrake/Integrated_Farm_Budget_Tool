@@ -8,6 +8,8 @@ corresponding to arbitrary sensitivity factors for price and yield.
 """
 from analysis import Analysis, crop_in
 
+PLC, ARC_CO = (0, 1)
+
 
 class GovPmt(Analysis):
     """
@@ -21,9 +23,6 @@ class GovPmt(Analysis):
       print(p.total_pmt(.9, 1.1) # specifies both price and yield factors
       print(p.total_pmt(yf=1.2) # uses default for pf
     """
-
-    PLC = 0
-    ARC_CO = 1
 
     DATA_FILES = 'farm_data gov_pmt_data'
 
@@ -185,7 +184,7 @@ class GovPmt(Analysis):
         for the selected program and specified crop.
         """
         return (self.arc_pmt_pre_sequest(crop, pf, yf)
-                if self.c('program', crop) == GovPmt.ARC_CO else
+                if self.c('program', crop) == ARC_CO else
                 self.plc_pmt_pre_sequest(crop, pf))
 
     def prog_pmt_pre_sequest(self, pf=1, yf=1):

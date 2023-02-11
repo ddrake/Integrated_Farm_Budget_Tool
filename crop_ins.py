@@ -10,7 +10,10 @@ from analysis import Analysis, crop_in
 from indemnity import (IndemnityAreaRp, IndemnityAreaRpHpe, IndemnityAreaYo,
                        IndemnityEntRp, IndemnityEntRpHpe, IndemnityEntYo,
                        IndemnityOptionRp, IndemnityOptionRpHpe, IndemnityOptionYo)
-
+NO, YES = (0, 1)
+AREA, ENT = (0, 1)
+RP, RPHPE, YO = (0, 1, 2)
+NONE, DFLT = (0, 1)
 
 UNITS = 'area ent'.split()
 PROTS = 'rp rphpe yo'.split()
@@ -48,7 +51,7 @@ class CropIns(Analysis):
                f'unit_{crop} must be either 0 or 1'
                if self.c('unit', crop) not in (0, 1) else
                f'protection_{crop} must be 0, 1 or 2'
-               if self.c('protection', crop) not in [0, 1, 2] else
+               if self.c('protection', crop) not in (0, 1, 2) else
                f'level_{crop} must be one of: 50, 55, ..., or 85'
                if (self.c('unit', crop) == 1 and self.c('level', crop)
                    not in range(50, 86, 5)) else
@@ -57,10 +60,10 @@ class CropIns(Analysis):
                    not in range(70, 91, 5)) else
                (f'sco_level_{crop} must be 0 or 1 OR one of: 50, 55, ..., 85 ' +
                 'equalling or exceeding base level')
-               if (self.c('sco_level', crop) not in [0, 1] and
+               if (self.c('sco_level', crop) not in (0, 1) and
                    self.c('sco_level', crop) < self.c('level', crop)) else
                f'eco_{crop} must be 0, 90 or 95'
-               if self.c('eco_level', crop) not in [0, 90, 95] else '')
+               if self.c('eco_level', crop) not in (0, 90, 95) else '')
         if len(msg) > 0:
             raise ValueError(f'Invalid setting(s) in text file: {msg}.')
 
@@ -83,21 +86,21 @@ class CropIns(Analysis):
             """
             setattr(self, attr_name,
                     (IndemnityAreaRp(crop_year, crop=crop, kind=kind)
-                     if unit == 0 and prot == 0 and kind == 'base' else
+                     if unit == AREA and prot == RP and kind == 'base' else
                      IndemnityAreaRpHpe(crop_year, crop=crop, kind=kind)
-                     if unit == 0 and prot == 1 and kind == 'base' else
+                     if unit == AREA and prot == RPHPE and kind == 'base' else
                      IndemnityAreaYo(crop_year, crop=crop, kind=kind)
-                     if unit == 0 and prot == 2 and kind == 'base' else
+                     if unit == AREA and prot == YO and kind == 'base' else
                      IndemnityEntRp(crop_year, crop=crop, kind=kind)
-                     if unit == 1 and prot == 0 and kind == 'base' else
+                     if unit == ENT and prot == RP and kind == 'base' else
                      IndemnityEntRpHpe(crop_year, crop=crop, kind=kind)
-                     if unit == 1 and prot == 1 and kind == 'base' else
+                     if unit == ENT and prot == RPHPE and kind == 'base' else
                      IndemnityEntYo(crop_year, crop=crop, kind=kind)
-                     if unit == 1 and prot == 2 and kind == 'base' else
+                     if unit == ENT and prot == YO and kind == 'base' else
                      IndemnityOptionRp(crop_year, crop=crop, kind=kind)
-                     if unit == 0 and prot == 0 and kind in ('sco', 'eco') else
+                     if unit == AREA and prot == RP and kind in ('sco', 'eco') else
                      IndemnityOptionRpHpe(crop_year, crop=crop, kind=kind)
-                     if unit == 0 and prot == 1 and kind in ('sco', 'eco') else
+                     if unit == AREA and prot == RPHPE and kind in ('sco', 'eco') else
                      IndemnityOptionYo(crop_year, crop=crop, kind=kind)))
 
             # Ensure commonly overridden properties are set on indemnity instances
@@ -118,25 +121,24 @@ class CropIns(Analysis):
             base_protection = self.c('protection', crop)
             base_level = self.c('level', crop)
             base_pmt_factor = self.c('selected_pmt_factor', crop)
-            AREA_UNIT = 0
             if ins:
                 add_indemnity_attr(
                     self.crop_year, crop, 'base', f'indemnity_{crop}',
                     base_unit, base_protection, base_level, sco_level,
                     eco_level, base_pmt_factor)
             if ins and sco_level > 0:
-                if base_unit != 1:
+                if base_unit == AREA:
                     raise ValueError('Cannot add SCO because base unit is Area')
                 add_indemnity_attr(
                     self.crop_year, crop, 'sco', f'sco_{crop}',
-                    AREA_UNIT, base_protection, base_level, sco_level,
+                    AREA, base_protection, base_level, sco_level,
                     eco_level, base_pmt_factor)
             if ins and eco_level > 0:
-                if base_unit != 1:
+                if base_unit == AREA:
                     raise ValueError('Cannot add ECO because base unit is Area')
                 add_indemnity_attr(
                     self.crop_year, crop, 'eco', f'eco_{crop}',
-                    AREA_UNIT, base_protection, base_level, sco_level,
+                    AREA, base_protection, base_level, sco_level,
                     eco_level, base_pmt_factor)
 
     def c4(self, unit, prot, level, crop):
@@ -170,12 +172,12 @@ class CropIns(Analysis):
         Note: payment factor is used only for area unit as far as we know
         """
         unit = self.c('unit', crop)
-        return (self.c4(
-            unit, self.c('protection', crop),
-            self.c('level', crop), crop) *
-                (self.c('selected_pmt_factor', crop)
-                 if unit == 0 else 1)
-                if self.c('insure', crop) == 1 else 0)
+        prot = self.c('protection', crop)
+        level = self.c('level', crop)
+
+        return (self.c4(unit, prot, level, crop) *
+                (self.c('selected_pmt_factor', crop) if unit == AREA else 1)
+                if self.c('insure', crop) == YES else 0)
 
     @crop_in('corn', 'soy')
     def crop_ins_premium_crop(self, crop):
@@ -193,12 +195,14 @@ class CropIns(Analysis):
         sco_level=1 specifies that the SCO coverage should begin at the base
         level.  This avoids leaving a gap in the coverage.
         """
+        prot = self.c('protection', crop)
+        level = self.c('level', crop)
         sco_level = self.c('sco_level', crop)
-        insure = self.c('insure', crop) == 1
+        insure = self.c('insure', crop) == YES
         return (self.c5(
-            self.c('protection', crop),
-            (self.c('level', crop) if (insure and sco_level == 1) else
-             sco_level if (insure and sco_level > 1) else 0),
+            prot,
+            (level if (insure and sco_level == DFLT) else
+             sco_level if (insure and sco_level > DFLT) else NONE),
             crop))
 
     @crop_in('corn', 'soy')
@@ -217,8 +221,10 @@ class CropIns(Analysis):
         """
         return (self.c6(
             self.c('protection', crop),
-            self.c('level', crop), crop, self.c('eco_level', crop))
-                if self.c('insure', crop) == 1
+            self.c('level', crop),
+            crop,
+            self.c('eco_level', crop))
+                if self.c('insure', crop) == YES
                 and self.c('eco_level', crop) > 0 else 0)
 
     @crop_in('corn', 'soy')

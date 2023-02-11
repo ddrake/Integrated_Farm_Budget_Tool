@@ -6,7 +6,11 @@ Method `make_scenarios` iterates through legal configurations
 for different scenarios of price and yield factor, evaluating the net cash flow
 for each, then sorting and presenting the top 10 choices for each scenario.
 """
+from datetime import datetime
+
 from cash_flow import CashFlow
+from crop_ins import NO, YES, AREA, ENT, RP, RPHPE, YO, NONE
+from gov_pmt import PLC, ARC_CO
 
 
 INS = ['No', 'Yes']
@@ -81,17 +85,18 @@ def choice1(prog_c, prog_s, prog_w, ins_c, unit_c,
     Helper for make_feasible_choices, whose only purpose is to make the code
     easier to read.
     """
-    for ins_s in [0, 1]:
-        for unit_s in (range(2) if ins_s == 1 else [0]):
-            for prot_s in (range(3) if ins_s == 1 else [0]):
+    for ins_s in [NO, YES]:
+        for unit_s in ([AREA, ENT] if ins_s == YES else [AREA]):
+            for prot_s in ([RP, RPHPE, YO] if ins_s == YES else [RP]):
                 for lvl_s in (range(50, 90, 5)
-                              if ins_s == 1 and unit_s == 1 else range(70, 91, 5)
-                              if ins_s == 1 and unit_s == 0 else [70]):
-                    for sco_lvl_s in ([0] + list(range(lvl_s, 86, 5))
-                                      if ins_s == 1 and unit_s == 1 and prog_s == 0
-                                      else [0]):
-                        for eco_lvl_s in ([0, 90, 95] if ins_s == 1 and unit_s == 1
-                                          else [0]):
+                              if ins_s == YES and unit_s == ENT else
+                              range(70, 91, 5)
+                              if ins_s == YES and unit_s == AREA else [70]):
+                    for sco_lvl_s in ([NONE] + list(range(lvl_s, 86, 5))
+                                      if ins_s == YES and unit_s == ENT and prog_s == PLC
+                                      else [NONE]):
+                        for eco_lvl_s in ([NONE, 90, 95] if ins_s == YES and unit_s == ENT
+                                          else [NONE]):
                             c = Choice(prog_c, prog_s, prog_w, ins_c, unit_c,
                                        prot_c, lvl_c, sco_lvl_c, eco_lvl_c, ins_s,
                                        unit_s, prot_s, lvl_s, sco_lvl_s, eco_lvl_s)
@@ -108,21 +113,22 @@ def make_feasible_choices():
     3. ECO may be applied for either farm program but only for Enterprise unit
     """
     choices = []
-    for prog_c in range(2):
-        for prog_s in range(2):
-            for prog_w in range(2):
-                for ins_c in [0, 1]:
-                    for unit_c in (range(2) if ins_c == 1 else [0]):
-                        for prot_c in (range(3) if ins_c == 1 else [0]):
-                            for lvl_c in (range(50, 90, 5) if ins_c == 1
-                                          and unit_c == 1
-                                          else range(70, 91, 5) if ins_c == 1
-                                          and unit_c == 0 else [70]):
-                                for sco_lvl_c in ([0] + list(range(lvl_c, 86, 5))
-                                                  if ins_c == 1 and unit_c == 1
-                                                  and prog_c == 0 else [0]):
-                                    for eco_lvl_c in ([0, 90, 95] if ins_c == 1
-                                                      and unit_c == 1 else [0]):
+    for prog_c in [PLC, ARC_CO]:
+        for prog_s in [PLC, ARC_CO]:
+            for prog_w in [PLC, ARC_CO]:
+                for ins_c in [NO, YES]:
+                    for unit_c in ([AREA, ENT] if ins_c == YES else [0]):
+                        for prot_c in ([RP, RPHPE, YO] if ins_c == YES else [RP]):
+                            for lvl_c in (range(50, 90, 5)
+                                          if ins_c == YES and unit_c == ENT
+                                          else range(70, 91, 5)
+                                          if ins_c == YES and unit_c == AREA else [70]):
+                                for sco_lvl_c in ([NONE] +
+                                                  list(range(lvl_c, 86, 5))
+                                                  if ins_c == YES and unit_c == ENT
+                                                  and prog_c == PLC else [NONE]):
+                                    for eco_lvl_c in ([NONE, 90, 95] if ins_c == YES
+                                                      and unit_c == ENT else [NONE]):
                                         choice1(prog_c, prog_s, prog_w, ins_c,
                                                 unit_c, prot_c, lvl_c, sco_lvl_c,
                                                 eco_lvl_c, choices)
@@ -135,6 +141,7 @@ def make_scenarios():
     Iterate through the 88 scenarios of price and yield factor,
     evaluating each choice.  Print the top 10 choices for each scenario
     """
+    print(f"Starting at {datetime.now}")
     choices = make_feasible_choices()
     scenarios = []
     for pf in [.6, .75, .9, .95, 1, 1.05, 1.1, 1.25, 1.4, 1.65, 1.8]:
@@ -160,9 +167,9 @@ def make_scenarios():
                       INS[ch.ins_s], UNIT[ch.unit_s], PROT[ch.prot_s], ch.lvl_s,
                       ch.sco_lvl_s, ch.eco_lvl_s)
             rslt.append(st)
-            print(rslt)
     with open('bestcases.txt', 'w') as f:
         f.write('\n'.join(rslt))
+    print(f"Ending at {datetime.now}")
 
 
 make_scenarios()

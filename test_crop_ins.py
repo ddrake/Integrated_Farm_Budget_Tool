@@ -1,6 +1,6 @@
 import pytest
 
-from crop_ins import CropIns
+from crop_ins import CropIns, NO, YES, AREA, ENT, RP, RPHPE, YO, NONE, DFLT
 
 # Note: tests may fail if changes are made to the data files
 # 2023_crop_ins_indemnity.txt or 2023_crop_ins_premiums.txt
@@ -9,37 +9,37 @@ from crop_ins import CropIns
 
 # For reference, here are the crop insurance settings definitions:
 
-# insure_[crop]:     (0) Don't insure OR (1) Insure
-# unit_[crop]:       (0) County area OR (1) Enterprise
-# protection_[crop]: (0) rp OR (1) rphpe OR (2) yo
+# insure_[crop]:     (0:NO) Don't insure OR (1:YES) Insure
+# unit_[crop]:       (0:AREA) County area OR (1:ENT) Enterprise
+# protection_[crop]: (0:RP) rp OR (1:RPHPE) rphpe OR (2:YO) yo
 # level_[crop]:      50, 55, 60, 65, 70, 75, 80, or 85 for ent unit or
 #                    70, 75, 80, 85, or 90             for area unit
-# sco_level_[crop]:  (0) Don't add sco or (1) add sco from base level
+# sco_level_[crop]:  (0:NONE) Don't add sco OR (1:DFLT) add sco to match base level
 #                    OR a value in {50, 55, 60, 65, 70, 80, 85} which is
 #                    greater than or equal to the base level selected for the crop.
-# eco_level_[crop]   (0) Don't add eco or 90 or 95
+# eco_level_[crop]   (0:NONE) Don't add eco OR 90 or 95
 
-tol = .01
+TOL = .01
 
 
 def test_total_crop_ins():
     # insure corn with an enterprise unit, rp protection at a 75% level
     # with supplemental coverage option, but no enhanced coverage
-    ovr = {'insure_corn': 1, 'unit_corn': 1, 'protection_corn': 0,
-           'level_corn': 75, 'sco_level_corn': 1, 'eco_level_corn': 0,
+    ovr = {'insure_corn': YES, 'unit_corn': ENT, 'protection_corn': RP,
+           'level_corn': 75, 'sco_level_corn': DFLT, 'eco_level_corn': NONE,
            'selected_pmt_factor_corn': 1}
 
     c = CropIns(2023, overrides=ovr)
 
     crop = 'corn'
-    assert c.crop_ins_premium_crop(crop) == pytest.approx(72847.62, tol)
+    assert c.crop_ins_premium_crop(crop) == pytest.approx(72847.62, TOL)
 
     assert (c.indemnity_corn.harvest_indemnity_pmt(pf=.7, yf=.75)
-            == pytest.approx(1126643.935, tol))
+            == pytest.approx(1126643.935, TOL))
 
     # there should be an SCO indemnity
     assert (c.sco_corn.harvest_indemnity_pmt(pf=.7, yf=.75)
-            == pytest.approx(593544.579, tol))
+            == pytest.approx(593544.579, TOL))
 
     # there should not be an ECO indemnity
     assert not hasattr(c, 'eco_corn')
@@ -48,8 +48,8 @@ def test_total_crop_ins():
 def test_premiums_and_revenue_are_zero_for_a_crop_without_insurance():
     # DON'T insure corn, but set an enterprise unit, rp protection at a 75% level
     # with no optional coverage.
-    ovr = {'insure_corn': 0, 'unit_corn': 1, 'protection_corn': 0,
-           'level_corn': 75, 'sco_level_corn': 0, 'eco_level_corn': 0,
+    ovr = {'insure_corn': NO, 'unit_corn': ENT, 'protection_corn': RP,
+           'level_corn': 75, 'sco_level_corn': NONE, 'eco_level_corn': NONE,
            'selected_pmt_factor_corn': 1}
 
     c = CropIns(2023, overrides=ovr)
@@ -62,8 +62,8 @@ def test_premiums_and_revenue_are_zero_for_a_crop_without_insurance():
 def test_no_indemnity_attribute_is_added_without_base_insurance():
     # DON'T insure corn, but set an enterprise unit, rp protection at a 75% level
     # with supplemental coverage option, and no enhanced coverage
-    ovr = {'insure_corn': 0, 'unit_corn': 1, 'protection_corn': 0,
-           'level_corn': 75, 'sco_level_corn': 1, 'eco_level_corn': 0,
+    ovr = {'insure_corn': NO, 'unit_corn': ENT, 'protection_corn': RP,
+           'level_corn': 75, 'sco_level_corn': DFLT, 'eco_level_corn': NONE,
            'selected_pmt_factor_corn': 1}
     c = CropIns(2023, overrides=ovr)
     assert not hasattr(c, 'indemnity_corn')
@@ -72,8 +72,8 @@ def test_no_indemnity_attribute_is_added_without_base_insurance():
 def test_cannot_add_sco_if_base_insurance_is_area():
     # insure corn with an enterprise unit, rp protection at a 75% level
     # with supplemental coverage option, but no enhanced coverage
-    ovr = {'insure_corn': 1, 'unit_corn': 0, 'protection_corn': 0,
-           'level_corn': 75, 'sco_level_corn': 1, 'eco_level_corn': 0,
+    ovr = {'insure_corn': YES, 'unit_corn': AREA, 'protection_corn': RP,
+           'level_corn': 75, 'sco_level_corn': DFLT, 'eco_level_corn': NONE,
            'selected_pmt_factor_corn': 1}
 
     with pytest.raises(ValueError):
@@ -87,14 +87,14 @@ def test_can_add_eco_without_sco():
     """
     # insure corn with an enterprise unit, rp protection at a 75% level
     # with supplemental coverage option, but no enhanced coverage
-    ovr = {'insure_corn': 1, 'unit_corn': 1, 'protection_corn': 0,
-           'level_corn': 75, 'sco_level_corn': 0, 'eco_level_corn': 90,
+    ovr = {'insure_corn': YES, 'unit_corn': ENT, 'protection_corn': RP,
+           'level_corn': 75, 'sco_level_corn': NONE, 'eco_level_corn': 90,
            'selected_pmt_factor_corn': 1}
 
     ci = CropIns(2023, overrides=ovr)
     assert (ci.total_indemnity_crop('corn', pf=.8, yf=.8) ==
-            pytest.approx(704796.216, .01))
-    assert (ci.total_premium_crop('corn') == pytest.approx(140666.895, .01))
+            pytest.approx(704796.216, TOL))
+    assert (ci.total_premium_crop('corn') == pytest.approx(140666.895, TOL))
 
 
 def test_cannot_add_eco_with_area_unit():
@@ -104,8 +104,8 @@ def test_cannot_add_eco_with_area_unit():
     """
     # insure corn with an enterprise unit, rp protection at a 75% level
     # with supplemental coverage option, but no enhanced coverage
-    ovr = {'insure_corn': 1, 'unit_corn': 0, 'protection_corn': 0,
-           'level_corn': 75, 'sco_level_corn': 0, 'eco_level_corn': 90,
+    ovr = {'insure_corn': YES, 'unit_corn': AREA, 'protection_corn': RP,
+           'level_corn': 75, 'sco_level_corn': NONE, 'eco_level_corn': 90,
            'selected_pmt_factor_corn': 1}
 
     with pytest.raises(ValueError):
@@ -120,14 +120,14 @@ def test_sco_level_greater_than_base_level_is_ok():
     """
     # insure corn with an enterprise unit, rp protection at a 75% level
     # with supplemental coverage option, but no enhanced coverage
-    ovr = {'insure_corn': 1, 'unit_corn': 1, 'protection_corn': 0,
+    ovr = {'insure_corn': YES, 'unit_corn': ENT, 'protection_corn': RP,
            'level_corn': 75, 'sco_level_corn': 80, 'eco_level_corn': 90,
            'selected_pmt_factor_corn': 1}
 
     ci = CropIns(2023, overrides=ovr)
     assert (ci.total_indemnity_crop('corn', pf=.8, yf=.8) ==
-            pytest.approx(1028547.804, .01))
-    assert (ci.total_premium_crop('corn') == pytest.approx(188584.065, .01))
+            pytest.approx(1028547.804, TOL))
+    assert (ci.total_premium_crop('corn') == pytest.approx(188584.065, TOL))
 
 
 def test_sco_level_equal_to_base_level_is_ok():
@@ -136,13 +136,13 @@ def test_sco_level_equal_to_base_level_is_ok():
     """
     # insure corn with an enterprise unit, rp protection at a 75% level
     # with supplemental coverage option, but no enhanced coverage
-    ovr = {'insure_corn': 1, 'unit_corn': 1, 'protection_corn': 0,
+    ovr = {'insure_corn': YES, 'unit_corn': ENT, 'protection_corn': RP,
            'level_corn': 75, 'sco_level_corn': 75, 'eco_level_corn': 90,
            'selected_pmt_factor_corn': 1}
 
     ci = CropIns(2023, overrides=ovr)
     assert (ci.total_net_crop_ins_indemnity(pf=.8, yf=.8) ==
-            pytest.approx(1640664.574, .01))
+            pytest.approx(1640664.574, TOL))
 
 
 def test_sco_level_less_than__base_level_throws():
@@ -151,7 +151,7 @@ def test_sco_level_less_than__base_level_throws():
     """
     # insure corn with an enterprise unit, rp protection at a 75% level
     # with supplemental coverage option, but no enhanced coverage
-    ovr = {'insure_corn': 1, 'unit_corn': 1, 'protection_corn': 1,
+    ovr = {'insure_corn': YES, 'unit_corn': ENT, 'protection_corn': RP,
            'level_corn': 75, 'sco_level_corn': 65, 'eco_level_corn': 90,
            'selected_pmt_factor_corn': 1}
 
@@ -163,18 +163,18 @@ def test_indemnity_and_its_parts_cannot_be_less_than_zero():
     # insure corn with an enterprise unit, rp protection at a 65% level
     # with supplemental coverage option and enhanced coverage to 90%
     # in a scenario of normal yields and prices (no indemnity)
-    ovr = {'insure_corn': 1, 'unit_corn': 1, 'protection_corn': 0,
-           'level_corn': 65, 'sco_level_corn': 1, 'eco_level_corn': 90,
+    ovr = {'insure_corn': YES, 'unit_corn': ENT, 'protection_corn': RP,
+           'level_corn': 65, 'sco_level_corn': DFLT, 'eco_level_corn': 90,
            'selected_pmt_factor_corn': 1}
 
     c = CropIns(2023, overrides=ovr)
     crop = 'corn'
     assert c.indemnity_corn.harvest_indemnity_pmt(pf=1, yf=1) == 0
     assert (c.indemnity_corn.total_indemnity_pmt_received(pf=1, yf=1) ==
-            pytest.approx(1991.901))
+            pytest.approx(1991.901, TOL))
     assert c.sco_corn.harvest_indemnity_pmt(pf=1, yf=1) == 0
     assert c.eco_corn.harvest_indemnity_pmt(pf=1, yf=1) == 0
-    assert c.total_indemnity_crop(crop, pf=1, yf=1) == pytest.approx(1991.901, .01)
+    assert c.total_indemnity_crop(crop, pf=1, yf=1) == pytest.approx(1991.901, TOL)
 
 
 def test_multiple_configurations():
@@ -186,10 +186,11 @@ def test_multiple_configurations():
 
     factors = [(.75, .7), (.75, 1), (1, .7), (1, 1), (2.5, .7)]
 
-    configs = [(0, 0, 0, 0), (0, 1, 0, 0), (0, 2, 0, 0),
-               (1, 0, 0, 0), (1, 1, 0, 0), (1, 2, 0, 0),
-               (1, 0, 1, 0), (1, 1, 1, 0), (1, 2, 1, 0),
-               (1, 0, 1, 90), (1, 1, 1, 90), (1, 2, 1, 90), ]
+    configs = [
+        (AREA, RP, NONE, NONE), (AREA, RPHPE, NONE, NONE), (AREA, YO, NONE, NONE),
+        (ENT, RP, NONE, NONE), (ENT, RPHPE, NONE, NONE), (ENT, YO, NONE, NONE),
+        (ENT, RP, DFLT, NONE), (ENT, RPHPE, DFLT, NONE), (ENT, YO, DFLT, NONE),
+        (ENT, RP, DFLT, 90), (ENT, RPHPE, DFLT, 90), (ENT, YO, DFLT, 90), ]
 
     values = [2359525.327, 2383567.332, -32515.612,
               1518295.213, 1559900.113, 100573.179,
@@ -220,26 +221,27 @@ def test_multiple_configurations():
     idx = 0
     for pf, yf in factors:
         for u, p, s, e in configs:
-            ovr = {'insure_corn': 1, 'unit_corn': u, 'protection_corn': p,
+            ovr = {'insure_corn': YES, 'unit_corn': u, 'protection_corn': p,
                    'level_corn': 75, 'sco_level_corn': s, 'eco_level_corn': e,
-                   'insure_soy': 1, 'unit_soy': u, 'protection_soy': p,
+                   'insure_soy': YES, 'unit_soy': u, 'protection_soy': p,
                    'level_soy': 75, 'sco_level_soy': s, 'eco_level_soy': e,
                    'selected_pmt_factor_corn': 1, 'selected_pmt_factor_soy': 1}
             ci = CropIns(2023, overrides=ovr)
             assert (ci.total_net_crop_ins_indemnity(pf, yf)
-                    == pytest.approx(values[idx], .01))
+                    == pytest.approx(values[idx], TOL))
             idx += 1
 
 
 def test_pmt_factor_scales_premiums_and_indemnities_for_area_unit():
     """
     Check that the premiums and indemnities match Excel when a payment factor
-    other than 1 is used
+    other than 1 is used.  Payment factor is only used for area unit we think.
     """
-    configs = [(0, 0, 0, 0), (0, 1, 0, 0), (0, 2, 0, 0),
-               (1, 0, 0, 0), (1, 1, 0, 0), (1, 2, 0, 0),
-               (1, 0, 1, 0), (1, 1, 1, 0), (1, 2, 1, 0),
-               (1, 0, 1, 90), (1, 1, 1, 90), (1, 2, 1, 90), ]
+    configs = [
+        (AREA, RP, NONE, NONE), (AREA, RPHPE, NONE, NONE), (AREA, YO, NONE, NONE),
+        (ENT, RP, NONE, NONE),  (ENT, RPHPE, NONE, NONE),  (ENT, YO, NONE, NONE),
+        (ENT, RP, DFLT, NONE),  (ENT, RPHPE, DFLT, NONE),  (ENT, YO, DFLT, NONE),
+        (ENT, RP, DFLT, 90),    (ENT, RPHPE, DFLT, 90),    (ENT, YO, DFLT, 90), ]
 
     premiums = [119263.793, 97625.988, 62704.394,
                 101210.851, 59605.951, 56173.328,
@@ -253,13 +255,13 @@ def test_pmt_factor_scales_premiums_and_indemnities_for_area_unit():
 
     idx = 0
     for u, p, s, e in configs:
-        ovr = {'insure_corn': 1, 'unit_corn': u, 'protection_corn': p,
+        ovr = {'insure_corn': YES, 'unit_corn': u, 'protection_corn': p,
                'level_corn': 75, 'sco_level_corn': s, 'eco_level_corn': e,
-               'insure_soy': 1, 'unit_soy': u, 'protection_soy': p,
+               'insure_soy': YES, 'unit_soy': u, 'protection_soy': p,
                'level_soy': 75, 'sco_level_soy': s, 'eco_level_soy': e,
                'selected_pmt_factor_corn': .9, 'selected_pmt_factor_soy': .9}
         ci = CropIns(2023, overrides=ovr)
-        assert (ci.total_premium() == pytest.approx(premiums[idx]))
+        assert (ci.total_premium() == pytest.approx(premiums[idx], TOL))
         assert (ci.total_indemnity(pf=.75, yf=.7) ==
-                pytest.approx(indemnities[idx]))
+                pytest.approx(indemnities[idx], TOL))
         idx += 1
