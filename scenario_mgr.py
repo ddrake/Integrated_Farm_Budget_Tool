@@ -2,8 +2,8 @@
 Module scenario_manager
 
 Defines classes Choice and Scenario
-Method `make_scenarios` iterates through 500,000 legal configurations
-for each of 88 scenarios of price and yield factor, evaluating the net cash flow
+Method `make_scenarios` iterates through legal configurations
+for different scenarios of price and yield factor, evaluating the net cash flow
 for each, then sorting and presenting the top 10 choices for each scenario.
 """
 from cash_flow import CashFlow
@@ -104,8 +104,8 @@ def make_feasible_choices():
     the choice not to ensure any crop.  The following rules are applied:
     1. SCO cannot be selected unless both the farm program is PLC and the unit
     is Enterprise
-    2. The SCO level must be greater or equal the base level
-    3. ECO may be applied for either farm program or unit
+    2. The SCO level must be greater than or equal to the base level
+    3. ECO may be applied for either farm program but only for Enterprise unit
     """
     choices = []
     for prog_c in range(2):
@@ -131,7 +131,7 @@ def make_feasible_choices():
 
 def make_scenarios():
     """
-    Construct all 627,200 choices and put them in a list.
+    Construct all 500,000 choices and put them in a list.
     Iterate through the 88 scenarios of price and yield factor,
     evaluating each choice.  Print the top 10 choices for each scenario
     """
