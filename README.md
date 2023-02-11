@@ -4,9 +4,11 @@ An integrated tool allowing midwest grain farmers to budget farm profitability a
 
 Based on farm specific inputs, this tool will assist an operator in 1) evaluating crop profitability and acreage allocation, 2) budgeting revenues reflective of already marketed and unmarketed grain, 3) assessing the implications of crop insurance alternatives, and 4) assessing the implications of title selection.  Farm operators can easily change any key inputs or assumptions to quickly test alternatives and visualize the holistic impact on their farm's budgeted profitability.   Furthermore, all the drivers of revenue, costs, crop insurance and title are sensitized to actual harvest price and yield.  Therefore an operator can readily visualize not only the implications of decisions on a static budget, but also the range of potential outomes of farm profitability dependant upon a range of possible actual harvest prices and yields.
 
-The current implementation is just beginning development with a goal of verifying this Python codebase against Kelley's benchmarking.xlsx Excel workbook.  Once the logic has been validated and a detailed roadmap proposed, the plan is to build a publicly available web application, possibly in Django.  Having registered to use this application, an operator could enter/upload farm-specific data and then use the tool to evaluate various alternatives across various price and yield scenarios to both maximize profitability while also minimizing risks.
+The current implementation is beginning the second phase of development.  The first phase was to devolop a Python codebase which could be validated against the sensitivity tables in Kelley's benchmarking.xlsx Excel workbook.  This is now complete and reasonably well-tested.
 
-At this point, all the components (revenue, cost, gov_pmt, crop_ins, and cash_flow) are complete and reasonably well tested, but there is more refactoring and testing to do.
+The next phase will be to implement on a different branch, a more general version of this tool, which will allow a user to select from a set of preset cost/revenue models and enter crop acres.  A user will be able to override many cost and revenue items with her own farm's data.  It will treat wheat and FAC soybeans as first-class crops.  A new workbook 'simplebudgettool.xlsx' is currently being developed by Kelley.
+
+Once finalized, it will be coded in Python and serve as the core business logic component of the third phase, a Django application to be built this summer.  Having registered to use this application, an operator could enter/upload farm-specific data and then use the tool to evaluate various alternatives across various price and yield scenarios to both maximize profitability while also minimizing risks.
 
 ## Prerequisites 
 
@@ -44,6 +46,14 @@ r = Revenue(2023)
 # 'pf' is price factor, 'yf' is yield factor
 r.total_revenue(pf=.95, yf=1.05)
 ```
+
+There is a new experimental feature in module/sript `scenario_mgr` that allows a user to evaluate net cash flow scenarios for a range of price and yield sensitivity factors and return the top 10 best legal configurations of farm program and crop insurance choices for a given scenario.  This script may take 10 hours or so to complete depending on your machine, but does not use much memory or CPU resources.  To try this feature, run at a command prompt:
+
+```
+python3 scenario_mgr.py
+```
+
+This script generates a tab-separated values file 'bestcases.txt', which can easily be imported into a spreadsheet for further analysis.
 
 ## Testing
 
