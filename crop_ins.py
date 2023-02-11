@@ -8,7 +8,8 @@ crop year corresponding to an arbitrary sensitivity factor for yield.
 """
 from analysis import Analysis, crop_in
 from indemnity import (IndemnityAreaRp, IndemnityAreaRpHpe, IndemnityAreaYo,
-                       IndemnityEntRp, IndemnityEntRpHpe, IndemnityEntYo)
+                       IndemnityEntRp, IndemnityEntRpHpe, IndemnityEntYo,
+                       IndemnityOptionRp, IndemnityOptionRpHpe, IndemnityOptionYo)
 
 
 UNITS = 'area ent'.split()
@@ -82,16 +83,22 @@ class CropIns(Analysis):
             """
             setattr(self, attr_name,
                     (IndemnityAreaRp(crop_year, crop=crop, kind=kind)
-                     if unit == 0 and prot == 0 else
+                     if unit == 0 and prot == 0 and kind == 'base' else
                      IndemnityAreaRpHpe(crop_year, crop=crop, kind=kind)
-                     if unit == 0 and prot == 1 else
+                     if unit == 0 and prot == 1 and kind == 'base' else
                      IndemnityAreaYo(crop_year, crop=crop, kind=kind)
-                     if unit == 0 and prot == 2 else
+                     if unit == 0 and prot == 2 and kind == 'base' else
                      IndemnityEntRp(crop_year, crop=crop, kind=kind)
-                     if unit == 1 and prot == 0 else
+                     if unit == 1 and prot == 0 and kind == 'base' else
                      IndemnityEntRpHpe(crop_year, crop=crop, kind=kind)
-                     if unit == 1 and prot == 1 else
-                     IndemnityEntYo(crop_year, crop=crop, kind=kind)))
+                     if unit == 1 and prot == 1 and kind == 'base' else
+                     IndemnityEntYo(crop_year, crop=crop, kind=kind)
+                     if unit == 1 and prot == 2 and kind == 'base' else
+                     IndemnityOptionRp(crop_year, crop=crop, kind=kind)
+                     if unit == 0 and prot == 0 and kind in ('sco', 'eco') else
+                     IndemnityOptionRpHpe(crop_year, crop=crop, kind=kind)
+                     if unit == 0 and prot == 1 and kind in ('sco', 'eco') else
+                     IndemnityOptionYo(crop_year, crop=crop, kind=kind)))
 
             # Ensure commonly overridden properties are set on indemnity instances
             new_attr = getattr(self, attr_name)
@@ -246,9 +253,9 @@ class CropIns(Analysis):
         return (
             (self.c('indemnity', crop).total_indemnity_pmt_received(pf, yf)
              if hasattr(self, f'indemnity_{crop}') else 0) +
-            (self.c('sco', crop).opt_harvest_indemnity_pmt(pf, yf)
+            (self.c('sco', crop).harvest_indemnity_pmt(pf, yf)
              if hasattr(self, f'sco_{crop}') else 0) +
-            (self.c('eco', crop).opt_harvest_indemnity_pmt(pf, yf)
+            (self.c('eco', crop).harvest_indemnity_pmt(pf, yf)
              if hasattr(self, f'eco_{crop}') else 0))
 
     def total_indemnity(self, pf=1, yf=1):
