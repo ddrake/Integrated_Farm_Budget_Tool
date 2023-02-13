@@ -19,12 +19,12 @@ Once finalized, it will be coded in Python and serve as the core business logic 
 
 ## Installation
 
-The following steps install this tool locally as a Python package called `ifbt`
+The following steps install this tool locally as an 'editable' Python package: `ifbt`
 
 ```
 git clone https://github.com/ddrake/Integrated_Farm_Budget_Tool.git
 cd Integrated_Farm_Budget_Tool
-pip install .
+pip install -e .
 ```
 
 ## Usage
