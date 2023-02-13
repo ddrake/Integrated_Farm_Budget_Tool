@@ -1,5 +1,5 @@
 """
-Module scenario_manager
+Module scenario_mgr
 
 Defines classes Choice and Scenario
 Method `make_scenarios` iterates through legal configurations
@@ -93,9 +93,11 @@ def choice1(prog_c, prog_s, prog_w, ins_c, unit_c,
                               range(70, 91, 5)
                               if ins_s == YES and unit_s == AREA else [70]):
                     for sco_lvl_s in ([NONE] + list(range(lvl_s, 86, 5))
-                                      if ins_s == YES and unit_s == ENT and prog_s == PLC
+                                      if ins_s == YES and unit_s == ENT
+                                      and prog_s == PLC
                                       else [NONE]):
-                        for eco_lvl_s in ([NONE, 90, 95] if ins_s == YES and unit_s == ENT
+                        for eco_lvl_s in ([NONE, 90, 95] if ins_s == YES
+                                          and unit_s == ENT
                                           else [NONE]):
                             c = Choice(prog_c, prog_s, prog_w, ins_c, unit_c,
                                        prot_c, lvl_c, sco_lvl_c, eco_lvl_c, ins_s,
@@ -172,4 +174,5 @@ def make_scenarios():
     print(f"Ending at {datetime.now}")
 
 
-make_scenarios()
+if __name__ == '__main__':
+    make_scenarios()
