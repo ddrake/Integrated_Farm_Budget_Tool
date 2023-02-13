@@ -69,7 +69,7 @@ def sens_revenue(crop_year=2023, overrides=None):
     Display a revenue sensitivity table for the specified crop year
     Optionally override some textfile settings by passing a dict.
     """
-    r = Revenue(crop_year)
+    r = Revenue(crop_year, overrides=overrides)
     show_table(r, r.total_revenue, 'REVENUE')
 
 
@@ -78,7 +78,7 @@ def sens_cost(crop_year=2023, overrides=None):
     Display a cost sensitivity table for the specified crop year
     Optionally override some textfile settings by passing a dict.
     """
-    c = Cost(crop_year)
+    c = Cost(crop_year, overrides=overrides)
     show_table(c, c.total_cost, 'COST', takes_pf=False)
 
 
@@ -87,7 +87,7 @@ def sens_gov_pmt(crop_year=2023, overrides=None):
     Display a government payment sensitivity table for the specified crop year
     Optionally override some textfile settings by passing a dict.
     """
-    g = GovPmt(crop_year)
+    g = GovPmt(crop_year, overrides=overrides)
     show_table(g, g.total_gov_pmt, 'GOV_PMT')
 
 
@@ -96,7 +96,7 @@ def sens_crop_ins(crop_year=2023, overrides=None):
     Display a crop insurance sensitivity table for the specified crop year
     Optionally override some textfile settings by passing a dict.
     """
-    c = CropIns(crop_year, overrides)
+    c = CropIns(crop_year, overrides=overrides)
     show_table(c, c.total_net_crop_ins_indemnity, 'CROP INS REV')
 
 
@@ -105,5 +105,5 @@ def sens_cash_flow(crop_year=2023, overrides=None):
     Display a cash flow sensitivity table for the specified crop year
     Optionally override some textfile settings by passing a dict.
     """
-    c = CashFlow(crop_year, overrides)
+    c = CashFlow(crop_year, overrides=overrides)
     show_table(c, c.total_cash_flow, 'CASH FLOW')
