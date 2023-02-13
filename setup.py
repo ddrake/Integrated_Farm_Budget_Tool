@@ -2,7 +2,7 @@ import setuptools
 
 setuptools.setup(
     name='ifbt',
-    version='0.1',
+    version='0.1.1',
     description=('Integrated Farm Budget Tool: An integrated tool ' +
                  'allowing midwest grain farmers to budget farm ' +
                  'profitability and readily visualize outcomes ' +
@@ -17,4 +17,5 @@ setuptools.setup(
     install_requires=['tabulate'],
     author_email='',
     packages=setuptools.find_packages(),
+    package_data={'ifbt': ['data/*.txt']},
     zip_safe=False)

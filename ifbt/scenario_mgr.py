@@ -8,9 +8,7 @@ for each, then sorting and presenting the top 10 choices for each scenario.
 """
 from datetime import datetime
 
-from cash_flow import CashFlow
-from crop_ins import NO, YES, AREA, ENT, RP, RPHPE, YO, NONE
-from gov_pmt import PLC, ARC_CO
+from ifbt import (CashFlow, NO, YES, AREA, ENT, RP, RPHPE, YO, NONE, PLC, ARC_CO)
 
 
 INS = ['No', 'Yes']

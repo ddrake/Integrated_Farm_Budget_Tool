@@ -1,3 +1,11 @@
+"""
+Module analysis
+
+Defines class Analysis, the base class for all ifbt components
+"""
+from os import path
+
+
 def crop_in(*crops):
     """
     Decorator for simplifying validation of permitted crops
@@ -11,6 +19,9 @@ def crop_in(*crops):
                 return f(*args, **kwds)
         return new_f
     return decorator
+
+
+DATADIR = path.join(path.dirname(path.abspath(__file__)), 'data')
 
 
 class Analysis(object):
@@ -38,7 +49,8 @@ class Analysis(object):
         """
         data = []
         for name in self.__class__.DATA_FILES.split():
-            data += self._load_textfile(f'{self.crop_year}_{name}.txt')
+            filepath = path.join(DATADIR, f'{self.crop_year}_{name}.txt')
+            data += self._load_textfile(filepath)
         return data
 
     def _load_textfile(self, filename):

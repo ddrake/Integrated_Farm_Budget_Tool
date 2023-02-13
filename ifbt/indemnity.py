@@ -24,7 +24,7 @@ Note: Some methods have unused optional arguments.  This is intentional and
 nessary to support the object hierarchy, the purpose of which is to eliminate
 any duplication of functionality
 """
-from analysis import Analysis
+from .analysis import Analysis
 
 
 UNITS = 'area ent'.split()

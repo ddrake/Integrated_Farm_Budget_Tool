@@ -1,4 +1,4 @@
-from cost import Cost
+from ifbt import Cost
 
 # Note: tests may fail if changes are made to the data textfile
 

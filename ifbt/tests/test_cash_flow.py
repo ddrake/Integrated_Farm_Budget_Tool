@@ -1,4 +1,4 @@
-from cash_flow import CashFlow
+from ifbt import CashFlow
 
 # Note: tests may fail if changes are made to the data textfile,
 # but changes to pricing for uncontracted grain and cash_flow_wheat are OK.

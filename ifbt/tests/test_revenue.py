@@ -1,4 +1,4 @@
-from revenue import Revenue
+from ifbt import Revenue
 
 # Note: tests may fail if changes are made to the data textfile,
 # but changes to pricing for uncontracted grain and revenue_wheat are OK.

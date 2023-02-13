@@ -1,4 +1,4 @@
-from gov_pmt import GovPmt, PLC, ARC_CO
+from ifbt import GovPmt, PLC, ARC_CO
 
 # Note: tests may fail if changes are made to the data textfile,
 # but changes to program selections are OK.

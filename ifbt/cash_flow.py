@@ -6,11 +6,11 @@ for a given crop year when an instance is created.  Its main function
 is to return total estimated cost for the farm for the given crop year
 corresponding to arbitrary sensitivity factors for price and yield.
 """
-from analysis import Analysis
-from cost import Cost
-from crop_ins import CropIns
-from gov_pmt import GovPmt
-from revenue import Revenue
+from .analysis import Analysis
+from .cost import Cost
+from .crop_ins import CropIns
+from .gov_pmt import GovPmt
+from .revenue import Revenue
 
 
 class CashFlow(Analysis):

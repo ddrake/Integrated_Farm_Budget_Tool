@@ -6,7 +6,7 @@ for a given crop year when an instance is created.  Its main function
 is to return total estimated cost for the farm for the given crop year
 corresponding to an arbitrary sensitivity factor for yield.
 """
-from analysis import Analysis, crop_in
+from .analysis import Analysis, crop_in
 
 
 class Cost(Analysis):

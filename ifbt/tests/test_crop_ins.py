@@ -1,6 +1,6 @@
 import pytest
 
-from crop_ins import CropIns, NO, YES, AREA, ENT, RP, RPHPE, YO, NONE, DFLT
+from ifbt import CropIns, NO, YES, AREA, ENT, RP, RPHPE, YO, NONE, DFLT
 
 # Note: tests may fail if changes are made to the data files
 # 2023_crop_ins_indemnity.txt or 2023_crop_ins_premiums.txt
