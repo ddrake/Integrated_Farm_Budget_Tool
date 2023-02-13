@@ -35,11 +35,11 @@ To see the revenue, cost, government payment and crop insurance sensitivity tabl
 
 ```
 from ifbt import (sens_revenue, sens_cost, sens_gov_pmt,
-                         sens_crp_ins, sens_cash_flow)
+                         sens_crop_ins, sens_cash_flow)
 sens_revenue(2023)
 sens_cost(2023)
 sens_gov_pmt(2023)
-sens_crp_ins(2023)
+sens_crop_ins(2023)
 sens_cash_flow(2023)
 ```
 
