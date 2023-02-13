@@ -8,7 +8,7 @@ The current implementation is beginning the second phase of development.  The fi
 
 The next phase will be to implement on a different branch, a more general version of this tool, which will allow a user to select from a set of preset cost/revenue models and enter crop acres.  A user will be able to override many cost and revenue items with her own farm's data.  It will treat wheat and FAC soybeans as first-class crops.  A new workbook 'simplebudgettool.xlsx' is currently being developed by Kelley.
 
-Once finalized, it will be coded in Python and serve as the core business logic component of the third phase, a Django application to be built this summer.  Having registered to use this application, an operator could enter/upload farm-specific data and then use the tool to evaluate various alternatives across various price and yield scenarios to both maximize profitability while also minimizing risks.
+Once finalized, it will be coded in Python and serve as the core business logic component of the third phase, a Django application to be built this summer.  Having registered to use this application, an operator could select a cost/revenue model and enter farm-specific data and then use the tool to evaluate various crop insurance and farm program alternatives across various price and yield scenarios to maximize profitability while also minimizing risks.
 
 ## Prerequisites 
 
@@ -19,16 +19,22 @@ Once finalized, it will be coded in Python and serve as the core business logic 
 
 ## Installation
 
-`git clone https://github.com/ddrake/Integrated_Farm_Budget_Tool.git`
+The following steps install this tool locally as a Python package called `ifbt`
+
+```
+git clone https://github.com/ddrake/Integrated_Farm_Budget_Tool.git
+cd Integrated_Farm_Budget_Tool
+pip install .
+```
 
 ## Usage
 
 In Python console or ipython console:
 
-To see the revenue, cost, gov_pmt and crp_ins sensitivity tables for 2023:
+To see the revenue, cost, government payment and crop insurance sensitivity tables for 2023:
 
 ```
-from sensitivity import (sens_revenue, sens_cost, sens_gov_pmt,
+from ifbt import (sens_revenue, sens_cost, sens_gov_pmt,
                          sens_crp_ins, sens_cash_flow)
 sens_revenue(2023)
 sens_cost(2023)
@@ -40,7 +46,7 @@ sens_cash_flow(2023)
 To compute a single cell of the table (or test wih arbitrary sensitivity factors): 
 
 ```
-from revenue import Revenue
+from ifbt import Revenue
 r = Revenue(2023)
 
 # 'pf' is price factor, 'yf' is yield factor
@@ -50,7 +56,7 @@ r.total_revenue(pf=.95, yf=1.05)
 There is a new experimental feature in module/sript `scenario_mgr` that allows a user to evaluate net cash flow scenarios for a range of price and yield sensitivity factors and return the top 10 best legal configurations of farm program and crop insurance choices for a given scenario.  This script may take 10 hours or so to complete depending on your machine, but does not use much memory or CPU resources.  To try this feature, run at a command prompt:
 
 ```
-python3 scenario_mgr.py
+python3 ifbt/scenario_mgr.py
 ```
 
 This script generates a tab-separated values file 'bestcases.txt', which can easily be imported into a spreadsheet for further analysis.
@@ -58,7 +64,14 @@ This script generates a tab-separated values file 'bestcases.txt', which can eas
 ## Testing
 
 - You will need pytest for now.  Install it via `pip install pytest`.
-- To run all tests, open a terminal in the project directory and enter `pytest`; the test files will be found automatically.  If you get a message that pytest is not found, you may need to add the location of the pytest executable to your PATH.
+- To run all tests,
+
+```
+cd ifbt 
+pytest
+```
+
+The test files are located in the directory `ifbt/tests` and will be found by pytest automatically.  If you get a message that pytest is not found, you may need to add the location of the pytest executable to your PATH.
 - Note: many of the tests depend on the data text files, which take their values from a slightly modified copy of the 1/30/2023 'benchmarks.xslx' workbook.  If you are a collaborator and would like a copy of that workbook for testing purposes, please contact Dow.
 
 ## Project collaborators
