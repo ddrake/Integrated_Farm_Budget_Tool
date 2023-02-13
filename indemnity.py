@@ -181,6 +181,66 @@ class IndemnityArea(Indemnity):
         return self.harvest_indemnity_pmt(pf, yf)
 
 
+class IndemnityEnt(Indemnity):
+    """
+    Base class for Enterprise Indemnity classes.
+    DO NOT construct an instance of this class.  Instead, get an instance of one
+    of the six concrete derived classes
+    """
+    def __init__(self, *args, **kwargs):
+        super(IndemnityEnt, self).__init__(*args, **kwargs)
+
+    def yield_trigger(self):
+        """
+        Government Crop Insurance J40: Yield trigger.
+        """
+        return (self.c('hist_yield_for_ins_ent', self.crop) *
+                self.c('level', self.crop) / 100)
+
+    def actual_revenue(self, pf=1, yf=1):
+        """
+        Government Crop Insurance J45: Sensitized actual revenue.
+        """
+        return (self.projected_yield_crop(self.crop, yf) *
+                self.ins_harvest_price(pf))
+
+    def replant_acres(self):
+        """
+        Government Crop Insurance J57: Replant acres expected.
+        Note: replant protection option is only for Enterprise units.
+        """
+        return (self.c('replant_frac_acres_assumed', self.crop) *
+                self.c('acres', self.crop))
+
+    def replant_bushels(self):
+        """
+        Government Crop Insurance J58: Replant bushels expected.
+        """
+        return (self.replant_acres() *
+                self.c('replant_yield_loss_bpa', self.crop))
+
+    def replant_indemnity_pmt(self):
+        """
+        Government Crop Insurance J59: Replant payment expected.
+        """
+        return (self.replant_bushels() *
+                self.c('fall_futures_price', self.crop))
+
+    def harvest_indemnity_pmt_per_acre(self, pf=1, yf=1):
+        """
+        Government Crop Insurance J52: Sensitized harvest indemnity payment.
+        in dollars per acre.
+        """
+        return self.revenue_loss(pf, yf)
+
+    def total_indemnity_pmt_received(self, pf=1, yf=1):
+        """
+        Government Crop Insurance J61: Sensitized total indemnity payment.
+        """
+        return (self.harvest_indemnity_pmt(pf, yf) +
+                self.replant_indemnity_pmt())
+
+
 class IndemnityOption(IndemnityArea):
     """
     Represents the indemnity logic for an SCO or ECO option
@@ -373,66 +433,6 @@ class IndemnityAreaYo(IndemnityArea):
         """
         return (self.yield_trigger() -
                 self.limiting_revenue_factor())
-
-
-class IndemnityEnt(Indemnity):
-    """
-    Base class for Enterprise Indemnity classes.
-    DO NOT construct an instance of this class.  Instead, get an instance of one
-    of the six concrete derived classes
-    """
-    def __init__(self, *args, **kwargs):
-        super(IndemnityEnt, self).__init__(*args, **kwargs)
-
-    def yield_trigger(self):
-        """
-        Government Crop Insurance J40: Yield trigger.
-        """
-        return (self.c('hist_yield_for_ins_ent', self.crop) *
-                self.c('level', self.crop) / 100)
-
-    def actual_revenue(self, pf=1, yf=1):
-        """
-        Government Crop Insurance J45: Sensitized actual revenue.
-        """
-        return (self.projected_yield_crop(self.crop, yf) *
-                self.ins_harvest_price(pf))
-
-    def replant_acres(self):
-        """
-        Government Crop Insurance J57: Replant acres expected.
-        Note: replant protection option is only for Enterprise units.
-        """
-        return (self.c('replant_frac_acres_assumed', self.crop) *
-                self.c('acres', self.crop))
-
-    def replant_bushels(self):
-        """
-        Government Crop Insurance J58: Replant bushels expected.
-        """
-        return (self.replant_acres() *
-                self.c('replant_yield_loss_bpa', self.crop))
-
-    def replant_indemnity_pmt(self):
-        """
-        Government Crop Insurance J59: Replant payment expected.
-        """
-        return (self.replant_bushels() *
-                self.c('fall_futures_price', self.crop))
-
-    def harvest_indemnity_pmt_per_acre(self, pf=1, yf=1):
-        """
-        Government Crop Insurance J52: Sensitized harvest indemnity payment.
-        in dollars per acre.
-        """
-        return self.revenue_loss(pf, yf)
-
-    def total_indemnity_pmt_received(self, pf=1, yf=1):
-        """
-        Government Crop Insurance J61: Sensitized total indemnity payment.
-        """
-        return (self.harvest_indemnity_pmt(pf, yf) +
-                self.replant_indemnity_pmt())
 
 
 class IndemnityEntRp(IndemnityEnt):
