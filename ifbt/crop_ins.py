@@ -29,10 +29,10 @@ class CropIns(Analysis):
     settings in the data files(s) do not cause tests to fail.
 
     Sample usage in a python or ipython console:
-      from crop_ins import CropIns
+      from ifbt import CropIns
       c = CropIns(2023)
-      print(c.total_cost(pf=.7)        # yield factor defaults to 1
-      print(c.total_cost(pf=.7, yf=.8) # specifies both price and yield factors
+      c.total_cost(pf=.7)        # yield factor defaults to 1
+      c.total_cost(pf=.7, yf=.8) # specifies both price and yield factors
     """
     DATA_FILES = 'farm_data crop_ins_data crop_ins_premiums'
 

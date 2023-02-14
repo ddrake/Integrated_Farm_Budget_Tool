@@ -17,11 +17,11 @@ class GovPmt(Analysis):
     corresponding to arbitrary sensitivity factors for price and yield.
 
     Sample usage in a python or ipython console:
-      from gov_pmt import GovPmt
+      from ifbt import GovPmt
       p = GovPmt(2023)
-      print(p.total_pmt() # pf and yf default to 1
-      print(p.total_pmt(.9, 1.1) # specifies both price and yield factors
-      print(p.total_pmt(yf=1.2) # uses default for pf
+      p.total_pmt()               # pf and yf default to 1
+      p.total_pmt(pf=.9, yf=1.1)  # specifies both price and yield factors
+      p.total_pmt(yf=1.2)         # uses default for pf
     """
 
     DATA_FILES = 'farm_data gov_pmt_data'
