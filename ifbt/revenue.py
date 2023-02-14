@@ -15,11 +15,11 @@ class Revenue(Analysis):
     corresponding to arbitrary sensitivity factors for price and yield.
 
     Sample usage in a python or ipython console:
-      from revenue import Revenue
+      from ifbt import Revenue
       r = Revenue(2023)
-      print(r.total_revenue()        # pf and yf default to 1
-      print(r.total_revenue(.9, 1.1) # specifies both price and yield factors
-      print(r.total_revenue(yf=1.2)  # uses default for pf
+      r.total_revenue()                # pf and yf default to 1
+      r.total_revenue(pf=.9, yf=1.1)   # specifies both price and yield factors
+      r.total_revenue(yf=1.2)          # uses default for pf
     """
     DATA_FILES = 'farm_data revenue_data'
 

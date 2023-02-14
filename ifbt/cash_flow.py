@@ -19,11 +19,11 @@ class CashFlow(Analysis):
     corresponding to arbitrary sensitivity factors for price and yield.
 
     Sample usage in a python or ipython console:
-      from cash_flow import CashFlow
+      from ifbt import CashFlow
       c = CashFlow(2023)
-      print(c.total_cash_flow()                 # pf and yf default to 1
-      print(c.total_cash_flow(pf=.9, yf=1.1)    # specifies both price and yield factors
-      print(c.total_cash_flow(yf=1.2)           # uses default for pf
+      c.total_cash_flow()                 # pf and yf default to 1
+      c.total_cash_flow(pf=.9, yf=1.1)    # specifies both price and yield factors
+      c.total_cash_flow(yf=1.2)           # uses default for pf
     """
     DATA_FILES = 'farm_data'
 

@@ -15,10 +15,10 @@ class Cost(Analysis):
     corresponding to an arbitrary sensitivity factor for yield.
 
     Sample usage in a python or ipython console:
-      from cost import Cost
+      from ifbt import Cost
       c = Cost(2023)
-      print(c.total_cost()         # yield factor defaults to 1
-      print(c.total_cost(yf=.7)    # specifies yield factor
+      c.total_cost()         # yield factor defaults to 1
+      c.total_cost(yf=.7)    # specifies yield factor
     """
     DATA_FILES = 'farm_data cost_data'
 
