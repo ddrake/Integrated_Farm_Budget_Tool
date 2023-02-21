@@ -27,16 +27,15 @@ class CashFlow(Analysis):
     """
     DATA_FILES = 'farm_data'
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, crop_ins_overrides=None,
+                 gov_pmt_overrides=None, **kwargs):
         """
         Initialize base class, then set attributes to instances of the four models.
         """
         super(CashFlow, self).__init__(*args, **kwargs)
-        ci_ovr = kwargs.get('crop_ins_overrides', None)
-        gp_ovr = kwargs.get('gov_pmt_overrides', None)
         self.cost = Cost(self.crop_year)
-        self.crop_ins = CropIns(self.crop_year, overrides=ci_ovr)
-        self.gov_pmt = GovPmt(self.crop_year, overrides=gp_ovr)
+        self.crop_ins = CropIns(self.crop_year, overrides=crop_ins_overrides)
+        self.gov_pmt = GovPmt(self.crop_year, overrides=gov_pmt_overrides)
         self.revenue = Revenue(self.crop_year)
 
     def total_revenue(self, pf=1, yf=1):
