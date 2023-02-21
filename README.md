@@ -59,6 +59,12 @@ There is a new experimental feature in module/sript `scenario_mgr` that allows a
 python3 ifbt/scenario_mgr.py
 ```
 
+To get the top n best legal configurations for each scenario in the output file, call the script with that argument.  For example, the following usage writes the best 5 configurations:
+
+```
+python3 ifbt/scenario_mgr.py 5
+```
+
 This script generates a tab-separated values file 'bestcases.txt', which can easily be imported into a spreadsheet for further analysis.
 
 ## Testing

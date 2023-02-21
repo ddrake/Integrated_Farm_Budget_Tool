@@ -8,6 +8,7 @@ for each, then sorting and presenting the top 10 choices for each scenario.
 """
 from collections import namedtuple
 from datetime import datetime
+from sys import argv
 
 from ifbt import (CashFlow, NO, YES, AREA, ENT, RP, RPHPE, YO, NONE, PLC, ARC_CO)
 
@@ -121,34 +122,38 @@ def make_scenarios(nbest=10):
     """
     print(f"Starting at {datetime.now()}")
     choices = make_feasible_choices()
-    scenarios = []
-    for pf in [.6, .75, .9, .95, 1, 1.05, 1.1, 1.25, 1.4, 1.65, 1.8]:
-        for yf in [.4, .55, .7, .8, .9, .95, 1, 1.05]:
-            scenarios.append(Scenario(pf, yf, choices))
-    nch = len(choices)
-    print(f'Created {len(scenarios)} scenarios, each with {nch} choices')
-    rslt = []
-
-    rslt.append('\t'.join(('scenario pf yf cashflow ' + CHOICES).split()))
+    price_factors = [.6, .75, .9, .95, 1, 1.05, 1.1, 1.25, 1.4, 1.65, 1.8]
+    yield_factors = [.4, .55, .7, .8, .9, .95, 1, 1.05]
+    scenarios = [Scenario(pf, yf, choices) for pf in price_factors
+                 for yf in yield_factors]
+    print(f'Created {len(scenarios)} scenarios, each with {len(choices)} choices')
+    header = '\t'.join(('scenario pf yf cashflow ' + CHOICES).split())
+    rslt = [header]
     rowformat = '\t'.join(['{}'] + ['{:0.2f}']*2 + ['{}']*16)
     for i, s in enumerate(scenarios):
         print(f'Evaluating scenario {i+1}: pf={s.pf}, yf={s.yf}.')
         s.evaluate_choices()
         for j, (idx, val) in enumerate(s.results[:nbest]):
             ch = s.choices[idx]
-            st = rowformat.format(
-                      i+1, s.pf, s.yf, val, PROG[ch.prog_c], PROG[ch.prog_s],
-                      PROG[ch.prog_w], INS[ch.ins_c], UNIT[ch.unit_c],
-                      PROT[ch.prot_c], ch.lvl_c, ch.sco_lvl_c, ch.eco_lvl_c,
-                      INS[ch.ins_s], UNIT[ch.unit_s], PROT[ch.prot_s], ch.lvl_s,
-                      ch.sco_lvl_s, ch.eco_lvl_s)
-            rslt.append(st)
+            linestr = rowformat.format(
+                i+1, s.pf, s.yf, val, PROG[ch.prog_c], PROG[ch.prog_s],
+                PROG[ch.prog_w], INS[ch.ins_c], UNIT[ch.unit_c],
+                PROT[ch.prot_c], ch.lvl_c, ch.sco_lvl_c, ch.eco_lvl_c,
+                INS[ch.ins_s], UNIT[ch.unit_s], PROT[ch.prot_s], ch.lvl_s,
+                ch.sco_lvl_s, ch.eco_lvl_s)
+            rslt.append(linestr)
             if j == 0:
-                print(f'Best is: {st}')
+                print(f'Best is: {linestr}')
     with open('bestcases.txt', 'w') as f:
         f.write('\n'.join(rslt))
     print(f"Ending at {datetime.now()}")
 
 
 if __name__ == '__main__':
-    make_scenarios()
+    if len(argv) == 2:
+        nbest = int(argv[1])
+        if nbest <= 0:
+            raise ValueError('nbest (number of top choices to save) must be positive')
+        make_scenarios(nbest=argv[1])
+    else:
+        make_scenarios()
