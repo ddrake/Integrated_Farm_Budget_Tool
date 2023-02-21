@@ -6,6 +6,7 @@ Method `make_scenarios` iterates through legal configurations
 for different scenarios of price and yield factor, evaluating the net cash flow
 for each, then sorting and presenting the top 10 choices for each scenario.
 """
+from collections import namedtuple
 from datetime import datetime
 
 from ifbt import (CashFlow, NO, YES, AREA, ENT, RP, RPHPE, YO, NONE, PLC, ARC_CO)
@@ -16,32 +17,9 @@ PROG = ['PLC', 'ARC_CO']
 UNIT = ['Area', 'Ent']
 PROT = ['RP', 'RP-HPE', 'YO']
 
-
-class Choice(object):
-    """
-    A choice of farm program combined with a crop insurance decision
-    """
-    def __init__(self, prog_c, prog_s, prog_w,
-                 ins_c, unit_c, prot_c, lvl_c, sco_lvl_c, eco_lvl_c,
-                 ins_s, unit_s, prot_s, lvl_s, sco_lvl_s, eco_lvl_s):
-
-        self.prog_c = prog_c
-        self.prog_s = prog_s
-        self.prog_w = prog_w
-
-        self.ins_c = ins_c
-        self.unit_c = unit_c
-        self.prot_c = prot_c
-        self.lvl_c = lvl_c
-        self.sco_lvl_c = sco_lvl_c
-        self.eco_lvl_c = eco_lvl_c
-
-        self.ins_s = ins_s
-        self.unit_s = unit_s
-        self.prot_s = prot_s
-        self.lvl_s = lvl_s
-        self.sco_lvl_s = sco_lvl_s
-        self.eco_lvl_s = eco_lvl_s
+CHOICES = ('prog_c prog_s prog_w ins_c unit_c prot_c lvl_c sco_lvl_c ' +
+           'eco_lvl_c ins_s unit_s prot_s lvl_s sco_lvl_s eco_lvl_s')
+Choice = namedtuple('Choice', CHOICES.split())
 
 
 class Scenario(object):
@@ -135,13 +113,13 @@ def make_feasible_choices():
     return choices
 
 
-def make_scenarios():
+def make_scenarios(nbest=10):
     """
     Construct all 500,000 choices and put them in a list.
     Iterate through the 88 scenarios of price and yield factor,
-    evaluating each choice.  Print the top 10 choices for each scenario
+    evaluating each choice.  Print the top nbest choices for each scenario
     """
-    print(f"Starting at {datetime.now}")
+    print(f"Starting at {datetime.now()}")
     choices = make_feasible_choices()
     scenarios = []
     for pf in [.6, .75, .9, .95, 1, 1.05, 1.1, 1.25, 1.4, 1.65, 1.8]:
@@ -150,26 +128,26 @@ def make_scenarios():
     nch = len(choices)
     print(f'Created {len(scenarios)} scenarios, each with {nch} choices')
     rslt = []
-    rslt.append('\t'.join((
-        'scenario pf yf cashflow prog_c prog_s prog_w ins_c unit_c ' +
-        'prot_c lvl_c sco_lvl_c eco_lvl_c ' +
-        'ins_s unit_s prot_s lvl_s sco_lvl_s eco_lvl_s').split()))
+
+    rslt.append('\t'.join(('scenario pf yf cashflow ' + CHOICES).split()))
+    rowformat = '\t'.join(['{}'] + ['{:0.2f}']*2 + ['{}']*16)
     for i, s in enumerate(scenarios):
         print(f'Evaluating scenario {i+1}: pf={s.pf}, yf={s.yf}.')
         s.evaluate_choices()
-        for idx, val in s.results[:10]:
+        for j, (idx, val) in enumerate(s.results[:nbest]):
             ch = s.choices[idx]
-            st = ('{}\t{:0.2f}\t{:0.2f}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t' +
-                  '{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}').format(
+            st = rowformat.format(
                       i+1, s.pf, s.yf, val, PROG[ch.prog_c], PROG[ch.prog_s],
                       PROG[ch.prog_w], INS[ch.ins_c], UNIT[ch.unit_c],
                       PROT[ch.prot_c], ch.lvl_c, ch.sco_lvl_c, ch.eco_lvl_c,
                       INS[ch.ins_s], UNIT[ch.unit_s], PROT[ch.prot_s], ch.lvl_s,
                       ch.sco_lvl_s, ch.eco_lvl_s)
             rslt.append(st)
+            if j == 0:
+                print(f'Best is: {st}')
     with open('bestcases.txt', 'w') as f:
         f.write('\n'.join(rslt))
-    print(f"Ending at {datetime.now}")
+    print(f"Ending at {datetime.now()}")
 
 
 if __name__ == '__main__':
