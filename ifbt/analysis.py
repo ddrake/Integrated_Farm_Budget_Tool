@@ -28,7 +28,7 @@ class Analysis(object):
     """
     Base class for all components of the integrated farm budget tool
     """
-    def __init__(self, crop_year, **kwargs):
+    def __init__(self, crop_year, *args, **kwargs):
         """
         Get an instance for the given crop year, then get a list of
         key/value pairs from the text file and make object attributes from it.

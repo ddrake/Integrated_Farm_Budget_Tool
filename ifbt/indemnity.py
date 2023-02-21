@@ -38,14 +38,14 @@ class Indemnity(Analysis):
     """
     DATA_FILES = 'farm_data crop_ins_data crop_ins_indemnity'
 
-    def __init__(self, crop_year, overrides=None, crop=None, kind='base'):
+    def __init__(self, crop_year, crop, kind, *args, **kwargs):
         """
         Initialize the base class, then set some useful attributes.
         The 'kind' argument must be one of 'base', 'eco' or 'sco' and should
         correspond to the kind of Indemnity the instance represents.
         The 'crop' argument allows an Indemnity instance to know its crop.
         """
-        super(Indemnity, self).__init__(crop_year, overrides=None)
+        super(Indemnity, self).__init__(crop_year, *args, **kwargs)
         self.crop = crop
         self.kind = kind
 

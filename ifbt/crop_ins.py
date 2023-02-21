@@ -85,23 +85,23 @@ class CropIns(Analysis):
             Then set some key properties on it for consistency.
             """
             setattr(self, attr_name,
-                    (IndemnityAreaRp(crop_year, crop=crop, kind=kind)
+                    (IndemnityAreaRp(crop_year, crop, kind)
                      if unit == AREA and prot == RP and kind == 'base' else
-                     IndemnityAreaRpHpe(crop_year, crop=crop, kind=kind)
+                     IndemnityAreaRpHpe(crop_year, crop, kind)
                      if unit == AREA and prot == RPHPE and kind == 'base' else
-                     IndemnityAreaYo(crop_year, crop=crop, kind=kind)
+                     IndemnityAreaYo(crop_year, crop, kind)
                      if unit == AREA and prot == YO and kind == 'base' else
-                     IndemnityEntRp(crop_year, crop=crop, kind=kind)
+                     IndemnityEntRp(crop_year, crop, kind)
                      if unit == ENT and prot == RP and kind == 'base' else
-                     IndemnityEntRpHpe(crop_year, crop=crop, kind=kind)
+                     IndemnityEntRpHpe(crop_year, crop, kind)
                      if unit == ENT and prot == RPHPE and kind == 'base' else
-                     IndemnityEntYo(crop_year, crop=crop, kind=kind)
+                     IndemnityEntYo(crop_year, crop, kind)
                      if unit == ENT and prot == YO and kind == 'base' else
-                     IndemnityOptionRp(crop_year, crop=crop, kind=kind)
+                     IndemnityOptionRp(crop_year, crop, kind)
                      if unit == AREA and prot == RP and kind in ('sco', 'eco') else
-                     IndemnityOptionRpHpe(crop_year, crop=crop, kind=kind)
+                     IndemnityOptionRpHpe(crop_year, crop, kind)
                      if unit == AREA and prot == RPHPE and kind in ('sco', 'eco') else
-                     IndemnityOptionYo(crop_year, crop=crop, kind=kind)))
+                     IndemnityOptionYo(crop_year, crop, kind)))
 
             # Ensure commonly overridden properties are set on indemnity instances
             new_attr = getattr(self, attr_name)
