@@ -154,6 +154,6 @@ if __name__ == '__main__':
         nbest = int(argv[1])
         if nbest <= 0:
             raise ValueError('nbest (number of top choices to save) must be positive')
-        make_scenarios(nbest=argv[1])
+        make_scenarios(nbest=nbest)
     else:
         make_scenarios()
