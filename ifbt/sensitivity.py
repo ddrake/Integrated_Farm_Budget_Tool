@@ -30,14 +30,12 @@ def show_table(r, method, title, takes_pf=True):
     The optional argument is used to handle the case of the total_cost
     method, which takes only a yield factor.
     """
-    data = [
-        ['']*3 +
-        [round((method(pf=p, yf=y) if takes_pf else method(yf=y))/1000)
-            for y in yield_pcts]
-        for p in price_pcts]
+    data = [['']*3 +
+            [round((method(pf=p, yf=y) if takes_pf else method(yf=y))/1000)
+             for y in yield_pcts] for p in price_pcts]
 
     # add 3 empty rows for headers
-    table = [['']*(3+ny)] + [['']*(3+ny)] + [['']*(3+ny)] + data
+    table = [['']*(3+ny) for i in range(3)] + data
 
     # add header text
     table[0][0] = title
