@@ -247,6 +247,8 @@ class IndemnityOption(IndemnityArea):
     """
     def __init__(self, *args, **kwargs):
         super(IndemnityArea, self).__init__(*args, **kwargs)
+        self.lvl = None
+        self.diff = None
 
     def county_insured_revenue(self, pf=1):
         """
