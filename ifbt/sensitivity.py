@@ -62,7 +62,7 @@ def show_table(r, method, title, takes_pf=True):
     print(tabulate(table, tablefmt="simple_grid"))
 
 
-def sens_revenue(crop_year=2023, overrides=None):
+def sens_revenue(crop_year, overrides=None):
     """
     Display a revenue sensitivity table for the specified crop year
     Optionally override some textfile settings by passing a dict.
@@ -71,7 +71,7 @@ def sens_revenue(crop_year=2023, overrides=None):
     show_table(r, r.total_revenue, 'REVENUE')
 
 
-def sens_cost(crop_year=2023, overrides=None):
+def sens_cost(crop_year, overrides=None):
     """
     Display a cost sensitivity table for the specified crop year
     Optionally override some textfile settings by passing a dict.
@@ -80,7 +80,7 @@ def sens_cost(crop_year=2023, overrides=None):
     show_table(c, c.total_cost, 'COST', takes_pf=False)
 
 
-def sens_gov_pmt(crop_year=2023, overrides=None):
+def sens_gov_pmt(crop_year, overrides=None):
     """
     Display a government payment sensitivity table for the specified crop year
     Optionally override some textfile settings by passing a dict.
@@ -89,7 +89,7 @@ def sens_gov_pmt(crop_year=2023, overrides=None):
     show_table(g, g.total_gov_pmt, 'GOV_PMT')
 
 
-def sens_crop_ins(crop_year=2023, overrides=None):
+def sens_crop_ins(crop_year, overrides=None):
     """
     Display a crop insurance sensitivity table for the specified crop year
     Optionally override some textfile settings by passing a dict.
@@ -98,7 +98,7 @@ def sens_crop_ins(crop_year=2023, overrides=None):
     show_table(c, c.total_net_crop_ins_indemnity, 'CROP INS REV')
 
 
-def sens_cash_flow(crop_year=2023, overrides=None):
+def sens_cash_flow(crop_year, overrides=None):
     """
     Display a cash flow sensitivity table for the specified crop year
     Optionally override some textfile settings by passing a dict.
