@@ -20,7 +20,7 @@ PROT = ['RP', 'RP-HPE', 'YO']
 
 CHOICES = ('prog_c prog_s prog_w ins_c unit_c prot_c lvl_c sco_lvl_c ' +
            'eco_lvl_c ins_s unit_s prot_s lvl_s sco_lvl_s eco_lvl_s')
-Choice = namedtuple('Choice', CHOICES.split())
+Choice = namedtuple('Choice', CHOICES)
 
 
 class Scenario(object):
