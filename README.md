@@ -53,19 +53,21 @@ r = Revenue(2023)
 r.total_revenue(pf=.95, yf=1.05)
 ```
 
-There is a new experimental feature in module/sript `scenario_mgr` that allows a user to evaluate net cash flow scenarios for a range of price and yield sensitivity factors and return the top 10 best legal configurations of farm program and crop insurance choices for a given scenario.  This script may take 10 hours or so to complete depending on your machine, but does not use much memory or CPU resources.  To try this feature, run at a command prompt:
+The module/sript `scenario_mgr` allows a user to evaluate net cash flow scenarios for a range of price and yield sensitivity factors and return the top 10 best legal configurations of farm program and crop insurance choices for each scenario.  Since there are 500,000 legal configurations and 88 scenarios, this script may take 10 hours or so to complete depending on your machine.  It uses minimal memory and only one CPU core.  To try this feature, run at a command prompt:
 
 ```
 python3 ifbt/scenario_mgr.py
 ```
 
-To get the top n best legal configurations for each scenario in the output file, call the script with that argument.  For example, the following usage writes the best 5 configurations:
+To get the top *n* best legal configurations for each scenario in the output file, call the script with that argument.  For example, the following usage writes the best 5 configurations for each scenario:
 
 ```
 python3 ifbt/scenario_mgr.py 5
 ```
 
-This script generates a tab-separated values file 'bestcases.txt', which can easily be imported into a spreadsheet for further analysis.
+This script generates a tab-separated values file 'bestcases.txt', which can easily be imported into a spreadsheet or a Pandas dataset for further analysis.
+
+Note that the "best legal configuration" depends on budget items, especially the proportion of contracted grain for each crop, and hence will generally be different for each user.  Also, it's not possible to use directly the results of this table to make farm program and crop insurance choices since knowledge of the harvest yields and prices is not available in the time frame when crop insurance can be purchased.
 
 ## Testing
 
@@ -87,3 +89,15 @@ The test files are located in the directory `ifbt/tests` and will be found by py
 - Bennett Drake
 - Varun Sadasivam
 - Danny Huang
+
+## Recommendations for collaborators
+
+If you're unfamiliar with the Git version control system, a good place to start is this [tutorial](https://docs.github.com/en/get-started/quickstart/hello-world).
+
+If you have an IDE you are already comfortable with, such as [PyCharm](https://www.jetbrains.com/pycharm/) or [VSCode](https://code.visualstudio.com/), that may be a good tool for testing this application and writing code to submit as pull requests.  However, if you are new to programming, you may find learning to use a heavy-weight IDE to be a time-consuming distraction from accomplishing your immediate goals.
+
+In this case, you may prefer to use a simple [text editor](https://en.wikipedia.org/wiki/List_of_text_editors) in conjunction with a Python or Ipython console running in a terminal/command window.  Personally, this is the approach I prefer (I use the Vim editor with syntax-checking and highlighting from the flake8 package), but Vim has its own learning curve, and is probably not a good editor choice for a beginning programmer.
+
+If you have some familiarity with Python, but want to get a deeper understanding, I higly recommend the book 'Fluent Python' by Luciano Ramalho.
+
+In addition to the excellent Django tutorial and documentation at the Django site, there is another good tutorial at the [Mozilla Developers Network](https://developer.mozilla.org/en-US/docs/Learn/Server-side/Django).
