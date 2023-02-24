@@ -3,6 +3,7 @@ Module analysis
 
 Defines class Analysis, the base class for all ifbt components
 """
+from functools import wraps
 from os import path
 
 
@@ -11,6 +12,7 @@ def crop_in(*crops):
     Decorator for simplifying validation of permitted crops
     """
     def decorator(f):
+        @wraps(f)
         def new_f(*args, **kwds):
             if args[1] not in crops:
                 crop_msg = ', '.join([f"'{c}'" for c in crops])
