@@ -243,7 +243,9 @@ class IndemnityEnt(Indemnity):
 
 class IndemnityOption(IndemnityArea):
     """
-    Represents the indemnity logic for an SCO or ECO option
+    Base class for IndemnityOption classes.
+    DO NOT construct an instance of this class.  Instead, get an instance of one
+    of the three concrete derived classes
     """
     def __init__(self, *args, **kwargs):
         super(IndemnityArea, self).__init__(*args, **kwargs)
@@ -533,7 +535,7 @@ class IndemnityOptionRpHpe(IndemnityOption):
 
 class IndemnityOptionYo(IndemnityOption):
     """
-    An SCO or ECO option with YO protection
+    An indemnity option (SCO or ECO) with YO protection
     """
     def __init__(self, *args, **kwargs):
         super(IndemnityOptionYo, self).__init__(*args, **kwargs)
