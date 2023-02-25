@@ -10,7 +10,8 @@ from collections import namedtuple
 from datetime import datetime
 from sys import argv
 
-from ifbt import (CashFlow, NO, YES, AREA, ENT, RP, RPHPE, YO, NONE, PLC, ARC_CO)
+from ifbt import (CashFlow, NO, YES, AREA, ENT, RP, RPHPE, YO, NONE, PLC, ARC_CO,
+                  CORN, SOY, WHEAT)
 
 
 INS = ['No', 'Yes']
@@ -41,15 +42,14 @@ class Scenario(object):
         Evaluate net cashflow for each choice with the given sensitivity
         """
         for i, c in enumerate(self.choices):
-            gp_ovr = {'program_corn': c.prog_c, 'program_soy': c.prog_s,
-                      'program_wheat': c.prog_w}
-            ci_ovr = {'insure_corn': c.ins_c, 'unit_corn': c.unit_c,
-                      'protection_corn': c.prot_c, 'level_corn': c.lvl_c,
-                      'sco_level_corn': c.sco_lvl_c, 'eco_level_corn': c.eco_lvl_c,
-                      'selected_pmt_factor_sorn': 1, 'insure_soy': c.ins_s,
-                      'unit_soy': c.unit_s, 'protection_soy': c.prot_s,
-                      'level_soy': c.lvl_s, 'sco_level_soy': c.sco_lvl_s,
-                      'eco_level_soy': c.eco_lvl_s, 'selected_pmt_factor_soy': 1}
+            gp_ovr = {'program': {CORN: c.prog_c, SOY: c.prog_s, WHEAT: c.prog_w}}
+            ci_ovr = {'insure': {CORN: c.ins_c, SOY: c.ins_s},
+                      'unit': {CORN: c.unit_c, SOY: c.unit_s},
+                      'protection': {CORN: c.prot_c, SOY: c.prot_s},
+                      'level': {CORN: c.lvl_c, SOY: c.lvl_s},
+                      'sco_level': {CORN: c.sco_lvl_c, SOY: c.sco_lvl_s},
+                      'eco_level': {CORN: c.eco_lvl_c, SOY: c.eco_lvl_s},
+                      'selected_pmt_factor': {CORN: 1, SOY: 1}, }
 
             cf = CashFlow(2023, crop_ins_overrides=ci_ovr, gov_pmt_overrides=gp_ovr)
             self.results.append((i, cf.total_cash_flow(pf=self.pf, yf=self.yf)))
