@@ -246,7 +246,6 @@ class IndemnityOption(IndemnityArea):
     """
     def __init__(self, crop_year, crop, kind, *args, **kwargs):
         super(IndemnityArea, self).__init__(crop_year, crop, *args, **kwargs)
-        print(f'in IndemnityOption, setting kind {kind}')
         self.kind = kind
         self.lvl = None
         self.diff = None

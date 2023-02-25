@@ -77,31 +77,37 @@ class CropIns(Analysis):
         In order to use the SCO option, the gov_pmt program must be PLC, but
         that rule cannot be enforced at this level.
         """
-        def add_indemnity_attr(crop_year, crop, kind, attr_name, unit,
+        def add_indemnity_attr(crop_year, crop, attr_name, unit,
                                prot, level, sco_level, eco_level, pmt_factor):
             """
             Helper to select the appropriate class, get an instance,
             set that instance as a property of the CropInsurance instance,
             Then set some key properties on it for consistency.
             """
-            setattr(self, attr_name,
-                    (IndemnityAreaRp(crop_year, crop)
-                     if unit == AREA and prot == RP and kind == 'base' else
-                     IndemnityAreaRpHpe(crop_year, crop)
-                     if unit == AREA and prot == RPHPE and kind == 'base' else
-                     IndemnityAreaYo(crop_year, crop)
-                     if unit == AREA and prot == YO and kind == 'base' else
-                     IndemnityEntRp(crop_year, crop)
-                     if unit == ENT and prot == RP and kind == 'base' else
-                     IndemnityEntRpHpe(crop_year, crop)
-                     if unit == ENT and prot == RPHPE and kind == 'base' else
-                     IndemnityEntYo(crop_year, crop)
-                     if unit == ENT and prot == YO and kind == 'base' else
-                     IndemnityOptionRp(crop_year, crop, kind)
-                     if unit == AREA and prot == RP and kind in ('sco', 'eco') else
-                     IndemnityOptionRpHpe(crop_year, crop, kind)
-                     if unit == AREA and prot == RPHPE and kind in ('sco', 'eco') else
-                     IndemnityOptionYo(crop_year, crop, kind)))
+            instance = (
+                IndemnityAreaRp(crop_year, crop)
+                if unit == AREA and prot == RP and attr_name == 'indemnity' else
+                IndemnityAreaRpHpe(crop_year, crop)
+                if unit == AREA and prot == RPHPE and attr_name == 'indemnity' else
+                IndemnityAreaYo(crop_year, crop)
+                if unit == AREA and prot == YO and attr_name == 'indemnity' else
+                IndemnityEntRp(crop_year, crop)
+                if unit == ENT and prot == RP and attr_name == 'indemnity' else
+                IndemnityEntRpHpe(crop_year, crop)
+                if unit == ENT and prot == RPHPE and attr_name == 'indemnity' else
+                IndemnityEntYo(crop_year, crop)
+                if unit == ENT and prot == YO and attr_name == 'indemnity' else
+                IndemnityOptionRp(crop_year, crop, attr_name)
+                if unit == AREA and prot == RP else
+                IndemnityOptionRpHpe(crop_year, crop, attr_name)
+                if unit == AREA and prot == RPHPE else
+                IndemnityOptionYo(crop_year, crop, attr_name))
+
+            if hasattr(self, attr_name):
+                attr = getattr(self, attr_name)
+                attr.update({crop: instance})
+            else:
+                setattr(self, attr_name, {crop: instance})
 
             # Ensure commonly overridden properties are set consistently
             # on indemnity instances
@@ -111,11 +117,10 @@ class CropIns(Analysis):
                     ('unit', unit), ('protection', prot), ('level', level),
                     ('sco_level', sco_level), ('eco_level', eco_level),
                     ('selected_pmt_factor', pmt_factor)]:
-                attr = getattr(new_attr, name)
+                attr = getattr(new_attr[crop], name)
                 attr.update({crop: val})
             return None
 
-        cropname = ['corn', 'soy']
         for crop in [CORN, SOY]:
             ins = self.insure[crop]
             sco_level = self.sco_level[crop]
@@ -126,21 +131,21 @@ class CropIns(Analysis):
             base_pmt_factor = self.selected_pmt_factor[crop]
             if ins:
                 add_indemnity_attr(
-                    self.crop_year, crop, 'base', f'indemnity_{cropname[crop]}',
+                    self.crop_year, crop, 'indemnity',
                     base_unit, base_protection, base_level, sco_level,
                     eco_level, base_pmt_factor)
             if ins and sco_level > 0:
                 if base_unit == AREA:
                     raise ValueError('Cannot add SCO because base unit is Area')
                 add_indemnity_attr(
-                    self.crop_year, crop, 'sco', f'sco_{cropname[crop]}',
+                    self.crop_year, crop, 'sco',
                     AREA, base_protection, base_level, sco_level,
                     eco_level, base_pmt_factor)
             if ins and eco_level > 0:
                 if base_unit == AREA:
                     raise ValueError('Cannot add ECO because base unit is Area')
                 add_indemnity_attr(
-                    self.crop_year, crop, 'eco', f'eco_{cropname[crop]}',
+                    self.crop_year, crop, 'eco',
                     AREA, base_protection, base_level, sco_level,
                     eco_level, base_pmt_factor)
 
@@ -234,17 +239,14 @@ class CropIns(Analysis):
     def total_indemnity_crop(self, crop, pf=1, yf=1):
         """
         Return the price/yield sensitized total indemnity for the crop.
-        TODO: Make indemnity, sco and eco dict properties
         """
-        crops = 'corn soy'.split()
-        scrop = crops[crop]
         return (
-            (getattr(self, f'indemnity_{scrop}').total_indemnity_pmt_received(pf, yf)
-             if hasattr(self, f'indemnity_{scrop}') else 0) +
-            (getattr(self, f'sco_{scrop}').harvest_indemnity_pmt(pf, yf)
-             if hasattr(self, f'sco_{scrop}') else 0) +
-            (getattr(self, f'eco_{scrop}').harvest_indemnity_pmt(pf, yf)
-             if hasattr(self, f'eco_{scrop}') else 0))
+            (self.indemnity[crop].total_indemnity_pmt_received(pf, yf)
+             if hasattr(self, 'indemnity') and crop in self.indemnity else 0) +
+            (self.sco[crop].harvest_indemnity_pmt(pf, yf)
+             if hasattr(self, 'sco') and crop in self.sco else 0) +
+            (self.eco[crop].harvest_indemnity_pmt(pf, yf)
+             if hasattr(self, 'eco') and crop in self.eco else 0))
 
     def total_indemnity(self, pf=1, yf=1):
         """

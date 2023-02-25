@@ -36,15 +36,15 @@ def test_total_crop_ins():
     crop = CORN
     assert c.crop_ins_premium_crop(crop) == pytest.approx(72847.62, TOL)
 
-    assert (c.indemnity_corn.harvest_indemnity_pmt(pf=.7, yf=.75)
+    assert (c.indemnity[CORN].harvest_indemnity_pmt(pf=.7, yf=.75)
             == pytest.approx(1126643.935, TOL))
 
     # there should be an SCO indemnity
-    assert (c.sco_corn.harvest_indemnity_pmt(pf=.7, yf=.75)
+    assert (c.sco[CORN].harvest_indemnity_pmt(pf=.7, yf=.75)
             == pytest.approx(593544.579, TOL))
 
-    # there should not be an ECO indemnity
-    assert not hasattr(c, 'eco_corn')
+    # there should not be an ECO indemnity for CORN
+    assert not hasattr(c, 'eco') or CORN not in c.eco
 
 
 def test_premiums_and_revenue_are_zero_for_a_crop_without_insurance():
@@ -58,7 +58,7 @@ def test_premiums_and_revenue_are_zero_for_a_crop_without_insurance():
     crop = CORN
     assert c.crop_ins_premium_crop(crop) == 0
     assert c.total_indemnity_crop(crop, pf=.7, yf=.75) == 0
-    assert not hasattr(c, 'indemnity_corn')
+    assert not hasattr(c, 'indemnity') or CORN not in c.indemnity
 
 
 def test_no_indemnity_attribute_is_added_without_base_insurance():
@@ -68,7 +68,7 @@ def test_no_indemnity_attribute_is_added_without_base_insurance():
            'level': {CORN: 75}, 'sco_level': {CORN: DFLT}, 'eco_level': {CORN: NONE},
            'selected_pmt_factor': {CORN: 1}, }
     c = CropIns(2023, overrides=ovr)
-    assert not hasattr(c, 'indemnity_corn')
+    assert not hasattr(c, 'indemnity') or CORN not in c.indemnity
 
 
 def test_cannot_add_sco_if_base_insurance_is_area():
@@ -171,11 +171,11 @@ def test_indemnity_and_its_parts_cannot_be_less_than_zero():
 
     c = CropIns(2023, overrides=ovr)
     crop = CORN
-    assert c.indemnity_corn.harvest_indemnity_pmt(pf=1, yf=1) == 0
-    assert (c.indemnity_corn.total_indemnity_pmt_received(pf=1, yf=1) ==
+    assert c.indemnity[CORN].harvest_indemnity_pmt(pf=1, yf=1) == 0
+    assert (c.indemnity[CORN].total_indemnity_pmt_received(pf=1, yf=1) ==
             pytest.approx(1991.901, TOL))
-    assert c.sco_corn.harvest_indemnity_pmt(pf=1, yf=1) == 0
-    assert c.eco_corn.harvest_indemnity_pmt(pf=1, yf=1) == 0
+    assert c.sco[CORN].harvest_indemnity_pmt(pf=1, yf=1) == 0
+    assert c.eco[CORN].harvest_indemnity_pmt(pf=1, yf=1) == 0
     assert c.total_indemnity_crop(crop, pf=1, yf=1) == pytest.approx(1991.901, TOL)
 
 
