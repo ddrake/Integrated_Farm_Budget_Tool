@@ -38,7 +38,7 @@ class Indemnity(Analysis):
     """
     DATA_FILES = 'farm_data crop_ins_data crop_ins_indemnity'
 
-    def __init__(self, crop_year, crop, kind, *args, **kwargs):
+    def __init__(self, crop_year, crop, *args, **kwargs):
         """
         Initialize the base class, then set some useful attributes.
         The 'kind' argument must be one of 'base', 'eco' or 'sco' and should
@@ -47,7 +47,6 @@ class Indemnity(Analysis):
         """
         super(Indemnity, self).__init__(crop_year, *args, **kwargs)
         self.crop = crop
-        self.kind = kind
 
     def revenue_trigger_feb_price(self):
         """
@@ -245,8 +244,10 @@ class IndemnityOption(IndemnityArea):
     DO NOT construct an instance of this class.  Instead, get an instance of one
     of the three concrete derived classes
     """
-    def __init__(self, *args, **kwargs):
-        super(IndemnityArea, self).__init__(*args, **kwargs)
+    def __init__(self, crop_year, crop, kind, *args, **kwargs):
+        super(IndemnityArea, self).__init__(crop_year, crop, *args, **kwargs)
+        print(f'in IndemnityOption, setting kind {kind}')
+        self.kind = kind
         self.lvl = None
         self.diff = None
 
@@ -504,7 +505,7 @@ class IndemnityOptionRp(IndemnityOption):
     An indemnity option (SCO or ECO) with RP protection
     """
     def __init__(self, *args, **kwargs):
-        super(IndemnityArea, self).__init__(*args, **kwargs)
+        super(IndemnityOptionRp, self).__init__(*args, **kwargs)
 
     def county_insured_revenue(self, pf=1):
         """

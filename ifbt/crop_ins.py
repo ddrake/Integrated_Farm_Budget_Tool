@@ -85,17 +85,17 @@ class CropIns(Analysis):
             Then set some key properties on it for consistency.
             """
             setattr(self, attr_name,
-                    (IndemnityAreaRp(crop_year, crop, kind)
+                    (IndemnityAreaRp(crop_year, crop)
                      if unit == AREA and prot == RP and kind == 'base' else
-                     IndemnityAreaRpHpe(crop_year, crop, kind)
+                     IndemnityAreaRpHpe(crop_year, crop)
                      if unit == AREA and prot == RPHPE and kind == 'base' else
-                     IndemnityAreaYo(crop_year, crop, kind)
+                     IndemnityAreaYo(crop_year, crop)
                      if unit == AREA and prot == YO and kind == 'base' else
-                     IndemnityEntRp(crop_year, crop, kind)
+                     IndemnityEntRp(crop_year, crop)
                      if unit == ENT and prot == RP and kind == 'base' else
-                     IndemnityEntRpHpe(crop_year, crop, kind)
+                     IndemnityEntRpHpe(crop_year, crop)
                      if unit == ENT and prot == RPHPE and kind == 'base' else
-                     IndemnityEntYo(crop_year, crop, kind)
+                     IndemnityEntYo(crop_year, crop)
                      if unit == ENT and prot == YO and kind == 'base' else
                      IndemnityOptionRp(crop_year, crop, kind)
                      if unit == AREA and prot == RP and kind in ('sco', 'eco') else
