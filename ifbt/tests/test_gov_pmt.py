@@ -1,11 +1,11 @@
-from ifbt import GovPmt, PLC, ARC_CO
+from ifbt import GovPmt, PLC, ARC_CO, CORN, SOY, WHEAT
 
 # Note: tests may fail if changes are made to the data textfile,
 # but changes to program selections are OK.
 
 
 def test_total_gov_pmt_arco():
-    ovr = {'program_corn': ARC_CO, 'program_soy': ARC_CO, 'program_wheat': ARC_CO}
+    ovr = {'program': {CORN: ARC_CO, SOY: ARC_CO, WHEAT: ARC_CO}, }
     g = GovPmt(2023, overrides=ovr)
 
     total_gov_pmt = g.total_gov_pmt(pf=1, yf=1)
@@ -22,7 +22,7 @@ def test_total_gov_pmt_arco():
 
 
 def test_total_gov_pmt_plc():
-    ovr = {'program_corn': PLC, 'program_soy': PLC, 'program_wheat': PLC}
+    ovr = {'program': {CORN: PLC, SOY: PLC, WHEAT: PLC}, }
     g = GovPmt(2023, overrides=ovr)
 
     total_gov_pmt = g.total_gov_pmt(pf=1, yf=1)

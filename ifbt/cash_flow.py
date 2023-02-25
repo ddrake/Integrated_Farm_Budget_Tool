@@ -67,4 +67,4 @@ class CashFlow(Analysis):
         GVBudget G52: Total net cash flow, including land expenses.
         """
         return round(self.cash_flow_before_land_costs(pf, yf) -
-                     self.cost.total_land_expenses(yf))
+                     self.cost.total_land_expenses_over_crops(yf))

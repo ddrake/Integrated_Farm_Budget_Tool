@@ -18,7 +18,7 @@ est_deduct_soy                 0.5
 
 # revenue, contract prices, basis, pmts in dollars
 
-revenue_wheat             300341
+wheat_revenue             300341
 
 # contract price includes basis (need these to 6 decimal places for exact comparison)
 avg_contract_price_corn        6.297083
