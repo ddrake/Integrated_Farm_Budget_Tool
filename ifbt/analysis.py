@@ -44,6 +44,9 @@ class Analysis(object):
             self._set_attrs_from_overrides(overrides)
 
     def _set_attrs_from_overrides(self, overrides):
+        """
+        Override the properties specified in the 'overrides' dict
+        """
         for k, v in overrides.items():
             if isinstance(v, dict):
                 attr = getattr(self, k)
@@ -54,6 +57,11 @@ class Analysis(object):
                 setattr(self, k, vnum)
 
     def _set_attrs_from_file_pairs(self):
+        """
+        Set the current object's attributes to match values in the input files.
+        Crop-specific items and insurance premiums have their values stored in dicts.
+        This greatly reduces the number of attributes for the current object.
+        """
         crop_pairs, simple = self._group_values_crop(self._load_key_value_pairs())
         prem_pairs, simple = self._group_values_ins_prem(simple)
         pairs = crop_pairs + prem_pairs + simple
@@ -91,8 +99,7 @@ class Analysis(object):
         and merge them into a new key/value pair with
           key: the original key with crop name removed,
           value: a dict with key crop and original value.
-        Return a list of key/value pairs which merges the items of the outer dict
-        with the without_crop pairs.
+        Return a list of key/value pairs and a list of simple pairs.
         """
         crops = 'corn soy wheat fullsoy dcsoy'.split()
         pat = f'^(.*)_({"|".join(crops)})$'
@@ -113,58 +120,48 @@ class Analysis(object):
     def _group_values_ins_prem(self, pairs):
         """
         Given a list of key/value pairs, find any that match an insurance premium,
-        and merge them into a new key/value pair with
-          key: 'premium',
-          value: a tuple with the values for the various crops ordered by crop name.
+        and merge them into new key/value pairs with
+          key: 'premium', 'sco_premium' or 'eco_premium'
+          value: a tuple with the values for the insurance parameters.
         """
+        def group_matches(pairs, pat):
+            simple = []
+            prem = {}
+            for k, v in pairs:
+                m = re.match(pat, k)
+                if m:
+                    if len(m.groups()) == 4:
+                        u, p, c, lvl = m.groups()
+                        choice = (units.index(u), prots.index(p),
+                                  crops.index(c), int(lvl))
+                    else:
+                        p, c, lvl = m.groups()
+                        choice = (prots.index(p), crops.index(c), int(lvl))
+                    prem[choice] = v
+                else:
+                    simple.append((k, v))
+            return prem, simple
+
         units = 'area ent'.split()
         prots = 'rp rphpe yo'.split()
         crops = 'corn soy'.split()
-        pat = (f'^({"|".join(units)})_({"|".join(prots)})_({"|".join(crops)})' +
-               f'_({"|".join(str(i) for i in range(50, 91, 5))})$')
+
+        pat_base = (f'^({"|".join(units)})_({"|".join(prots)})_({"|".join(crops)})' +
+                    f'_({"|".join(str(i) for i in range(50, 91, 5))})$')
         pat_sco = (f'^sco_({"|".join(prots)})_({"|".join(crops)})' +
                    f'_({"|".join(str(i) for i in range(50, 86, 5))})_86$')
         pat_eco = (f'^eco_({"|".join(prots)})_({"|".join(crops)})' +
                    '_86_(90|95)$')
 
-        # premium
-        simple1 = []
-        premium = {}
-        for k, v in pairs:
-            m = re.match(pat, k)
-            if m:
-                u, p, c, lvl = m.groups()
-                choice = (units.index(u), prots.index(p), crops.index(c), int(lvl))
-                premium[choice] = v
-            else:
-                simple1.append((k, v))
+        dicts = []
+        prem, simple = group_matches(pairs, pat_base)
+        dicts.append(('premium', prem))
+        prem, simple = group_matches(simple, pat_sco)
+        dicts.append(('sco_premium', prem))
+        prem, simple = group_matches(simple, pat_eco)
+        dicts.append(('eco_premium', prem))
 
-        # sco
-        simple2 = []
-        sco_premium = {}
-        for k, v in simple1:
-            m = re.match(pat_sco, k)
-            if m:
-                p, c, lvl = m.groups()
-                choice = (prots.index(p), crops.index(c), int(lvl))
-                sco_premium[choice] = v
-            else:
-                simple2.append((k, v))
-
-        # eco
-        simple3 = []
-        eco_premium = {}
-        for k, v in simple2:
-            m = re.match(pat_eco, k)
-            if m:
-                p, c, lvl = m.groups()
-                choice = (prots.index(p), crops.index(c), int(lvl))
-                eco_premium[choice] = v
-            else:
-                simple3.append((k, v))
-
-        return ([('premium', premium), ('sco_premium', sco_premium),
-                 ('eco_premium', eco_premium)], simple3)
+        return dicts, simple
 
     def _to_number(self, s):
         """
