@@ -1,15 +1,14 @@
 __all__ = ['Cost', 'Analysis', 'CashFlow', 'GovPmt', 'CropIns', 'Indemnity', 'Revenue',
            'sens_revenue', 'sens_cost', 'sens_gov_pmt',
            'sens_crop_ins', 'sens_cash_flow',
-           'NO', 'YES', 'AREA', 'ENT', 'RP', 'RPHPE', 'YO', 'NONE', 'DFLT',
-           'PLC', 'ARC_CO', 'CORN', 'SOY', 'WHEAT', 'FULL_SOY', 'DC_SOY']
+           'Crop', 'Prog', 'Ins', 'Unit', 'Prot', 'Lvl']
 
-from .analysis import Analysis, CORN, SOY, WHEAT, FULL_SOY, DC_SOY
+from .analysis import Analysis, Crop
 from .cost import Cost
 from .revenue import Revenue
 from .indemnity import Indemnity
-from .gov_pmt import (GovPmt, PLC, ARC_CO)
+from .gov_pmt import GovPmt, Prog
 from .cash_flow import CashFlow
-from .crop_ins import (CropIns, NO, YES, AREA, ENT, RP, RPHPE, YO, NONE, DFLT)
+from .crop_ins import CropIns, Ins, Unit, Prot, Lvl
 from .sensitivity import (sens_revenue, sens_cost, sens_gov_pmt, sens_crop_ins,
                           sens_cash_flow)

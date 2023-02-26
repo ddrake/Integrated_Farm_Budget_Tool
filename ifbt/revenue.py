@@ -6,7 +6,7 @@ for a given crop year when an instance is created.  Its main function
 is to return total estimated revenue for the farm for the given crop year
 corresponding to arbitrary sensitivity factors for price and yield.
 """
-from .analysis import Analysis, crop_in, CORN, SOY
+from .analysis import Analysis, crop_in, Crop
 
 
 class Revenue(Analysis):
@@ -26,7 +26,7 @@ class Revenue(Analysis):
     def __init__(self, *args, **kwargs):
         super(Revenue, self).__init__(*args, **kwargs)
 
-    @crop_in(CORN, SOY)
+    @crop_in(Crop.CORN, Crop.SOY)
     def projected_shrink_bu_crop(self, crop, yf=1):
         """
         GVBudget E13, F13: Yield-sensitized projected shrink for the crop.
@@ -34,7 +34,7 @@ class Revenue(Analysis):
         return (self.projected_bu_crop(crop, yf) *
                 self.est_shrink[crop]/100.)
 
-    @crop_in(CORN, SOY)
+    @crop_in(Crop.CORN, Crop.SOY)
     def deliverable_bu_crop(self, crop, yf=1):
         """
         GVBudget E14, F14: Yield-sensitized deliverable bushels for the crop.
@@ -42,7 +42,7 @@ class Revenue(Analysis):
         return (self.projected_bu_crop(crop, yf) -
                 self.projected_shrink_bu_crop(crop, yf))
 
-    @crop_in(CORN, SOY)
+    @crop_in(Crop.CORN, Crop.SOY)
     def sold_under_contract_crop(self, crop):
         """
         GVBudget E18, F18: Gross revenue from contracted crop assuming contracts
@@ -52,7 +52,7 @@ class Revenue(Analysis):
             self.contract_bu[crop] *
             self.avg_contract_price[crop])
 
-    @crop_in(CORN, SOY)
+    @crop_in(Crop.CORN, Crop.SOY)
     def unsold_bushels_crop(self, crop, yf=1):
         """
         GVBudget E19, F19: Yield-sensitized unsold (or oversold) bushels
@@ -61,7 +61,7 @@ class Revenue(Analysis):
         return (self.deliverable_bu_crop(crop, yf) -
                 self.contract_bu[crop])
 
-    @crop_in(CORN, SOY)
+    @crop_in(Crop.CORN, Crop.SOY)
     def est_price_crop_uncontracted(self, crop, pf=1):
         """
         GVBudget E20, F20: Price-sensitized harvest price plus basis
@@ -69,7 +69,7 @@ class Revenue(Analysis):
         return (self.fall_futures_price[crop] * pf +
                 self.est_basis[crop])
 
-    @crop_in(CORN, SOY)
+    @crop_in(Crop.CORN, Crop.SOY)
     def revenue_uncontracted_crop(self, crop, pf=1, yf=1):
         """
         GVBudget E21, F21: Sensitized estimated revenue (buyout) of uncontracted
@@ -79,7 +79,7 @@ class Revenue(Analysis):
             self.unsold_bushels_crop(crop, yf) *
             self.est_price_crop_uncontracted(crop, pf))
 
-    @crop_in(CORN, SOY)
+    @crop_in(Crop.CORN, Crop.SOY)
     def total_revenue_before_deducts_crop(self, crop, pf=1, yf=1):
         """
         GVBudget E22, F22: Sensitized total revenue before deducts/penalties.
@@ -87,7 +87,7 @@ class Revenue(Analysis):
         return (self.sold_under_contract_crop(crop) +
                 self.revenue_uncontracted_crop(crop, pf, yf))
 
-    @crop_in(CORN, SOY)
+    @crop_in(Crop.CORN, Crop.SOY)
     def est_deducts_crop(self, crop, pf=1, yf=1):
         """
         GVBudget E23, F23: Sensitized estimated deducts/penalties in dollars.
@@ -96,13 +96,13 @@ class Revenue(Analysis):
                  abs(self.revenue_uncontracted_crop(crop, pf, yf))) *
                 self.est_deduct[crop]/100)
 
-    @crop_in(CORN, SOY)
+    @crop_in(Crop.CORN, Crop.SOY)
     def total_revenue_crop(self, crop, pf=1, yf=1):
         """
         GVBudget E24, F25, F26: Sensitized total revenue attained by each crop.
         Note: wheat is considered a component of soy for revenue and cost
         """
-        return ((self.wheat_revenue if crop == SOY else 0) +
+        return ((self.wheat_revenue if crop == Crop.SOY else 0) +
                 self.total_revenue_before_deducts_crop(crop, pf, yf) -
                 self.est_deducts_crop(crop, pf, yf))
 
@@ -112,9 +112,9 @@ class Revenue(Analysis):
         """
         return round(sum(
             [self.total_revenue_crop(crop, pf, yf)
-             for crop in [CORN, SOY]]))
+             for crop in [Crop.CORN, Crop.SOY]]))
 
-    @crop_in(CORN, SOY)
+    @crop_in(Crop.CORN, Crop.SOY)
     def avg_realized_price_per_bu(self, crop, pf=1, yf=1):
         """
         GVBudget E25, F25: Sensitized average realized price per bushel for
@@ -123,7 +123,7 @@ class Revenue(Analysis):
         return (self.total_revenue_crop(crop, pf, yf) /
                 self.projected_bu_crop(crop, yf))
 
-    @crop_in(CORN, SOY)
+    @crop_in(Crop.CORN, Crop.SOY)
     def revenue_other_crop(self, crop):
         """
         GVBudget E35, F35: Total of other revenue by crop *excluding* government
@@ -139,7 +139,7 @@ class Revenue(Analysis):
         GVBudget G35: Total of other revenue *excluding* government program payments
         """
         return sum([self.revenue_other_crop(crop)
-                    for crop in [CORN, SOY]])
+                    for crop in [Crop.CORN, Crop.SOY]])
 
     def total_revenue(self, pf=1, yf=1):
         """

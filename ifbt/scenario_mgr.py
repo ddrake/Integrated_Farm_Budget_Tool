@@ -10,8 +10,7 @@ from collections import namedtuple
 from datetime import datetime
 from sys import argv
 
-from ifbt import (CashFlow, NO, YES, AREA, ENT, RP, RPHPE, YO, NONE, PLC, ARC_CO,
-                  CORN, SOY, WHEAT)
+from ifbt import CashFlow, Crop, Ins, Unit, Prot, Lvl, Prog
 
 
 INS = ['No', 'Yes']
@@ -42,14 +41,15 @@ class Scenario(object):
         Evaluate net cashflow for each choice with the given sensitivity
         """
         for i, c in enumerate(self.choices):
-            gp_ovr = {'program': {CORN: c.prog_c, SOY: c.prog_s, WHEAT: c.prog_w}}
-            ci_ovr = {'insure': {CORN: c.ins_c, SOY: c.ins_s},
-                      'unit': {CORN: c.unit_c, SOY: c.unit_s},
-                      'protection': {CORN: c.prot_c, SOY: c.prot_s},
-                      'level': {CORN: c.lvl_c, SOY: c.lvl_s},
-                      'sco_level': {CORN: c.sco_lvl_c, SOY: c.sco_lvl_s},
-                      'eco_level': {CORN: c.eco_lvl_c, SOY: c.eco_lvl_s},
-                      'selected_pmt_factor': {CORN: 1, SOY: 1}, }
+            gp_ovr = {'program': {Crop.CORN: c.prog_c, Crop.SOY: c.prog_s,
+                                  Crop.WHEAT: c.prog_w}}
+            ci_ovr = {'insure': {Crop.CORN: c.ins_c, Crop.SOY: c.ins_s},
+                      'unit': {Crop.CORN: c.unit_c, Crop.SOY: c.unit_s},
+                      'protection': {Crop.CORN: c.prot_c, Crop.SOY: c.prot_s},
+                      'level': {Crop.CORN: c.lvl_c, Crop.SOY: c.lvl_s},
+                      'sco_level': {Crop.CORN: c.sco_lvl_c, Crop.SOY: c.sco_lvl_s},
+                      'eco_level': {Crop.CORN: c.eco_lvl_c, Crop.SOY: c.eco_lvl_s},
+                      'selected_pmt_factor': {Crop.CORN: 1, Crop.SOY: 1}, }
 
             cf = CashFlow(2023, crop_ins_overrides=ci_ovr, gov_pmt_overrides=gp_ovr)
             self.results.append((i, cf.total_cash_flow(pf=self.pf, yf=self.yf)))
@@ -62,20 +62,21 @@ def choice1(prog_c, prog_s, prog_w, ins_c, unit_c,
     Helper for make_feasible_choices, whose only purpose is to make the code
     easier to read.
     """
-    for ins_s in [NO, YES]:
-        for unit_s in ([AREA, ENT] if ins_s == YES else [AREA]):
-            for prot_s in ([RP, RPHPE, YO] if ins_s == YES else [RP]):
+    for ins_s in [Ins.NO, Ins.YES]:
+        for unit_s in ([Unit.AREA, Unit.ENT] if ins_s else [Unit.AREA]):
+            for prot_s in ([Prot.RP, Prot.RPHPE, Prot.YO]
+                           if ins_s else [Prot.RP]):
                 for lvl_s in (range(50, 90, 5)
-                              if ins_s == YES and unit_s == ENT else
+                              if ins_s and unit_s == Unit.ENT else
                               range(70, 91, 5)
-                              if ins_s == YES and unit_s == AREA else [70]):
-                    for sco_lvl_s in ([NONE] + list(range(lvl_s, 86, 5))
-                                      if ins_s == YES and unit_s == ENT
-                                      and prog_s == PLC
-                                      else [NONE]):
-                        for eco_lvl_s in ([NONE, 90, 95] if ins_s == YES
-                                          and unit_s == ENT
-                                          else [NONE]):
+                              if ins_s and unit_s == Unit.AREA else [70]):
+                    for sco_lvl_s in ([Lvl.NONE] + list(range(lvl_s, 86, 5))
+                                      if ins_s and unit_s == Unit.ENT
+                                      and prog_s == Prog.PLC
+                                      else [Lvl.NONE]):
+                        for eco_lvl_s in ([Lvl.NONE, 90, 95] if ins_s
+                                          and unit_s == Unit.ENT
+                                          else [Lvl.NONE]):
                             c = Choice(prog_c, prog_s, prog_w, ins_c, unit_c,
                                        prot_c, lvl_c, sco_lvl_c, eco_lvl_c, ins_s,
                                        unit_s, prot_s, lvl_s, sco_lvl_s, eco_lvl_s)
@@ -92,22 +93,25 @@ def make_feasible_choices():
     3. ECO may be applied for either farm program but only for Enterprise unit
     """
     choices = []
-    for prog_c in [PLC, ARC_CO]:
-        for prog_s in [PLC, ARC_CO]:
-            for prog_w in [PLC, ARC_CO]:
-                for ins_c in [NO, YES]:
-                    for unit_c in ([AREA, ENT] if ins_c == YES else [0]):
-                        for prot_c in ([RP, RPHPE, YO] if ins_c == YES else [RP]):
+    for prog_c in [Prog.PLC, Prog.ARC_CO]:
+        for prog_s in [Prog.PLC, Prog.ARC_CO]:
+            for prog_w in [Prog.PLC, Prog.ARC_CO]:
+                for ins_c in [Ins.NO, Ins.YES]:
+                    for unit_c in ([Unit.AREA, Unit.ENT] if ins_c else [0]):
+                        for prot_c in ([Prot.RP, Prot.RPHPE, Prot.YO]
+                                       if ins_c else [Prot.RP]):
                             for lvl_c in (range(50, 90, 5)
-                                          if ins_c == YES and unit_c == ENT
+                                          if ins_c and unit_c == Unit.ENT
                                           else range(70, 91, 5)
-                                          if ins_c == YES and unit_c == AREA else [70]):
-                                for sco_lvl_c in ([NONE] +
+                                          if ins_c and unit_c == Unit.AREA else [70]):
+                                for sco_lvl_c in ([Lvl.NONE] +
                                                   list(range(lvl_c, 86, 5))
-                                                  if ins_c == YES and unit_c == ENT
-                                                  and prog_c == PLC else [NONE]):
-                                    for eco_lvl_c in ([NONE, 90, 95] if ins_c == YES
-                                                      and unit_c == ENT else [NONE]):
+                                                  if ins_c and unit_c == Unit.ENT
+                                                  and prog_c == Prog.PLC
+                                                  else [Lvl.NONE]):
+                                    for eco_lvl_c in ([Lvl.NONE, 90, 95]
+                                                      if ins_c and unit_c == Unit.ENT
+                                                      else [Lvl.NONE]):
                                         choice1(prog_c, prog_s, prog_w, ins_c,
                                                 unit_c, prot_c, lvl_c, sco_lvl_c,
                                                 eco_lvl_c, choices)

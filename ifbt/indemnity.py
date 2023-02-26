@@ -26,11 +26,7 @@ Note: Some methods have unused optional arguments.  This is intentional and
 nessary to support the object hierarchy, the purpose of which is to eliminate
 any duplication of functionality
 """
-from .analysis import Analysis, crop_in, CORN, SOY, WHEAT
-
-
-UNITS = 'area ent'.split()
-PROTS = 'rp rphpe yo'.split()
+from .analysis import Analysis, crop_in, Crop
 
 
 class Indemnity(Analysis):
@@ -124,7 +120,7 @@ class IndemnityArea(Indemnity):
     def __init__(self, *args, **kwargs):
         super(IndemnityArea, self).__init__(*args, **kwargs)
 
-    @crop_in(CORN, SOY, WHEAT)
+    @crop_in(Crop.CORN, Crop.SOY, Crop.WHEAT)
     def county_rma_yield(self, crop, yf=1):
         """
         Government Crop Insurance F15: Yield-sensitized county RMA yield for the

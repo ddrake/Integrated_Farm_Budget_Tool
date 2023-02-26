@@ -5,7 +5,7 @@ Generate a table of values from two sensitivity parameters
 """
 from tabulate import tabulate
 
-from .analysis import CORN, SOY
+from .analysis import Crop
 from .cost import Cost
 from .gov_pmt import GovPmt
 from .revenue import Revenue
@@ -50,14 +50,14 @@ def show_table(r, method, title, takes_pf=True):
 
     # Row headers at left
     for i, p in enumerate(price_pcts):
-        table[3+i][0] = round(p * r.fall_futures_price[CORN], 2)
-        table[3+i][1] = round(p * r.fall_futures_price[SOY], 2)
+        table[3+i][0] = round(p * r.fall_futures_price[Crop.CORN], 2)
+        table[3+i][1] = round(p * r.fall_futures_price[Crop.SOY], 2)
         table[3+i][2] = price_pct_labels[i]
 
     # Column headers along top
     for i, p in enumerate(yield_pcts):
-        table[0][3+i] = round(p * r.projected_yield_crop(CORN), 1)
-        table[1][3+i] = round(p * r.projected_yield_crop(SOY), 1)
+        table[0][3+i] = round(p * r.projected_yield_crop(Crop.CORN), 1)
+        table[1][3+i] = round(p * r.projected_yield_crop(Crop.SOY), 1)
         table[2][3+i] = yield_pct_labels[i]
 
     print(tabulate(table, tablefmt="simple_grid"))
