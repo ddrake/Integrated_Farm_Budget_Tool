@@ -98,6 +98,6 @@ If you have an IDE you are already comfortable with, such as [PyCharm](https://w
 
 In this case, you may prefer to use a simple [text editor](https://en.wikipedia.org/wiki/List_of_text_editors) in conjunction with a Python or Ipython console running in a terminal/command window.  Personally, this is the approach I prefer (I use the Vim editor with syntax-checking and highlighting from the flake8 package), but Vim has its own learning curve, and is probably not a good editor choice for a beginning programmer.
 
-If you have some familiarity with Python, but want to get a deeper understanding, I higly recommend the book 'Fluent Python' by Luciano Ramalho.
+If you have some familiarity with Python, but want to get a deeper understanding, I highly recommend the book 'Fluent Python' by Luciano Ramalho.
 
 In addition to the excellent Django tutorial and documentation at the Django site, there is another good tutorial at the [Mozilla Developers Network](https://developer.mozilla.org/en-US/docs/Learn/Server-side/Django).
