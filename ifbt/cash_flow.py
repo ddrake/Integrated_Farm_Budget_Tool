@@ -1,9 +1,9 @@
 """
 Module cash_flow
 
-Contains a single class, CashFlow, which loads its data from a text file
-for a given crop year when an instance is created.  Its main function
-is to return total estimated cost for the farm for the given crop year
+Contains a single class, CashFlow, which loads some data from a text file
+for a given crop year when an instance is created, and uses results from other modules
+Its main function is to return total estimated cost for the farm for the given crop year
 corresponding to arbitrary sensitivity factors for price and yield.
 """
 from .analysis import Analysis

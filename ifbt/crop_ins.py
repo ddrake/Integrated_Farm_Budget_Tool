@@ -22,7 +22,7 @@ PROTS = 'rp rphpe yo'.split()
 class CropIns(Analysis):
     """
     Computes total net (after payout) crop insurance cost for the farm crop year
-    corresponding to an arbitrary sensitivity factor for yield.
+    corresponding to arbitrary sensitivity factors for price and yield.
 
     The optional argument 'overrides' is a dict intended to override settings
     from the data file(s).  It is primarily used to ensure that changes to key

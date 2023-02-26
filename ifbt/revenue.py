@@ -1,7 +1,7 @@
 """
 Module revenue
 
-Contains a single class, Revenue, which loads its data from a text file
+Contains a single class, Revenue, which loads its data from text files
 for a given crop year when an instance is created.  Its main function
 is to return total estimated revenue for the farm for the given crop year
 corresponding to arbitrary sensitivity factors for price and yield.

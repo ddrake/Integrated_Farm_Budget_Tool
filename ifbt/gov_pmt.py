@@ -1,10 +1,10 @@
 """
 Module gov_pmt
 
-Contains a single class, GovPmt, which loads its data from a text file
+Contains a single class, GovPmt, which loads its data from text files
 for a given crop year when an instance is created.  Its main function
-is to return total estimated cost for the farm for the given crop year
-corresponding to arbitrary sensitivity factors for price and yield.
+is to return total estimated government payment for the farm for the given
+crop year corresponding to arbitrary sensitivity factors for price and yield.
 """
 from .analysis import Analysis, crop_in, CORN, SOY, WHEAT
 

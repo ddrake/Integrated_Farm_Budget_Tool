@@ -1,19 +1,21 @@
 """
 Module indemnity
 
-Contains an abstract base class: Indemnity, two abstract subclasses:
-IndemnityArea and IndemnityEnt.  From these latter two are derived
-six concrete subclasses:
+Defines a base class: Indemnity with two subclasses:
+IndemnityArea and IndemnityEnt.  From these are derived
+six classes which can be instantiated:
 
 IndemnityAreaRp, IndemnityAreaRpHpe, IndemnityAreaYo
 IndemnityEntRp, IndemnityEntRpHpe, IndemnityEntYo
-which override certain methods in the base class.
 
-Instances of one or two of these subclasses will be selected by CropIns
-instances to compute the indemnity for a specified configuration.
-They can represent the base indemnity for a crop or an optional indemnity,
-such as for ECO or SCO.  Methods specific to optional indemnity may be prefixed
-by 'opt' to prevent conflict with similar base indemnity methods.
+From IndemnityArea is derived IndemnityOption,
+which is a base class for three derived classes representing SCO or ECO optional
+indemnities and which can be instantiated:
+
+IndemnityOptionRp,  IndemnityOptionRpHpe and IndemnityOptionYo
+
+Instances for specific crops are available as attributes of a CropIns instance
+based on user-specified crop insurance choicies.
 
 The concrete class instances load data from text files for a given crop year.
 Their main function is to return the total indemnity payment for the farm for
