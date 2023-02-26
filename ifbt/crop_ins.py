@@ -40,7 +40,7 @@ class CropIns(Analysis):
         super(CropIns, self).__init__(*args, **kwargs)
         for crop in [CORN, SOY]:
             self.validate_settings(crop)
-        self.indemnity_factory()
+        self._indemnity_factory()
 
     def validate_settings(self, crop):
         """
@@ -67,7 +67,7 @@ class CropIns(Analysis):
         if len(msg) > 0:
             raise ValueError(f'Invalid setting(s) in text file: {msg}.')
 
-    def indemnity_factory(self):
+    def _indemnity_factory(self):
         """
         Provides CropIns instances with attributes such as
         indemnity_corn and sco_soy which are instances of concrete
@@ -77,84 +77,74 @@ class CropIns(Analysis):
         In order to use the SCO option, the gov_pmt program must be PLC, but
         that rule cannot be enforced at this level.
         """
-        def add_indemnity_attr(crop_year, crop, attr_name, unit,
-                               prot, level, sco_level, eco_level, pmt_factor):
-            """
-            Helper to select the appropriate class, get an instance,
-            set that instance as a property of the CropInsurance instance,
-            Then set some key properties on it for consistency.
-            """
-            instance = (
-                IndemnityAreaRp(crop_year, crop)
-                if unit == AREA and prot == RP and attr_name == 'indemnity' else
-                IndemnityAreaRpHpe(crop_year, crop)
-                if unit == AREA and prot == RPHPE and attr_name == 'indemnity' else
-                IndemnityAreaYo(crop_year, crop)
-                if unit == AREA and prot == YO and attr_name == 'indemnity' else
-                IndemnityEntRp(crop_year, crop)
-                if unit == ENT and prot == RP and attr_name == 'indemnity' else
-                IndemnityEntRpHpe(crop_year, crop)
-                if unit == ENT and prot == RPHPE and attr_name == 'indemnity' else
-                IndemnityEntYo(crop_year, crop)
-                if unit == ENT and prot == YO and attr_name == 'indemnity' else
-                IndemnityOptionRp(crop_year, crop, attr_name)
-                if unit == AREA and prot == RP else
-                IndemnityOptionRpHpe(crop_year, crop, attr_name)
-                if unit == AREA and prot == RPHPE else
-                IndemnityOptionYo(crop_year, crop, attr_name))
+        def add_indemnity_attr_for(attr_name, unit):
+            self._add_indemnity_attr(crop_year, crop, attr_name, unit, base_protection,
+                                     base_level, sco_level, eco_level, base_pmt_factor)
 
-            if hasattr(self, attr_name):
-                attr = getattr(self, attr_name)
-                attr.update({crop: instance})
-            else:
-                setattr(self, attr_name, {crop: instance})
-
-            # Ensure commonly overridden properties are set consistently
-            # on indemnity instances
-
-            new_attr = getattr(self, attr_name)
-            for name, val in [
-                    ('unit', unit), ('protection', prot), ('level', level),
-                    ('sco_level', sco_level), ('eco_level', eco_level),
-                    ('selected_pmt_factor', pmt_factor)]:
-                attr = getattr(new_attr[crop], name)
-                attr.update({crop: val})
-            return None
-
+        crop_year = self.crop_year
         for crop in [CORN, SOY]:
             ins = self.insure[crop]
-            sco_level = self.sco_level[crop]
-            eco_level = self.eco_level[crop]
-            base_unit = self.unit[crop]
-            base_protection = self.protection[crop]
+            sco_level, eco_level = self.sco_level[crop], self.eco_level[crop]
+            base_unit, base_protection = self.unit[crop], self.protection[crop]
             base_level = self.level[crop]
             base_pmt_factor = self.selected_pmt_factor[crop]
             if ins:
-                add_indemnity_attr(
-                    self.crop_year, crop, 'indemnity',
-                    base_unit, base_protection, base_level, sco_level,
-                    eco_level, base_pmt_factor)
-            if ins and sco_level > 0:
+                add_indemnity_attr_for('indemnity', base_unit)
+            if ins and sco_level > NONE:
                 if base_unit == AREA:
                     raise ValueError('Cannot add SCO because base unit is Area')
-                add_indemnity_attr(
-                    self.crop_year, crop, 'sco',
-                    AREA, base_protection, base_level, sco_level,
-                    eco_level, base_pmt_factor)
-            if ins and eco_level > 0:
+                add_indemnity_attr_for('sco', AREA)
+            if ins and eco_level > NONE:
                 if base_unit == AREA:
                     raise ValueError('Cannot add ECO because base unit is Area')
-                add_indemnity_attr(
-                    self.crop_year, crop, 'eco',
-                    AREA, base_protection, base_level, sco_level,
-                    eco_level, base_pmt_factor)
+                add_indemnity_attr_for('eco', AREA)
+
+    def _add_indemnity_attr(self, crop_year, crop, attr_name, unit,
+                            prot, level, sco_level, eco_level, pmt_factor):
+        """
+        1. Get an instance of the appropriate Indemnity class.
+        2. Set that instance as a property of the CropInsurance instance.
+        3. Set some key properties on the Indemnity attribute for consistency.
+        """
+        indem = 'indemnity'
+        instance = (
+            IndemnityAreaRp(crop_year, crop)
+            if (unit, prot, attr_name) == (AREA, RP, indem) else
+            IndemnityAreaRpHpe(crop_year, crop)
+            if (unit, prot, attr_name) == (AREA, RPHPE, indem) else
+            IndemnityAreaYo(crop_year, crop)
+            if (unit, prot, attr_name) == (AREA, YO, indem) else
+            IndemnityEntRp(crop_year, crop)
+            if (unit, prot, attr_name) == (ENT, RP, indem) else
+            IndemnityEntRpHpe(crop_year, crop)
+            if (unit, prot, attr_name) == (ENT, RPHPE, indem) else
+            IndemnityEntYo(crop_year, crop)
+            if (unit, prot, attr_name) == (ENT, YO, indem) else
+            IndemnityOptionRp(crop_year, crop, attr_name)
+            if (unit, prot) == (AREA, RP) else
+            IndemnityOptionRpHpe(crop_year, crop, attr_name)
+            if (unit, prot) == (AREA, RPHPE) else
+            IndemnityOptionYo(crop_year, crop, attr_name))
+
+        if hasattr(self, attr_name):
+            getattr(self, attr_name).update({crop: instance})
+        else:
+            setattr(self, attr_name, {crop: instance})
+
+        new_attr = getattr(self, attr_name)
+        for name, val in [
+                ('unit', unit), ('protection', prot), ('level', level),
+                ('sco_level', sco_level), ('eco_level', eco_level),
+                ('selected_pmt_factor', pmt_factor)]:
+            getattr(new_attr[crop], name).update({crop: val})
+        return None
 
     @crop_in(CORN, SOY)
     def crop_ins_premium_per_acre_crop(self, crop):
         """
         Crop insurance per-acre premium based on choices of
         'unit', 'protection' and 'level' for the crop
-        Note: payment factor is used only for area unit as far as we know
+        Note: payment factor is used only for area unit as far as we know.
         """
         unit = self.unit[crop]
         prot = self.protection[crop]
@@ -178,8 +168,8 @@ class CropIns(Analysis):
         """
         If the crop is not insured, return zero, otherwise, get the
         sco premium to bring coverage from the specified sco_level to 86%.
-        sco_level=1 specifies that the SCO coverage should begin at the base
-        level.  This avoids leaving a gap in the coverage.
+        sco_level=DFLT specifies that the SCO coverage should begin at the base
+        level.  This prevents a gap in the coverage.
         """
         prot = self.protection[crop]
         level = self.level[crop]
