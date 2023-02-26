@@ -107,25 +107,26 @@ class CropIns(Analysis):
         2. Set that instance as a property of the CropInsurance instance.
         3. Set some key properties on the Indemnity attribute for consistency.
         """
-        indem = 'indemnity'
+        opts = ('sco', 'eco')
         instance = (
-            IndemnityAreaRp(crop_year, crop)
-            if (unit, prot, attr_name) == (AREA, RP, indem) else
-            IndemnityAreaRpHpe(crop_year, crop)
-            if (unit, prot, attr_name) == (AREA, RPHPE, indem) else
-            IndemnityAreaYo(crop_year, crop)
-            if (unit, prot, attr_name) == (AREA, YO, indem) else
-            IndemnityEntRp(crop_year, crop)
-            if (unit, prot, attr_name) == (ENT, RP, indem) else
-            IndemnityEntRpHpe(crop_year, crop)
-            if (unit, prot, attr_name) == (ENT, RPHPE, indem) else
-            IndemnityEntYo(crop_year, crop)
-            if (unit, prot, attr_name) == (ENT, YO, indem) else
             IndemnityOptionRp(crop_year, crop, attr_name)
-            if (unit, prot) == (AREA, RP) else
+            if (unit, prot) == (AREA, RP) and attr_name in opts else
             IndemnityOptionRpHpe(crop_year, crop, attr_name)
+            if (unit, prot) == (AREA, RPHPE) and attr_name in opts else
+            IndemnityOptionYo(crop_year, crop, attr_name)
+            if (unit, prot) == (AREA, YO) and attr_name in opts else
+            IndemnityAreaRp(crop_year, crop)
+            if (unit, prot) == (AREA, RP) else
+            IndemnityAreaRpHpe(crop_year, crop)
             if (unit, prot) == (AREA, RPHPE) else
-            IndemnityOptionYo(crop_year, crop, attr_name))
+            IndemnityAreaYo(crop_year, crop)
+            if (unit, prot) == (AREA, YO) else
+            IndemnityEntRp(crop_year, crop)
+            if (unit, prot) == (ENT, RP) else
+            IndemnityEntRpHpe(crop_year, crop)
+            if (unit, prot) == (ENT, RPHPE) else
+            IndemnityEntYo(crop_year, crop)
+            if (unit, prot) == (ENT, YO) else None)
 
         if hasattr(self, attr_name):
             getattr(self, attr_name).update({crop: instance})
