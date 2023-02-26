@@ -39,31 +39,32 @@ class CropIns(Analysis):
     def __init__(self, *args, **kwargs):
         super(CropIns, self).__init__(*args, **kwargs)
         for crop in [CORN, SOY]:
-            self.validate_settings(crop)
+            self._validate_settings(crop)
         self._indemnity_factory()
 
-    def validate_settings(self, crop):
+    def _validate_settings(self, crop):
         """
-        Perform basic validation (sanity check) on the input data
+        Perform basic validation (sanity check) on the input data for insured crops.
         """
+        insure = self.insure[crop]
         msg = (f'insure_{crop} must be either 0 or 1'
-               if self.insure[crop] not in (0, 1) else
+               if insure not in (0, 1) else
                f'unit_{crop} must be either 0 or 1'
-               if self.unit[crop] not in (0, 1) else
+               if insure and self.unit[crop] not in (0, 1) else
                f'protection_{crop} must be 0, 1 or 2'
-               if self.protection[crop] not in (0, 1, 2) else
+               if insure and self.protection[crop] not in (0, 1, 2) else
                f'level_{crop} must be one of: 50, 55, ..., or 85'
-               if (self.unit[crop] == 1 and self.level[crop]
+               if (insure and self.unit[crop] == 1 and self.level[crop]
                    not in range(50, 86, 5)) else
                f'level_{crop} must be one of: 70, 75, ..., or 90'
-               if (self.unit[crop] == 0 and self.level[crop]
+               if (insure and self.unit[crop] == 0 and self.level[crop]
                    not in range(70, 91, 5)) else
                (f'sco_level_{crop} must be 0 or 1 OR one of: 50, 55, ..., 85 ' +
                 'equalling or exceeding base level')
-               if (self.sco_level[crop] not in (0, 1) and
+               if (insure and self.sco_level[crop] not in (0, 1) and
                    self.sco_level[crop] < self.level[crop]) else
                f'eco_{crop} must be 0, 90 or 95'
-               if self.eco_level[crop] not in (0, 90, 95) else '')
+               if insure and self.eco_level[crop] not in (0, 90, 95) else '')
         if len(msg) > 0:
             raise ValueError(f'Invalid setting(s) in text file: {msg}.')
 

@@ -1,9 +1,9 @@
-# 2023 crop year data required by the cost component
+# 2023 crop year data required by the crop_ins component
 
 # FILE FORMAT INFORMATION
 # Each line in this file should be either blank, a comment line
 # denoted by the '#' as the first character, or a key value pair.
-# A key cannot contain spaces, and underscores are recommended
+# A key must start with a letter and contain only letters, numbers and underscores.
 # A value should represent an integer or floating point value
 # Units of values should be specified in comments if ambiguous
 
@@ -32,7 +32,9 @@ unit_soy                           1
 protection_corn                    0
 protection_soy                     0
 
-# choice: 50, 55, 60, 65, 70, 75, 80, or 85
+# choice:
+#   For enterprise unit: 50, 55, 60, 65, 70, 75, 80, or 85
+#   For area unit:       70, 75, 80, 85 or 90
 level_corn                        65
 level_soy                         65
 
@@ -51,5 +53,6 @@ sco_level_soy                      1
 eco_level_corn                    90
 eco_level_soy                     90
 
-selected_pmt_factor_corn       1.0
-selected_pmt_factor_soy        1.0
+# Choice: A fraction less than or equal to 1.0
+selected_pmt_factor_corn           1.0
+selected_pmt_factor_soy            1.0

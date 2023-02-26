@@ -1,9 +1,9 @@
-# 2023 crop year data required by the cost component
+# 2023 crop year data required by the crop_ins component
 
 # FILE FORMAT INFORMATION
 # Each line in this file should be either blank, a comment line
 # denoted by the '#' as the first character, or a key value pair.
-# A key cannot contain spaces, and underscores are recommended
+# A key must start with a letter and contain only letters, numbers and underscores.
 # A value should represent an integer or floating point value
 # Units of values should be specified in comments if ambiguous
 
@@ -78,17 +78,17 @@ ent_yo_corn_75                     9.21
 ent_yo_corn_80                    16.10
 ent_yo_corn_85                    29.66
 
-sco_yo_corn_50_86             10.64
-sco_yo_corn_55_86             10.17
-sco_yo_corn_60_86             10.00
-sco_yo_corn_65_86              9.62
-sco_yo_corn_70_86              8.85
-sco_yo_corn_75_86              7.48
-sco_yo_corn_80_86              5.04
-sco_yo_corn_85_86              1.02
+sco_yo_corn_50_86                 10.64
+sco_yo_corn_55_86                 10.17
+sco_yo_corn_60_86                 10.00
+sco_yo_corn_65_86                  9.62
+sco_yo_corn_70_86                  8.85
+sco_yo_corn_75_86                  7.48
+sco_yo_corn_80_86                  5.04
+sco_yo_corn_85_86                  1.02
 
-eco_yo_corn_86_90              7.90
-eco_yo_corn_86_95             21.02
+eco_yo_corn_86_90                  7.90
+eco_yo_corn_86_95                 21.02
 
 # AREA COVERAGE CORN
 # ------------------
@@ -125,17 +125,17 @@ ent_rp_soy_75                      7.61
 ent_rp_soy_80                     14.58
 ent_rp_soy_85                     28.50
 
-sco_rp_soy_50_86              10.78
-sco_rp_soy_55_86              10.78
-sco_rp_soy_60_86              10.73
-sco_rp_soy_65_86              10.56
-sco_rp_soy_70_86               9.91
-sco_rp_soy_75_86               8.40
-sco_rp_soy_80_86               5.70
-sco_rp_soy_85_86               1.18
+sco_rp_soy_50_86                  10.78
+sco_rp_soy_55_86                  10.78
+sco_rp_soy_60_86                  10.73
+sco_rp_soy_65_86                  10.56
+sco_rp_soy_70_86                   9.91
+sco_rp_soy_75_86                   8.40
+sco_rp_soy_80_86                   5.70
+sco_rp_soy_85_86                   1.18
 
-eco_rp_soy_86_90               8.98
-eco_rp_soy_86_95              23.58
+eco_rp_soy_86_90                   8.98
+eco_rp_soy_86_95                  23.58
 
 # rp hpe
 ent_rphpe_soy_50                   0.78
@@ -147,17 +147,17 @@ ent_rphpe_soy_75                   4.61
 ent_rphpe_soy_80                   8.88
 ent_rphpe_soy_85                  17.49
 
-sco_rphpe_soy_50_86            8.48
-sco_rphpe_soy_55_86            8.48
-sco_rphpe_soy_60_86            8.42
-sco_rphpe_soy_65_86            8.26
-sco_rphpe_soy_70_86            7.74
-sco_rphpe_soy_75_86            6.51
-sco_rphpe_soy_80_86            4.37
-sco_rphpe_soy_85_86            0.90
+sco_rphpe_soy_50_86                8.48
+sco_rphpe_soy_55_86                8.48
+sco_rphpe_soy_60_86                8.42
+sco_rphpe_soy_65_86                8.26
+sco_rphpe_soy_70_86                7.74
+sco_rphpe_soy_75_86                6.51
+sco_rphpe_soy_80_86                4.37
+sco_rphpe_soy_85_86                0.90
 
-eco_rphpe_soy_86_90            6.74
-eco_rphpe_soy_86_95           17.65
+eco_rphpe_soy_86_90                6.74
+eco_rphpe_soy_86_95               17.65
 
 # yield only
 ent_yo_soy_50                      0.86
@@ -169,17 +169,17 @@ ent_yo_soy_75                      4.63
 ent_yo_soy_80                      8.64
 ent_yo_soy_85                     16.35
 
-sco_yo_soy_50_86               3.25
-sco_yo_soy_55_86               3.25
-sco_yo_soy_60_86               3.25
-sco_yo_soy_65_86               3.24
-sco_yo_soy_70_86               3.12
-sco_yo_soy_75_86               2.80
-sco_yo_soy_80_86               2.04
-sco_yo_soy_85_86               0.47
+sco_yo_soy_50_86                   3.25
+sco_yo_soy_55_86                   3.25
+sco_yo_soy_60_86                   3.25
+sco_yo_soy_65_86                   3.24
+sco_yo_soy_70_86                   3.12
+sco_yo_soy_75_86                   2.80
+sco_yo_soy_80_86                   2.04
+sco_yo_soy_85_86                   0.47
 
-eco_yo_soy_86_90               4.05
-eco_yo_soy_86_95              11.74
+eco_yo_soy_86_90                   4.05
+eco_yo_soy_86_95                  11.74
 
 # AREA COVERAGE SOY
 # ------------------

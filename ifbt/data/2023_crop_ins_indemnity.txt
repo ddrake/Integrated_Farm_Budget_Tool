@@ -1,21 +1,15 @@
-# 2023 crop year data required by the cost component
+# 2023 crop year data required by the crop_ins component
 
 # FILE FORMAT INFORMATION
 # Each line in this file should be either blank, a comment line
 # denoted by the '#' as the first character, or a key value pair.
-# A key cannot contain spaces, and underscores are recommended
+# A key must start with a letter and contain only letters, numbers and underscores.
 # A value should represent an integer or floating point value
 # Units of values should be specified in comments if ambiguous
 
 # Abbreviations
 # -------------
-# rp:    revenue protection
-# rphpe: revenue protection with harvest price exclusion
-# yo:    yield only protection
-# ent:   enterprise level coverage
-# area:  county area level coverage
 # sco:   supplemental coverage option
-# eco:   enhanced coverage option
 
 # CHOICES FOR BASE CROP INSURANCE
 # -------------------------------
@@ -51,5 +45,5 @@ loss_limit_factor                   0.18
 replant_yield_loss_bpa_corn         8
 replant_yield_loss_bpa_soy          3
 
-sco_top_level                       86
+sco_top_level                      86
 
