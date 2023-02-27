@@ -8,6 +8,7 @@ for each, then sorting and presenting the top 10 choices for each scenario.
 """
 from collections import namedtuple
 from datetime import datetime
+import reprlib
 from sys import argv
 
 from ifbt import CashFlow, Crop, Ins, Unit, Prot, Lvl, Prog
@@ -38,7 +39,8 @@ class Scenario(object):
 
     def __repr__(self):
         class_name = type(self).__name__
-        return '{}({!r}, {!r}, {!r})'.format(class_name, self.pf, self.yf, self.choices)
+        choices = reprlib.repr(self.choices)
+        return '{}({!r}, {!r}, {!r})'.format(class_name, self.pf, self.yf, choices)
 
     def evaluate_choices(self):
         """
