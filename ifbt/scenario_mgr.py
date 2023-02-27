@@ -40,7 +40,7 @@ class Scenario(object):
     def __repr__(self):
         class_name = type(self).__name__
         choices = reprlib.repr(self.choices)
-        return '{}({!r}, {!r}, {!r})'.format(class_name, self.pf, self.yf, choices)
+        return '{}({!r}, {!r}, {})'.format(class_name, self.pf, self.yf, choices)
 
     def evaluate_choices(self):
         """
