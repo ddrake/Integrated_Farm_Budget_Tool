@@ -46,6 +46,10 @@ class Indemnity(Analysis):
         super(Indemnity, self).__init__(crop_year, *args, **kwargs)
         self.crop = crop
 
+    def __repr__(self):
+        class_name = type(self).__name__
+        return '{}({!r}, {!r})'.format(class_name, self.crop_year, self.crop)
+
     def revenue_trigger_feb_price(self):
         """
         Government Crop Insurance F41: The product of the actual fall harvest
@@ -247,6 +251,11 @@ class IndemnityOption(IndemnityArea):
         self.kind = kind
         self.lvl = None
         self.diff = None
+
+    def __repr__(self):
+        class_name = type(self).__name__
+        return '{}({!r}, {!r}, {!r})'.format(class_name, self.crop_year,
+                                             self.crop, self.kind)
 
     def county_insured_revenue(self, pf=1):
         """

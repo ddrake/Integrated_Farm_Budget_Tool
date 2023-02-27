@@ -36,6 +36,10 @@ class Scenario(object):
         self.choices = choices
         self.results = []
 
+    def __repr__(self):
+        class_name = type(self).__name__
+        return '{}({!r}, {!r}, {!r})'.format(class_name, self.pf, self.yf, self.choices)
+
     def evaluate_choices(self):
         """
         Evaluate net cashflow for each choice with the given sensitivity
