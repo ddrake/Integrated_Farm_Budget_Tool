@@ -31,7 +31,7 @@ Crop = IntEnum('Crop', ['CORN', 'SOY', 'WHEAT', 'FULL_SOY', 'DC_SOY'], start=0)
 Ins = IntEnum('Ins', ['NO', 'YES'], start=0)
 Unit = IntEnum('Unit', ['AREA', 'ENT'], start=0)
 Prot = IntEnum('Prot', ['RP', 'RPHPE', 'YO'], start=0)
-Lvl = IntEnum('ScoLvl', ['NONE', 'DFLT'], start=0)
+Lvl = IntEnum('Lvl', ['NONE', 'DFLT'], start=0)
 Prog = IntEnum('Prog', ['PLC', 'ARC_CO'], start=0)
 
 
