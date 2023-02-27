@@ -42,6 +42,12 @@ class Scenario(object):
         choices = reprlib.repr(self.choices)
         return '{}({!r}, {!r}, {})'.format(class_name, self.pf, self.yf, choices)
 
+    def __len__(self):
+        return len(self.choices)
+
+    def __getitem__(self, position):
+        return self.choices[position]
+
     def evaluate_choices(self):
         """
         Evaluate net cashflow for each choice with the given sensitivity
