@@ -11,7 +11,10 @@ import re
 
 def crop_in(*crops):
     """
-    Decorator for simplifying validation of permitted crops
+    Decorator for simplifying validation of permitted crops.
+    Assumes it will be decorating a method (i.e. first positional argument 'self') and
+    second positional argument 'crop'.  It would also be possible to use
+    inspect.getArgSpec(f) to check for a parameter named 'crop'.
     """
     def decorator(f):
         @wraps(f)
@@ -111,81 +114,114 @@ class Analysis(object):
 
     def _group_values_crop(self, pairs):
         """
-        Given a list of key/value pairs, find any that end with a crop name,
+        Given a list of key/value pairs, partition into two lists, one with
+        keys ending in a crop name, (with_crop) and one with the rest (simple).
+        Return both lists after mapping with_crop to a new list with dict values.
         and merge them into a new key/value pair with
           key: the original key with crop name removed,
           value: a dict with key crop and original value.
         Return a list of key/value pairs and a list of simple pairs.
         """
         crops = 'corn soy wheat fullsoy dcsoy'.split()
-        levels = 'level, sco_level, eco_level'.split()
         pat = f'^(.*)_({"|".join(crops)})$'
         with_crop = []
         simple = []
         for k, v in pairs:
             m = re.match(pat, k)
             if m:
-                # Change crop insurance choice values to appropriate enum values
-                tag = m.groups()[0]
-                val = (Ins(v) if tag == 'insure' else Unit(v) if tag == 'unit' else
-                       Prot(v) if tag == 'protection' else
-                       toLvl(v) if tag in levels else self._to_number(v))
-                with_crop.append((m.groups(), val))
+                with_crop.append((m.groups(), self._get_value_crop(m, v)))
             else:
                 simple.append((k, v))
+        return self._group_crop(with_crop, crops), simple
+
+    def _get_value_crop(self, m, v):
+        """
+        Change crop insurance choice values to appropriate enum values
+        if needed for choices like 'insure_corn'.
+        Expects a match instance (m) and an int or float value (v)
+        """
+        levels = 'level, sco_level, eco_level'.split()
+        tag = m.groups()[0]
+        val = (Ins(v) if tag == 'insure' else Unit(v) if tag == 'unit' else
+               Prot(v) if tag == 'protection' else
+               toLvl(v) if tag in levels else v)
+        return val
+
+    def _group_crop(self, with_crop, crops):
+        """
+        Given a list of crop-specific ungrouped key/value pairs, return a new, shorter
+        list of key/value pairs where each value is a dict with key Crop and
+        crop-specific values.
+        """
         groups = {}
         for (name, crop), v in with_crop:
             groups.setdefault(name, {})[Crop(crops.index(crop))] = v
-        with_crop = list(groups.items())
-        return with_crop, simple
+        return list(groups.items())
 
     def _group_values_ins_prem(self, pairs):
         """
-        Given a list of key/value pairs, find any that match an insurance premium,
-        and merge them into new key/value pairs with
-          key: 'premium', 'sco_premium' or 'eco_premium'
-          value: a tuple with the values for the insurance parameters.
+        Given a list of key/value pairs, reorganize them into two lists by filtering
+        and processing base premiums, sco premiumsn and eco premiums in three
+          filter steps.  The resulting lists are:
+        dicts - a list containing three dicts, containing premiums for diferrent
+          crop insurance choices.
+        simple - a list of key/value pairs which don't represent premiums.
         """
-        def group_matches(pairs, pat):
-            simple = []
-            prem = {}
-            for k, v in pairs:
-                m = re.match(pat, k)
-                if m:
-                    if len(m.groups()) == 4:
-                        u, p, c, lvl = m.groups()
-                        choice = (Unit(units.index(u)), Prot(prots.index(p)),
-                                  Crop(crops.index(c)),
-                                  toLvl(lvl))
-                    else:
-                        p, c, lvl = m.groups()
-                        choice = (Prot(prots.index(p)), Crop(crops.index(c)),
-                                  toLvl(lvl))
-                    prem[choice] = v
-                else:
-                    simple.append((k, v))
-            return prem, simple
-
         units = 'area ent'.split()
         prots = 'rp rphpe yo'.split()
         crops = 'corn soy'.split()
+        names = 'premium sco_premium eco_premium'.split()
+        pats = [
+            (f'^({"|".join(units)})_({"|".join(prots)})_({"|".join(crops)})' +
+             f'_({"|".join(str(i) for i in range(50, 91, 5))})$'),
+            (f'^sco_({"|".join(prots)})_({"|".join(crops)})' +
+             f'_({"|".join(str(i) for i in range(50, 86, 5))})_86$'),
+            (f'^eco_({"|".join(prots)})_({"|".join(crops)})_86_(90|95)$'), ]
+        return self._build_dicts(pairs, pats, names, units, prots, crops)
 
-        pat_base = (f'^({"|".join(units)})_({"|".join(prots)})_({"|".join(crops)})' +
-                    f'_({"|".join(str(i) for i in range(50, 91, 5))})$')
-        pat_sco = (f'^sco_({"|".join(prots)})_({"|".join(crops)})' +
-                   f'_({"|".join(str(i) for i in range(50, 86, 5))})_86$')
-        pat_eco = (f'^eco_({"|".join(prots)})_({"|".join(crops)})' +
-                   '_86_(90|95)$')
-
+    def _build_dicts(self, pairs, pats, names, units, prots, crops):
+        """
+        Build up a list of pairs (name, dict) from pairs with crop ins premiums,
+        and return this list along with the remaining simple pairs.
+        """
         dicts = []
-        prem, simple = group_matches(pairs, pat_base)
-        dicts.append(('premium', prem))
-        prem, simple = group_matches(simple, pat_sco)
-        dicts.append(('sco_premium', prem))
-        prem, simple = group_matches(simple, pat_eco)
-        dicts.append(('eco_premium', prem))
+        for pat, name in zip(pats, names):
+            prem, pairs = self.group_matches_ins_prem(pairs, pat, units, prots, crops)
+            dicts.append((name, prem))
+        return dicts, pairs
 
-        return dicts, simple
+    def group_matches_ins_prem(self, pairs, pat, units, prots, crops):
+        """
+        Given a list of key/value pairs, a pattern to match and some name lists,
+        return a dict (prem) with premiums for the crop ins type constructed from pairs
+        whose keys match the given pattern.  Also return a list (simple)
+        with the unmatched pairs.
+        """
+        simple = []
+        prem = {}
+        for k, v in pairs:
+            m = re.match(pat, k)
+            if m:
+                prem[self._make_prem_choice(m, units, prots, crops)] = v
+            else:
+                simple.append((k, v))
+        return prem, simple
+
+    def _make_prem_choice(self, m, units, prots, crops):
+        """
+        Given a match object and some name lists, return a tuple representing a crop
+        insurance choice
+        """
+        if len(m.groups()) == 4:
+            u, p, c, lvl = m.groups()
+            choice = (Unit(units.index(u)), Prot(prots.index(p)),
+                      Crop(crops.index(c)),
+                      toLvl(lvl))
+        else:
+            p, c, lvl = m.groups()
+            choice = (Prot(prots.index(p)), Crop(crops.index(c)),
+                      toLvl(lvl))
+        return choice
 
     def _to_number(self, s):
         """
@@ -200,8 +236,7 @@ class Analysis(object):
         """
         return ((self.acres[Crop.DC_SOY] *
                  self.proj_yield_farm[Crop.DC_SOY] +
-                 (self.acres[Crop.SOY] -
-                  self.acres[Crop.DC_SOY]) *
+                 (self.acres[Crop.SOY] - self.acres[Crop.DC_SOY]) *
                  self.proj_yield_farm[Crop.FULL_SOY]) * yf)
 
     @crop_in(Crop.CORN, Crop.SOY)
