@@ -17,7 +17,7 @@ def crop_in(*crops):
         @wraps(f)
         def new_f(*args, **kwds):
             if args[1] not in crops:
-                crop_msg = ', '.join([f"'{c}'" for c in crops])
+                crop_msg = ', '.join(str(c) for c in crops)
                 raise ValueError(f'Crop must be one of: {crop_msg}')
             else:
                 return f(*args, **kwds)
