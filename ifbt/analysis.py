@@ -161,9 +161,9 @@ class Analysis(object):
     def _group_values_ins_prem(self, pairs):
         """
         Given a list of key/value pairs, reorganize them into two lists by filtering
-        and processing base premiums, sco premiumsn and eco premiums in three
+        and processing base premiums, sco premiums and eco premiums in three
           filter steps.  The resulting lists are:
-        dicts - a list containing three dicts, containing premiums for diferrent
+        dicts - a list containing three dicts, containing premiums for different
           crop insurance choices.
         simple - a list of key/value pairs which don't represent premiums.
         """
@@ -186,11 +186,11 @@ class Analysis(object):
         """
         dicts = []
         for pat, name in zip(pats, names):
-            prem, pairs = self.group_matches_ins_prem(pairs, pat, units, prots, crops)
+            prem, pairs = self._group_matches_ins_prem(pairs, pat, units, prots, crops)
             dicts.append((name, prem))
         return dicts, pairs
 
-    def group_matches_ins_prem(self, pairs, pat, units, prots, crops):
+    def _group_matches_ins_prem(self, pairs, pat, units, prots, crops):
         """
         Given a list of key/value pairs, a pattern to match and some name lists,
         return a dict (prem) with premiums for the crop ins type constructed from pairs
@@ -214,13 +214,11 @@ class Analysis(object):
         """
         if len(m.groups()) == 4:
             u, p, c, lvl = m.groups()
-            choice = (Unit(units.index(u)), Prot(prots.index(p)),
-                      Crop(crops.index(c)),
+            choice = (Unit(units.index(u)), Prot(prots.index(p)), Crop(crops.index(c)),
                       toLvl(lvl))
         else:
             p, c, lvl = m.groups()
-            choice = (Prot(prots.index(p)), Crop(crops.index(c)),
-                      toLvl(lvl))
+            choice = (Prot(prots.index(p)), Crop(crops.index(c)), toLvl(lvl))
         return choice
 
     def _to_number(self, s):
@@ -234,8 +232,7 @@ class Analysis(object):
         Compute the projected, sensitized raw total soy bushels
         considering wheat/dc soy acres
         """
-        return ((self.acres[Crop.DC_SOY] *
-                 self.proj_yield_farm[Crop.DC_SOY] +
+        return ((self.acres[Crop.DC_SOY] * self.proj_yield_farm[Crop.DC_SOY] +
                  (self.acres[Crop.SOY] - self.acres[Crop.DC_SOY]) *
                  self.proj_yield_farm[Crop.FULL_SOY]) * yf)
 
