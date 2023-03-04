@@ -3,6 +3,7 @@ Module analysis
 
 Defines class Analysis, the base class for all ifbt components
 """
+from collections import abc
 from enum import IntEnum
 from functools import wraps
 from os import path
@@ -68,13 +69,12 @@ class Analysis(object):
         Override the properties specified in the 'overrides' dict
         """
         for k, v in overrides.items():
-            if isinstance(v, dict):
+            if isinstance(v, abc.Mapping):
                 attr = getattr(self, k)
                 attr.update(v)
                 setattr(self, k, attr)
             else:
-                vnum = (v if isinstance(v, (int, float)) else self._to_number(v))
-                setattr(self, k, vnum)
+                setattr(self, k, v)
 
     def _set_attrs_from_file_pairs(self):
         """
@@ -225,7 +225,7 @@ class Analysis(object):
         """
         Convert a number string to a float or int
         """
-        return s if isinstance(s, (float, int)) else float(s) if '.' in s else int(s)
+        return float(s) if '.' in s else int(s)
 
     def projected_bu_soy(self, yf=1):
         """
