@@ -6,10 +6,11 @@ for a given crop year when an instance is created.  Its main function
 is to return total estimated net insurance cost for the farm for the given
 crop year corresponding to an arbitrary sensitivity factor for yield.
 """
-from .analysis import Analysis, crop_in, Crop, Ins, Unit, Prot, Lvl
+from .analysis import Analysis
 from .indemnity import (IndemnityAreaRp, IndemnityAreaRpHpe, IndemnityAreaYo,
                         IndemnityEntRp, IndemnityEntRpHpe, IndemnityEntYo,
                         IndemnityOptionRp, IndemnityOptionRpHpe, IndemnityOptionYo)
+from .util import Crop, crop_in, Ins, Unit, Prot, Lvl
 
 
 class CropIns(Analysis):

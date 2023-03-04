@@ -6,7 +6,8 @@ for a given crop year when an instance is created.  Its main function
 is to return total estimated government payment for the farm for the given
 crop year corresponding to arbitrary sensitivity factors for price and yield.
 """
-from .analysis import Analysis, crop_in, Crop, Prog
+from .analysis import Analysis
+from .util import crop_in, Crop, Prog
 
 
 class GovPmt(Analysis):

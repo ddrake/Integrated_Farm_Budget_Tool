@@ -26,7 +26,8 @@ Note: Some methods have unused optional arguments.  This is intentional and
 nessary to support the object hierarchy, the purpose of which is to eliminate
 any duplication of functionality
 """
-from .analysis import Analysis, crop_in, Crop
+from .analysis import Analysis
+from .util import crop_in, Crop
 
 
 class Indemnity(Analysis):

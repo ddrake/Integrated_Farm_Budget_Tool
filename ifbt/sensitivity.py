@@ -5,12 +5,8 @@ Generate a table of values from two sensitivity parameters
 """
 from tabulate import tabulate
 
-from .analysis import Crop
-from .cost import Cost
-from .gov_pmt import GovPmt
-from .revenue import Revenue
-from .crop_ins import CropIns
-from .cash_flow import CashFlow
+from .util import Crop
+from ifbt import Cost, GovPmt, Revenue, CropIns, CashFlow
 
 yield_pcts = "40 55 70 80 90 95 100 105".split()
 price_pcts = "60 75 90 95 100 105 110 125 140 165 180".split()

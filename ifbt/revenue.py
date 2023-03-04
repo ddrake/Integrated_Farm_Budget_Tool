@@ -6,7 +6,8 @@ for a given crop year when an instance is created.  Its main function
 is to return total estimated revenue for the farm for the given crop year
 corresponding to arbitrary sensitivity factors for price and yield.
 """
-from .analysis import Analysis, crop_in, Crop
+from .analysis import Analysis
+from .util import crop_in, Crop
 
 
 class Revenue(Analysis):

@@ -11,7 +11,7 @@ from datetime import datetime
 import reprlib
 from sys import argv
 
-from ifbt import CashFlow, Crop, Ins, Unit, Prot, Lvl, Prog
+from ifbt import Crop, Ins, Unit, Prot, Lvl, Prog, CashFlow
 
 
 INS = ['No', 'Yes']
