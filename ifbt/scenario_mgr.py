@@ -136,7 +136,6 @@ def make_scenarios(nbest=10):
     Iterate through the 88 scenarios of price and yield factor,
     evaluating each choice.  Print the top nbest choices for each scenario
     """
-    print(f"Starting at {datetime.now()}")
     choices = make_feasible_choices()
     price_factors = [.6, .75, .9, .95, 1, 1.05, 1.1, 1.25, 1.4, 1.65, 1.8]
     yield_factors = [.4, .55, .7, .8, .9, .95, 1, 1.05]
@@ -147,7 +146,7 @@ def make_scenarios(nbest=10):
     rslt = [header]
     rowformat = '\t'.join(['{}'] + ['{:0.2f}']*2 + ['{}']*16)
     for i, s in enumerate(scenarios):
-        print(f'Evaluating scenario {i+1}: pf={s.pf}, yf={s.yf}.')
+        print(f'Evaluating scenario {i+1}: pf={s.pf}, yf={s.yf} at {datetime.now()}.')
         s.evaluate_choices()
         for j, (idx, val) in enumerate(s.results[:nbest]):
             ch = s.choices[idx]
