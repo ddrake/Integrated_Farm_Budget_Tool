@@ -1,6 +1,12 @@
 # 2023 crop year data required by the crop_ins component
 
 # FILE FORMAT INFORMATION
+# Any file whose name contains the text 'crop_ins_premiums' must contain
+# *only* crop insurance premiums.  Conversely, any file with crop insurance premiums
+# must be in a file whose name contains that text.
+# Multiple crop insurance premium files are permitted, but this restriction must
+# hold for each of their filenames.
+
 # Each line in this file should be either blank, a comment line
 # denoted by the '#' as the first character, or a key value pair.
 # A key must start with a letter and contain only letters, numbers and underscores.
