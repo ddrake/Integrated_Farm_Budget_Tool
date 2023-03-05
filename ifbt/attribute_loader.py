@@ -42,7 +42,7 @@ class DatabaseAttributeLoader(AttributeLoader):
     Concrete class DatabaseAttributeLoader
     Handles loading attribute data from a database.
     """
-    def set_attrs_from_pairs(self, inst):
+    def set_attrs(self, inst):
         """
         Set the given object's attributes based on key/value pairs.
         Crop-specific and insurance premium attributes have dict values.
@@ -138,7 +138,7 @@ class TextfileAttributeLoader(AttributeLoader):
     def __init__(self, filenames):
         self.filenames = filenames.split()
 
-    def set_attrs_from_pairs(self, inst):
+    def set_attrs(self, inst):
         """
         Set the given object's attributes based on key/value pairs.
         Crop-specific and insurance premium attributes have dict values.

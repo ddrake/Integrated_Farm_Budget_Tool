@@ -15,15 +15,16 @@ class Analysis(object):
     """
     def __init__(self, crop_year, *args, overrides=None, **kwargs):
         """
-        Get an instance for the given crop year, then get a list of
-        key/value pairs from the text file and make object attributes from it.
+        Get an instance for the given crop year, then load its attributes
+        from text files or database querysets.  If overrides are provided,
+        override the specified attributes.
         """
         self.crop_year = crop_year
         klass = self.__class__
         attrloader = (TextfileAttributeLoader(klass.DATA_FILES)
                       if hasattr(klass, 'DATA_FILES') else
                       DatabaseAttributeLoader())
-        attrloader.set_attrs_from_pairs(self)
+        attrloader.set_attrs(self)
 
         if overrides is not None:
             self._update_attrs_from_overrides(overrides)
