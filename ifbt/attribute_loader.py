@@ -1,7 +1,7 @@
 """
 Module attribute_loader
 
-Defines a base class AttributeLoader and concrete subclass TextfileAttributeLoader.
+Defines classes DatabaseAttributeLoader and TextfileAttributeLoader.
 Subclasses are responsible for loading key value pairs into object attributes.
 """
 from os import path
@@ -13,35 +13,15 @@ from .util import Crop, Ins, Unit, Prot, Lvl, Prog
 DATADIR = path.join(path.dirname(path.abspath(__file__)), 'data')
 
 
-class AttributeLoader(object):
+class DatabaseAttributeLoader(object):
     """
-    Base class AttributeLoader (should not be instantiated)
-    Sets the attributes of a given instance based on data in textfiles
-    or a database.
-
-    The essential difference between these two is that for textfiles, the names of
-    crops, units, prots, etc... are embedded in the key name, while database
-    records will refer to crop_id's, unit, prot, etc... directly as integers.
-    """
-    def get_value_crop(self, tag, v):
-        """
-        Change crop insurance and gov pmt choice values to appropriate enum values
-        if needed for choices like 'insure_corn'.
-        Expects a tag name and an int or float value (v)
-        """
-        levels = 'level, sco_level, eco_level'.split()
-        val = (Ins(v) if tag == 'insure' else Unit(v) if tag == 'unit' else
-               Prot(v) if tag == 'protection' else
-               to_lvl(v) if tag in levels else
-               Prog(v) if tag == 'program' else v)
-        return val
-
-
-class DatabaseAttributeLoader(AttributeLoader):
-    """
-    Concrete class DatabaseAttributeLoader
+    class DatabaseAttributeLoader
     Handles loading attribute data from a database.
     """
+    def __init__(self):
+        # TODO: Maybe gets list of queries instead of list of files?
+        pass
+
     def set_attrs(self, inst):
         """
         Set the given object's attributes based on key/value pairs.
@@ -50,16 +30,16 @@ class DatabaseAttributeLoader(AttributeLoader):
         """
         prem_pairs = self.group_values_ins_prem(
             self.load_crop_ins_premium_tuples(inst.crop_year))
-        crop_pairs, simple = self.group_values_crop(
+        crop_pairs, simple_pairs = self.group_values_crop(
             self.load_model_and_user_tuples(inst.crop_year))
-        pairs = crop_pairs + prem_pairs + simple
+        pairs = crop_pairs + prem_pairs + simple_pairs
         for k, v in pairs:
             setattr(inst, k, v)
 
     def load_crop_ins_premium_tuples(self, attr):
         """
-        Query the database to get detail records for crop insurance
-        Generate a list of tuples from crop insurance premium details
+        Query the database to get detail records for crop insurance.
+        Generate a list of tuples from crop insurance premium details.
         """
         # TODO:
         details = []
@@ -67,7 +47,7 @@ class DatabaseAttributeLoader(AttributeLoader):
 
     def load_model_and_user_tuples(self, attr):
         """
-        Generate a list of tuples from model and user data
+        Generate a list of tuples from model and user data.
         """
         # TODO:
         details = []
@@ -85,13 +65,12 @@ class DatabaseAttributeLoader(AttributeLoader):
 
     def group_crop(self, with_crop):
         """
-        Given an iterable of crop-specific details, return a,
-        shorter list of key/value pairs where each value is a dict with key Crop and
-        crop-specific values.
+        Given an iterable of crop-specific details, return a shorter list of key/value
+        pairs where each value is a dict with key Crop and crop-specific values.
         """
         groups = {}
         for det in with_crop:
-            val = self.get_value_crop(det.name, det.value)
+            val = get_value_crop(det.name, det.value)
             groups.setdefault(det.name, {})[Crop(det.crop)] = val
         return list(groups.items())
 
@@ -130,11 +109,24 @@ class DatabaseAttributeLoader(AttributeLoader):
         return choice
 
 
-class TextfileAttributeLoader(AttributeLoader):
+class TextfileAttributeLoader(object):
     """
-    Concrete class TextfileAttributeLoader
+    class TextfileAttributeLoader
     Handles loading attribute data from textfiles.
     """
+    CROPS = 'corn soy wheat fullsoy dcsoy'.split()
+    UNITS = 'area ent'.split()
+    PROTS = 'rp rphpe yo'.split()
+    INS_CROPS = 'corn soy'.split()
+    PREM_KINDS = 'premium sco_premium eco_premium'.split()
+    CROP_PAT = f'^(.*)_({"|".join(CROPS)})$'
+    PREM_PATS = [
+            (f'^({"|".join(UNITS)})_({"|".join(PROTS)})_({"|".join(INS_CROPS)})' +
+             f'_({"|".join(str(i) for i in range(50, 91, 5))})$'),
+            (f'^sco_({"|".join(PROTS)})_({"|".join(INS_CROPS)})' +
+             f'_({"|".join(str(i) for i in range(50, 86, 5))})_86$'),
+            (f'^eco_({"|".join(PROTS)})_({"|".join(INS_CROPS)})_86_(90|95)$'), ]
+
     def __init__(self, filenames):
         self.filenames = filenames.split()
 
@@ -144,140 +136,143 @@ class TextfileAttributeLoader(AttributeLoader):
         Crop-specific and insurance premium attributes have dict values.
         This greatly reduces the number of attributes for the current object.
         """
-        prem_filenames = [fname for fname in self.filenames
-                          if fname.find('crop_ins_premiums') >= 0]
-        std_filenames = [fname for fname in self.filenames
-                         if fname.find('crop_ins_premiums') < 0]
+        prem_filenames = (fname for fname in self.filenames
+                          if fname.find('crop_ins_premiums') >= 0)
+        std_filenames = (fname for fname in self.filenames
+                         if fname.find('crop_ins_premiums') < 0)
         prem_pairs = self.group_values_ins_prem(
-            self.load_key_value_pairs(inst.crop_year, prem_filenames))
-        crop_pairs, simple = self.group_values_crop(
-            self.load_key_value_pairs(inst.crop_year, std_filenames))
-        pairs = prem_pairs + crop_pairs + simple
+            load_key_value_pairs(inst.crop_year, prem_filenames))
+        crop_pairs, simple_pairs = self.group_values_crop(
+            load_key_value_pairs(inst.crop_year, std_filenames))
+        pairs = prem_pairs + crop_pairs + simple_pairs
         for k, v in pairs:
             setattr(inst, k, v)
-
-    def load_key_value_pairs(self, crop_year, filenames):
-        """
-        Load key/value pairs from all specified DATA_FILES
-        return a list with all the key/value pairs
-        """
-        pairs = []
-        for name in filenames:
-            filepath = path.join(DATADIR, f'{crop_year}_{name}.txt')
-            pairs += self.load_textfile(filepath)
-        return pairs
-
-    def load_textfile(self, filename):
-        """
-        Load a textfile with the given name into a list of key/value pairs,
-        ignoring blank lines and comment lines that begin with '#'
-        """
-        with open(filename) as f:
-            contents = f.read()
-
-        lines = [line.strip() for line in contents.strip().split('\n')
-                 if len(line.strip()) > 0 and line[0] != '#']
-        pairs = [line.split() for line in lines]
-        return [(k, to_number(v)) for k, v in pairs]
 
     def group_values_crop(self, pairs):
         """
         Given an iterable of key/value pairs, with string keys and Number values,
-        create two lists, one with keys ending in a crop name, (with_crop),
-        and one with the rest (simple).
-        Return both lists after mapping with_crop to a new list with dict values.
-        and merge them into a new key/value pair with
-          key: the original key with crop name removed,
-          value: a dict with key crop and original value.
-        Return a list of key/dict-valued pairs and a list of simple pairs.
+        return two lists of key/value pairs, one with dict values with dict key crop,
+        the other with the original number values.
         """
-        crops = 'corn soy wheat fullsoy dcsoy'.split()
-        pat = f'^(.*)_({"|".join(crops)})$'
         with_crop = []
         simple = []
         for k, v in pairs:
-            m = re.match(pat, k)
+            m = re.match(self.CROP_PAT, k)
             if m:
-                with_crop.append((m.groups(), self.get_value_crop(m.groups()[0], v)))
+                with_crop.append((m.groups(), get_value_crop(m.groups()[0], v)))
             else:
                 simple.append((k, v))
-        return self.group_crop(with_crop, crops), simple
+        return self.group_crop(with_crop), simple
 
-    def group_crop(self, with_crop, crops):
+    def group_crop(self, with_crop):
         """
-        Given a list of crop-specific ungrouped key/value pairs, return a new, shorter
-        list of key/value pairs where each value is a dict with key Crop and
-        crop-specific values.
+        Given a list of crop-specific, ungrouped key/value pairs, use a temporary dict
+        (groups) to generate a new, shorter list of key/value pairs where each key
+        is the original key with crop name removed, and the corresponding value
+        is a dict with key Crop and crop-specific values.
         """
         groups = {}
         for (name, crop), v in with_crop:
-            groups.setdefault(name, {})[Crop(crops.index(crop))] = v
+            groups.setdefault(name, {})[Crop(self.CROPS.index(crop))] = v
         return list(groups.items())
 
     def group_values_ins_prem(self, pairs):
         """
-        Given a list of key/value pairs, reorganize them into two lists by filtering
-        and processing base premiums, sco premiums and eco premiums in three
-          filter steps.  The resulting lists are:
-        dicts - a list containing three dicts, containing premiums for different
-          crop insurance choices.
-        simple - a list of key/value pairs which don't represent premiums.
-        """
-        units = 'area ent'.split()
-        prots = 'rp rphpe yo'.split()
-        crops = 'corn soy'.split()
-        names = 'premium sco_premium eco_premium'.split()
-        pats = [
-            (f'^({"|".join(units)})_({"|".join(prots)})_({"|".join(crops)})' +
-             f'_({"|".join(str(i) for i in range(50, 91, 5))})$'),
-            (f'^sco_({"|".join(prots)})_({"|".join(crops)})' +
-             f'_({"|".join(str(i) for i in range(50, 86, 5))})_86$'),
-            (f'^eco_({"|".join(prots)})_({"|".join(crops)})_86_(90|95)$'), ]
-        return self.build_dicts(pairs, pats, names, units, prots, crops)
-
-    def build_dicts(self, pairs, pats, names, units, prots, crops):
-        """
-        Build up a list of pairs (name, dict) from pairs with crop ins premiums,
-        and return this list along with the remaining simple pairs.
+        Return a list of three (name, dict) pairs, one for each kind of premium,
+        from simple pairs with crop ins premiums.
         """
         dicts = []
-        for pat, name in zip(pats, names):
-            prem, pairs = self.group_matches_ins_prem(pairs, pat, units, prots, crops)
+        unmatched = list(pairs)
+        for pat, name in zip(self.PREM_PATS, self.PREM_KINDS):
+            prem, unmatched = self.extract_dict_ins_prem(unmatched, pat)
             dicts.append((name, prem))
-        if pairs:
-            raise ValueError("Expected file contents to include only crop ins premiums")
+        if unmatched:
+            raise ValueError("Expected file to contain only crop ins premiums.")
         return dicts
 
-    def group_matches_ins_prem(self, pairs, pat, units, prots, crops):
+    def extract_dict_ins_prem(self, pairs, pat):
         """
-        Given a list of key/value pairs, a pattern to match and some name lists,
-        return a dict (prem) with premiums for the crop ins type constructed from pairs
-        whose keys match the given pattern.  Also return a list (simple)
-        with the unmatched pairs.
+        Given a list of key/value pairs and a pattern to match on keys,
+        return a dict (prem) with premiums for the crop ins type.
+        Also return a list (simple) with the unmatched pairs.
         """
         simple = []
         prem = {}
         for k, v in pairs:
             m = re.match(pat, k)
             if m:
-                prem[self.make_prem_choice(m, units, prots, crops)] = v
+                prem[self.make_choice_prem(m)] = v
             else:
                 simple.append((k, v))
         return prem, simple
 
-    def make_prem_choice(self, m, units, prots, crops):
+    def make_choice_prem(self, m):
         """
-        Given a match object and some name lists, return a tuple representing a crop
-        insurance choice
+        Given a match object, return a tuple of IntEnum values
+        representing a crop insurance choice.
         """
         if len(m.groups()) == 4:
             u, p, c, lvl = m.groups()
-            choice = (Unit(units.index(u)), Prot(prots.index(p)), Crop(crops.index(c)),
-                      to_lvl(lvl))
+            choice = (Unit(self.UNITS.index(u)), Prot(self.PROTS.index(p)),
+                      Crop(self.INS_CROPS.index(c)), to_lvl(lvl))
         else:
             p, c, lvl = m.groups()
-            choice = (Prot(prots.index(p)), Crop(crops.index(c)), to_lvl(lvl))
+            choice = (Prot(self.PROTS.index(p)), Crop(self.INS_CROPS.index(c)),
+                      to_lvl(lvl))
         return choice
+
+
+# ----------------------------
+# Helpers used by both classes
+# ----------------------------
+def to_lvl(v):
+    """
+    Helper to convert a 'level' to a Lvl IntEnum
+    """
+    return (Lvl.NONE if v == 'NONE' else Lvl.DFLT if v == 'DFLT' else int(v))
+
+
+def get_value_crop(tag, v):
+    """
+    Change crop insurance and gov pmt choice values to appropriate IntEnum values
+    for choices like 'insure_corn'.
+    Expects a tag name and an int or float value (v)
+    """
+    levels = 'level, sco_level, eco_level'.split()
+    val = (Ins(v) if tag == 'insure' else Unit(v) if tag == 'unit' else
+           Prot(v) if tag == 'protection' else
+           to_lvl(v) if tag in levels else
+           Prog(v) if tag == 'program' else v)
+    return val
+
+
+# ---------------------------------------------
+# Helpers used by TextfileAttributeLoader class
+# ---------------------------------------------
+def load_key_value_pairs(crop_year, filenames):
+    """
+    Load key/value pairs from all specified DATA_FILES
+    return a list with all the key/value pairs
+    """
+    pairs = []
+    for name in filenames:
+        filepath = path.join(DATADIR, f'{crop_year}_{name}.txt')
+        pairs += load_textfile(filepath)
+    return pairs
+
+
+def load_textfile(filename):
+    """
+    Load a textfile with the given name into a list of key/value pairs,
+    ignoring blank lines and comment lines that begin with '#'
+    """
+    with open(filename) as f:
+        contents = f.read()
+
+    lines = (line.strip() for line in contents.strip().split('\n')
+             if len(line.strip()) > 0 and line[0] != '#')
+    pairs = (line.split() for line in lines)
+    return [(k, to_number(v)) for k, v in pairs]
 
 
 def to_number(s):
@@ -285,10 +280,3 @@ def to_number(s):
     Convert a number string to a float or int
     """
     return float(s) if '.' in s else int(s)
-
-
-def to_lvl(v):
-    """
-    Helper to convert an int to a Lvl IntEnum in some cases
-    """
-    return (Lvl.NONE if v == 'NONE' else Lvl.DFLT if v == 'DFLT' else int(v))
