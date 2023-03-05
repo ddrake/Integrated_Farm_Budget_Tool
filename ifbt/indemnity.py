@@ -44,7 +44,7 @@ class Indemnity(Analysis):
         correspond to the kind of Indemnity the instance represents.
         The 'crop' argument allows an Indemnity instance to know its crop.
         """
-        super(Indemnity, self).__init__(crop_year, *args, **kwargs)
+        super().__init__(crop_year, *args, **kwargs)
         self.crop = crop
 
     def __repr__(self):
@@ -123,7 +123,7 @@ class IndemnityArea(Indemnity):
     of the six concrete derived classes
     """
     def __init__(self, *args, **kwargs):
-        super(IndemnityArea, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     @crop_in(Crop.CORN, Crop.SOY, Crop.WHEAT)
     def county_rma_yield(self, crop, yf=1):
@@ -188,7 +188,7 @@ class IndemnityEnt(Indemnity):
     of the six concrete derived classes
     """
     def __init__(self, *args, **kwargs):
-        super(IndemnityEnt, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def yield_trigger(self):
         """
@@ -248,7 +248,7 @@ class IndemnityOption(IndemnityArea):
     of the three concrete derived classes
     """
     def __init__(self, crop_year, crop, kind, *args, **kwargs):
-        super(IndemnityArea, self).__init__(crop_year, crop, *args, **kwargs)
+        super().__init__(crop_year, crop, *args, **kwargs)
         self.kind = kind
         self.lvl = None
         self.diff = None
@@ -332,7 +332,7 @@ class IndemnityAreaRp(IndemnityArea):
     """
 
     def __init__(self, *args, **kwargs):
-        super(IndemnityAreaRp, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def limiting_revenue_factor(self, pf=1):
         """
@@ -378,7 +378,7 @@ class IndemnityAreaRpHpe(IndemnityArea):
     """
 
     def __init__(self, *args, **kwargs):
-        super(IndemnityAreaRpHpe, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def revenue_loss(self, pf=1, yf=1):
         """
@@ -414,7 +414,7 @@ class IndemnityAreaYo(IndemnityArea):
     """
 
     def __init__(self, *args, **kwargs):
-        super(IndemnityAreaYo, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def limiting_revenue_factor(self):
         """
@@ -453,7 +453,7 @@ class IndemnityEntRp(IndemnityEnt):
     This class is designed to be instantiated by the CropIns class.
     """
     def __init__(self, *args, **kwargs):
-        super(IndemnityEntRp, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
 
 class IndemnityEntRpHpe(IndemnityEnt):
@@ -464,7 +464,7 @@ class IndemnityEntRpHpe(IndemnityEnt):
     This class is designed to be instantiated by the CropIns class.
     """
     def __init__(self, *args, **kwargs):
-        super(IndemnityEntRpHpe, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def revised_revenue_trigger(self, pf=1, yf=1):
         """
@@ -485,7 +485,7 @@ class IndemnityEntYo(IndemnityEnt):
     This class is designed to be instantiated by the CropIns class.
     """
     def __init__(self, *args, **kwargs):
-        super(IndemnityEntYo, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def yield_shortfall(self, yf=1):
         """
@@ -512,7 +512,7 @@ class IndemnityOptionRp(IndemnityOption):
     An indemnity option (SCO or ECO) with RP protection
     """
     def __init__(self, *args, **kwargs):
-        super(IndemnityOptionRp, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def county_insured_revenue(self, pf=1):
         """
@@ -536,7 +536,7 @@ class IndemnityOptionRpHpe(IndemnityOption):
     An indemnity option (SCO or ECO) with RP-HPE protection
     """
     def __init__(self, *args, **kwargs):
-        super(IndemnityOptionRpHpe, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
 
 class IndemnityOptionYo(IndemnityOption):
@@ -544,7 +544,7 @@ class IndemnityOptionYo(IndemnityOption):
     An indemnity option (SCO or ECO) with YO protection
     """
     def __init__(self, *args, **kwargs):
-        super(IndemnityOptionYo, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def actual_revenue(self, pf=1, yf=1):
         """

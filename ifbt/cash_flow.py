@@ -32,7 +32,7 @@ class CashFlow(Analysis):
         """
         Initialize base class, then set attributes to instances of the four models.
         """
-        super(CashFlow, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.cost = Cost(self.crop_year)
         self.crop_ins = CropIns(self.crop_year, overrides=crop_ins_overrides)
         self.gov_pmt = GovPmt(self.crop_year, overrides=gov_pmt_overrides)

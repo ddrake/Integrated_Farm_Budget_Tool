@@ -27,7 +27,7 @@ class Cost(Analysis):
         """
         Just initialize the base class
         """
-        super(Cost, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     # VARIABLE COSTS
     # --------------

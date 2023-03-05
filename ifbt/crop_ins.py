@@ -31,7 +31,7 @@ class CropIns(Analysis):
     DATA_FILES = 'farm_data crop_ins_data crop_ins_premiums'
 
     def __init__(self, *args, **kwargs):
-        super(CropIns, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         for crop in [Crop.CORN, Crop.SOY]:
             self._validate_settings(crop)
         self._indemnity_factory()

@@ -26,7 +26,7 @@ class GovPmt(Analysis):
     DATA_FILES = 'farm_data gov_pmt_data'
 
     def __init__(self, *args, **kwargs):
-        super(GovPmt, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     @crop_in(Crop.CORN, Crop.SOY, Crop.WHEAT)
     def assumed_mya_price(self, crop, pf=1):
