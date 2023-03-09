@@ -152,11 +152,8 @@ class EntPrems:
                 yeAdj = (self.effcov - 0.85) / 0.15
             yeAdj = 1 + round(min(1, yeAdj) ** 3, 7) * 0.05
             self.rateDiffFac[0] *= yeAdj
-            self.uFactor[:] = (min(self.uFactor[0], self.unitFactor[jjHigh, 0]),
-                               min(self.uFactor[1], self.unitFactor[jjHigh, 1]))
-            self.eFactor[:] = (
-                min(self.eFactor[0], self.enterpriseFactor[jjHigh, 0]),
-                min(self.eFactor[1], self.enterpriseFactor[jjHigh, 1]))
+            self.uFactor = np.minimum(self.uFactor, self.unitFactor[jjHigh, :])
+            self.eFactor = np.minimum(self.eFactor, self.enterpriseFactor[jjHigh, :])
 
     def make_rev_liab(self, i):
         # step 1
@@ -178,9 +175,16 @@ class EntPrems:
             min(max(round(self.aphyield / refyield[0], 2), 0.5), 1.5),
             min(max(round(self.aphyield / refyield[1], 2), 0.5), 1.5))
         # step 2.02
-        self.baseRate[0] = round(self.baseRate[0] ** exponent[0], 8)
-        self.baseRate[1] = round(self.baseRate[1] ** exponent[1], 8)
+        self.baseRate = (self.baseRate ** exponent).round(8)
         # step 2.03
+
+        # TODO: Get this working to replace the rest of the method
+        # self.baseRate = (self.highRisk +
+        #                  (self.baseRate + refrate + fixedrate)).round(8)
+        # if self.rtype > 1.5:
+        #     self.baseRate[:] = self.highRisk
+        # self.revLook = self.baseRate
+
         self.baseRate[0] = round(
             self.highRisk + (self.baseRate[0] * refrate[0]) + fixedrate[0], 8)
         if self.rtype > 1.5:
@@ -198,25 +202,16 @@ class EntPrems:
         Set base premium rates
         """
         # step 2.04
-        self.basePremRate[0] = round(
-            self.baseRate[0] * self.rateDiffFac[0] * self.uFactor[0], 8)
-        self.basePremRate[1] = round(
-            self.baseRate[1] * self.rateDiffFac[1] * self.uFactor[1], 8)
-        self.basePremRateE[0] = round(
-            self.baseRate[0] * self.rateDiffFac[0] * self.eFactor[0], 8)
-        self.basePremRateE[1] = round(
-            self.baseRate[1] * self.rateDiffFac[1] * self.eFactor[1], 8)
-        self.basePremRateErev[0] = round(
-            self.baseRate[0] * self.rateDiffFac[0] * self.eFactorRev[0], 8)
-        self.basePremRateErev[1] = round(
-            self.baseRate[1] * self.rateDiffFac[1] * self.eFactorRev[1], 8)
+        self.basePremRate = (self.baseRate * self.rateDiffFac * self.uFactor).round(8)
+        self.basePremRateE = (self.baseRate * self.rateDiffFac * self.eFactor).round(8)
+        self.basePremRateErev = (self.baseRate *
+                                 self.rateDiffFac * self.eFactorRev).round(8)
 
     def limit_base_prem_rates(self):
         """
         Limit base premium rates
         """
         # step 2.05
-        print('2.05', self.basePremRateE[0], self.basePremRateE[1])
         if self.basePremRate[0] > self.basePremRate[1] * 1.2:
             self.basePremRate[0] = round(self.basePremRate[1] * 1.2, 8)
         if self.basePremRate[0] > 0.99:
@@ -268,10 +263,10 @@ class EntPrems:
             int(self.revLook[0] * self.discountEnter[3, self.jSize] * 10000 + 0.5)]
         self.mQty, self.stdQty = zip(*(self.rev_lookup[k] for k in revLookup))
 
-    def simulate_losses(self, ii):
+    def simulate_losses(self, policy):
         # step 5.02
-        self.adjMeanQty = round(self.revYield * self.mQty[ii] / 100, 8)
-        self.adjStdQty = round(self.revYield * self.stdQty[ii] / 100, 8)
+        self.adjMeanQty = round(self.revYield * self.mQty[policy] / 100, 8)
+        self.adjStdQty = round(self.revYield * self.stdQty[policy] / 100, 8)
         self.lnMean = round(log(self.aphPrice) - (self.pvol ** 2 / 2), 8)
         # step 5.04 simulate losses
         simYieldLoss = 0
@@ -315,10 +310,9 @@ class EntPrems:
         self.premRateB = self.basePremRate[0] * self.multFactor * self.disBasic
         self.premRateE = self.basePremRateE[0] * self.multFactor * self.disEnter
         self.premRateErev = self.basePremRateErev[0] * self.multFactor * self.disEnter
-        print('0.01a', self.premRateE, self.basePremRateE[0])
 
-    def set_prems(self, i, ii):
-        if ii == 0:  # optional policies
+    def set_prems(self, i, policy):
+        if policy == 0:  # optional policies
             # rp optional
             self.prem[i, 0] = round(self.liab *
                                     round(self.premRateO + self.revRateUse, 8), 0)
@@ -327,7 +321,7 @@ class EntPrems:
                                     round(self.premRateO + self.revExcRateUse, 8), 0)
             # yp optional
             self.prem[i, 6] = round(self.liab * round(self.premRateO, 8), 0)
-        if ii == 1:  # basic policy
+        if policy == 1:  # basic policy
             # rp basic
             self.prem[i, 1] = round(self.liab *
                                     round(self.premRateB + self.revRateUse, 8), 0)
@@ -336,7 +330,7 @@ class EntPrems:
                                     round(self.premRateB + self.revExcRateUse, 8), 0)
             # yp basic
             self.prem[i, 7] = round(self.liab * round(self.premRateB, 8), 0)
-        if ii == 2:   # enterprise policy
+        if policy == 2:   # enterprise policy
             # rp enterprise
             self.prem[i, 2] = round(self.liab *
                                     round(self.premRateErev + self.revRateEntUse, 8), 0)
@@ -387,18 +381,17 @@ class EntPrems:
         enterId = self.enter_id[self.code]
         self.discountBasic = self.discount_basic[enterId]
         self.discountEnter = self.discount_enter[enterId]
-        self.rateDiff = zeros((8, 2))
-        self.rateDiff[:, 0] = self.rate_diff[self.fcode]
-        self.rateDiff[:, 1] = self.prate_diff[self.fcode]
-        self.unitFactor = zeros((8, 2))
-        self.unitFactor[:, 0] = self.unit_factor[self.fcode]
-        self.unitFactor[:, 1] = self.punit_factor[self.fcode]
-        self.enterpriseFactor = zeros((8, 2))
-        self.enterpriseFactor[:, 0] = self.enterprise_factor[self.fcode]
-        self.enterpriseFactor[:, 1] = self.penterprise_factor[self.fcode]
-        self.enterFactorRev = zeros((8, 2))
-        self.enterFactorRev[:, 0] = self.enter_factor_rev[self.fcode]
-        self.enterFactorRev[:, 1] = self.penter_factor_rev[self.fcode]
+        self.rateDiff = array((self.rate_diff[self.fcode],
+                               self.prate_diff[self.fcode])).T
+        self.unitFactor = array((self.unit_factor[self.fcode],
+                                 self.punit_factor[self.fcode])).T
+        self.enterpriseFactor = array((self.enterprise_factor[self.fcode],
+                                       self.penterprise_factor[self.fcode])).T
+        self.enterFactorRev = array((self.enter_factor_rev[self.fcode],
+                                     self.penter_factor_rev[self.fcode])).T
+        # self.enterFactorRev = zeros((8, 2))
+        # self.enterFactorRev[:, 0] = self.enter_factor_rev[self.fcode]
+        # self.enterFactorRev[:, 1] = self.penter_factor_rev[self.fcode]
         betaId = self.beta_id[self.code]
         self.yieldDraw, self.priceDraw = self.draws[betaId]
 
@@ -408,7 +401,7 @@ class EntPrems:
 
         # will store premiums
         self.prem = zeros((8, 9))
-
+        self.set_multfactor()
         for i in range(8):
             # index i corresponds to coverage level
             if self.rateDiff[i, 0] > 0:
@@ -425,16 +418,14 @@ class EntPrems:
                 # Note: each pass, we set the base rates, use them to get base prem
                 # rates, then limit the base rates. Can this be improved?
                 self.limit_baserate()
-                # TODO: move set_multfactor and set_qtys before loop
-                self.set_multfactor()
                 self.set_qtys()
                 # step 5.01
                 #  Loop for units (0=optional, 1=basic, 2=enterprise)
-                for ii in range(3):
+                for policy in range(3):
                     # section 5 revenue calculation
-                    self.simulate_losses(ii)
+                    self.simulate_losses(policy)
                     self.set_rates()
-                    self.set_prems(i, ii)
+                    self.set_prems(i, policy)
                 self.apply_subsidy(i)
         return self.prem
 
