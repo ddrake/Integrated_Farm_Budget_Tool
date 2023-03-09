@@ -1,7 +1,7 @@
 __all__ = ['Cost', 'Analysis', 'CashFlow', 'GovPmt', 'CropIns', 'Indemnity', 'Revenue',
            'sens_revenue', 'sens_cost', 'sens_gov_pmt',
            'sens_crop_ins', 'sens_cash_flow',
-           'Crop', 'Prog', 'Ins', 'Unit', 'Prot', 'Lvl', 'crop_in', ]
+           'Crop', 'Prog', 'Ins', 'Unit', 'Prot', 'Lvl', 'crop_in', 'EntPrems']
 
 from .analysis import Analysis
 from .cost import Cost
@@ -13,3 +13,4 @@ from .crop_ins import CropIns
 from .sensitivity import (sens_revenue, sens_cost, sens_gov_pmt, sens_crop_ins,
                           sens_cash_flow)
 from .util import Crop, crop_in, Ins, Unit, Prot, Lvl, Prog
+from .ent_prems import EntPrems
