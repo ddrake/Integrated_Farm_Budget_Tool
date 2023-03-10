@@ -2,53 +2,102 @@ from numpy import zeros, array
 import numpy as np
 from math import log, exp
 
+np.set_printoptions(precision=2)
+np.set_printoptions(suppress=True)
+
 
 class EntPrems:
     """
-    Compute premiums for optional, basic and enterprise unit crop insurance
+    Class for computing 'Combo' premiums for optional, basic and enterprise
+    unit crop insurance, for RP, RP-HPE, YO, for coverage levels 50, 55, ..., 85
     """
-    # TODO: aphyield and apprYield seem to be switched in the code!!
-    # TODO: Which states should we support?
-    # TODO: Which crops should we support?
-    # TODO: Try to import parameters (it's a mess).
-    # Note: UnitFactor.txt has column calc_year with values 2023.
-    # Note: There is an unusual level of intermediate rounding in the original code.
-    #       It has been preserved here, but should perhaps be questioned.
-    # TODO: Should we do anything with the risk classes?
-    # The Risk Class drop-down has 4 invisible options under None, I think.
-    # locat2 = locat + 0.1 + (0.2 if riskTest == 'AAA' else
-    #                         0.3 if riskTest == 'BBB' else
-    #                         0.4 if riskTest == 'CCC' else
-    #                         0.5 if riskTest == 'DDD' else 0)
-
     def __init__(self):
         self.load_lookups()
         self.subsidy = array([[0.67, 0.64, 0.64, 0.59, 0.59, 0.55, 0.48, 0.38],
                               [0.8,  0.8,  0.8,  0.8,  0.8,  0.77, 0.68, 0.53]]).T
+
+        # User inputs
+        # -----------
+        self.acre = None       # acres to insure
+
+        # yields
+        self.aphyield = None   # Actual production history yield
+        self.apprYield = None  # Approved yield
+        self.tayield = None    # Trend-adjusted yield
+
+        # price / volatility
+        self.aphPrice = None   # Actual or estimated production history price
+        self.pvol = None       # Actual or estimate volatility factor
+
+        # extras
+        self.hf = None         # Hail / Fire protection
+        self.pf = None         # Prevent plant protection
+        self.tause = None      # 1 to use trend-adjusted yields else 0
+        self.ye = None         # 1 to use yield-exclusion else 0
+
+        # Risk related
+        self.riskname = None   # {'None', 'AAA', 'BBB', 'CCC', 'DDD'} dep. on county
+        self.risk = None       # {0: None, 1: 'AAA', 2: 'BBB', 3: 'CCC', 4: 'DDD'}
+        self.highRisk = None   # float looked up by code and riskname in high_risk dict
+        self.rtype = None      # int looked up by code and riskname in high_risk dict
+
+        # lookup key codes
+        self.code = None       # code for state/county/crop/etc..
+        self.fcode = None      # code with decimal suffix for risk
+
+        # 8 coverage levels
+        self.cover = array([x/100 for x in range(50, 86, 5)])
+
+        # scalar instance variables
+        self.adjMeanQty = None
+        self.adjStdQty = None
+        self.disBasic = None         # factor computed from discountBasic
+        self.disEnter = None
+        self.effcov = None
+        self.jSize = None            # based on acre
+        self.liab = None
+        self.lnMean = None
+        self.multFactor = None
+        self.selected_draws = None
+        self.premRateO = None        # Premium rate used for optional
+        self.premRateB = None        # Premium rate used for basic
+        self.premRateE = None        # Premium rate used for enterprise YO
+        self.premRateErev = None     # Premium rate used for enterprise rev
+        self.revCov = None
+        self.revExcRateUse = None
+        self.revExcRateEntUse = None
+        self.revRateUse = None
+        self.revRateEntUse = None
+        self.revYield = None
+        self.simRpLoss = None
+        self.simRpExcLoss = None
+        self.simYpLoss = None
+
+        # 3-tuples
+        self.mQty = None
+        self.stdQty = None
+
+        # Intance variable pairs with the current value in the first position
+        # and the previous year value in the second position
+        self.baseRate = None          # Continuous rating base rate
+        self.basePremRate = None      # Base premium rate
+        self.basePremRateE = None     # Base premium rate
+        self.basePremRateErev = None
+        self.eFactor = None
+        self.eFactorRev = None
+        self.rateDiffFac = None
+        self.revLook = None
+        self.uFactor = None
+
+        # Arrays sized (8, 6) (6 values for each of 8 coverage levels)
         self.discountBasic = None
         self.discountEnter = None
+
+        # Arrays sized (8, 2) (8 rows for coverage levels and 2 for current/prev)
         self.rateDiff = None
-        self.unitFactor = zeros(2)
+        self.unitFactor = None
         self.enterpriseFactor = None
         self.enterFactorRev = None
-        self.yieldDraw = None
-        self.priceDraw = None
-        self.jSize = None
-        self.effcov = None
-        self.rateDiffFac = zeros(2)
-        self.uFactor = zeros(2)
-        self.eFactor = zeros(2)
-        self.eFactorRev = zeros(2)
-        self.disBasic = None
-        self.disEnter = None
-        self.baseRate = zeros(2)
-        self.revLook = zeros(2)
-        self.basePremRate = zeros(2)
-        self.basePremRateE = zeros(2)
-        self.RateDiffFac = zeros(2)
-        self.basePremRateErev = zeros(2)
-        np.set_printoptions(precision=2)
-        np.set_printoptions(suppress=True)
 
     def load_lookups(self):
         """
@@ -60,6 +109,7 @@ class EntPrems:
                           'Non-irrigated': '003',
                           'Irrigated': '002'}
         self.types = {'Grain': '016', 'No Type Specified': '997', 'Winter': '011'}
+        self.risk_classes = {'None': 0, 'AAA': 1, 'BBB': 2, 'CCC': 3, 'DDD': 4}
         self.counties = get_counties()
         self.enter_id = get_enter_id()
         self.beta_id = get_beta_id()
@@ -77,13 +127,89 @@ class EntPrems:
         self.penter_factor_rev = get_penter_factor_rev()
         self.rev_lookup = get_rev_lookup()
         self.draws = get_draws()
+        self.high_risk = get_high_risk()
 
+    def store_user_settings(self, aphyield, apprYield, tayield, acre, aphPrice, pvol,
+                            hf, pf, riskname, tause, ye, county, crop, practice, atype):
+        """
+        Store settings provide by user when calling calc_premiums
+        """
+        self.aphyield = aphyield
+        self.apprYield = apprYield
+        self.tayield = tayield
+        self.acre = acre
+        self.aphPrice = aphPrice
+        self.pvol = pvol
+        self.hf = hf
+        self.pf = pf
+        self.riskname = riskname
+        self.risk = self.risk_classes[self.riskname]
+        self.highRisk = None
+        self.rtype = None
+        self.tause = tause
+        self.ye = ye
+
+        if self.tayield < self.aphyield:
+            self.tayield = self.aphyield
+
+        # codes used to key into dicts
+        self.code = self.make_code(county, crop, atype, practice)
+        self.fcode = self.code + 0.1 * (1 + self.risk)
+
+        # Set index based on acreage
+        self.jSize = (0 if self.acre < 50 else 1 if self.acre < 100 else
+                      2 if self.acre < 200 else 3 if self.acre < 400 else
+                      4 if self.acre < 800 else 5)
+
+    def initialize_arrays(self):
+        """
+        Initialize arrays for premium calculation
+        """
+        # Initialize current/prev arrays
+        self.rateDiffFac = zeros(2)
+        self.uFactor = zeros(2)
+        self.eFactor = zeros(2)
+        self.eFactorRev = zeros(2)
+        self.baseRate = zeros(2)
+        self.revLook = zeros(2)
+
+        # Initialize array to hold premiums
+        self.prem = zeros((8, 9))
+
+        enterId = self.enter_id[self.code]
+        betaId = self.beta_id[self.code]
+
+        # Look up info from the dicts created when the object was constructed
+        self.highRisk, self.rtype = ((0, 0) if self.risk == 0 else
+                                     self.high_risk[str(self.code)+self.riskname])
+        self.discountBasic = self.discount_basic[enterId]
+        self.discountEnter = self.discount_enter[enterId]
+        self.rateDiff = array((self.rate_diff[self.fcode],
+                               self.prate_diff[self.fcode])).T
+        self.unitFactor = array((self.unit_factor[self.fcode],
+                                 self.punit_factor[self.fcode])).T
+        self.enterpriseFactor = array((self.enterprise_factor[self.fcode],
+                                       self.penterprise_factor[self.fcode])).T
+        self.enterFactorRev = array((self.enter_factor_rev[self.fcode],
+                                     self.penter_factor_rev[self.fcode])).T
+        self.selected_draws = self.draws[betaId]
+
+    # -------------------------------
+    # Core business logic begins here
+    # -------------------------------
     def make_code(self, county, crop, atype, practice):
         """
         Construct an integer code used to key in some tabular data
         """
         return int(f'{self.counties[county]}{self.crops[crop]}' +
                    f'{self.types[atype]}{self.practices[practice]}')
+
+    def set_effcov(self, i):
+        """
+        Set the effective coverage level
+        """
+        self.effcov = round(0.0001 + self.cover[i] *
+                            self.tayield / self.apprYield, 2)
 
     def get_factor(self, var, j2, ro):
         """
@@ -112,7 +238,6 @@ class EntPrems:
         """
         Set factors used to compute base premium rates
         """
-        # TODO: tause = 1 in base case; need to test case tause = 0
         self.rateDiffFac[:] = (
             self.get_factor(self.rateDiff, 0, 9) if self.tause else
             self.rateDiff[i, 0],
@@ -157,77 +282,61 @@ class EntPrems:
 
     def make_rev_liab(self, i):
         # step 1
-        self.revYield = self.apprYield if self.tause < 0.5 else self.tayield
-        self.revCov = self.cover[i] if self.tause < 0.5 else self.effcov
+        self.revYield = self.tayield if self.tause else self.apprYield
+        self.revCov = self.effcov if self.tause else self.cover[i]
         self.liab = round(round(self.revYield * self.cover[i] + 0.001, 1) *
                           self.aphPrice * self.acre, 0)
 
     def set_base_rates(self):
         """
-        Set and limit base rates
+        Set and limit base rates from RMA data
         """
-        # step 2.01
+        # step 2.01: Look up current and previous year rates.
         refyield, refrate, exponent, fixedrate = zeros(2), zeros(2), zeros(2), zeros(2)
         (refyield[0], refrate[0], exponent[0], fixedrate[0],
          refyield[1], refrate[1], exponent[1], fixedrate[1]) = self.rates[self.code]
 
+        # Worksheet steps 1, 2: Continuous rating base rate
         self.baseRate[:] = (
             min(max(round(self.aphyield / refyield[0], 2), 0.5), 1.5),
             min(max(round(self.aphyield / refyield[1], 2), 0.5), 1.5))
+
         # step 2.02
         self.baseRate = (self.baseRate ** exponent).round(8)
+
         # step 2.03
-
-        # TODO: Get this working to replace the rest of the method
-        # self.baseRate = (self.highRisk +
-        #                  (self.baseRate + refrate + fixedrate)).round(8)
-        # if self.rtype > 1.5:
-        #     self.baseRate[:] = self.highRisk
-        # self.revLook = self.baseRate
-
-        self.baseRate[0] = round(
-            self.highRisk + (self.baseRate[0] * refrate[0]) + fixedrate[0], 8)
+        self.baseRate = (self.highRisk + self.baseRate * refrate + fixedrate).round(8)
         if self.rtype > 1.5:
-            self.baseRate[0] = self.highRisk
-        self.revLook[0] = self.baseRate[0]
-
-        self.baseRate[1] = round(
-            self.highRisk + (self.baseRate[1] * refrate[1]) + fixedrate[1], 8)
-        if self.rtype > 1.5:
-            self.baseRate[1] = self.highRisk
-        self.revLook[1] = self.baseRate[1]
+            self.baseRate[:] = self.highRisk
+        self.revLook[:] = self.baseRate
 
     def set_base_prem_rates(self):
         """
-        Set base premium rates
+        Set adjusted base premium rates
         """
+        # Worksheet step 8.  Calculate Base Premium Rates Adjusted Base Rate x
+        # coverage level rate differential.
         # step 2.04
-        self.basePremRate = (self.baseRate * self.rateDiffFac * self.uFactor).round(8)
-        self.basePremRateE = (self.baseRate * self.rateDiffFac * self.eFactor).round(8)
-        self.basePremRateErev = (self.baseRate *
-                                 self.rateDiffFac * self.eFactorRev).round(8)
+        prod = self.baseRate * self.rateDiffFac
+        self.basePremRate = (prod * self.uFactor).round(8)
+        self.basePremRateE = (prod * self.eFactor).round(8)
+        self.basePremRateErev = (prod * self.eFactorRev).round(8)
 
     def limit_base_prem_rates(self):
         """
-        Limit base premium rates
+        Limit base premium rates based on previous
         """
+        # Worksheet step 5, 6.  Preliminary base rate is min of cur and 1.2*prev.
         # step 2.05
-        if self.basePremRate[0] > self.basePremRate[1] * 1.2:
-            self.basePremRate[0] = round(self.basePremRate[1] * 1.2, 8)
-        if self.basePremRate[0] > 0.99:
-            self.basePremRate[0] = 0  # Not 1?  Smells fishy...
-        if self.basePremRateE[0] > self.basePremRateE[1] * 1.2:
-            self.basePremRateE[0] = round(self.basePremRateE[1] * 1.2, 8)
-        if self.basePremRateE[0] > 0.99:
-            self.basePremRateE[0] = 0
-        if self.basePremRateErev[0] > self.basePremRateErev[1] * 1.2:
-            self.basePremRateErev[0] = round(self.basePremRateErev[1] * 1.2, 8)
-        if self.basePremRateErev[0] > 0.99:
-            self.basePremRateErev[0] = 0
+        for var in (self.basePremRate, self.basePremRateE, self.basePremRateErev):
+            if var[0] > var[1] * 1.2:
+                var[0] = round(var[1] * 1.2, 8)
+            if var[0] > 0.99:
+                var[0] = 0
 
     def limit_revlook(self):
         """
-        Limit revenue lookup
+        Limit revenue lookup based on previous
         """
         # step 2.06
         if self.revLook[0] > self.revLook[1] * 1.2:
@@ -236,7 +345,7 @@ class EntPrems:
 
     def limit_baserate(self):
         """
-        Limit base rate
+        Limit base rate based on previous
         """
         # step 2.07
         if self.baseRate[0] > self.baseRate[1] * 1.2:
@@ -244,7 +353,7 @@ class EntPrems:
 
     def set_multfactor(self):
         """
-        Set multFactor
+        Set Multiplicative Factor used in Worksheet step 7.
         """
         # options factor
         hfrate, pfrate, ptrate = self.options[self.code]
@@ -257,29 +366,34 @@ class EntPrems:
             self.multFactor *= ptrate
 
     def set_qtys(self):
+        """
+        Compute mQty and stdQty
+        """
+        prod = self.revLook[0] * 10000
         revLookup = [
-            int(self.revLook[0] * 10000 + 0.5),
-            int(self.revLook[0] * self.discountBasic[3, self.jSize] * 10000 + 0.5),
-            int(self.revLook[0] * self.discountEnter[3, self.jSize] * 10000 + 0.5)]
+            int(prod + 0.5),
+            int(prod * self.discountBasic[3, self.jSize] + 0.5),
+            int(prod * self.discountEnter[3, self.jSize] + 0.5)]
         self.mQty, self.stdQty = zip(*(self.rev_lookup[k] for k in revLookup))
 
     def simulate_losses(self, policy):
+        """
+        Loop through 500 yieldDraw values, incrementing losses.
+        """
         # step 5.02
         self.adjMeanQty = round(self.revYield * self.mQty[policy] / 100, 8)
         self.adjStdQty = round(self.revYield * self.stdQty[policy] / 100, 8)
         self.lnMean = round(log(self.aphPrice) - (self.pvol ** 2 / 2), 8)
         # step 5.04 simulate losses
-        simYieldLoss = 0
-        simRevLoss = 0
-        simRevExcLoss = 0
-        for j in range(500):
+        simYieldLoss, simRevLoss, simRevExcLoss = 0, 0, 0
+        for yieldDraw, priceDraw in self.selected_draws:
             # yield insurance
-            yld = max(0, self.yieldDraw[j] * self.adjStdQty + self.adjMeanQty)
+            yld = max(0, yieldDraw * self.adjStdQty + self.adjMeanQty)
             loss = max(0, self.revYield * self.revCov - yld)
             simYieldLoss += loss
             # revenue insurance
             harPrice = min(2 * self.aphPrice,
-                           exp(self.priceDraw[j] * self.pvol + self.lnMean))
+                           exp(priceDraw * self.pvol + self.lnMean))
             guarPrice = max(harPrice, self.aphPrice)
             loss = max(0, self.revYield * guarPrice * self.revCov - yld * harPrice)
             simRevLoss += loss
@@ -287,127 +401,83 @@ class EntPrems:
             loss = max(0, self.revYield * self.aphPrice * self.revCov - yld * harPrice)
             simRevExcLoss += loss
         # step 5.05
-        self.simYpLoss = round((simYieldLoss / 500) / (self.revYield * self.revCov), 8)
-        self.simRpLoss = round(simRevLoss / 500 /
+        ct = len(self.selected_draws)
+        self.simYpLoss = round((simYieldLoss / ct) / (self.revYield * self.revCov), 8)
+        self.simRpLoss = round(simRevLoss / ct /
                                (self.revYield * self.revCov * self.aphPrice), 8)
-        self.simRpExcLoss = round(simRevExcLoss / 500 /
+        self.simRpExcLoss = round(simRevExcLoss / ct /
                                   (self.revYield * self.revCov * self.aphPrice), 8)
 
     def set_rates(self):
+        """
+        Set the premium rates
+        """
         # step 5.06
         revRate = round(max(0.01 * self.basePremRate[0],
                             self.simRpLoss - self.simYpLoss), 8)
         revExcRate = round(max(-0.5 * self.basePremRate[0],
                                self.simRpExcLoss - self.simYpLoss), 8)
-        # step 6 calculation of historical revenue capping
-        # since krecord = 0, cHisRec = 0 so the if block was removed
-        self.revRateUse = revRate
-        self.revRateEntUse = revRate
-        self.revExcRateUse = revExcRate
-        self.revExcRateEntUse = revExcRate
+        # step 6  No historical revenue capping is performed
+        self.revRateUse, self.revRateEntUse = revRate, revRate
+        self.revExcRateUse, self.revExcRateEntUse = revExcRate, revExcRate
         # step 8.01
         self.premRateO = self.basePremRate[0] * self.multFactor
         self.premRateB = self.basePremRate[0] * self.multFactor * self.disBasic
         self.premRateE = self.basePremRateE[0] * self.multFactor * self.disEnter
         self.premRateErev = self.basePremRateErev[0] * self.multFactor * self.disEnter
 
+    def set_prem(self, rate, i, j, rateuse=0):
+        """
+        Set a premium with given rate, indices and optional rateuse
+        """
+        self.prem[i, j] = round(self.liab * round(rate + rateuse, 8), 0)
+
     def set_prems(self, i, policy):
+        """
+        Set the pre-subsidy premiums
+        """
         if policy == 0:  # optional policies
-            # rp optional
-            self.prem[i, 0] = round(self.liab *
-                                    round(self.premRateO + self.revRateUse, 8), 0)
-            # rpexc optional
-            self.prem[i, 3] = round(self.liab *
-                                    round(self.premRateO + self.revExcRateUse, 8), 0)
-            # yp optional
-            self.prem[i, 6] = round(self.liab * round(self.premRateO, 8), 0)
+            self.set_prem(self.premRateO, i, 0, self.revRateUse)           # rp
+            self.set_prem(self.premRateO, i, 3, self.revExcRateUse)        # rpexc
+            self.set_prem(self.premRateO, i, 6)                            # yp
         if policy == 1:  # basic policy
-            # rp basic
-            self.prem[i, 1] = round(self.liab *
-                                    round(self.premRateB + self.revRateUse, 8), 0)
-            # rpexc basic
-            self.prem[i, 4] = round(self.liab *
-                                    round(self.premRateB + self.revExcRateUse, 8), 0)
-            # yp basic
-            self.prem[i, 7] = round(self.liab * round(self.premRateB, 8), 0)
+            self.set_prem(self.premRateB, i, 1, self.revRateUse)           # rp
+            self.set_prem(self.premRateB, i, 4, self.revExcRateUse)        # rpexc
+            self.set_prem(self.premRateB, i, 7)                            # yp
         if policy == 2:   # enterprise policy
-            # rp enterprise
-            self.prem[i, 2] = round(self.liab *
-                                    round(self.premRateErev + self.revRateEntUse, 8), 0)
-            # rpexc enterprise
-            self.prem[i, 5] = round(self.liab *
-                                    round(self.premRateErev +
-                                          self.revExcRateEntUse, 8), 0)
-            # yp enterprise
-            self.prem[i, 8] = round(self.liab * round(self.premRateE, 8), 0)
+            self.set_prem(self.premRateErev, i, 2, self.revRateEntUse)     # rp
+            self.set_prem(self.premRateErev, i, 5, self.revExcRateEntUse)  # rpexc
+            self.set_prem(self.premRateE, i, 8)                            # yp
 
     def apply_subsidy(self, i):
+        """
+        Apply the subsidy
+        """
         for j in range(9):
             self.prem[i, j] -= round(self.prem[i, j] *
                                      self.subsidy[i, 1 if j % 3 == 2 else 0], 0)
-        for j in range(9):
             self.prem[i, j] = round(self.prem[i, j] / self.acre, 2)
 
+    # -----------------------------
+    # MAIN METHOD: COMPUTE PREMIUMS
+    # -----------------------------
     def compute_premiums(self, aphyield=180, apprYield=180, tayield=190, acre=100,
-                         aphPrice=5.91, pvol=0.18, hf=0, pf=0, highRisk=0, rtype=0,
+                         aphPrice=5.91, pvol=0.18, hf=0, pf=0, riskname='None',
                          tause=1, ye=0, county='Champaign, IL', crop='Corn',
                          practice='Non-irrigated', atype='Grain'):
         """
         Given user information, compute premiums for enterprise, optional and basic
         units with RP, RP-HPE or YO protection.
         """
-        self.aphyield = aphyield
-        self.apprYield = apprYield
-        self.tayield = tayield
-        self.acre = acre
-        self.aphPrice = aphPrice
-        self.pvol = pvol
-        self.hf = hf
-        self.pf = pf
-        self.highRisk = highRisk
-        self.rtype = rtype
-        self.tause = tause
-        self.ye = ye
-
-        if self.tayield < self.aphyield:
-            self.tayield = self.aphyield
-
-        self.code = self.make_code(county, crop, atype, practice)
-        self.fcode = self.code + 0.1
-        self.cover = array([x/100 for x in range(50, 86, 5)])
-        # -------------------------------------------------------------------
-        # Look up info from the dicts created when the object was constructed
-        # -------------------------------------------------------------------
-        enterId = self.enter_id[self.code]
-        self.discountBasic = self.discount_basic[enterId]
-        self.discountEnter = self.discount_enter[enterId]
-        self.rateDiff = array((self.rate_diff[self.fcode],
-                               self.prate_diff[self.fcode])).T
-        self.unitFactor = array((self.unit_factor[self.fcode],
-                                 self.punit_factor[self.fcode])).T
-        self.enterpriseFactor = array((self.enterprise_factor[self.fcode],
-                                       self.penterprise_factor[self.fcode])).T
-        self.enterFactorRev = array((self.enter_factor_rev[self.fcode],
-                                     self.penter_factor_rev[self.fcode])).T
-        # self.enterFactorRev = zeros((8, 2))
-        # self.enterFactorRev[:, 0] = self.enter_factor_rev[self.fcode]
-        # self.enterFactorRev[:, 1] = self.penter_factor_rev[self.fcode]
-        betaId = self.beta_id[self.code]
-        self.yieldDraw, self.priceDraw = self.draws[betaId]
-
-        self.jSize = (0 if self.acre < 50 else 1 if self.acre < 100 else
-                      2 if self.acre < 200 else 3 if self.acre < 400 else
-                      4 if self.acre < 800 else 5)
-
-        # will store premiums
-        self.prem = zeros((8, 9))
+        self.store_user_settings(aphyield, apprYield, tayield, acre, aphPrice,
+                                 pvol, hf, pf, riskname, tause, ye, county,
+                                 crop, practice, atype)
+        self.initialize_arrays()
         self.set_multfactor()
         for i in range(8):
             # index i corresponds to coverage level
             if self.rateDiff[i, 0] > 0:
-                # Note: rateDiff[i, 0] would result in zero premiums for level.
-                self.effcov = round(0.0001 + self.cover[i] *
-                                    self.tayield / self.apprYield, 2)
+                self.set_effcov(i)
                 self.set_factors(i)
                 self.make_ye_adj()
                 self.make_rev_liab(i)
@@ -415,8 +485,6 @@ class EntPrems:
                 self.set_base_prem_rates()
                 self.limit_base_prem_rates()
                 self.limit_revlook()
-                # Note: each pass, we set the base rates, use them to get base prem
-                # rates, then limit the base rates. Can this be improved?
                 self.limit_baserate()
                 self.set_qtys()
                 # step 5.01
@@ -428,6 +496,11 @@ class EntPrems:
                     self.set_prems(i, policy)
                 self.apply_subsidy(i)
         return self.prem
+
+
+# -------------------------------------
+# Helper functions for text file import
+# -------------------------------------
 
 
 def readfile(filename):
@@ -524,8 +597,9 @@ def get_draws():
     draws = {}
     for code, _, yielddraw, pricedraw in items:
         draws.setdefault(int(code), []).append((float(yielddraw), float(pricedraw)))
-    draws = {k: tuple(zip(*v)) for k, v in draws.items()}
-    return {k: (np.array(v[0]), np.array(v[1])) for k, v in draws.items()}
+    return draws
+    # draws = {k: tuple(zip(*v)) for k, v in draws.items()}
+    # return {k: (np.array(v[0]), np.array(v[1])) for k, v in draws.items()}
 
 
 def get_discount_basic():
@@ -544,3 +618,8 @@ def get_counties():
     items = get_file_items('data/counties.txt')
     return {f'{cty}, {st}': f'{int(stcode):02}{int(ctycode):03}'
             for stcode, ctycode, cty, st in items}
+
+
+def get_high_risk():
+    items = get_file_items('data/highRisk.txt')
+    return {itm[0]+itm[1]: (float(itm[2]), float(itm[3])) for itm in items}
