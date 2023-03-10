@@ -3,6 +3,8 @@ from ifbt import EntPrems
 
 # This loads all data (expensive), so only do it once!
 # Note: 'expected' arrays marked 'verified' have been checked against excel
+# Note: When verifying against the Excel file, note that the APH Yield and
+#       Rate Yield are reversed on the premiums tab.
 ep = EntPrems()
 
 
@@ -33,12 +35,11 @@ def test_3000_acres_corn_in_champaign():
         'acre': 3000,
         'aphPrice': 5.91,
         'pvol': 0.18,
-        'hf': 0,        # possibly harvest factor
-        'pf': 0,        # prevent plant factor: std=0, Plus5%=1, Plus10%=2
-        'highRisk': 0,  # only visible option is None -> 0
-        'rtype': 0,     # only visible option is None -> 0
-        'tause': 1,     # 0 if K7 is 'No' else 1
-        'ye': 0,        # 1 if K7 is 'YE' or 'TA/YE' else 0
+        'hf': 0,             # hail and fire protection
+        'pf': 0,             # prevent plant factor: std=0, Plus5%=1, Plus10%=2
+        'riskname': 'None',  # {'None', 'AAA', 'BBB', 'CCC', 'DDD'}
+        'tause': 1,          # 1 to use trend-adjusted yields 0 else
+        'ye': 0,             # 1 to use yield-exclusion 0 else
         'county': 'Champaign, IL',
         'crop': 'Corn',
         'practice': 'Non-irrigated',
@@ -67,12 +68,11 @@ def test_3000_acres_champaign_full_soy():
         'acre': 3000,
         'aphPrice': 13.76,
         'pvol': 0.13,
-        'hf': 0,        # possibly harvest factor
-        'pf': 0,        # prevent plant factor: std=0, Plus5%=1, Plus10%=2
-        'highRisk': 0,  # only visible option is None -> 0
-        'rtype': 0,     # only visible option is None -> 0
-        'tause': 1,     # 0 if K7 is 'No' else 1
-        'ye': 0,        # 1 if K7 is 'YE' or 'TA/YE' else 0
+        'hf': 0,             # hail and fire protection
+        'pf': 0,             # prevent plant factor: std=0, Plus5%=1, Plus10%=2
+        'riskname': 'None',  # {'None', 'AAA', 'BBB', 'CCC', 'DDD'}
+        'tause': 1,          # 1 to use trend-adjusted yields 0 else
+        'ye': 0,             # 1 to use yield-exclusion 0 else
         'county': 'Champaign, IL',
         'crop': 'Soybeans',
         'practice': 'Nfac (non-irrigated)',
@@ -102,12 +102,11 @@ def test_300_acres_wheat_champaign():
         'acre': 300,
         'aphPrice': 7.25,
         'pvol': 0.24,
-        'hf': 0,        # possibly harvest factor
-        'pf': 0,        # prevent plant factor: std=0, Plus5%=1, Plus10%=2
-        'highRisk': 0,  # only visible option is None -> 0
-        'rtype': 0,     # only visible option is None -> 0
-        'tause': 1,     # 0 if K7 is 'No' else 1
-        'ye': 0,        # 1 if K7 is 'YE' or 'TA/YE' else 0
+        'hf': 0,             # hail and fire protection
+        'pf': 0,             # prevent plant factor: std=0, Plus5%=1, Plus10%=2
+        'riskname': 'None',  # {'None', 'AAA', 'BBB', 'CCC', 'DDD'}
+        'tause': 1,          # 1 to use trend-adjusted yields 0 else
+        'ye': 0,             # 1 to use yield-exclusion 0 else
         'county': 'Champaign, IL',
         'crop': 'Wheat',
         'practice': 'Non-irrigated',
@@ -136,12 +135,11 @@ def test_100_acres_madison_corn():
         'acre': 100,
         'aphPrice': 5.91,
         'pvol': 0.18,
-        'hf': 0,        # possibly harvest factor
-        'pf': 0,        # prevent plant factor: std=0, Plus5%=1, Plus10%=2
-        'highRisk': 0,  # only visible option is None -> 0
-        'rtype': 0,     # only visible option is None -> 0
-        'tause': 1,     # 0 if K7 is 'No' else 1
-        'ye': 0,        # 1 if K7 is 'YE' or 'TA/YE' else 0
+        'hf': 0,             # hail and fire protection
+        'pf': 0,             # prevent plant factor: std=0, Plus5%=1, Plus10%=2
+        'riskname': 'None',  # {'None', 'AAA', 'BBB', 'CCC', 'DDD'}
+        'tause': 1,          # 1 to use trend-adjusted yields 0 else
+        'ye': 0,             # 1 to use yield-exclusion 0 else
         'county': 'Madison, IL',
         'crop': 'Corn',
         'practice': 'Non-irrigated',
@@ -170,12 +168,11 @@ def test_3000_acres_full_soybeans_madison():
         'acre': 3000,
         'aphPrice': 13.76,
         'pvol': 0.13,
-        'hf': 0,        # possibly harvest factor
-        'pf': 0,        # prevent plant factor: std=0, Plus5%=1, Plus10%=2
-        'highRisk': 0,  # only visible option is None -> 0
-        'rtype': 0,     # only visible option is None -> 0
-        'tause': 1,     # 0 if K7 is 'No' else 1
-        'ye': 0,        # 1 if K7 is 'YE' or 'TA/YE' else 0
+        'hf': 0,             # hail and fire protection
+        'pf': 0,             # prevent plant factor: std=0, Plus5%=1, Plus10%=2
+        'riskname': 'None',  # {'None', 'AAA', 'BBB', 'CCC', 'DDD'}
+        'tause': 1,          # 1 to use trend-adjusted yields 0 else
+        'ye': 0,             # 1 to use yield-exclusion 0 else
         'county': 'Madison, IL',
         'crop': 'Soybeans',
         'practice': 'Nfac (non-irrigated)',
@@ -204,12 +201,11 @@ def test_300_acres_wheat_madison():
         'acre': 300,
         'aphPrice': 7.25,
         'pvol': 0.24,
-        'hf': 0,        # possibly harvest factor
-        'pf': 0,        # prevent plant factor: std=0, Plus5%=1, Plus10%=2
-        'highRisk': 0,  # only visible option is None -> 0
-        'rtype': 0,     # only visible option is None -> 0
-        'tause': 1,     # 0 if K7 is 'No' else 1
-        'ye': 0,        # 1 if K7 is 'YE' or 'TA/YE' else 0
+        'hf': 0,             # hail and fire protection
+        'pf': 0,             # prevent plant factor: std=0, Plus5%=1, Plus10%=2
+        'riskname': 'None',  # {'None', 'AAA', 'BBB', 'CCC', 'DDD'}
+        'tause': 1,          # 1 to use trend-adjusted yields 0 else
+        'ye': 0,             # 1 to use yield-exclusion 0 else
         'county': 'Madison, IL',
         'crop': 'Wheat',
         'practice': 'Non-irrigated',
@@ -238,12 +234,11 @@ def test_300_acres_fac_soy_madison():
         'acre': 300,
         'aphPrice': 13.76,
         'pvol': 0.13,
-        'hf': 0,        # possibly harvest factor
-        'pf': 0,        # prevent plant factor: std=0, Plus5%=1, Plus10%=2
-        'highRisk': 0,  # only visible option is None -> 0
-        'rtype': 0,     # only visible option is None -> 0
-        'tause': 1,     # 0 if K7 is 'No' else 1
-        'ye': 0,        # 1 if K7 is 'YE' or 'TA/YE' else 0
+        'hf': 0,             # hail and fire protection
+        'pf': 0,             # prevent plant factor: std=0, Plus5%=1, Plus10%=2
+        'riskname': 'None',  # {'None', 'AAA', 'BBB', 'CCC', 'DDD'}
+        'tause': 1,          # 1 to use trend-adjusted yields 0 else
+        'ye': 0,             # 1 to use yield-exclusion 0 else
         'county': 'Madison, IL',
         'crop': 'Soybeans',
         'practice': 'Fac (non-irrigated)',
@@ -259,5 +254,71 @@ def test_300_acres_fac_soy_madison():
        [18.83, 14.86,  7.57, 14.27, 10.75,  5.47, 15.4 , 11.82,  6.01],
        [27.14, 21.95, 13.34, 20.67, 15.97,  9.66, 22.21, 17.43, 10.56],
        [40.52, 33.73, 25.34, 31.25, 24.87, 18.62, 32.94, 26.56, 19.73]])
+
+    assert np.all((prem - expected) == 0), "values don't all match"
+
+
+def test_100_acres_corn_st_charles_mo_risk_BBB():
+    # Premiums for 100 acres corn in St. Charles, MO (verified)
+    settings = {
+        'aphyield': 147.0,
+        'apprYield': 147.0,
+        'tayield': 156.0,
+        'acre': 100,
+        'aphPrice': 5.91,
+        'pvol': 0.18,
+        'hf': 0,             # hail and fire protection
+        'pf': 0,             # prevent plant factor: std=0, Plus5%=1, Plus10%=2
+        'riskname': 'BBB',  # {'None', 'AAA', 'BBB', 'CCC', 'DDD'}
+        'tause': 1,          # 1 to use trend-adjusted yields 0 else
+        'ye': 0,             # 1 to use yield-exclusion 0 else
+        'county': 'St._Charles, MO',
+        'crop': 'Corn',
+        'practice': 'Non-irrigated',
+        'atype': 'Grain'
+    }
+    prem = ep.compute_premiums(**settings)
+    expected = np.array(
+      [[021.39,  13.88,   8.41,  17.79,  10.92,   6.62,  18.06,  11.4 , 6.91],
+       [028.04,  18.55,  10.31,  23.45,  14.65,   8.14,  23.65,  15.25, 8.47],
+       [034.02,  23.02,  12.79,  28.48,  18.36,  10.2 ,  28.47,  18.8 , 10.45],
+       [045.61,  31.65,  15.44,  38.26,  25.41,  12.4 ,  37.97,  25.57, 12.47],
+       [054.07,  38.52,  18.61,  45.59,  31.1 ,  14.99,  45.14,  30.98, 14.94],
+       [072.35,  52.83,  26.19,  61.59,  43.2 ,  21.27,  61.01,  42.83, 21.08],
+       [099.47,  73.88,  43.3 ,  85.4 ,  61.03,  35.39,  84.44,  60.37, 34.99],
+       [134.42, 101.92,  75.04, 115.69,  84.39,  61.75, 114.09,  83.06, 59.29]])
+
+    assert np.all((prem - expected) == 0), "values don't all match"
+
+
+def test_100_acres_madison_corn_NO_TA():
+    # Premiums for Madison County corn without trend adjustment (verified)
+    settings = {
+        'aphyield': 154,
+        'apprYield': 154,
+        'tayield': 164,
+        'acre': 100,
+        'aphPrice': 5.91,
+        'pvol': 0.18,
+        'hf': 0,             # hail and fire protection
+        'pf': 0,             # prevent plant factor: std=0, Plus5%=1, Plus10%=2
+        'riskname': 'None',  # {'None', 'AAA', 'BBB', 'CCC', 'DDD'}
+        'tause': 0,          # 1 to use trend-adjusted yields 0 else
+        'ye': 0,             # 1 to use yield-exclusion 0 else
+        'county': 'Madison, IL',
+        'crop': 'Corn',
+        'practice': 'Non-irrigated',
+        'atype': 'Grain'
+    }
+    prem = ep.compute_premiums(**settings)
+    expected = np.array(
+      [[04.23,  2.67,  1.62,  3.03,  1.98,  1.2 ,  3.56,  2.26,  1.37],
+       [05.79,  3.79,  2.11,  4.03,  2.56,  1.42,  4.78,  3.09,  1.72],
+       [07.35,  4.96,  2.76,  4.99,  3.23,  1.8 ,  5.95,  3.93,  2.18],
+       [10.66,  7.41,  3.61,  7.04,  4.65,  2.27,  8.5 ,  5.72,  2.79],
+       [13.92,  9.84,  4.8 ,  9.02,  5.95,  2.9 , 10.67,  7.32,  3.57],
+       [20.19, 14.8 ,  7.49, 13.24,  8.92,  4.48, 15.08, 10.54,  5.31],
+       [30.76, 23.3 , 13.97, 20.53, 14.43,  8.51, 22.7 , 16.16,  9.58],
+       [47.68, 37.18, 27.06, 32.66, 23.62, 16.78, 34.94, 25.33, 18.09]])
 
     assert np.all((prem - expected) == 0), "values don't all match"
