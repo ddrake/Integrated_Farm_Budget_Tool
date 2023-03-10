@@ -16,6 +16,8 @@ class EntPrems:
         self.subsidy = array([[0.67, 0.64, 0.64, 0.59, 0.59, 0.55, 0.48, 0.38],
                               [0.8,  0.8,  0.8,  0.8,  0.8,  0.77, 0.68, 0.53]]).T
 
+        self.cover = array([x/100 for x in range(50, 86, 5)])  # coverage levels
+
         # User inputs
         # -----------
         self.acre = None       # acres to insure
@@ -45,9 +47,6 @@ class EntPrems:
         self.code = None       # code for state/county/crop/etc..
         self.fcode = None      # code with decimal suffix for risk
 
-        # 8 coverage levels
-        self.cover = array([x/100 for x in range(50, 86, 5)])
-
         # scalar instance variables
         self.adjMeanQty = None
         self.adjStdQty = None
@@ -58,17 +57,17 @@ class EntPrems:
         self.liab = None
         self.lnMean = None
         self.multFactor = None
-        self.selected_draws = None
         self.premRateO = None        # Premium rate used for optional
         self.premRateB = None        # Premium rate used for basic
         self.premRateE = None        # Premium rate used for enterprise YO
         self.premRateErev = None     # Premium rate used for enterprise rev
         self.revCov = None
-        self.revExcRateUse = None
         self.revExcRateEntUse = None
-        self.revRateUse = None
+        self.revExcRateUse = None
         self.revRateEntUse = None
+        self.revRateUse = None
         self.revYield = None
+        self.selected_draws = None
         self.simRpLoss = None
         self.simRpExcLoss = None
         self.simYpLoss = None
@@ -77,8 +76,7 @@ class EntPrems:
         self.mQty = None
         self.stdQty = None
 
-        # Intance variable pairs with the current value in the first position
-        # and the previous year value in the second position
+        # Intance variable (current/prev) pairs
         self.baseRate = None          # Continuous rating base rate
         self.basePremRate = None      # Base premium rate
         self.basePremRateE = None     # Base premium rate
@@ -89,15 +87,15 @@ class EntPrems:
         self.revLook = None
         self.uFactor = None
 
-        # Arrays sized (8, 6) (6 values for each of 8 coverage levels)
-        self.discountBasic = None
-        self.discountEnter = None
-
-        # Arrays sized (8, 2) (8 rows for coverage levels and 2 for current/prev)
+        # Arrays sized (8, 2) (8 coverage levels by 2 current/prev)
         self.rateDiff = None
         self.unitFactor = None
         self.enterpriseFactor = None
         self.enterFactorRev = None
+
+        # Arrays sized (8, 6) (6 values for each of 8 coverage levels)
+        self.discountBasic = None
+        self.discountEnter = None
 
     def load_lookups(self):
         """
@@ -211,7 +209,7 @@ class EntPrems:
         self.effcov = round(0.0001 + self.cover[i] *
                             self.tayield / self.apprYield, 2)
 
-    def get_factor(self, var, j2, ro):
+    def get_factor(self, var, i, j2, ro):
         """
         Given a variable (e.g. rateDiff), a 2nd index and a roundoff precision,
         first compute some indices, then use them to get a factor (e.g. rateDiffFac)
@@ -229,47 +227,34 @@ class EntPrems:
             jlow = 4
             jhigh = 5
             jfloor = 5
-        return round(
-            var[jfloor, j2] +
-            (var[jhigh, j2] - var[jlow, j2]) *
-            (ecv - cv[jfloor]) * 20 + 0.00000000001, ro)
+        return (
+            round(var[jfloor, j2] + (var[jhigh, j2] - var[jlow, j2]) *
+                  (ecv - cv[jfloor]) * 20 + 1e-11, ro) if self.tause else
+            var[i, j2])
 
     def set_factors(self, i):
         """
-        Set factors used to compute base premium rates
+        Set 4 vector factors and 2 scalar factors used to compute base premium rates
         """
         self.rateDiffFac[:] = (
-            self.get_factor(self.rateDiff, 0, 9) if self.tause else
-            self.rateDiff[i, 0],
-            self.get_factor(self.rateDiff, 1, 9) if self.tause else
-            self.rateDiff[i, 1])
+            self.get_factor(self.rateDiff, i, 0, 9),
+            self.get_factor(self.rateDiff, i, 1, 9))
         self.uFactor[:] = (
-            self.get_factor(self.unitFactor, 0, 3) if self.tause else
-            self.unitFactor[i, 0],
-            self.get_factor(self.unitFactor, 1, 3) if self.tause else
-            self.unitFactor[i, 1])
+            self.get_factor(self.unitFactor, i, 0, 3),
+            self.get_factor(self.unitFactor, i, 1, 3))
         self.eFactor[:] = (
-            self.get_factor(self.enterpriseFactor, 0, 3) if self.tause else
-            self.enterpriseFactor[i, 0],
-            self.get_factor(self.enterpriseFactor, 1, 3) if self.tause else
-            self.enterpriseFactor[i, 1])
+            self.get_factor(self.enterpriseFactor, i, 0, 3),
+            self.get_factor(self.enterpriseFactor, i, 1, 3))
         self.eFactorRev[:] = (
-            self.get_factor(self.enterFactorRev, 0, 3) if self.tause else
-            self.enterFactorRev[i, 0],
-            self.get_factor(self.enterFactorRev, 1, 3) if self.tause else
-            self.enterFactorRev[i, 1])
-        self.disBasic = (
-            self.get_factor(self.discountBasic, self.jSize, 4) if self.tause else
-            self.discountBasic[i, self.jSize])
-        self.disEnter = (
-            self.get_factor(self.discountEnter, self.jSize, 4) if self.tause else
-            self.discountEnter[i, self.jSize])
+            self.get_factor(self.enterFactorRev, i, 0, 3),
+            self.get_factor(self.enterFactorRev, i, 1, 3))
+        self.disBasic = self.get_factor(self.discountBasic, i, self.jSize, 4)
+        self.disEnter = self.get_factor(self.discountEnter, i, self.jSize, 4)
 
     def make_ye_adj(self):
         """
-        Adjust factors for YE
+        Adjust factors for YE (vectorized)
         """
-        # code for YE adj
         jjHigh = 5 if self.rateDiff[6, 0] == 0 else 7
         yeAdj = 0
         if self.effcov > 0.85:
@@ -281,6 +266,9 @@ class EntPrems:
             self.eFactor = np.minimum(self.eFactor, self.enterpriseFactor[jjHigh, :])
 
     def make_rev_liab(self, i):
+        """
+        Set the revised yield, the revised cover and the liability
+        """
         # step 1
         self.revYield = self.tayield if self.tause else self.apprYield
         self.revCov = self.effcov if self.tause else self.cover[i]
@@ -289,22 +277,21 @@ class EntPrems:
 
     def set_base_rates(self):
         """
-        Set and limit base rates from RMA data
+        Set and limit vector base rates from RMA data
         """
         # step 2.01: Look up current and previous year rates.
         refyield, refrate, exponent, fixedrate = zeros(2), zeros(2), zeros(2), zeros(2)
         (refyield[0], refrate[0], exponent[0], fixedrate[0],
          refyield[1], refrate[1], exponent[1], fixedrate[1]) = self.rates[self.code]
 
-        # Worksheet steps 1, 2: Continuous rating base rate
-        self.baseRate[:] = (
-            min(max(round(self.aphyield / refyield[0], 2), 0.5), 1.5),
-            min(max(round(self.aphyield / refyield[1], 2), 0.5), 1.5))
+        # Worksheet steps 1, 2: Continuous rating base rate (current/prior)
+        self.baseRate = np.minimum(np.maximum(
+            (self.aphyield / refyield).round(2), 0.5), 1.5)
 
-        # step 2.02
+        # step 2.02: vectorized (current/prior)
         self.baseRate = (self.baseRate ** exponent).round(8)
 
-        # step 2.03
+        # step 2.03: vectorized (current/prior)
         self.baseRate = (self.highRisk + self.baseRate * refrate + fixedrate).round(8)
         if self.rtype > 1.5:
             self.baseRate[:] = self.highRisk
@@ -312,7 +299,7 @@ class EntPrems:
 
     def set_base_prem_rates(self):
         """
-        Set adjusted base premium rates
+        Set vector adjusted base premium rates
         """
         # Worksheet step 8.  Calculate Base Premium Rates Adjusted Base Rate x
         # coverage level rate differential.
@@ -324,9 +311,9 @@ class EntPrems:
 
     def limit_base_prem_rates(self):
         """
-        Limit base premium rates based on previous
+        Limit base premium rates based on prior (unpacking vectors)
         """
-        # Worksheet step 5, 6.  Preliminary base rate is min of cur and 1.2*prev.
+        # Preliminary base rate is min of cur and 1.2 * prev.
         # step 2.05
         for var in (self.basePremRate, self.basePremRateE, self.basePremRateErev):
             if var[0] > var[1] * 1.2:
@@ -336,7 +323,7 @@ class EntPrems:
 
     def limit_revlook(self):
         """
-        Limit revenue lookup based on previous
+        Limit revenue lookup based on previous (unpacking vectors)
         """
         # step 2.06
         if self.revLook[0] > self.revLook[1] * 1.2:
@@ -345,7 +332,7 @@ class EntPrems:
 
     def limit_baserate(self):
         """
-        Limit base rate based on previous
+        Limit base rate based on previous (unpacking vectors)
         """
         # step 2.07
         if self.baseRate[0] > self.baseRate[1] * 1.2:
@@ -378,7 +365,7 @@ class EntPrems:
 
     def simulate_losses(self, policy):
         """
-        Loop through 500 yieldDraw values, incrementing losses.
+        Loop through 500 yield, price pairs, incrementing losses.
         """
         # step 5.02
         self.adjMeanQty = round(self.revYield * self.mQty[policy] / 100, 8)
@@ -454,8 +441,8 @@ class EntPrems:
         Apply the subsidy
         """
         for j in range(9):
-            self.prem[i, j] -= round(self.prem[i, j] *
-                                     self.subsidy[i, 1 if j % 3 == 2 else 0], 0)
+            idx = 1 if j % 3 == 2 else 0
+            self.prem[i, j] -= round(self.prem[i, j] * self.subsidy[i, idx], 0)
             self.prem[i, j] = round(self.prem[i, j] / self.acre, 2)
 
     # -----------------------------
@@ -466,16 +453,15 @@ class EntPrems:
                          tause=1, ye=0, county='Champaign, IL', crop='Corn',
                          practice='Non-irrigated', atype='Grain'):
         """
-        Given user information, compute premiums for enterprise, optional and basic
-        units with RP, RP-HPE or YO protection.
+        With farm-specific inputs, compute premiums for optional, basic and enterprise,
+        units with RP, RP-HPE or YO protection for all coverage levels.
         """
         self.store_user_settings(aphyield, apprYield, tayield, acre, aphPrice,
                                  pvol, hf, pf, riskname, tause, ye, county,
                                  crop, practice, atype)
         self.initialize_arrays()
         self.set_multfactor()
-        for i in range(8):
-            # index i corresponds to coverage level
+        for i in range(8):  # index i corresponds to coverage level
             if self.rateDiff[i, 0] > 0:
                 self.set_effcov(i)
                 self.set_factors(i)
@@ -488,7 +474,7 @@ class EntPrems:
                 self.limit_baserate()
                 self.set_qtys()
                 # step 5.01
-                #  Loop for units (0=optional, 1=basic, 2=enterprise)
+                #  Loop for policy (0=optional, 1=basic, 2=enterprise)
                 for policy in range(3):
                     # section 5 revenue calculation
                     self.simulate_losses(policy)
