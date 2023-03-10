@@ -33,8 +33,6 @@ def test_3000_acres_corn_in_champaign():
         'apprYield': 180,
         'tayield': 190,
         'acre': 3000,
-        'aphPrice': 5.91,
-        'pvol': 0.18,
         'hf': 0,             # hail and fire protection
         'pf': 0,             # prevent plant factor: std=0, Plus5%=1, Plus10%=2
         'riskname': 'None',  # {'None', 'AAA', 'BBB', 'CCC', 'DDD'}
@@ -66,8 +64,6 @@ def test_3000_acres_champaign_full_soy():
         'apprYield': 58.0,
         'tayield': 60,
         'acre': 3000,
-        'aphPrice': 13.76,
-        'pvol': 0.13,
         'hf': 0,             # hail and fire protection
         'pf': 0,             # prevent plant factor: std=0, Plus5%=1, Plus10%=2
         'riskname': 'None',  # {'None', 'AAA', 'BBB', 'CCC', 'DDD'}
@@ -100,8 +96,6 @@ def test_300_acres_wheat_champaign():
         'apprYield': 39.0,
         'tayield': 38.5,
         'acre': 300,
-        'aphPrice': 7.25,
-        'pvol': 0.24,
         'hf': 0,             # hail and fire protection
         'pf': 0,             # prevent plant factor: std=0, Plus5%=1, Plus10%=2
         'riskname': 'None',  # {'None', 'AAA', 'BBB', 'CCC', 'DDD'}
@@ -133,8 +127,6 @@ def test_100_acres_madison_corn():
         'apprYield': 154,
         'tayield': 164,
         'acre': 100,
-        'aphPrice': 5.91,
-        'pvol': 0.18,
         'hf': 0,             # hail and fire protection
         'pf': 0,             # prevent plant factor: std=0, Plus5%=1, Plus10%=2
         'riskname': 'None',  # {'None', 'AAA', 'BBB', 'CCC', 'DDD'}
@@ -166,8 +158,6 @@ def test_3000_acres_full_soybeans_madison():
         'apprYield': 47.0,
         'tayield': 50,
         'acre': 3000,
-        'aphPrice': 13.76,
-        'pvol': 0.13,
         'hf': 0,             # hail and fire protection
         'pf': 0,             # prevent plant factor: std=0, Plus5%=1, Plus10%=2
         'riskname': 'None',  # {'None', 'AAA', 'BBB', 'CCC', 'DDD'}
@@ -199,8 +189,6 @@ def test_300_acres_wheat_madison():
         'apprYield': 58.0,
         'tayield': 61.0,
         'acre': 300,
-        'aphPrice': 7.25,
-        'pvol': 0.24,
         'hf': 0,             # hail and fire protection
         'pf': 0,             # prevent plant factor: std=0, Plus5%=1, Plus10%=2
         'riskname': 'None',  # {'None', 'AAA', 'BBB', 'CCC', 'DDD'}
@@ -232,8 +220,6 @@ def test_300_acres_fac_soy_madison():
         'apprYield': 47.0,
         'tayield': 49.0,
         'acre': 300,
-        'aphPrice': 13.76,
-        'pvol': 0.13,
         'hf': 0,             # hail and fire protection
         'pf': 0,             # prevent plant factor: std=0, Plus5%=1, Plus10%=2
         'riskname': 'None',  # {'None', 'AAA', 'BBB', 'CCC', 'DDD'}
@@ -265,8 +251,6 @@ def test_100_acres_corn_st_charles_mo_risk_BBB():
         'apprYield': 147.0,
         'tayield': 156.0,
         'acre': 100,
-        'aphPrice': 5.91,
-        'pvol': 0.18,
         'hf': 0,             # hail and fire protection
         'pf': 0,             # prevent plant factor: std=0, Plus5%=1, Plus10%=2
         'riskname': 'BBB',  # {'None', 'AAA', 'BBB', 'CCC', 'DDD'}
@@ -298,8 +282,6 @@ def test_100_acres_madison_corn_NO_TA():
         'apprYield': 154,
         'tayield': 164,
         'acre': 100,
-        'aphPrice': 5.91,
-        'pvol': 0.18,
         'hf': 0,             # hail and fire protection
         'pf': 0,             # prevent plant factor: std=0, Plus5%=1, Plus10%=2
         'riskname': 'None',  # {'None', 'AAA', 'BBB', 'CCC', 'DDD'}

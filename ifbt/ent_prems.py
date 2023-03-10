@@ -97,110 +97,42 @@ class EntPrems:
         self.discountBasic = None
         self.discountEnter = None
 
-    def load_lookups(self):
+    # -----------------------------
+    # MAIN METHOD: COMPUTE PREMIUMS
+    # -----------------------------
+    def compute_premiums(self, aphyield=180, apprYield=180, tayield=190, acre=100,
+                         hf=0, pf=0, riskname='None', tause=1, ye=0,
+                         county='Champaign, IL', crop='Corn',
+                         practice='Non-irrigated', atype='Grain'):
         """
-        Define dicts for lookups
+        With farm-specific inputs, compute premiums for optional, basic and enterprise,
+        units with RP, RP-HPE or YO protection for all coverage levels.
         """
-        self.crops = {'Corn': '41', 'Soybeans': '81', 'Wheat': '11', 'Sorghum': '51'}
-        self.practices = {'Nfac (non-irrigated)': '053',
-                          'Fac (non-irrigated)': '043',
-                          'Non-irrigated': '003',
-                          'Irrigated': '002'}
-        self.types = {'Grain': '016', 'No Type Specified': '997', 'Winter': '011'}
-        self.risk_classes = {'None': 0, 'AAA': 1, 'BBB': 2, 'CCC': 3, 'DDD': 4}
-        self.counties = get_counties()
-        self.enter_id = get_enter_id()
-        self.beta_id = get_beta_id()
-        self.options = get_options()
-        self.discount_basic = get_discount_basic()
-        self.discount_enter = get_discount_enter()
-        self.rates = get_rates()
-        self.rate_diff = get_rate_diff()
-        self.prate_diff = get_prate_diff()
-        self.unit_factor = get_unit_factor()
-        self.punit_factor = get_punit_factor()
-        self.enterprise_factor = get_enterprise_factor()
-        self.penterprise_factor = get_penterprise_factor()
-        self.enter_factor_rev = get_enter_factor_rev()
-        self.penter_factor_rev = get_penter_factor_rev()
-        self.rev_lookup = get_rev_lookup()
-        self.draws = get_draws()
-        self.high_risk = get_high_risk()
-
-    def store_user_settings(self, aphyield, apprYield, tayield, acre, aphPrice, pvol,
-                            hf, pf, riskname, tause, ye, county, crop, practice, atype):
-        """
-        Store settings provide by user when calling calc_premiums
-        """
-        self.aphyield = aphyield
-        self.apprYield = apprYield
-        self.tayield = tayield
-        self.acre = acre
-        self.aphPrice = aphPrice
-        self.pvol = pvol
-        self.hf = hf
-        self.pf = pf
-        self.riskname = riskname
-        self.risk = self.risk_classes[self.riskname]
-        self.highRisk = None
-        self.rtype = None
-        self.tause = tause
-        self.ye = ye
-
-        if self.tayield < self.aphyield:
-            self.tayield = self.aphyield
-
-        # codes used to key into dicts
-        self.code = self.make_code(county, crop, atype, practice)
-        self.fcode = self.code + 0.1 * (1 + self.risk)
-
-        # Set index based on acreage
-        self.jSize = (0 if self.acre < 50 else 1 if self.acre < 100 else
-                      2 if self.acre < 200 else 3 if self.acre < 400 else
-                      4 if self.acre < 800 else 5)
-
-    def initialize_arrays(self):
-        """
-        Initialize arrays for premium calculation
-        """
-        # Initialize current/prev arrays
-        self.rateDiffFac = zeros(2)
-        self.uFactor = zeros(2)
-        self.eFactor = zeros(2)
-        self.eFactorRev = zeros(2)
-        self.baseRate = zeros(2)
-        self.revLook = zeros(2)
-
-        # Initialize array to hold premiums
-        self.prem = zeros((8, 9))
-
-        enterId = self.enter_id[self.code]
-        betaId = self.beta_id[self.code]
-
-        # Look up info from the dicts created when the object was constructed
-        self.highRisk, self.rtype = ((0, 0) if self.risk == 0 else
-                                     self.high_risk[str(self.code)+self.riskname])
-        self.discountBasic = self.discount_basic[enterId]
-        self.discountEnter = self.discount_enter[enterId]
-        self.rateDiff = array((self.rate_diff[self.fcode],
-                               self.prate_diff[self.fcode])).T
-        self.unitFactor = array((self.unit_factor[self.fcode],
-                                 self.punit_factor[self.fcode])).T
-        self.enterpriseFactor = array((self.enterprise_factor[self.fcode],
-                                       self.penterprise_factor[self.fcode])).T
-        self.enterFactorRev = array((self.enter_factor_rev[self.fcode],
-                                     self.penter_factor_rev[self.fcode])).T
-        self.selected_draws = self.draws[betaId]
-
-    # -------------------------------
-    # Core business logic begins here
-    # -------------------------------
-    def make_code(self, county, crop, atype, practice):
-        """
-        Construct an integer code used to key in some tabular data
-        """
-        return int(f'{self.counties[county]}{self.crops[crop]}' +
-                   f'{self.types[atype]}{self.practices[practice]}')
+        self.store_user_settings(aphyield, apprYield, tayield, acre, hf, pf, riskname,
+                                 tause, ye, county, crop, practice, atype)
+        self.initialize_arrays()
+        self.set_multfactor()
+        for i in range(8):  # index i corresponds to coverage level
+            if self.rateDiff[i, 0] > 0:
+                self.set_effcov(i)
+                self.set_factors(i)
+                self.make_ye_adj()
+                self.make_rev_liab(i)
+                self.set_base_rates()
+                self.set_base_prem_rates()
+                self.limit_base_prem_rates()
+                self.limit_revlook()
+                self.limit_baserate()
+                self.set_qtys()
+                # step 5.01
+                #  Loop for policy (0=optional, 1=basic, 2=enterprise)
+                for policy in range(3):
+                    # section 5 revenue calculation
+                    self.simulate_losses(policy)
+                    self.set_rates()
+                    self.set_prems(i, policy)
+                self.apply_subsidy(i)
+        return self.prem
 
     def set_effcov(self, i):
         """
@@ -445,44 +377,126 @@ class EntPrems:
             self.prem[i, j] -= round(self.prem[i, j] * self.subsidy[i, idx], 0)
             self.prem[i, j] = round(self.prem[i, j] / self.acre, 2)
 
-    # -----------------------------
-    # MAIN METHOD: COMPUTE PREMIUMS
-    # -----------------------------
-    def compute_premiums(self, aphyield=180, apprYield=180, tayield=190, acre=100,
-                         aphPrice=5.91, pvol=0.18, hf=0, pf=0, riskname='None',
-                         tause=1, ye=0, county='Champaign, IL', crop='Corn',
-                         practice='Non-irrigated', atype='Grain'):
+    # ------------------------
+    # Setup and Initialization
+    # ------------------------
+    def load_lookups(self):
         """
-        With farm-specific inputs, compute premiums for optional, basic and enterprise,
-        units with RP, RP-HPE or YO protection for all coverage levels.
+        Define dicts for lookups
         """
-        self.store_user_settings(aphyield, apprYield, tayield, acre, aphPrice,
-                                 pvol, hf, pf, riskname, tause, ye, county,
-                                 crop, practice, atype)
-        self.initialize_arrays()
-        self.set_multfactor()
-        for i in range(8):  # index i corresponds to coverage level
-            if self.rateDiff[i, 0] > 0:
-                self.set_effcov(i)
-                self.set_factors(i)
-                self.make_ye_adj()
-                self.make_rev_liab(i)
-                self.set_base_rates()
-                self.set_base_prem_rates()
-                self.limit_base_prem_rates()
-                self.limit_revlook()
-                self.limit_baserate()
-                self.set_qtys()
-                # step 5.01
-                #  Loop for policy (0=optional, 1=basic, 2=enterprise)
-                for policy in range(3):
-                    # section 5 revenue calculation
-                    self.simulate_losses(policy)
-                    self.set_rates()
-                    self.set_prems(i, policy)
-                self.apply_subsidy(i)
-        return self.prem
+        self.crops = {'Corn': '41', 'Soybeans': '81', 'Wheat': '11'}
+        self.practices = {'Nfac (non-irrigated)': '053',
+                          'Fac (non-irrigated)': '043',
+                          'Non-irrigated': '003',
+                          'Irrigated': '002'}
+        self.types = {'Grain': '016', 'No Type Specified': '997', 'Winter': '011'}
+        self.risk_classes = {'None': 0, 'AAA': 1, 'BBB': 2, 'CCC': 3, 'DDD': 4}
+        self.states = {
+            'IL': '17', 'AL': '01', 'AR': '05', 'FL': '12', 'GA': '13', 'IN': '18',
+            'IA': '19', 'KS': '20', 'KY': '21', 'LA': '22', 'MD': '24', 'MI': '26',
+            'MN': '27', 'MS': '28', 'MO': '29', 'NE': '31', 'NC': '37', 'ND': '38',
+            'OH': '39', 'PA': '41', 'SC': '45', 'SD': '46', 'TN': '47', 'VA': '51',
+            'WV': '54', 'WI': '55', 'OK': '40', 'TX': '48'}
 
+        self.counties = get_counties()
+        self.enter_id = get_enter_id()
+        self.beta_id = get_beta_id()
+        self.options = get_options()
+        self.discount_basic = get_discount_basic()
+        self.discount_enter = get_discount_enter()
+        self.rates = get_rates()
+        self.rate_diff = get_rate_diff()
+        self.prate_diff = get_prate_diff()
+        self.unit_factor = get_unit_factor()
+        self.punit_factor = get_punit_factor()
+        self.enterprise_factor = get_enterprise_factor()
+        self.penterprise_factor = get_penterprise_factor()
+        self.enter_factor_rev = get_enter_factor_rev()
+        self.penter_factor_rev = get_penter_factor_rev()
+        self.rev_lookup = get_rev_lookup()
+        self.draws = get_draws()
+        self.high_risk = get_high_risk()
+        self.parameters = get_parameters()
+
+    def store_user_settings(self, aphyield, apprYield, tayield, acre, hf, pf, riskname,
+                            tause, ye, county, crop, practice, atype):
+        """
+        Store settings provide by user when calling calc_premiums
+        """
+        self.aphyield = aphyield
+        self.apprYield = apprYield
+        self.tayield = tayield
+        self.acre = acre
+        self.hf = hf
+        self.pf = pf
+        self.riskname = riskname
+        self.risk = self.risk_classes[self.riskname]
+        self.highRisk = None
+        self.rtype = None
+        self.tause = tause
+        self.ye = ye
+
+        if self.tayield < self.aphyield:
+            self.tayield = self.aphyield
+
+        # codes used to key into dicts
+        self.code = self.make_code(county, crop, atype, practice)
+        self.fcode = self.code + 0.1 * (1 + self.risk)
+        self.pcode = self.make_pcode(str(self.code))
+
+        # read price and volatility from parameters
+        self.aphPrice, self.pvol = self.parameters[self.pcode]
+
+        # Set index based on acreage
+        self.jSize = (0 if self.acre < 50 else 1 if self.acre < 100 else
+                      2 if self.acre < 200 else 3 if self.acre < 400 else
+                      4 if self.acre < 800 else 5)
+
+    def initialize_arrays(self):
+        """
+        Initialize arrays for premium calculation
+        """
+        # Initialize current/prev arrays
+        self.rateDiffFac = zeros(2)
+        self.uFactor = zeros(2)
+        self.eFactor = zeros(2)
+        self.eFactorRev = zeros(2)
+        self.baseRate = zeros(2)
+        self.revLook = zeros(2)
+
+        # Initialize array to hold premiums
+        self.prem = zeros((8, 9))
+
+        enterId = self.enter_id[self.code]
+        betaId = self.beta_id[self.code]
+
+        # Look up info from the dicts created when the object was constructed
+        self.highRisk, self.rtype = ((0, 0) if self.risk == 0 else
+                                     self.high_risk[str(self.code)+self.riskname])
+        self.discountBasic = self.discount_basic[enterId]
+        self.discountEnter = self.discount_enter[enterId]
+        self.rateDiff = array((self.rate_diff[self.fcode],
+                               self.prate_diff[self.fcode])).T
+        self.unitFactor = array((self.unit_factor[self.fcode],
+                                 self.punit_factor[self.fcode])).T
+        self.enterpriseFactor = array((self.enterprise_factor[self.fcode],
+                                       self.penterprise_factor[self.fcode])).T
+        self.enterFactorRev = array((self.enter_factor_rev[self.fcode],
+                                     self.penter_factor_rev[self.fcode])).T
+        self.selected_draws = self.draws[betaId]
+
+    def make_code(self, county, crop, atype, practice):
+        """
+        Construct an integer code used to key in some tabular data
+        """
+        return int(f'{self.counties[county]}{self.crops[crop]}' +
+                   f'{self.types[atype]}{self.practices[practice]}')
+
+    def make_pcode(self, code):
+        """
+        Construct a string code (crop + state) to key in parameter data (price, vol)
+        """
+        return code[5:7]+code[:2]
 
 # -------------------------------------
 # Helper functions for text file import
@@ -584,8 +598,6 @@ def get_draws():
     for code, _, yielddraw, pricedraw in items:
         draws.setdefault(int(code), []).append((float(yielddraw), float(pricedraw)))
     return draws
-    # draws = {k: tuple(zip(*v)) for k, v in draws.items()}
-    # return {k: (np.array(v[0]), np.array(v[1])) for k, v in draws.items()}
 
 
 def get_discount_basic():
@@ -609,3 +621,9 @@ def get_counties():
 def get_high_risk():
     items = get_file_items('data/highRisk.txt')
     return {itm[0]+itm[1]: (float(itm[2]), float(itm[3])) for itm in items}
+
+
+def get_parameters():
+    items = get_file_items('data/parameters.txt')
+    return {f'{int(itm[0]):02d}{int(itm[1]):02d}':
+            (float(itm[2]), float(itm[3])) for itm in items}
