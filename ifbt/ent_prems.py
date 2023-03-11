@@ -47,7 +47,8 @@ class EntPrems:
         self.code = None       # code for state/county/crop/etc..
         self.fcode = None      # code with decimal suffix for risk
 
-        # scalar instance variables
+        # scalar variables
+        # -------------------------
         self.adjMeanQty = None
         self.adjStdQty = None
         self.disBasic = None         # factor computed from discountBasic
@@ -57,45 +58,40 @@ class EntPrems:
         self.liab = None
         self.lnMean = None
         self.multFactor = None
-        self.premRateO = None        # Premium rate used for optional
-        self.premRateB = None        # Premium rate used for basic
-        self.premRateE = None        # Premium rate used for enterprise YO
-        self.premRateErev = None     # Premium rate used for enterprise rev
+        self.premRate = None         # Premium rates array (O, B, Erev, E)
         self.revCov = None
-        self.revExcRateEntUse = None
-        self.revExcRateUse = None
-        self.revRateEntUse = None
-        self.revRateUse = None
         self.revYield = None
         self.selected_draws = None
-        self.simRpLoss = None
-        self.simRpExcLoss = None
-        self.simYpLoss = None
+        self.simLoss = None          # Simulated Loss array (Yp, Rp, RpExc)
 
         # 3-tuples
         self.mQty = None
         self.stdQty = None
 
-        # Intance variable (current/prev) pairs
+        # (current/prev) pairs
         self.baseRate = None          # Continuous rating base rate
-        self.basePremRate = None      # Base premium rate
-        self.basePremRateE = None     # Base premium rate
-        self.basePremRateErev = None
         self.eFactor = None
         self.eFactorRev = None
         self.rateDiffFac = None
         self.revLook = None
         self.uFactor = None
 
-        # Arrays sized (8, 2) (8 coverage levels by 2 current/prev)
+        # Array sized (3, 2)  ('', 'E', 'Erev') by (cur, prior)
+        self.basePremRate = None
+
+        # Arrays sized (8, 2) (8 coverage levels) by 2 (cur, prior)
         self.rateDiff = None
         self.unitFactor = None
         self.enterpriseFactor = None
         self.enterFactorRev = None
 
-        # Arrays sized (8, 6) (6 values for each of 8 coverage levels)
+        # Arrays sized (8, 6) (8 coverage levels) by (6 values)
         self.discountBasic = None
         self.discountEnter = None
+
+        # Arrays sized (2) ('', 'Ent')
+        self.revExcRateUse = None
+        self.revRateUse = None
 
     # -----------------------------
     # MAIN METHOD: COMPUTE PREMIUMS
@@ -251,9 +247,9 @@ class EntPrems:
         # coverage level rate differential.
         # step 2.04
         prod = self.baseRate * self.rateDiffFac
-        self.basePremRate = (prod * self.uFactor).round(8)
-        self.basePremRateE = (prod * self.eFactor).round(8)
-        self.basePremRateErev = (prod * self.eFactorRev).round(8)
+        self.basePremRate = array((prod * self.uFactor,
+                                   prod * self.eFactor,
+                                   prod * self.eFactorRev)).round(8)
 
     def limit_base_prem_rates(self):
         """
@@ -261,11 +257,12 @@ class EntPrems:
         """
         # Preliminary base rate is min of cur and 1.2 * prev.
         # step 2.05
-        for var in (self.basePremRate, self.basePremRateE, self.basePremRateErev):
-            if var[0] > var[1] * 1.2:
-                var[0] = round(var[1] * 1.2, 8)
-            if var[0] > 0.99:
-                var[0] = 0
+        var = self.basePremRate
+        for i in range(3):
+            if var[i, 0] > var[i, 1] * 1.2:
+                var[i, 0] = round(var[i, 1] * 1.2, 8)
+            if var[i, 0] > 0.99:
+                var[i, 0] = 0
 
     def limit_revlook(self):
         """
@@ -304,46 +301,47 @@ class EntPrems:
         self.adjStdQty = round(self.revYield * self.stdQty[policy] / 100, 8)
         self.lnMean = round(log(self.aphPrice) - (self.pvol ** 2 / 2), 8)
         # step 5.04 simulate losses
-        simYieldLoss, simRevLoss, simRevExcLoss = 0, 0, 0
+
+        simloss = zeros(3)  # (Yp, Rp, RpExc)
         for yieldDraw, priceDraw in self.selected_draws:
             # yield insurance
             yld = max(0, yieldDraw * self.adjStdQty + self.adjMeanQty)
             loss = max(0, self.revYield * self.revCov - yld)
-            simYieldLoss += loss
+            simloss[0] += loss
             # revenue insurance
             harPrice = min(2 * self.aphPrice,
                            exp(priceDraw * self.pvol + self.lnMean))
             guarPrice = max(harPrice, self.aphPrice)
             loss = max(0, self.revYield * guarPrice * self.revCov - yld * harPrice)
-            simRevLoss += loss
+            simloss[1] += loss
             # revenue insurance with exclusion
             loss = max(0, self.revYield * self.aphPrice * self.revCov - yld * harPrice)
-            simRevExcLoss += loss
+            simloss[2] += loss
         # step 5.05
         ct = len(self.selected_draws)
-        self.simYpLoss = round((simYieldLoss / ct) / (self.revYield * self.revCov), 8)
-        self.simRpLoss = round(simRevLoss / ct /
-                               (self.revYield * self.revCov * self.aphPrice), 8)
-        self.simRpExcLoss = round(simRevExcLoss / ct /
-                                  (self.revYield * self.revCov * self.aphPrice), 8)
+        self.simLoss[0] = round((simloss[0] / ct) / (self.revYield * self.revCov), 8)
+        self.simLoss[1] = round(simloss[1] / ct /
+                                (self.revYield * self.revCov * self.aphPrice), 8)
+        self.simLoss[2] = round(simloss[2] / ct /
+                                (self.revYield * self.revCov * self.aphPrice), 8)
 
     def set_rates(self):
         """
         Set the premium rates
         """
         # step 5.06
-        revRate = round(max(0.01 * self.basePremRate[0],
-                            self.simRpLoss - self.simYpLoss), 8)
-        revExcRate = round(max(-0.5 * self.basePremRate[0],
-                               self.simRpExcLoss - self.simYpLoss), 8)
+        revRate = round(max(0.01 * self.basePremRate[0, 0],
+                            self.simLoss[1] - self.simLoss[0]), 8)
+        revExcRate = round(max(-0.5 * self.basePremRate[0, 0],
+                               self.simLoss[2] - self.simLoss[0]), 8)
         # step 6  No historical revenue capping is performed
-        self.revRateUse, self.revRateEntUse = revRate, revRate
-        self.revExcRateUse, self.revExcRateEntUse = revExcRate, revExcRate
+        self.revRateUse = array((revRate, revRate))
+        self.revExcRateUse = array((revExcRate, revExcRate))
         # step 8.01
-        self.premRateO = self.basePremRate[0] * self.multFactor
-        self.premRateB = self.basePremRate[0] * self.multFactor * self.disBasic
-        self.premRateE = self.basePremRateE[0] * self.multFactor * self.disEnter
-        self.premRateErev = self.basePremRateErev[0] * self.multFactor * self.disEnter
+        self.premRate[0] = self.basePremRate[0, 0] * self.multFactor
+        self.premRate[1] = self.basePremRate[0, 0] * self.multFactor * self.disBasic
+        self.premRate[2] = self.basePremRate[1, 0] * self.multFactor * self.disEnter
+        self.premRate[3] = self.basePremRate[2, 0] * self.multFactor * self.disEnter
 
     def set_prem(self, rate, i, j, rateuse=0):
         """
@@ -356,17 +354,17 @@ class EntPrems:
         Set the pre-subsidy premiums
         """
         if policy == 0:  # optional policies
-            self.set_prem(self.premRateO, i, 0, self.revRateUse)           # rp
-            self.set_prem(self.premRateO, i, 3, self.revExcRateUse)        # rpexc
-            self.set_prem(self.premRateO, i, 6)                            # yp
+            self.set_prem(self.premRate[0], i, 0, self.revRateUse[0])       # rp
+            self.set_prem(self.premRate[0], i, 3, self.revExcRateUse[0])    # rpexc
+            self.set_prem(self.premRate[0], i, 6)                           # yp
         if policy == 1:  # basic policy
-            self.set_prem(self.premRateB, i, 1, self.revRateUse)           # rp
-            self.set_prem(self.premRateB, i, 4, self.revExcRateUse)        # rpexc
-            self.set_prem(self.premRateB, i, 7)                            # yp
+            self.set_prem(self.premRate[1], i, 1, self.revRateUse[0])       # rp
+            self.set_prem(self.premRate[1], i, 4, self.revExcRateUse[0])    # rpexc
+            self.set_prem(self.premRate[1], i, 7)                           # yp
         if policy == 2:   # enterprise policy
-            self.set_prem(self.premRateErev, i, 2, self.revRateEntUse)     # rp
-            self.set_prem(self.premRateErev, i, 5, self.revExcRateEntUse)  # rpexc
-            self.set_prem(self.premRateE, i, 8)                            # yp
+            self.set_prem(self.premRate[3], i, 2, self.revRateUse[1])       # rp
+            self.set_prem(self.premRate[3], i, 5, self.revExcRateUse[1])    # rpexc
+            self.set_prem(self.premRate[2], i, 8)                           # yp
 
     def apply_subsidy(self, i):
         """
@@ -469,6 +467,9 @@ class EntPrems:
 
         enterId = self.enter_id[self.code]
         betaId = self.beta_id[self.code]
+
+        self.premRate = zeros(4)  # Premium rates array (O, B, Erev, E)
+        self.simLoss = zeros(3)   # Simulated losses array (Yp, Rp, RpExc)
 
         # Look up info from the dicts created when the object was constructed
         self.highRisk, self.rtype = ((0, 0) if self.risk == 0 else
