@@ -134,12 +134,45 @@ class EntPrems:
                 self.apply_subsidy(i)
         return self.prem
 
+    def set_multfactor(self):
+        """
+        Set Multiplicative Factor used in Worksheet step 7.
+        """
+        # options factor
+        hfrate, pfrate, ptrate = self.options[self.code]
+        self.multFactor = 1
+        if self.hf > 0:
+            self.multFactor *= hfrate
+        if self.pf == 1:
+            self.multFactor *= pfrate
+        if self.pf == 2:
+            self.multFactor *= ptrate
+
     def set_effcov(self, i):
         """
         Set the effective coverage level
         """
         self.effcov = round(0.0001 + self.cover[i] *
                             self.tayield / self.apprYield, 2)
+
+    def set_factors(self, i):
+        """
+        Set 4 vector factors and 2 scalar factors used to compute base premium rates
+        """
+        self.rateDiffFac[:] = (
+            self.get_factor(self.rateDiff, i, 0, 9),
+            self.get_factor(self.rateDiff, i, 1, 9))
+        self.uFactor[:] = (
+            self.get_factor(self.unitFactor, i, 0, 3),
+            self.get_factor(self.unitFactor, i, 1, 3))
+        self.eFactor[:] = (
+            self.get_factor(self.enterpriseFactor, i, 0, 3),
+            self.get_factor(self.enterpriseFactor, i, 1, 3))
+        self.eFactorRev[:] = (
+            self.get_factor(self.enterFactorRev, i, 0, 3),
+            self.get_factor(self.enterFactorRev, i, 1, 3))
+        self.disBasic = self.get_factor(self.discountBasic, i, self.jSize, 4)
+        self.disEnter = self.get_factor(self.discountEnter, i, self.jSize, 4)
 
     def get_factor(self, var, i, j2, ro):
         """
@@ -163,25 +196,6 @@ class EntPrems:
             round(var[jfloor, j2] + (var[jhigh, j2] - var[jlow, j2]) *
                   (ecv - cv[jfloor]) * 20 + 1e-11, ro) if self.tause else
             var[i, j2])
-
-    def set_factors(self, i):
-        """
-        Set 4 vector factors and 2 scalar factors used to compute base premium rates
-        """
-        self.rateDiffFac[:] = (
-            self.get_factor(self.rateDiff, i, 0, 9),
-            self.get_factor(self.rateDiff, i, 1, 9))
-        self.uFactor[:] = (
-            self.get_factor(self.unitFactor, i, 0, 3),
-            self.get_factor(self.unitFactor, i, 1, 3))
-        self.eFactor[:] = (
-            self.get_factor(self.enterpriseFactor, i, 0, 3),
-            self.get_factor(self.enterpriseFactor, i, 1, 3))
-        self.eFactorRev[:] = (
-            self.get_factor(self.enterFactorRev, i, 0, 3),
-            self.get_factor(self.enterFactorRev, i, 1, 3))
-        self.disBasic = self.get_factor(self.discountBasic, i, self.jSize, 4)
-        self.disEnter = self.get_factor(self.discountEnter, i, self.jSize, 4)
 
     def make_ye_adj(self):
         """
@@ -269,20 +283,6 @@ class EntPrems:
         # step 2.07
         if self.baseRate[0] > self.baseRate[1] * 1.2:
             self.baseRate[0] = round(self.baseRate[1] * 1.2, 8)
-
-    def set_multfactor(self):
-        """
-        Set Multiplicative Factor used in Worksheet step 7.
-        """
-        # options factor
-        hfrate, pfrate, ptrate = self.options[self.code]
-        self.multFactor = 1
-        if self.hf > 0:
-            self.multFactor *= hfrate
-        if self.pf == 1:
-            self.multFactor *= pfrate
-        if self.pf == 2:
-            self.multFactor *= ptrate
 
     def set_qtys(self):
         """
