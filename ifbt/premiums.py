@@ -1,11 +1,11 @@
 from numpy import zeros, array
 import numpy as np
 from math import log, exp
+import os
+import pickle
 
 np.set_printoptions(precision=2)
 np.set_printoptions(suppress=True)
-
-# TODO: Update tests to check all premiums
 
 
 class Premiums:
@@ -74,7 +74,6 @@ class Premiums:
         self.revYield = None
         self.selected_draws = None
         self.simLoss = None          # Simulated Loss array (Yp, Rp, RpExc)
-        # only keep 2nd index
         self.revExcRateUse = None
         self.revRateUse = None
 
@@ -372,7 +371,8 @@ class Premiums:
     def store_user_settings_ent(self, aphyield, apprYield, tayield, acres, hf, pf,
                                 riskname, tause, ye, county, crop, practice, atype):
         """
-        Store settings provide by user when calling calc_premiums
+        Store settings provide by user when calling calc_premiums, and calculate
+        some values derived from them.
         """
         self.aphyield = aphyield
         self.apprYield = apprYield
@@ -402,6 +402,41 @@ class Premiums:
         self.jSize = (0 if self.acres < 50 else 1 if self.acres < 100 else
                       2 if self.acres < 200 else 3 if self.acres < 400 else
                       4 if self.acres < 800 else 5)
+
+    def initialize_arrays(self):
+        """
+        Initialize arrays for premium calculation
+        """
+        # Initialize current/prev arrays
+        self.rateDiffFac = zeros(2)
+        self.uFactor = zeros(2)
+        self.eFactor = zeros(2)
+        self.eFactorRev = zeros(2)
+        self.baseRate = zeros(2)
+        self.revLook = zeros(2)
+
+        # Initialize array to hold premiums
+        self.prem = zeros((8, 3))
+
+        enterId = self.enter_id[self.code]
+        betaId = self.beta_id[self.code]
+
+        self.premRate = zeros(2)  # Premium rates array (Erev, E)
+        self.simLoss = zeros(3)   # Simulated losses array (Yp, Rp, RpExc)
+
+        # Look up info from the dicts created when the object was constructed
+        self.highRisk, self.rtype = ((0, 0) if self.risk == 0 else
+                                     self.high_risk[str(self.code)+self.riskname])
+        self.discountEnter = self.discount_enter[enterId]
+        self.rateDiff = array((self.rate_diff[self.fcode],
+                               self.prate_diff[self.fcode])).T
+        self.unitFactor = array((self.unit_factor[self.fcode],
+                                 self.punit_factor[self.fcode])).T
+        self.enterpriseFactor = array((self.enterprise_factor[self.fcode],
+                                       self.penterprise_factor[self.fcode])).T
+        self.enterFactorRev = array((self.enter_factor_rev[self.fcode],
+                                     self.penter_factor_rev[self.fcode])).T
+        self.selected_draws = self.draws[betaId]
 
     # -----------------------
     # ARC PREMIUMS
@@ -584,41 +619,6 @@ class Premiums:
         # dict with key code, value array(36, 3, 2) (ivol, unit, cov)
         self.eco = get_eco()
 
-    def initialize_arrays(self):
-        """
-        Initialize arrays for premium calculation
-        """
-        # Initialize current/prev arrays
-        self.rateDiffFac = zeros(2)
-        self.uFactor = zeros(2)
-        self.eFactor = zeros(2)
-        self.eFactorRev = zeros(2)
-        self.baseRate = zeros(2)
-        self.revLook = zeros(2)
-
-        # Initialize array to hold premiums
-        self.prem = zeros((8, 3))
-
-        enterId = self.enter_id[self.code]
-        betaId = self.beta_id[self.code]
-
-        self.premRate = zeros(2)  # Premium rates array (Erev, E)
-        self.simLoss = zeros(3)   # Simulated losses array (Yp, Rp, RpExc)
-
-        # Look up info from the dicts created when the object was constructed
-        self.highRisk, self.rtype = ((0, 0) if self.risk == 0 else
-                                     self.high_risk[str(self.code)+self.riskname])
-        self.discountEnter = self.discount_enter[enterId]
-        self.rateDiff = array((self.rate_diff[self.fcode],
-                               self.prate_diff[self.fcode])).T
-        self.unitFactor = array((self.unit_factor[self.fcode],
-                                 self.punit_factor[self.fcode])).T
-        self.enterpriseFactor = array((self.enterprise_factor[self.fcode],
-                                       self.penterprise_factor[self.fcode])).T
-        self.enterFactorRev = array((self.enter_factor_rev[self.fcode],
-                                     self.penter_factor_rev[self.fcode])).T
-        self.selected_draws = self.draws[betaId]
-
     def make_code(self, county, crop, atype, practice):
         """
         Construct an integer code used to key in some tabular data
@@ -639,9 +639,24 @@ class Premiums:
         """
         return code[5:7]+code[:2]
 
+
 # -------------------------------------
 # Helper functions for text file import
 # -------------------------------------
+def load(filename, processor, **kwargs):
+    picklename = f'data/{filename}.pkl'
+    if os.path.isfile(picklename):
+        print(f'Found {picklename}.')
+        with open(picklename, 'rb') as f:
+            data = pickle.load(f)
+    else:
+        print(f'{picklename} not found; loading textfile.')
+        items = get_file_items(f'data/{filename}.txt')
+        data = processor(items, **kwargs)
+        print(f'saving {picklename}')
+        with open(picklename, 'wb') as f:
+            pickle.dump(data, f)
+    return data
 
 
 def readfile(filename):
@@ -662,7 +677,10 @@ def get_file_items(filename):
     return (line.split() for line in contents.strip().split('\n'))
 
 
-def get_float_tuple_dict(filename, rest=None):
+# ----------
+# PROCESSORS
+# ----------
+def float_key_float_tuple(items, rest=None):
     """
     Get a nested list of items for the given file, then construct a dict
     using the float-converted, first item in each row as the dict key and setting
@@ -671,150 +689,178 @@ def get_float_tuple_dict(filename, rest=None):
     """
     if rest is None:
         rest = slice(1, None, None)
-    items = get_file_items(filename)
     return {float(item[0]): tuple(float(it) for it in item[rest]) for item in items}
 
 
-def get_enter_id():
-    items = get_file_items('data/enterId.txt')
-    return {int(code): int(unitId) for code, unitId in items}
+def int_key_float_tuple(items, rest=None):
+    if rest is None:
+        rest = slice(1, None, None)
+    print(rest)
+    return {int(item[0]): tuple(float(it) for it in item[rest]) for item in items}
 
 
-def get_beta_id():
-    items = get_file_items('data/betaid.txt')
-    return {int(code): int(betaId) for code, betaId in items}
-
-
-def get_options():
-    items = get_file_items('data/options.txt')
-    return {int(code): (float(hf), float(pf), float(pt))
-            for code, hf, pf, pt, _ in items}
-
-
-def get_rates():
-    items = get_file_items('data/rates.txt')
-    return {int(item[0]): tuple(float(it) for it in item[1:]) for item in items}
-
-
-def get_rate_diff():
-    return get_float_tuple_dict('data/rateDiff.txt')
-
-
-def get_prate_diff():
-    return get_float_tuple_dict('data/prateDiff.txt')
-
-
-def get_unit_factor():
-    return get_float_tuple_dict('data/UnitFactor.txt', rest=slice(3, None, None))
-
-
-def get_punit_factor():
-    return get_float_tuple_dict('data/punitFactor.txt')
-
-
-def get_enterprise_factor():
-    return get_float_tuple_dict('data/enterpriseFactor.txt')
-
-
-def get_penterprise_factor():
-    return get_float_tuple_dict('data/penterpriseFactor.txt')
-
-
-def get_enter_factor_rev():
-    return get_float_tuple_dict('data/enterFactorRev.txt')
-
-
-def get_penter_factor_rev():
-    return get_float_tuple_dict('data/pEnterFactorRev.txt')
-
-
-def get_rev_lookup():
-    items = get_file_items('data/revLookup.txt')
-    return {int(code): (float(qty), float(std)) for code, qty, std in items}
-
-
-def get_draws():
+def int_key_list_float_tuple(items):
     items = get_file_items('data/draws.txt')
-    draws = {}
+    result = {}
     for code, _, yielddraw, pricedraw in items:
-        draws.setdefault(int(code), []).append((float(yielddraw), float(pricedraw)))
-    return draws
+        result.setdefault(int(code), []).append((float(yielddraw), float(pricedraw)))
+    return result
 
 
-def get_discount_enter():
-    items = get_file_items('data/discountEnter.txt')
-    return {int(itm[0]): np.array([float(it) for it in itm[1:]]).reshape(8, 6)
-            for itm in items}
+def int_key_float_array(items, shape=None):
+    return ({int(itm[0]): np.array([float(it) for it in itm[1:]]).reshape(shape)
+             for itm in items} if shape is not None else
+            {int(itm[0]): np.array([float(it) for it in itm[1:]])
+             for itm in items})
 
 
-def get_counties():
-    items = get_file_items('data/counties.txt')
+def special_counties(items):
     return {f'{cty}, {st}': f'{int(stcode):02}{int(ctycode):03}'
             for stcode, ctycode, cty, st in items}
 
 
-def get_high_risk():
-    items = get_file_items('data/highRisk.txt')
+def special_high_risk(items):
     return {itm[0]+itm[1]: (float(itm[2]), float(itm[3])) for itm in items}
 
 
-def get_parameters():
-    items = get_file_items('data/parameters.txt')
+def special_parameters(items):
     return {f'{int(itm[0]):02d}{int(itm[1]):02d}':
             (float(itm[2]), float(itm[3])) for itm in items}
 
-    # dicts with float key and value tuple(1, tuple(5))
+
+def int_key_int_value(items):
+    return {int(item[0]): int(item[1]) for item in items}
+
+
+def float_pair_float_float_tuple(items):
+    return {float(itm[0]): (float(itm[1]), tuple(float(it) for it in itm[2:]))
+            for itm in items}
+
+
+def int_pair_float_float_tuple(items, rest=None):
+    if rest is None:
+        rest = slice(2, None, None)
+    return {int(itm[0]): (float(itm[1]), tuple(float(it) for it in itm[rest]))
+            for itm in items}
+
+
+def float_pair_float_float_array(items, shape=None, rest=None):
+    if rest is None:
+        rest = slice(2, None, None)
+    return {float(itm[0]): (float(itm[1]), tuple(float(it) for it in itm[rest]))
+            for itm in items}
+
+
+def int_pair_float_float_array(items, shape=None):
+    return ({int(itm[0]):
+             (float(itm[1]),
+              np.array([float(it) for it in itm[2:]]).reshape(shape))
+             for itm in items} if shape is not None else
+            {int(itm[0]): (float(itm[1]), np.array([float(it) for it in itm[2:]]))
+             for itm in items})
+
+
+# ------------
+# DICT GETTERS
+# ------------
+def get_enter_id():
+    return load('enterId', int_key_int_value)
+
+
+def get_beta_id():
+    return load('betaid', int_key_int_value)
+
+
+def get_options():
+    return load('options', int_key_float_tuple, rest=slice(1, 4, None))
+
+
+def get_rates():
+    return load('rates', int_key_float_tuple)
+
+
+def get_rate_diff():
+    return load('rateDiff', float_key_float_tuple)
+
+
+def get_prate_diff():
+    return load('prateDiff', float_key_float_tuple)
+
+
+def get_unit_factor():
+    return load('UnitFactor', float_key_float_tuple, rest=slice(3, None, None))
+
+
+def get_punit_factor():
+    return load('punitFactor', float_key_float_tuple)
+
+
+def get_enterprise_factor():
+    return load('enterpriseFactor', float_key_float_tuple)
+
+
+def get_penterprise_factor():
+    return load('penterpriseFactor', float_key_float_tuple)
+
+
+def get_enter_factor_rev():
+    return load('enterFactorRev', float_key_float_tuple)
+
+
+def get_penter_factor_rev():
+    return load('pEnterFactorRev', float_key_float_tuple)
+
+
+def get_rev_lookup():
+    return load('revLookup', int_key_float_tuple)
+
+
+def get_draws():
+    return load('draws', int_key_list_float_tuple)
+
+
+def get_discount_enter():
+    return load('discountEnter', int_key_float_array, shape=(8, 6))
+
+
+def get_counties():
+    return load('counties', special_counties)
+
+
+def get_high_risk():
+    return load('highRisk', special_high_risk)
+
+
+def get_parameters():
+    return load('parameters', special_parameters)
 
 
 def get_arc_rp():
-    items = get_file_items('data/griphr.txt')
-    return {float(itm[0]): (float(itm[1]), tuple(float(it) for it in itm[2:]))
-            for itm in items}
+    return load('griphr', float_pair_float_float_tuple)
 
 
 def get_arc_rphpe():
-    items = get_file_items('data/grip.txt')
-    return {float(itm[0]): (float(itm[1]), tuple(float(it) for it in itm[2:]))
-            for itm in items}
+    return load('grip', float_pair_float_float_tuple)
 
 
 def get_arc_yp():
     """
-    Note: the second column in the table is 65 coverage, which is not used
+    The second column in the table is 65 coverage, which is not used
     """
-    items = get_file_items('data/grp.txt')
-    return {int(itm[0]): (float(itm[1]), tuple(float(it) for it in itm[3:]))
-            for itm in items}
-
-    # dicts with key code, value array(36, 8) (ivol, cover)
+    return load('grp', int_pair_float_float_tuple, rest=slice(3, None, None))
 
 
 def get_sco_rp():
-    items = get_file_items('data/scoArp.txt')
-    return {int(itm[0]): (float(itm[1]),
-                          array([float(it) for it in itm[2:]]).reshape(36, 8))
-            for itm in items}
+    return load('scoArp', int_pair_float_float_array, shape=(36, 8))
 
 
 def get_sco_rphpe():
-    items = get_file_items('data/scoArpw.txt')
-    return {int(itm[0]): (float(itm[1]),
-                          array([float(it) for it in itm[2:]]).reshape(36, 8))
-            for itm in items}
-
-    # dict with key code, value array(8) (cover)
+    return load('scoArpw', int_pair_float_float_array, shape=(36, 8))
 
 
 def get_sco_yp():
-    items = get_file_items('data/scoYp.txt')
-    return {int(itm[0]): (float(itm[1]),
-                          array([float(it) for it in itm[2:]]))
-            for itm in items}
-
-    # dict with key code, value array(36, 3, 2) (ivol, unit, cov)
+    return load('scoYp', int_pair_float_float_array)
 
 
 def get_eco():
-    items = get_file_items('data/eco.txt')
-    return {int(itm[0]): array([float(it) for it in itm[1:]]).reshape(36, 3, 2)
-            for itm in items}
+    return load('eco', int_key_float_array, shape=(36, 3, 2))
