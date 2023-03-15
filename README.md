@@ -27,6 +27,8 @@ cd Integrated_Farm_Budget_Tool
 pip install -e .
 ```
 
+Download the data directory from the Google Drive folder and place it inside ifbt/
+
 ## Usage
 
 In Python console or ipython console:
