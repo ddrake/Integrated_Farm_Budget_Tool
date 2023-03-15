@@ -76,6 +76,7 @@ class Premiums:
         self.simLoss = None          # Simulated Loss array (Yp, Rp, RpExc)
         self.revExcRateUse = None
         self.revRateUse = None
+        self.prot_factor = None      # Protection factor for ARC
 
         # 3-tuples
         self.mQty = None
@@ -126,18 +127,18 @@ class Premiums:
             if self.rateDiff[i, 0] > 0:
                 self.set_effcov(i)
                 self.set_factors(i)
-                self.make_ye_adj()
+                self.make_ye_adj(i)
                 self.make_rev_liab(i)
-                self.set_base_rates()
-                self.set_base_prem_rates()
-                self.limit_base_prem_rates()
-                self.limit_revlook()
-                self.limit_baserate()
-                self.set_qtys()
+                self.set_base_rates(i)
+                self.set_base_prem_rates(i)
+                self.limit_base_prem_rates(i)
+                self.limit_revlook(i)
+                self.limit_baserate(i)
+                self.set_qtys(i)
                 # step 5.01
                 # section 5 revenue calculation
-                self.simulate_losses()
-                self.set_rates()
+                self.simulate_losses(i)
+                self.set_rates(i)
                 self.set_prems(i)
                 self.apply_subsidy(i)
         return self.prem
@@ -204,7 +205,7 @@ class Premiums:
                   (ecv - cv[jfloor]) * 20 + 1e-11, ro) if self.tause else
             var[i, j2])
 
-    def make_ye_adj(self):
+    def make_ye_adj(self, i):
         """
         Adjust factors for YE (vectorized)
         """
@@ -228,7 +229,7 @@ class Premiums:
         self.liab = round(round(self.revYield * self.cover[i] + 0.001, 1) *
                           self.aphPrice * self.acres, 0)
 
-    def set_base_rates(self):
+    def set_base_rates(self, i):
         """
         Set and limit vector base rates from RMA data
         """
@@ -250,7 +251,7 @@ class Premiums:
             self.baseRate[:] = self.highRisk
         self.revLook[:] = self.baseRate
 
-    def set_base_prem_rates(self):
+    def set_base_prem_rates(self, i):
         """
         Set vector adjusted base premium rates
         """
@@ -261,20 +262,20 @@ class Premiums:
         self.basePremRate = array((prod * self.eFactor,
                                    prod * self.eFactorRev)).round(8)
 
-    def limit_base_prem_rates(self):
+    def limit_base_prem_rates(self, i):
         """
         Limit base premium rates based on prior (unpacking vectors)
         """
         # Preliminary base rate is min of cur and 1.2 * prev.
         # step 2.05
         var = self.basePremRate
-        for i in range(2):
-            if var[i, 0] > var[i, 1] * 1.2:
-                var[i, 0] = round(var[i, 1] * 1.2, 8)
-            if var[i, 0] > 0.99:
-                var[i, 0] = 0
+        for j in range(2):
+            if var[j, 0] > var[j, 1] * 1.2:
+                var[j, 0] = round(var[j, 1] * 1.2, 8)
+            if var[j, 0] > 0.99:
+                var[j, 0] = 0
 
-    def limit_revlook(self):
+    def limit_revlook(self, i):
         """
         Limit revenue lookup based on previous (unpacking vectors)
         """
@@ -283,7 +284,7 @@ class Premiums:
             self.revLook[0] = round(self.revLook[1] * 1.2, 8)
         self.revLook[0] = round(min(self.revLook[0], 0.9999), 4)
 
-    def limit_baserate(self):
+    def limit_baserate(self, i):
         """
         Limit base rate based on previous (unpacking vectors)
         """
@@ -291,7 +292,7 @@ class Premiums:
         if self.baseRate[0] > self.baseRate[1] * 1.2:
             self.baseRate[0] = round(self.baseRate[1] * 1.2, 8)
 
-    def set_qtys(self):
+    def set_qtys(self, i):
         """
         Compute mQty and stdQty
         """
@@ -299,7 +300,7 @@ class Premiums:
         revLookup = int(prod * self.discountEnter[3, self.jSize] + 0.5)
         self.mQty, self.stdQty = self.rev_lookup[revLookup]
 
-    def simulate_losses(self):
+    def simulate_losses(self, i):
         """
         Loop through 500 yield, price pairs, incrementing losses.
         """
@@ -332,7 +333,7 @@ class Premiums:
         self.simLoss[2] = round(simloss[2] / ct /
                                 (self.revYield * self.revCov * self.aphPrice), 8)
 
-    def set_rates(self):
+    def set_rates(self, i):
         """
         Set the premium rates
         """
@@ -349,6 +350,7 @@ class Premiums:
     def set_prem(self, rate, i, j, rateuse=0):
         """
         Set a premium with given rate, indices and optional rateuse
+        prem is (8, 3): 8 coverage levels x (RP, RP-HPE, YP)
         """
         self.prem[i, j] = round(self.liab * round(rate + rateuse, 8), 0)
 
@@ -356,9 +358,9 @@ class Premiums:
         """
         Set the pre-subsidy premiums
         """
-        self.set_prem(self.premRate[1], i, 0, self.revRateUse)       # rp
-        self.set_prem(self.premRate[1], i, 1, self.revExcRateUse)    # rpexc
-        self.set_prem(self.premRate[0], i, 2)                        # yp
+        self.set_prem(self.premRate[1], i, 0, self.revRateUse)       # RP
+        self.set_prem(self.premRate[1], i, 1, self.revExcRateUse)    # RP-HPE
+        self.set_prem(self.premRate[0], i, 2)                        # YP
 
     def apply_subsidy(self, i):
         """
@@ -442,13 +444,14 @@ class Premiums:
     # ARC PREMIUMS
     # -----------------------
     def compute_prems_arc(self, county='Champaign, IL', crop='Corn',
-                          practice='Non-irrigated', atype='Grain'):
+                          practice='Non-irrigated', atype='Grain',
+                          prot_factor=1):
         """
         Get 120 pct values for each area type and level from 70:90
         These are scaled to get the 85 pct and 80 pct columns
         """
         self.arc_prem = zeros((3, 5))
-        self.store_user_settings_arc(county, crop, practice, atype)
+        self.store_user_settings_arc(county, crop, practice, atype, prot_factor)
         subsidies = (self.subsidy_grip, self.subsidy_grip, self.subsidy_grp)
         dicts = (self.arc_rp, self.arc_rphpe, self.arc_yp)
         for i, subsidy in enumerate(subsidies):
@@ -467,15 +470,17 @@ class Premiums:
         self.maxliab = round(self.expYield * self.aphPrice * 1.2, 2)
         self.arc_prem[idx, :] = (self.maxliab * 100 * rate).round(0)
         self.arc_prem[idx, :] -= (self.arc_prem[idx, :] * subsidy).round(0)
-        self.arc_prem[idx, :] = (self.arc_prem[idx, :] / 100).round(2)
+        self.arc_prem[idx, :] = (self.arc_prem[idx, :] / 100 *
+                                 self.prot_factor / 1.2).round(2)
 
-    def store_user_settings_arc(self, county, crop, practice, atype):
+    def store_user_settings_arc(self, county, crop, practice, atype, prot_factor):
         """
         Store settings provide by user when calling calc_premiums
         """
         self.code = self.make_code(county, crop, atype, practice)
         self.ccode = self.make_ccode(county, crop, atype, practice)
         self.pcode = self.make_pcode(str(self.code))
+        self.prot_factor = prot_factor
         # read price and volatility from parameters
         self.aphPrice, self.pvol = self.parameters[self.pcode]
         # codes used to key into dicts
@@ -488,8 +493,9 @@ class Premiums:
                           county='Champaign, IL', crop='Corn',
                           practice='Non-irrigated', atype='Grain'):
 
-        self.store_user_settings_sco(aphyield, tayield, tause,
-                                     county, crop, practice, atype)
+        self.store_user_settings_sco(aphyield, tayield, tause, county,
+                                     crop, practice, atype)
+
         self.sco_prem = zeros((3, 8))
         for i, d in enumerate((self.sco_rp, self.sco_rphpe, self.sco_yp)):
             self.compute_prem_sco(d, i)
@@ -508,8 +514,8 @@ class Premiums:
         self.sco_prem[unit, :] = (self.aliab * (0.86 - self.cover) * rate).round(2)
         self.sco_prem[unit, :] -= (self.subsidy_sco * self.sco_prem[unit, :]).round(2)
 
-    def store_user_settings_sco(self, aphyield, tayield, tause, county, crop,
-                                practice, atype):
+    def store_user_settings_sco(self, aphyield, tayield, tause, county,
+                                crop, practice, atype):
         """
         Store settings provide by user when calling calc_premiums
         """
@@ -695,7 +701,6 @@ def float_key_float_tuple(items, rest=None):
 def int_key_float_tuple(items, rest=None):
     if rest is None:
         rest = slice(1, None, None)
-    print(rest)
     return {int(item[0]): tuple(float(it) for it in item[rest]) for item in items}
 
 

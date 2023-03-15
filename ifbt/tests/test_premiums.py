@@ -14,8 +14,7 @@ TOL = .01
 # 'ye': 0,             # 1 to use yield-exclusion 0 else
 #
 # Note: An premium array of zeros means no premiums are avaiable for the product
-# Note: All arc, sco and eco premiums use the 120% protection factor
-#       (so we can match excel).
+# Note: arc premiums use the 120% protection factor to match an Excel column.
 
 # This loads all data from textfiles (expensive), so we only do it once!
 p = Premiums()
@@ -38,7 +37,7 @@ def test_with_default_values():
 
     assert np.all((prem - expected) == pytest.approx(0, TOL)), "values don't all match"
 
-    prem = p.compute_prems_arc()
+    prem = p.compute_prems_arc(prot_factor=1.2)
     print(prem)
 
     expected = np.array(
@@ -90,7 +89,8 @@ def test_3000_acres_corn_in_champaign():
         'county': 'Champaign, IL',
         'crop': 'Corn',
         'practice': 'Non-irrigated',
-        'atype': 'Grain'
+        'atype': 'Grain',
+        'prot_factor': 1.2,
     }
     settings_opt = {
         'aphyield': 180,
@@ -166,7 +166,8 @@ def test_3000_acres_champaign_full_soy():
         'county': 'Champaign, IL',
         'crop': 'Soybeans',
         'practice': 'Nfac (non-irrigated)',
-        'atype': 'No Type Specified'
+        'atype': 'No Type Specified',
+        'prot_factor': 1.2,
     }
     settings_opt = {
         'aphyield': 58.0,
@@ -246,7 +247,8 @@ def test_300_acres_wheat_champaign():
         'county': 'Champaign, IL',
         'crop': 'Wheat',
         'practice': 'Non-irrigated',
-        'atype': 'Winter'
+        'atype': 'Winter',
+        'prot_factor': 1.2,
     }
     settings_opt = {
         'aphyield': 39.0,
@@ -322,7 +324,8 @@ def test_100_acres_madison_corn():
         'county': 'Madison, IL',
         'crop': 'Corn',
         'practice': 'Non-irrigated',
-        'atype': 'Grain'
+        'atype': 'Grain',
+        'prot_factor': 1.2,
     }
     settings_opt = {
         'aphyield': 154,
@@ -398,7 +401,8 @@ def test_3000_acres_full_soybeans_madison():
         'county': 'Madison, IL',
         'crop': 'Soybeans',
         'practice': 'Nfac (non-irrigated)',
-        'atype': 'No Type Specified'
+        'atype': 'No Type Specified',
+        'prot_factor': 1.2,
     }
     settings_opt = {
         'aphyield': 47.0,
@@ -474,7 +478,8 @@ def test_300_acres_wheat_madison():
         'county': 'Madison, IL',
         'crop': 'Wheat',
         'practice': 'Non-irrigated',
-        'atype': 'Winter'
+        'atype': 'Winter',
+        'prot_factor': 1.2,
     }
     settings_opt = {
         'aphyield': 58.0,
@@ -550,7 +555,8 @@ def test_300_acres_fac_soy_madison():
         'county': 'Madison, IL',
         'crop': 'Soybeans',
         'practice': 'Fac (non-irrigated)',
-        'atype': 'No Type Specified'
+        'atype': 'No Type Specified',
+        'prot_factor': 1.2,
     }
     settings_opt = {
         'aphyield': 47.0,
@@ -626,7 +632,8 @@ def test_100_acres_corn_st_charles_mo_risk_BBB():
         'county': 'St._Charles, MO',
         'crop': 'Corn',
         'practice': 'Non-irrigated',
-        'atype': 'Grain'
+        'atype': 'Grain',
+        'prot_factor': 1.2,
     }
     settings_opt = {
         'aphyield': 147.0,
@@ -702,7 +709,8 @@ def test_100_acres_madison_corn_NO_TA():
         'county': 'Madison, IL',
         'crop': 'Corn',
         'practice': 'Non-irrigated',
-        'atype': 'Grain'
+        'atype': 'Grain',
+        'prot_factor': 1.2,
     }
     settings_opt = {
         'aphyield': 154,
