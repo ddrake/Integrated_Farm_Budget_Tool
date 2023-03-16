@@ -11,8 +11,9 @@ from datetime import datetime
 import reprlib
 from sys import argv
 
-from ifbt import Crop, Ins, Unit, Prot, Lvl, Prog, CashFlow
+from ifbt import Crop, Ins, Unit, Prot, Lvl, Prog, CashFlow, Premiums
 
+p = Premiums()
 
 INS = ['No', 'Yes']
 PROG = ['PLC', 'ARC_CO']
@@ -63,7 +64,8 @@ class Scenario(object):
                       'eco_level': {Crop.CORN: c.eco_lvl_c, Crop.SOY: c.eco_lvl_s},
                       'selected_pmt_factor': {Crop.CORN: 1, Crop.SOY: 1}, }
 
-            cf = CashFlow(2023, crop_ins_overrides=ci_ovr, gov_pmt_overrides=gp_ovr)
+            cf = CashFlow(2023, crop_ins_overrides=ci_ovr, gov_pmt_overrides=gp_ovr,
+                          prem=p)
             self.results.append((i, cf.total_cash_flow(pf=self.pf, yf=self.yf)))
         self.results.sort(reverse=True, key=lambda pr: pr[1])
 

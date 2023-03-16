@@ -36,7 +36,7 @@ In Python console or ipython console:
 To see the revenue, cost, government payment and crop insurance sensitivity tables for 2023:
 
 ```
-from ifbt import (sens_revenue, sens_cost, sens_gov_pmt,
+from sensitivity import (sens_revenue, sens_cost, sens_gov_pmt,
                          sens_crop_ins, sens_cash_flow)
 sens_revenue(2023)
 sens_cost(2023)
