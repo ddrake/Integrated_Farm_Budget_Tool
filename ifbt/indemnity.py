@@ -51,6 +51,9 @@ class Indemnity(Analysis):
         class_name = type(self).__name__
         return '{}({!r}, {!r})'.format(class_name, self.crop_year, self.crop)
 
+    def basecrop(self):
+        return Crop.SOY if self.crop in (Crop.FULL_SOY, Crop.DC_SOY) else self.crop
+
     def revenue_trigger_feb_price(self):
         """
         Government Crop Insurance F41: The product of the actual fall harvest
@@ -58,7 +61,7 @@ class Indemnity(Analysis):
         classes).
         """
         return (self.yield_trigger() *
-                self.fall_futures_price[self.crop])
+                self.fall_futures_price[self.basecrop()])
 
     def sensitized_fall_price(self, pf=1):
         """
@@ -72,7 +75,7 @@ class Indemnity(Analysis):
         Government Crop Insurance F13: Insurance harvest price, limited
         to twice the price-sensitized, projected fall price.
         """
-        return min((self.fall_futures_price[self.crop] *
+        return min((self.fall_futures_price[self.basecrop()] *
                     self.price_cap_factor),
                    self.sensitized_fall_price(pf))
 
@@ -98,7 +101,7 @@ class Indemnity(Analysis):
         """
         return (self.ins_harvest_price(pf)
                 if (self.ins_harvest_price(pf) >
-                    self.fall_futures_price[self.crop])
+                    self.fall_futures_price[self.basecrop()])
                 else 0)
 
     def revised_revenue_trigger(self, pf=1, yf=1):
@@ -125,7 +128,7 @@ class IndemnityArea(Indemnity):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    @crop_in(Crop.CORN, Crop.SOY, Crop.WHEAT)
+    @crop_in(Crop.CORN, Crop.FULL_SOY, Crop.DC_SOY, Crop.WHEAT)
     def county_rma_yield(self, crop, yf=1):
         """
         Government Crop Insurance F15: Yield-sensitized county RMA yield for the
@@ -163,7 +166,7 @@ class IndemnityArea(Indemnity):
         Government Crop Insurance F42: Minimum dollars of protection.
         """
         return (self.hist_yield_for_ins_area[self.crop] *
-                self.fall_futures_price[self.crop] *
+                self.fall_futures_price[self.basecrop()] *
                 self.selected_pmt_factor[self.crop])
 
     def harvest_indemnity_pmt_per_acre(self, pf=1, yf=1):
@@ -224,7 +227,7 @@ class IndemnityEnt(Indemnity):
         Government Crop Insurance J59: Replant payment expected.
         """
         return (self.replant_bushels() *
-                self.fall_futures_price[self.crop])
+                self.fall_futures_price[self.basecrop()])
 
     def harvest_indemnity_pmt_per_acre(self, pf=1, yf=1):
         """
@@ -263,7 +266,7 @@ class IndemnityOption(IndemnityArea):
         Government Crop Insurance J80: Price-sensitized county insured revenue.
         Used by RP-HPE and YO derived classes.
         """
-        return (self.fall_futures_price[self.crop] *
+        return (self.fall_futures_price[self.basecrop()] *
                 self.hist_yield_for_ins_area[self.crop])
 
     def county_rev_as_ratio(self, pf=1, yf=1):
@@ -289,7 +292,7 @@ class IndemnityOption(IndemnityArea):
         Used by RP-HPE and YO derived classes.
         """
         return (self.hist_yield_for_ins_ent[self.crop] *
-                self.fall_futures_price[self.crop] * self.diff)
+                self.fall_futures_price[self.basecrop()] * self.diff)
 
     def harvest_indemnity_pmt_per_acre(self, pf=1, yf=1):
         """
@@ -339,7 +342,7 @@ class IndemnityAreaRp(IndemnityArea):
         Government Crop Insurance F48: Price-sensitized limiting revenue factor.
         """
         return (self.hist_yield_for_ins_area[self.crop] *
-                max(self.fall_futures_price[self.crop],
+                max(self.fall_futures_price[self.basecrop()],
                     self.ins_harvest_price(pf)) *
                 self.loss_limit_factor)
 
@@ -392,7 +395,7 @@ class IndemnityAreaRpHpe(IndemnityArea):
         Government Crop Insurance G48: Limiting revenue factor.
         """
         return (self.hist_yield_for_ins_area[self.crop] *
-                self.fall_futures_price[self.crop] *
+                self.fall_futures_price[self.basecrop()] *
                 self.loss_limit_factor)
 
     def maximum_loss_pmt(self, pf=1, yf=1):
@@ -473,8 +476,8 @@ class IndemnityEntRpHpe(IndemnityEnt):
         """
         return (self.yield_trigger() *
                 (0 if (self.ins_harvest_price(pf) >
-                       self.fall_futures_price[self.crop])
-                else self.fall_futures_price[self.crop]))
+                       self.fall_futures_price[self.basecrop()])
+                else self.fall_futures_price[self.basecrop()]))
 
 
 class IndemnityEntYo(IndemnityEnt):
@@ -500,7 +503,7 @@ class IndemnityEntYo(IndemnityEnt):
         in dollars per acre.
         """
         return (self.yield_shortfall(yf) *
-                self.fall_futures_price[self.crop])
+                self.fall_futures_price[self.basecrop()])
 
 
 # INDEMNITY OPTION CONCRETE CLASSES
@@ -520,7 +523,7 @@ class IndemnityOptionRp(IndemnityOption):
         """
         return (self.hist_yield_for_ins_area[self.crop] *
                 max(self.ins_harvest_price(pf),
-                    self.fall_futures_price[self.crop]))
+                    self.fall_futures_price[self.basecrop()]))
 
     def farm_crop_value(self, pf=1):
         """
@@ -528,7 +531,7 @@ class IndemnityOptionRp(IndemnityOption):
         """
         return (self.hist_yield_for_ins_ent[self.crop] *
                 max(self.ins_harvest_price(pf),
-                    self.fall_futures_price[self.crop]) * self.diff)
+                    self.fall_futures_price[self.basecrop()]) * self.diff)
 
 
 class IndemnityOptionRpHpe(IndemnityOption):
@@ -550,5 +553,5 @@ class IndemnityOptionYo(IndemnityOption):
         """
         Government Crop Insurance J79: Yield-sensitized county actual revenue.
         """
-        return (self.fall_futures_price[self.crop] *
+        return (self.fall_futures_price[self.basecrop()] *
                 self.county_rma_yield(self.crop, yf))

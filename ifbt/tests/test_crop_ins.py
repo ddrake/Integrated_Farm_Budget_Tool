@@ -230,13 +230,20 @@ def test_multiple_configurations():
     idx = 0
     for pf, yf in factors:
         for u, p, s, e in configs:
-            ovr = {'insure': {Crop.CORN: Ins.YES, Crop.SOY: Ins.YES},
-                   'unit': {Crop.CORN: u, Crop.SOY: u},
-                   'protection': {Crop.CORN: p, Crop.SOY: p},
-                   'level': {Crop.CORN: 75, Crop.SOY: 75},
-                   'sco_level': {Crop.CORN: s, Crop.SOY: s},
-                   'eco_level': {Crop.CORN: e, Crop.SOY: e},
-                   'selected_pmt_factor': {Crop.CORN: 1, Crop.SOY: 1}, }
+            ovr = {'insure': {Crop.CORN: Ins.YES, Crop.FULL_SOY: Ins.YES,
+                              Crop.DC_SOY: Ins.YES, Crop.WHEAT: Ins.YES},
+                   'unit': {Crop.CORN: u, Crop.FULL_SOY: u, Crop.DC_SOY: u,
+                            Crop.WHEAT: u},
+                   'protection': {Crop.CORN: p, Crop.FULL_SOY: p, Crop.DC_SOY: p,
+                                  Crop.WHEAT: p},
+                   'level': {Crop.CORN: 75, Crop.FULL_SOY: 75, Crop.DC_SOY: 75,
+                             Crop.WHEAT: 75},
+                   'sco_level': {Crop.CORN: s, Crop.FULL_SOY: s, Crop.DC_SOY: s,
+                                 Crop.WHEAT: s},
+                   'eco_level': {Crop.CORN: e, Crop.FULL_SOY: e, Crop.DC_SOY: e,
+                                 Crop.WHEAT: e},
+                   'selected_pmt_factor': {Crop.CORN: 1, Crop.FULL_SOY: 1,
+                                           Crop.DC_SOY: 1, Crop.WHEAT: 1}, }
             ci = CropIns(2023, overrides=ovr, prem=p)
             assert (ci.total_net_crop_ins_indemnity(pf, yf)
                     == pytest.approx(values[idx], TOL))
@@ -274,13 +281,20 @@ def test_pmt_factor_scales_premiums_and_indemnities_for_area_unit():
 
     idx = 0
     for u, p, s, e in configs:
-        ovr = {'insure': {Crop.CORN: Ins.YES, Crop.SOY: Ins.YES},
-               'unit': {Crop.CORN: u, Crop.SOY: u},
-               'protection': {Crop.CORN: p, Crop.SOY: p},
-               'level': {Crop.CORN: 75, Crop.SOY: 75},
-               'sco_level': {Crop.CORN: s, Crop.SOY: s},
-               'eco_level': {Crop.CORN: e, Crop.SOY: e},
-               'selected_pmt_factor': {Crop.CORN: .9, Crop.SOY: .9}, }
+        ovr = {'insure': {Crop.CORN: Ins.YES, Crop.FULL_SOY: Ins.YES,
+                          Crop.DC_SOY: Ins.YES, Crop.WHEAT: Ins.YES},
+               'unit': {Crop.CORN: u, Crop.FULL_SOY: u, Crop.DC_SOY: u,
+                        Crop.WHEAT: u},
+               'protection': {Crop.CORN: p, Crop.FULL_SOY: p, Crop.DC_SOY: p,
+                              Crop.WHEAT: p},
+               'level': {Crop.CORN: 75, Crop.FULL_SOY: 75, Crop.DC_SOY: 75,
+                         Crop.WHEAT: 75},
+               'sco_level': {Crop.CORN: s, Crop.FULL_SOY: s, Crop.DC_SOY: s,
+                             Crop.WHEAT: s},
+               'eco_level': {Crop.CORN: e, Crop.FULL_SOY: e, Crop.DC_SOY: e,
+                             Crop.WHEAT: e},
+               'selected_pmt_factor': {Crop.CORN: .9, Crop.FULL_SOY: .9,
+                                       Crop.DC_SOY: .9, Crop.WHEAT: .9}, }
         ci = CropIns(2023, overrides=ovr, prem=p)
         assert (ci.total_premium() == pytest.approx(premiums[idx], TOL))
         assert (ci.total_indemnity(pf=.75, yf=.7) ==

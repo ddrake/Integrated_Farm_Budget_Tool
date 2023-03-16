@@ -117,7 +117,7 @@ class TextfileAttributeLoader(object):
     CROPS = 'corn soy wheat soy_fs soy_dc'.split()
     UNITS = 'area ent'.split()
     PROTS = 'rp rphpe yo'.split()
-    INS_CROPS = 'corn soy'.split()
+    INS_CROPS = 'corn wheat soy_fs soy_dc'.split()
     PREM_KINDS = 'premium sco_premium eco_premium'.split()
     CROP_PAT = f'^(.*)_({"|".join(CROPS)})$'
     PREM_PATS = [
@@ -214,11 +214,11 @@ class TextfileAttributeLoader(object):
         if len(m.groups()) == 4:
             u, p, c, lvl = m.groups()
             choice = (Unit(self.UNITS.index(u)), Prot(self.PROTS.index(p)),
-                      Crop(self.INS_CROPS.index(c)), to_lvl(lvl))
+                      Crop(inscrop2crop(self.INS_CROPS.index(c))), to_lvl(lvl))
         else:
             p, c, lvl = m.groups()
-            choice = (Prot(self.PROTS.index(p)), Crop(self.INS_CROPS.index(c)),
-                      to_lvl(lvl))
+            choice = (Prot(self.PROTS.index(p)),
+                      Crop(inscrop2crop(self.INS_CROPS.index(c))), to_lvl(lvl))
         return choice
 
 
@@ -230,6 +230,10 @@ def to_lvl(v):
     Helper to convert a 'level' to a Lvl IntEnum
     """
     return (Lvl.NONE if v == 'NONE' else Lvl.DFLT if v == 'DFLT' else int(v))
+
+
+def inscrop2crop(idx):
+    return 0 if idx == 0 else idx + 1
 
 
 def get_value_crop(tag, v):
