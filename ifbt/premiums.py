@@ -29,10 +29,10 @@ class Premiums:
         self.acres = None       # acres to insure
 
         # extras
-        self.hf = None         # Hail / Fire protection
-        self.pf = None         # Prevent plant protection
+        self.hailfire = None         # Hail / Fire protection
+        self.prevplant = None         # Prevent plant protection
         self.tause = None      # 1 to use trend-adjusted yields else 0
-        self.ye = None         # 1 to use yield-exclusion else 0
+        self.yieldexcl = None         # 1 to use yield-exclusion else 0
 
         # yields
         self.aphyield = None   # Actual production history yield
@@ -112,15 +112,16 @@ class Premiums:
     # MAIN METHOD: COMPUTE PREMIUMS
     # -----------------------------
     def compute_prems_ent(self, aphyield=180, apprYield=180, tayield=190, acres=100,
-                          hf=0, pf=0, riskname='None', tause=1, ye=0,
-                          county='Champaign, IL', crop='Corn',
-                          practice='Non-irrigated', atype='Grain'):
+                          hailfire=0, prevplant=0, riskname='None', tause=1,
+                          yieldexcl=0, county='Champaign, IL', crop='Corn',
+                          practice='Non-irrigated', croptype='Grain'):
         """
         With farm-specific inputs, compute premiums for optional, basic and enterprise,
         units with RP, RP-HPE or YO protection for all coverage levels.
         """
-        self.store_user_settings_ent(aphyield, apprYield, tayield, acres, hf, pf,
-                                     riskname, tause, ye, county, crop, practice, atype)
+        self.store_user_settings_ent(aphyield, apprYield, tayield, acres, hailfire,
+                                     prevplant, riskname, tause, yieldexcl, county,
+                                     crop, practice, croptype)
         self.initialize_arrays()
         self.set_multfactor()
         for i in range(8):  # index i corresponds to coverage level
@@ -150,11 +151,11 @@ class Premiums:
         # options factor
         hfrate, pfrate, ptrate = self.options[self.code]
         self.multFactor = 1
-        if self.hf > 0:
+        if self.hailfire > 0:
             self.multFactor *= hfrate
-        if self.pf == 1:
+        if self.prevplant == 1:
             self.multFactor *= pfrate
-        if self.pf == 2:
+        if self.prevplant == 2:
             self.multFactor *= ptrate
 
     def set_effcov(self, i):
@@ -209,7 +210,7 @@ class Premiums:
         jjHigh = 5 if self.rateDiff[6, 0] == 0 else 7
         yeAdj = 0
         if self.effcov > 0.85:
-            if self.ye > 0.5:
+            if self.yieldexcl > 0.5:
                 yeAdj = (self.effcov - 0.85) / 0.15
             yeAdj = 1 + round(min(1, yeAdj) ** 3, 7) * 0.05
             self.rateDiffFac[0] *= yeAdj
@@ -366,8 +367,9 @@ class Premiums:
             self.prem[i, j] -= round(self.prem[i, j] * self.subsidy[i], 0)
             self.prem[i, j] = round(self.prem[i, j] / self.acres, 2)
 
-    def store_user_settings_ent(self, aphyield, apprYield, tayield, acres, hf, pf,
-                                riskname, tause, ye, county, crop, practice, atype):
+    def store_user_settings_ent(self, aphyield, apprYield, tayield, acres, hailfire,
+                                prevplant, riskname, tause, yieldexcl, county, crop,
+                                practice, croptype):
         """
         Store settings provide by user when calling calc_premiums, and calculate
         some values derived from them.
@@ -376,20 +378,20 @@ class Premiums:
         self.apprYield = apprYield
         self.tayield = tayield
         self.acres = acres
-        self.hf = hf
-        self.pf = pf
+        self.hailfire = hailfire
+        self.prevplant = prevplant
         self.riskname = riskname
         self.risk = self.risk_classes[self.riskname]
         self.highRisk = None
         self.rtype = None
         self.tause = tause
-        self.ye = ye
+        self.yieldexcl = yieldexcl
 
         if self.tayield < self.aphyield:
             self.tayield = self.aphyield
 
         # codes used to key into dicts
-        self.code = self.make_code(county, crop, atype, practice)
+        self.code = self.make_code(county, crop, croptype, practice)
         self.fcode = self.code + 0.1 * (1 + self.risk)
         self.pcode = self.make_pcode(str(self.code))
 
@@ -437,14 +439,14 @@ class Premiums:
     # ARC PREMIUMS
     # -----------------------
     def compute_prems_arc(self, county='Champaign, IL', crop='Corn',
-                          practice='Non-irrigated', atype='Grain',
+                          practice='Non-irrigated', croptype='Grain',
                           prot_factor=1):
         """
         Get 120 pct values for each area type and level from 70:90
         These are scaled to get the 85 pct and 80 pct columns
         """
         self.arc_prem = zeros((3, 5))
-        self.store_user_settings_arc(county, crop, practice, atype, prot_factor)
+        self.store_user_settings_arc(county, crop, practice, croptype, prot_factor)
         subsidies = (self.subsidy_grip, self.subsidy_grip, self.subsidy_grp)
         dicts = (self.arc_rp, self.arc_rphpe, self.arc_yp)
         for i, subsidy in enumerate(subsidies):
@@ -466,12 +468,12 @@ class Premiums:
         self.arc_prem[idx, :] = (self.arc_prem[idx, :] / 100 *
                                  self.prot_factor / 1.2).round(2)
 
-    def store_user_settings_arc(self, county, crop, practice, atype, prot_factor):
+    def store_user_settings_arc(self, county, crop, practice, croptype, prot_factor):
         """
         Store settings provide by user when calling calc_premiums
         """
-        self.code = self.make_code(county, crop, atype, practice)
-        self.ccode = self.make_ccode(county, crop, atype, practice)
+        self.code = self.make_code(county, crop, croptype, practice)
+        self.ccode = self.make_ccode(county, crop, croptype, practice)
         self.pcode = self.make_pcode(str(self.code))
         self.prot_factor = prot_factor
         # read price and volatility from parameters
@@ -484,11 +486,11 @@ class Premiums:
     # -----------------------
     def compute_prems_sco(self, aphyield=180, tayield=190, tause=1,
                           county='Champaign, IL', crop='Corn',
-                          practice='Non-irrigated', atype='Grain'):
+                          practice='Non-irrigated', croptype='Grain'):
         """ Compute all SCO premiums """
 
         self.store_user_settings_sco(aphyield, tayield, tause, county,
-                                     crop, practice, atype)
+                                     crop, practice, croptype)
 
         self.sco_prem = zeros((3, 8))
         for i, d in enumerate((self.sco_rp, self.sco_rphpe, self.sco_yp)):
@@ -509,14 +511,14 @@ class Premiums:
         self.sco_prem[unit, :] -= (self.subsidy_sco * self.sco_prem[unit, :]).round(2)
 
     def store_user_settings_sco(self, aphyield, tayield, tause, county,
-                                crop, practice, atype):
+                                crop, practice, croptype):
         """
         Store settings provide by user when calling calc_premiums
         """
         self.aphyield = aphyield
         self.tayield = tayield
         self.tause = tause
-        self.code = self.make_code(county, crop, atype, practice)
+        self.code = self.make_code(county, crop, croptype, practice)
         self.pcode = self.make_pcode(str(self.code))
         # read price and volatility from parameters
         self.aphPrice, self.pvol = self.parameters[self.pcode]
@@ -528,10 +530,10 @@ class Premiums:
     # -----------------------
     def compute_prems_eco(self, aphyield=180, tayield=190, tause=1,
                           county='Champaign, IL', crop='Corn',
-                          practice='Non-irrigated', atype='Grain'):
+                          practice='Non-irrigated', croptype='Grain'):
         """ Compute all ECO premiums """
         self.store_user_settings_eco(aphyield, tayield, tause, county,
-                                     crop, practice, atype)
+                                     crop, practice, croptype)
         mult = array([0.04, 0.09])  # 90% - 86%, 95% - 86%
         self.eco_prem = zeros((3, 2))
         rate = zeros((3, 2))
@@ -544,14 +546,14 @@ class Premiums:
         return self.eco_prem
 
     def store_user_settings_eco(self, aphyield, tayield, tause, county, crop,
-                                practice, atype):
+                                practice, croptype):
         """
         Store settings provide by user when calling calc_premiums
         """
         self.aphyield = aphyield
         self.tayield = tayield
         self.tause = tause
-        self.code = self.make_code(county, crop, atype, practice)
+        self.code = self.make_code(county, crop, croptype, practice)
         self.pcode = self.make_pcode(str(self.code))
         # read price and volatility from parameters
         self.aphPrice, self.pvol = self.parameters[self.pcode]
@@ -618,19 +620,19 @@ class Premiums:
         # dict with key code, value array(36, 3, 2) (ivol, unit, cov)
         self.eco = get_eco()
 
-    def make_code(self, county, crop, atype, practice):
+    def make_code(self, county, crop, croptype, practice):
         """
         Construct an integer code used to key in some tabular data
         """
         return int(f'{self.counties[county]}{self.crops[crop]}' +
-                   f'{self.types[atype]}{self.practices[practice]}')
+                   f'{self.types[croptype]}{self.practices[practice]}')
 
-    def make_ccode(self, county, crop, atype, practice):
+    def make_ccode(self, county, crop, croptype, practice):
         """
         Construct a COUNTY integer code used to key in some tabular data
         """
         return int(f'{self.counties[county]}{self.crops[crop]}' +
-                   f'{self.types[atype]}{self.cpractices[practice]}')
+                   f'{self.types[croptype]}{self.cpractices[practice]}')
 
     def make_pcode(self, code):
         """

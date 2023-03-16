@@ -1,6 +1,6 @@
 import pytest
 
-from ifbt import CropIns, Crop, Ins, Unit, Prot, Lvl
+from ifbt import CropIns, Premiums, Crop, Ins, Unit, Prot, Lvl
 
 # Note: tests may fail if changes are made to the data files
 # 2023_crop_ins_indemnity.txt or 2023_crop_ins_premiums.txt
@@ -8,6 +8,8 @@ from ifbt import CropIns, Crop, Ins, Unit, Prot, Lvl
 # not cause any tests to fail because tests will provide overrides
 
 TOL = .01
+
+p = Premiums()
 
 
 def test_total_crop_ins():
@@ -19,7 +21,7 @@ def test_total_crop_ins():
            'eco_level': {Crop.CORN: Lvl.NONE},
            'selected_pmt_factor': {Crop.CORN: 1}}
 
-    c = CropIns(2023, overrides=ovr)
+    c = CropIns(2023, overrides=ovr, prem=p)
 
     crop = Crop.CORN
     assert c.crop_ins_premium_crop(crop) == pytest.approx(72847.62, TOL)
@@ -43,7 +45,7 @@ def test_premiums_and_revenue_are_zero_for_a_crop_without_insurance():
            'sco_level': {Crop.CORN: Lvl.NONE}, 'eco_level': {Crop.CORN: Lvl.NONE},
            'selected_pmt_factor': {Crop.CORN: 1}, }
 
-    c = CropIns(2023, overrides=ovr)
+    c = CropIns(2023, overrides=ovr, prem=p)
     crop = Crop.CORN
     assert c.crop_ins_premium_crop(crop) == 0
     assert c.total_indemnity_crop(crop, pf=.7, yf=.75) == 0
@@ -57,7 +59,7 @@ def test_no_indemnity_attribute_is_added_without_base_insurance():
            'protection': {Crop.CORN: Prot.RP}, 'level': {Crop.CORN: 75},
            'sco_level': {Crop.CORN: Lvl.DFLT}, 'eco_level': {Crop.CORN: Lvl.NONE},
            'selected_pmt_factor': {Crop.CORN: 1}, }
-    c = CropIns(2023, overrides=ovr)
+    c = CropIns(2023, overrides=ovr, prem=p)
     assert not hasattr(c, 'indemnity') or Crop.CORN not in c.indemnity
 
 
@@ -70,7 +72,7 @@ def test_cannot_add_sco_if_base_insurance_is_area():
            'selected_pmt_factor': {Crop.CORN: 1}, }
 
     with pytest.raises(ValueError):
-        CropIns(2023, overrides=ovr)
+        CropIns(2023, overrides=ovr, prem=p)
 
 
 def test_can_add_eco_without_sco():
@@ -85,7 +87,7 @@ def test_can_add_eco_without_sco():
            'sco_level': {Crop.CORN: Lvl.NONE}, 'eco_level': {Crop.CORN: 90},
            'selected_pmt_factor': {Crop.CORN: 1}, }
 
-    ci = CropIns(2023, overrides=ovr)
+    ci = CropIns(2023, overrides=ovr, prem=p)
     assert (ci.total_indemnity_crop(Crop.CORN, pf=.8, yf=.8) ==
             pytest.approx(704796.216, TOL))
     assert (ci.total_premium_crop(Crop.CORN) == pytest.approx(140666.895, TOL))
@@ -104,7 +106,7 @@ def test_cannot_add_eco_with_area_unit():
            'selected_pmt_factor': {Crop.CORN: 1}, }
 
     with pytest.raises(ValueError):
-        CropIns(2023, overrides=ovr)
+        CropIns(2023, overrides=ovr, prem=p)
 
 
 def test_sco_level_greater_than_base_level_is_ok():
@@ -120,7 +122,7 @@ def test_sco_level_greater_than_base_level_is_ok():
            'sco_level': {Crop.CORN: 80}, 'eco_level': {Crop.CORN: 90},
            'selected_pmt_factor': {Crop.CORN: 1}, }
 
-    ci = CropIns(2023, overrides=ovr)
+    ci = CropIns(2023, overrides=ovr, prem=p)
     assert (ci.total_indemnity_crop(Crop.CORN, pf=.8, yf=.8) ==
             pytest.approx(1028547.804, TOL))
     assert (ci.total_premium_crop(Crop.CORN) == pytest.approx(188584.065, TOL))
@@ -137,7 +139,7 @@ def test_sco_level_equal_to_base_level_is_ok():
            'sco_level': {Crop.CORN: 75}, 'eco_level': {Crop.CORN: 90},
            'selected_pmt_factor': {Crop.CORN: 1}, }
 
-    ci = CropIns(2023, overrides=ovr)
+    ci = CropIns(2023, overrides=ovr, prem=p)
     assert (ci.total_net_crop_ins_indemnity(pf=.8, yf=.8) ==
             pytest.approx(1640664.574, TOL))
 
@@ -154,7 +156,7 @@ def test_sco_level_less_than__base_level_throws():
            'selected_pmt_factor': {Crop.CORN: 1}, }
 
     with pytest.raises(ValueError):
-        CropIns(2023, overrides=ovr)
+        CropIns(2023, overrides=ovr, prem=p)
 
 
 def test_indemnity_and_its_parts_cannot_be_less_than_zero():
@@ -166,7 +168,7 @@ def test_indemnity_and_its_parts_cannot_be_less_than_zero():
            'sco_level': {Crop.CORN: Lvl.DFLT}, 'eco_level': {Crop.CORN: 90},
            'selected_pmt_factor': {Crop.CORN: 1}, }
 
-    c = CropIns(2023, overrides=ovr)
+    c = CropIns(2023, overrides=ovr, prem=p)
     crop = Crop.CORN
     assert c.indemnity[Crop.CORN].harvest_indemnity_pmt(pf=1, yf=1) == 0
     assert (c.indemnity[Crop.CORN].total_indemnity_pmt_received(pf=1, yf=1) ==
@@ -235,7 +237,7 @@ def test_multiple_configurations():
                    'sco_level': {Crop.CORN: s, Crop.SOY: s},
                    'eco_level': {Crop.CORN: e, Crop.SOY: e},
                    'selected_pmt_factor': {Crop.CORN: 1, Crop.SOY: 1}, }
-            ci = CropIns(2023, overrides=ovr)
+            ci = CropIns(2023, overrides=ovr, prem=p)
             assert (ci.total_net_crop_ins_indemnity(pf, yf)
                     == pytest.approx(values[idx], TOL))
             idx += 1
@@ -279,7 +281,7 @@ def test_pmt_factor_scales_premiums_and_indemnities_for_area_unit():
                'sco_level': {Crop.CORN: s, Crop.SOY: s},
                'eco_level': {Crop.CORN: e, Crop.SOY: e},
                'selected_pmt_factor': {Crop.CORN: .9, Crop.SOY: .9}, }
-        ci = CropIns(2023, overrides=ovr)
+        ci = CropIns(2023, overrides=ovr, prem=p)
         assert (ci.total_premium() == pytest.approx(premiums[idx], TOL))
         assert (ci.total_indemnity(pf=.75, yf=.7) ==
                 pytest.approx(indemnities[idx], TOL))

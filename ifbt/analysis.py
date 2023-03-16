@@ -45,14 +45,23 @@ class Analysis(object):
             else:
                 setattr(self, k, v)
 
+    def acres_soy(self):
+        """
+        Compute the total soy acres
+        """
+        return self.acres[Crop.DC_SOY] + self.acres[Crop.FULL_SOY]
+
+    @crop_in(Crop.CORN, Crop.SOY, Crop.WHEAT, Crop.DC_SOY, Crop.FULL_SOY)
+    def acres_crop(self, crop):
+        return self.acres_soy() if crop == Crop.SOY else self.acres[crop]
+
     def projected_bu_soy(self, yf=1):
         """
         Compute the projected, sensitized raw total soy bushels
         considering wheat/dc soy acres
         """
         return ((self.acres[Crop.DC_SOY] * self.proj_yield_farm[Crop.DC_SOY] +
-                 (self.acres[Crop.SOY] - self.acres[Crop.DC_SOY]) *
-                 self.proj_yield_farm[Crop.FULL_SOY]) * yf)
+                 self.acres[Crop.FULL_SOY] * self.proj_yield_farm[Crop.FULL_SOY]) * yf)
 
     @crop_in(Crop.CORN, Crop.SOY)
     def projected_bu_crop(self, crop, yf=1):
@@ -62,16 +71,10 @@ class Analysis(object):
         return (self.projected_bu_soy(yf) if crop == Crop.SOY else
                 self.proj_yield_farm[crop] * self.acres[crop] * yf)
 
-    def projected_yield_soy(self, yf=1):
-        """
-        Compute the projected, sensitized overall soy yield
-        """
-        return self.projected_bu_soy(yf) / self.acres[Crop.SOY]
-
     @crop_in(Crop.CORN, Crop.SOY, Crop.FULL_SOY, Crop.DC_SOY, Crop.WHEAT)
     def projected_yield_crop(self, crop, yf=1):
         """
         Compute the projected, sensitized yield for any crop
         """
-        return (self.projected_yield_soy(yf) if crop == Crop.SOY else
+        return (self.projected_bu_soy(yf)/self.acres_soy() if crop == Crop.SOY else
                 self.proj_yield_farm[crop] * yf)

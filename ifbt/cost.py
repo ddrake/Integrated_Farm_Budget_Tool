@@ -91,7 +91,7 @@ class Cost(Analysis):
         used to compute the clear diesel cost for the crop
         """
         return (
-            self.clear_gpa_2018 * self.acres[crop] *
+            self.clear_gpa_2018 * self.acres_crop(crop) *
             self.clear_diesel_price * self.fuel_alloc[crop])
 
     @crop_in(Crop.CORN, Crop.SOY)
@@ -112,7 +112,7 @@ class Cost(Analysis):
         Dyed diesel cost for the specified crop.
         """
         return round(
-            self.dyed_gpa_2018 * self.acres[crop] *
+            self.dyed_gpa_2018 * self.acres_crop(crop) *
             self.dyed_diesel_price * self.fuel_alloc[crop])
 
     @crop_in(Crop.CORN, Crop.SOY)

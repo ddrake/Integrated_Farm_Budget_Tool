@@ -10,6 +10,7 @@ from .analysis import Analysis
 from .indemnity import (IndemnityAreaRp, IndemnityAreaRpHpe, IndemnityAreaYo,
                         IndemnityEntRp, IndemnityEntRpHpe, IndemnityEntYo,
                         IndemnityOptionRp, IndemnityOptionRpHpe, IndemnityOptionYo)
+from .premiums import Premiums
 from .util import Crop, crop_in, Ins, Unit, Prot, Lvl
 
 
@@ -35,6 +36,9 @@ class CropIns(Analysis):
         for crop in [Crop.CORN, Crop.SOY]:
             self._validate_settings(crop)
         self._indemnity_factory()
+        if 'prem' not in kwargs:
+            raise ValueError("CropIns constructor needs a Premiums instance")
+        self.prem = kwargs['prem']
 
     def _validate_settings(self, crop):
         """
@@ -158,7 +162,7 @@ class CropIns(Analysis):
         Crop insurance premium in dollars
         """
         return (self.crop_ins_premium_per_acre_crop(crop) *
-                self.acres[crop])
+                self.acres_crop(crop))
 
     @crop_in(Crop.CORN, Crop.SOY)
     def sco_ins_premium_per_acre_crop(self, crop):
@@ -183,7 +187,7 @@ class CropIns(Analysis):
         SCO premium in dollars
         """
         return (self.sco_ins_premium_per_acre_crop(crop) *
-                self.acres[crop])
+                self.acres_crop(crop))
 
     @crop_in(Crop.CORN, Crop.SOY)
     def eco_ins_premium_per_acre_crop(self, crop):
@@ -204,7 +208,7 @@ class CropIns(Analysis):
         ECO premium in dollars
         """
         return (self.eco_ins_premium_per_acre_crop(crop) *
-                self.acres[crop])
+                self.acres_crop(crop))
 
     @crop_in(Crop.CORN, Crop.SOY)
     def total_premium_crop(self, crop):

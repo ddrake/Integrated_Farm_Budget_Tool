@@ -7,11 +7,11 @@ TOL = .01
 # Note: When verifying against the Excel file, note that the APH Yield and
 #       Rate Yield are reversed on the premiums tab.
 # Abbreviations
-# 'hf'             # hail and fire protection
-# 'pf'             # prevent plant factor: std=0, Plus5%=1, Plus10%=2
+# 'hailfire'             # hail and fire protection
+# 'prevplant'             # prevent plant factor: std=0, Plus5%=1, Plus10%=2
 # 'riskname': 'BBB',  # {'None', 'AAA', 'BBB', 'CCC', 'DDD'}
 # 'tause': 1,          # 1 to use trend-adjusted yields 0 else
-# 'ye': 0,             # 1 to use yield-exclusion 0 else
+# 'yieldexcl': 0,             # 1 to use yield-exclusion 0 else
 #
 # Note: An premium array of zeros means no premiums are avaiable for the product
 # Note: arc premiums use the 120% protection factor to match an Excel column.
@@ -75,21 +75,21 @@ def test_3000_acres_corn_in_champaign():
         'apprYield': 180,
         'tayield': 190,
         'acres': 3000,
-        'hf': 0,
-        'pf': 0,
+        'hailfire': 0,
+        'prevplant': 0,
         'riskname': 'None',
         'tause': 1,
-        'ye': 0,
+        'yieldexcl': 0,
         'county': 'Champaign, IL',
         'crop': 'Corn',
         'practice': 'Non-irrigated',
-        'atype': 'Grain'
+        'croptype': 'Grain'
     }
     settings_arc = {
         'county': 'Champaign, IL',
         'crop': 'Corn',
         'practice': 'Non-irrigated',
-        'atype': 'Grain',
+        'croptype': 'Grain',
         'prot_factor': 1.2,
     }
     settings_opt = {
@@ -99,7 +99,7 @@ def test_3000_acres_corn_in_champaign():
         'county': 'Champaign, IL',
         'crop': 'Corn',
         'practice': 'Non-irrigated',
-        'atype': 'Grain'
+        'croptype': 'Grain'
     }
     prem = p.compute_prems_ent(**settings_ent)
     expected = np.array(
@@ -152,21 +152,21 @@ def test_3000_acres_champaign_full_soy():
         'apprYield': 58.0,
         'tayield': 60,
         'acres': 3000,
-        'hf': 0,
-        'pf': 0,
+        'hailfire': 0,
+        'prevplant': 0,
         'riskname': 'None',
         'tause': 1,
-        'ye': 0,
+        'yieldexcl': 0,
         'county': 'Champaign, IL',
         'crop': 'Soybeans',
         'practice': 'Nfac (non-irrigated)',
-        'atype': 'No Type Specified'
+        'croptype': 'No Type Specified'
     }
     settings_arc = {
         'county': 'Champaign, IL',
         'crop': 'Soybeans',
         'practice': 'Nfac (non-irrigated)',
-        'atype': 'No Type Specified',
+        'croptype': 'No Type Specified',
         'prot_factor': 1.2,
     }
     settings_opt = {
@@ -176,7 +176,7 @@ def test_3000_acres_champaign_full_soy():
         'county': 'Champaign, IL',
         'crop': 'Soybeans',
         'practice': 'Nfac (non-irrigated)',
-        'atype': 'No Type Specified'
+        'croptype': 'No Type Specified'
     }
     prem = p.compute_prems_ent(**settings_ent)
     print(prem)
@@ -233,21 +233,21 @@ def test_300_acres_wheat_champaign():
         'apprYield': 39.0,
         'tayield': 38.5,
         'acres': 300,
-        'hf': 0,
-        'pf': 0,
+        'hailfire': 0,
+        'prevplant': 0,
         'riskname': 'None',
         'tause': 1,
-        'ye': 0,
+        'yieldexcl': 0,
         'county': 'Champaign, IL',
         'crop': 'Wheat',
         'practice': 'Non-irrigated',
-        'atype': 'Winter'
+        'croptype': 'Winter'
     }
     settings_arc = {
         'county': 'Champaign, IL',
         'crop': 'Wheat',
         'practice': 'Non-irrigated',
-        'atype': 'Winter',
+        'croptype': 'Winter',
         'prot_factor': 1.2,
     }
     settings_opt = {
@@ -257,7 +257,7 @@ def test_300_acres_wheat_champaign():
         'county': 'Champaign, IL',
         'crop': 'Wheat',
         'practice': 'Non-irrigated',
-        'atype': 'Winter'
+        'croptype': 'Winter'
     }
     prem = p.compute_prems_ent(**settings_ent)
     expected = np.array(
@@ -310,21 +310,21 @@ def test_100_acres_madison_corn():
         'apprYield': 154,
         'tayield': 164,
         'acres': 100,
-        'hf': 0,
-        'pf': 0,
+        'hailfire': 0,
+        'prevplant': 0,
         'riskname': 'None',
         'tause': 1,
-        'ye': 0,
+        'yieldexcl': 0,
         'county': 'Madison, IL',
         'crop': 'Corn',
         'practice': 'Non-irrigated',
-        'atype': 'Grain'
+        'croptype': 'Grain'
     }
     settings_arc = {
         'county': 'Madison, IL',
         'crop': 'Corn',
         'practice': 'Non-irrigated',
-        'atype': 'Grain',
+        'croptype': 'Grain',
         'prot_factor': 1.2,
     }
     settings_opt = {
@@ -334,7 +334,7 @@ def test_100_acres_madison_corn():
         'county': 'Madison, IL',
         'crop': 'Corn',
         'practice': 'Non-irrigated',
-        'atype': 'Grain'
+        'croptype': 'Grain'
     }
     prem = p.compute_prems_ent(**settings_ent)
     expected = np.array(
@@ -387,21 +387,21 @@ def test_3000_acres_full_soybeans_madison():
         'apprYield': 47.0,
         'tayield': 50,
         'acres': 3000,
-        'hf': 0,
-        'pf': 0,
+        'hailfire': 0,
+        'prevplant': 0,
         'riskname': 'None',
         'tause': 1,
-        'ye': 0,
+        'yieldexcl': 0,
         'county': 'Madison, IL',
         'crop': 'Soybeans',
         'practice': 'Nfac (non-irrigated)',
-        'atype': 'No Type Specified'
+        'croptype': 'No Type Specified'
     }
     settings_arc = {
         'county': 'Madison, IL',
         'crop': 'Soybeans',
         'practice': 'Nfac (non-irrigated)',
-        'atype': 'No Type Specified',
+        'croptype': 'No Type Specified',
         'prot_factor': 1.2,
     }
     settings_opt = {
@@ -411,7 +411,7 @@ def test_3000_acres_full_soybeans_madison():
         'county': 'Madison, IL',
         'crop': 'Soybeans',
         'practice': 'Nfac (non-irrigated)',
-        'atype': 'No Type Specified'
+        'croptype': 'No Type Specified'
     }
     prem = p.compute_prems_ent(**settings_ent)
     expected = np.array(
@@ -464,21 +464,21 @@ def test_300_acres_wheat_madison():
         'apprYield': 58.0,
         'tayield': 61.0,
         'acres': 300,
-        'hf': 0,
-        'pf': 0,
+        'hailfire': 0,
+        'prevplant': 0,
         'riskname': 'None',
         'tause': 1,
-        'ye': 0,
+        'yieldexcl': 0,
         'county': 'Madison, IL',
         'crop': 'Wheat',
         'practice': 'Non-irrigated',
-        'atype': 'Winter'
+        'croptype': 'Winter'
     }
     settings_arc = {
         'county': 'Madison, IL',
         'crop': 'Wheat',
         'practice': 'Non-irrigated',
-        'atype': 'Winter',
+        'croptype': 'Winter',
         'prot_factor': 1.2,
     }
     settings_opt = {
@@ -488,7 +488,7 @@ def test_300_acres_wheat_madison():
         'county': 'Madison, IL',
         'crop': 'Wheat',
         'practice': 'Non-irrigated',
-        'atype': 'Winter'
+        'croptype': 'Winter'
     }
     prem = p.compute_prems_ent(**settings_ent)
     expected = np.array(
@@ -541,21 +541,21 @@ def test_300_acres_fac_soy_madison():
         'apprYield': 47.0,
         'tayield': 49.0,
         'acres': 300,
-        'hf': 0,
-        'pf': 0,
+        'hailfire': 0,
+        'prevplant': 0,
         'riskname': 'None',
         'tause': 1,
-        'ye': 0,
+        'yieldexcl': 0,
         'county': 'Madison, IL',
         'crop': 'Soybeans',
         'practice': 'Fac (non-irrigated)',
-        'atype': 'No Type Specified'
+        'croptype': 'No Type Specified'
     }
     settings_arc = {
         'county': 'Madison, IL',
         'crop': 'Soybeans',
         'practice': 'Fac (non-irrigated)',
-        'atype': 'No Type Specified',
+        'croptype': 'No Type Specified',
         'prot_factor': 1.2,
     }
     settings_opt = {
@@ -565,7 +565,7 @@ def test_300_acres_fac_soy_madison():
         'county': 'Madison, IL',
         'crop': 'Soybeans',
         'practice': 'Fac (non-irrigated)',
-        'atype': 'No Type Specified'
+        'croptype': 'No Type Specified'
     }
     prem = p.compute_prems_ent(**settings_ent)
     expected = np.array(
@@ -618,21 +618,21 @@ def test_100_acres_corn_st_charles_mo_risk_BBB():
         'apprYield': 147.0,
         'tayield': 156.0,
         'acres': 100,
-        'hf': 0,
-        'pf': 0,
+        'hailfire': 0,
+        'prevplant': 0,
         'riskname': 'BBB',
         'tause': 1,
-        'ye': 0,
+        'yieldexcl': 0,
         'county': 'St._Charles, MO',
         'crop': 'Corn',
         'practice': 'Non-irrigated',
-        'atype': 'Grain'
+        'croptype': 'Grain'
     }
     settings_arc = {
         'county': 'St._Charles, MO',
         'crop': 'Corn',
         'practice': 'Non-irrigated',
-        'atype': 'Grain',
+        'croptype': 'Grain',
         'prot_factor': 1.2,
     }
     settings_opt = {
@@ -642,7 +642,7 @@ def test_100_acres_corn_st_charles_mo_risk_BBB():
         'county': 'St._Charles, MO',
         'crop': 'Corn',
         'practice': 'Non-irrigated',
-        'atype': 'Grain'
+        'croptype': 'Grain'
     }
     prem = p.compute_prems_ent(**settings_ent)
     expected = np.array(
@@ -695,21 +695,21 @@ def test_100_acres_madison_corn_NO_TA():
         'apprYield': 154,
         'tayield': 164,
         'acres': 100,
-        'hf': 0,
-        'pf': 0,
+        'hailfire': 0,
+        'prevplant': 0,
         'riskname': 'None',
         'tause': 0,
-        'ye': 0,
+        'yieldexcl': 0,
         'county': 'Madison, IL',
         'crop': 'Corn',
         'practice': 'Non-irrigated',
-        'atype': 'Grain'
+        'croptype': 'Grain'
     }
     settings_arc = {
         'county': 'Madison, IL',
         'crop': 'Corn',
         'practice': 'Non-irrigated',
-        'atype': 'Grain',
+        'croptype': 'Grain',
         'prot_factor': 1.2,
     }
     settings_opt = {
@@ -719,7 +719,7 @@ def test_100_acres_madison_corn_NO_TA():
         'county': 'Madison, IL',
         'crop': 'Corn',
         'practice': 'Non-irrigated',
-        'atype': 'Grain'
+        'croptype': 'Grain'
     }
     prem = p.compute_prems_ent(**settings_ent)
     expected = np.array(

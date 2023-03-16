@@ -82,7 +82,7 @@ class Indemnity(Analysis):
         For now, we assume that all crop acres or none are insured.
         This is not a requirement of the program and may change in the future.
         """
-        return self.acres[self.crop]
+        return self.acres_crop(self.crop)
 
     def harvest_indemnity_pmt(self, pf=1, yf=1):
         """
@@ -210,7 +210,7 @@ class IndemnityEnt(Indemnity):
         Note: replant protection option is only for Enterprise units.
         """
         return (self.replant_frac_acres_assumed[self.crop] *
-                self.acres[self.crop])
+                self.acres_crop(self.crop))
 
     def replant_bushels(self):
         """
