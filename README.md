@@ -4,11 +4,11 @@ An integrated tool allowing midwest grain farmers to budget farm profitability a
 
 Based on farm specific inputs, this tool will assist an operator in 1) evaluating crop profitability and acreage allocation, 2) budgeting revenues reflective of already marketed and unmarketed grain, 3) assessing the implications of crop insurance alternatives, and 4) assessing the implications of title selection.  Farm operators can easily change any key inputs or assumptions to quickly test alternatives and visualize the holistic impact on their farm's budgeted profitability.   Furthermore, all the drivers of revenue, costs, crop insurance and title are sensitized to actual harvest price and yield.  Therefore an operator can readily visualize not only the implications of decisions on a static budget, but also the range of potential outomes of farm profitability dependant upon a range of possible actual harvest prices and yields.
 
-The current implementation is beginning the second phase of development.  The first phase was to devolop a Python codebase which could be validated against the sensitivity tables in Kelley's benchmarking.xlsx Excel workbook.  This is now complete and reasonably well-tested.
+The current implementation is beginning the second phase of development.  The first phase was to devolop a Python codebase which could be validated against the sensitivity tables in Kelley's benchmarking.xlsx Excel workbook.  This is now complete and reasonably well-tested, and has been moved to a new _benchmarking_ branch for further testing.  Although this implementation can compute the indemnity payments for crop insurance, it requires a set of pre-computed premiums.
 
-The next phase will be to implement on a different branch, a more general version of this tool, which will allow a user to select from a set of preset cost/revenue models and enter crop acres.  A user will be able to override many cost and revenue items with her own farm's data.  It will treat wheat and FAC soybeans as first-class crops.  A new workbook 'simplebudgettool.xlsx' is currently being developed by Kelley.
+The final phase will be to implement a more general version of this tool, as a Django application.  This application will allow a logged-in user to select from a set of preset budget models and customize it as needed, then enter their farm-specific data.  This application will treat wheat and FAC soybeans as first-class crops.  A new workbook 'simplebudgettool.xlsx' has been developed by Kelley as a model for this tool.
 
-Once finalized, it will be coded in Python and serve as the core business logic component of the third phase, a Django application to be built this summer.  Having registered to use this application, an operator could select a cost/revenue model and enter farm-specific data and then use the tool to evaluate various crop insurance and farm program alternatives across various price and yield scenarios to maximize profitability while also minimizing risks.
+This new tool will replace the hard-coded crop insurance premiums in 'crop_ins_premiums.txt' file with premium computation logic and data sourced by the RMA (Risk Management Agency).  The computational logic has now been largely implemented, but we are working out how to source some of its data.  It will support irrigated and non irrigated corn, winter wheat and soybeans, including soybeans following another crop (FAC).  It will support all counties in the following 28 states: IL, AL, AR, FL, GA, IN, IA, KS, KY, LA, MD, MI, MN, MS, MO, NE, NC, ND, OH, PA, SC, SD, TN, VA, WV, WI, OK, TX.
 
 ## Prerequisites 
 
@@ -27,7 +27,7 @@ cd Integrated_Farm_Budget_Tool
 pip install -e .
 ```
 
-Download the data directory from the Google Drive folder and place it inside ifbt/
+Download the data directory from the Google Drive folder corresponding to the branch you want to work with and place it inside ifbt/.  Note: The data on Google Drive contains only textfiles, which are compact, but slow to load.  The current implementation for crop insurance premiums on the main branch looks for data in pickle (.pkl) files.  If a pickle file is not found, the corresponding textfile is loaded, converted to a dict, and the dict saved to a pickle file.  Currently, 1.3 GB of drive space is required for data for the main branch.  The drive space required for the benchmarking branch data is less then 1 MB.
 
 ## Usage
 
