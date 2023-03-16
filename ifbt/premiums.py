@@ -4,7 +4,8 @@ from math import log, exp
 import os
 import pickle
 
-np.set_printoptions(precision=2)
+DATADIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data')
+np.set_printoptions(precision=6)
 np.set_printoptions(suppress=True)
 
 
@@ -88,7 +89,6 @@ class Premiums:
         self.eFactorRev = None
         self.rateDiffFac = None
         self.revLook = None
-        self.uFactor = None
 
         # Array sized (2, 2)  ('E', 'Erev') by (cur, prior)
         self.basePremRate = None
@@ -171,9 +171,6 @@ class Premiums:
         self.rateDiffFac[:] = (
             self.get_factor(self.rateDiff, i, 0, 9),
             self.get_factor(self.rateDiff, i, 1, 9))
-        self.uFactor[:] = (
-            self.get_factor(self.unitFactor, i, 0, 3),
-            self.get_factor(self.unitFactor, i, 1, 3))
         self.eFactor[:] = (
             self.get_factor(self.enterpriseFactor, i, 0, 3),
             self.get_factor(self.enterpriseFactor, i, 1, 3))
@@ -216,7 +213,6 @@ class Premiums:
                 yeAdj = (self.effcov - 0.85) / 0.15
             yeAdj = 1 + round(min(1, yeAdj) ** 3, 7) * 0.05
             self.rateDiffFac[0] *= yeAdj
-            self.uFactor = np.minimum(self.uFactor, self.unitFactor[jjHigh, :])
             self.eFactor = np.minimum(self.eFactor, self.enterpriseFactor[jjHigh, :])
 
     def make_rev_liab(self, i):
@@ -411,7 +407,6 @@ class Premiums:
         """
         # Initialize current/prev arrays
         self.rateDiffFac = zeros(2)
-        self.uFactor = zeros(2)
         self.eFactor = zeros(2)
         self.eFactorRev = zeros(2)
         self.baseRate = zeros(2)
@@ -432,8 +427,6 @@ class Premiums:
         self.discountEnter = self.discount_enter[enterId]
         self.rateDiff = array((self.rate_diff[self.fcode],
                                self.prate_diff[self.fcode])).T
-        self.unitFactor = array((self.unit_factor[self.fcode],
-                                 self.punit_factor[self.fcode])).T
         self.enterpriseFactor = array((self.enterprise_factor[self.fcode],
                                        self.penterprise_factor[self.fcode])).T
         self.enterFactorRev = array((self.enter_factor_rev[self.fcode],
@@ -492,6 +485,7 @@ class Premiums:
     def compute_prems_sco(self, aphyield=180, tayield=190, tause=1,
                           county='Champaign, IL', crop='Corn',
                           practice='Non-irrigated', atype='Grain'):
+        """ Compute all SCO premiums """
 
         self.store_user_settings_sco(aphyield, tayield, tause, county,
                                      crop, practice, atype)
@@ -502,12 +496,12 @@ class Premiums:
         return self.sco_prem
 
     def compute_prem_sco(self, rate_dict, unit):
-        # Note the values of the Sco related dicts are a tuple with first
-        # element expYld and second element the rates array.
-        # expYld is currently ignored.
+        """
+        Compute the sco premium for the given dict and unit index
+        """
         if self.ccode not in rate_dict:
             return
-        rate = rate_dict[self.ccode][1]
+        rate = rate_dict[self.ccode]
         if unit < 2:
             idx = int((self.pvol - 0.05)*100)
             rate = rate[idx, :]
@@ -535,6 +529,7 @@ class Premiums:
     def compute_prems_eco(self, aphyield=180, tayield=190, tause=1,
                           county='Champaign, IL', crop='Corn',
                           practice='Non-irrigated', atype='Grain'):
+        """ Compute all ECO premiums """
         self.store_user_settings_eco(aphyield, tayield, tause, county,
                                      crop, practice, atype)
         mult = array([0.04, 0.09])  # 90% - 86%, 95% - 86%
@@ -603,8 +598,6 @@ class Premiums:
         self.rates = get_rates()
         self.rate_diff = get_rate_diff()
         self.prate_diff = get_prate_diff()
-        self.unit_factor = get_unit_factor()
-        self.punit_factor = get_punit_factor()
         self.enterprise_factor = get_enterprise_factor()
         self.penterprise_factor = get_penterprise_factor()
         self.enter_factor_rev = get_enter_factor_rev()
@@ -650,14 +643,18 @@ class Premiums:
 # Helper functions for text file import
 # -------------------------------------
 def load(filename, processor, **kwargs):
-    picklename = f'data/{filename}.pkl'
+    """
+    Try to load a pickle file with the filename.  If it doesn't exist, load the
+    textfile, create its dict, and save its dict to a pickle file.
+    """
+    picklename = f'{DATADIR}/{filename}.pkl'
     if os.path.isfile(picklename):
         print(f'Found {picklename}.')
         with open(picklename, 'rb') as f:
             data = pickle.load(f)
     else:
         print(f'{picklename} not found; loading textfile.')
-        items = get_file_items(f'data/{filename}.txt')
+        items = get_file_items(f'{DATADIR}/{filename}.txt')
         data = processor(items, **kwargs)
         print(f'saving {picklename}')
         with open(picklename, 'wb') as f:
@@ -705,17 +702,19 @@ def int_key_float_tuple(items, rest=None):
 
 
 def int_key_list_float_tuple(items):
-    items = get_file_items('data/draws.txt')
+    items = get_file_items(f'{DATADIR}/draws.txt')
     result = {}
     for code, _, yielddraw, pricedraw in items:
         result.setdefault(int(code), []).append((float(yielddraw), float(pricedraw)))
     return result
 
 
-def int_key_float_array(items, shape=None):
-    return ({int(itm[0]): np.array([float(it) for it in itm[1:]]).reshape(shape)
+def int_key_float_array(items, shape=None, rest=None):
+    if rest is None:
+        rest = slice(1, None, None)
+    return ({int(itm[0]): np.array([float(it) for it in itm[rest]]).reshape(shape)
              for itm in items} if shape is not None else
-            {int(itm[0]): np.array([float(it) for it in itm[1:]])
+            {int(itm[0]): np.array([float(it) for it in itm[rest]])
              for itm in items})
 
 
@@ -792,14 +791,6 @@ def get_prate_diff():
     return load('prateDiff', float_key_float_tuple)
 
 
-def get_unit_factor():
-    return load('UnitFactor', float_key_float_tuple, rest=slice(3, None, None))
-
-
-def get_punit_factor():
-    return load('punitFactor', float_key_float_tuple)
-
-
 def get_enterprise_factor():
     return load('enterpriseFactor', float_key_float_tuple)
 
@@ -856,15 +847,16 @@ def get_arc_yp():
 
 
 def get_sco_rp():
-    return load('scoArp', int_pair_float_float_array, shape=(36, 8))
+    return load('scoArp', int_key_float_array, shape=(36, 8), rest=slice(2, None, None))
 
 
 def get_sco_rphpe():
-    return load('scoArpw', int_pair_float_float_array, shape=(36, 8))
+    return load('scoArpw', int_key_float_array, shape=(36, 8),
+                rest=slice(2, None, None))
 
 
 def get_sco_yp():
-    return load('scoYp', int_pair_float_float_array)
+    return load('scoYp', int_key_float_array, rest=slice(2, None, None))
 
 
 def get_eco():
