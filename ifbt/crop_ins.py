@@ -177,7 +177,8 @@ class CropIns(Analysis):
         Note: payment factor is used only for area unit as far as we know.
         """
         premiums = self.get_all_premiums()
-        return 0 if crop not in premiums else premiums[crop]['base']
+        return (0 if crop not in premiums or 'base' not in premiums[crop] else
+                premiums[crop]['base'])
 
     @crop_in(Crop.CORN, Crop.FULL_SOY, Crop.DC_SOY, Crop.WHEAT)
     def crop_ins_premium_crop(self, crop):

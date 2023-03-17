@@ -662,11 +662,13 @@ class Premiums:
 
     def get_all_premiums(self, cropdicts=None):
         """
-        Given a list of dicts, one for each crop, including specific choices of unit,
-        level, sco_level, eco_level, Return a dict of dicts, each containing
+        Given a list of dicts, one for each crop, containing specific choices of
+        unit, level, sco_level, eco_level, Return a dict of dicts, each containing
         individual premiums for the base product and options.
         """
         premiums = {}
+        if cropdicts is None:
+            return premiums
         for d in cropdicts:
             crop = d['crop']
             name = ('Corn' if crop == Crop.CORN else 'Wheat' if crop == Crop.WHEAT
