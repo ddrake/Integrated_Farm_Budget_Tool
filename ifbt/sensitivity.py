@@ -7,7 +7,7 @@ from tabulate import tabulate
 
 from ifbt import Crop, Cost, GovPmt, Revenue, CropIns, CashFlow, Premiums
 
-p = Premiums()
+prem = Premiums()
 
 
 yield_pcts = "40 55 70 80 90 95 100 105".split()
@@ -93,7 +93,7 @@ def sens_crop_ins(crop_year, overrides=None):
     Display a crop insurance sensitivity table for the specified crop year
     Optionally override some textfile settings by passing a dict.
     """
-    c = CropIns(crop_year, overrides=overrides, prem=p)
+    c = CropIns(crop_year, overrides=overrides, prem=prem)
     show_table(c, c.total_net_crop_ins_indemnity, 'CROP INS REV')
 
 
@@ -102,5 +102,5 @@ def sens_cash_flow(crop_year, overrides=None):
     Display a cash flow sensitivity table for the specified crop year
     Optionally override some textfile settings by passing a dict.
     """
-    c = CashFlow(crop_year, overrides=overrides, prem=p)
+    c = CashFlow(crop_year, overrides=overrides, prem=prem)
     show_table(c, c.total_cash_flow, 'CASH FLOW')

@@ -72,7 +72,7 @@ def test_3000_acres_corn_in_champaign():
     # Premiums for 3000 acres corn (verified)
     settings_ent = {
         'aphyield': 180,
-        'apprYield': 180,
+        'appryield': 180,
         'tayield': 190,
         'acres': 3000,
         'hailfire': 0,
@@ -149,7 +149,7 @@ def test_3000_acres_champaign_full_soy():
     # Premiums for 3000 acres full season soybeans in Champaign (verified)
     settings_ent = {
         'aphyield': 58.0,
-        'apprYield': 58.0,
+        'appryield': 58.0,
         'tayield': 60,
         'acres': 3000,
         'hailfire': 0,
@@ -230,7 +230,7 @@ def test_300_acres_wheat_champaign():
     #   The rates were verified against the RMA tool.
     settings_ent = {
         'aphyield': 39.0,
-        'apprYield': 39.0,
+        'appryield': 39.0,
         'tayield': 38.5,
         'acres': 300,
         'hailfire': 0,
@@ -307,7 +307,7 @@ def test_100_acres_madison_corn():
     # Premiums for Madison County corn (verified)
     settings_ent = {
         'aphyield': 154,
-        'apprYield': 154,
+        'appryield': 154,
         'tayield': 164,
         'acres': 100,
         'hailfire': 0,
@@ -384,7 +384,7 @@ def test_3000_acres_full_soybeans_madison():
     # Premiums for 3000 acres full season soybeans in Madison (verified)
     settings_ent = {
         'aphyield': 47.0,
-        'apprYield': 47.0,
+        'appryield': 47.0,
         'tayield': 50,
         'acres': 3000,
         'hailfire': 0,
@@ -461,7 +461,7 @@ def test_300_acres_wheat_madison():
     # Premiums for 300 acres wheat in Madison (verified)
     settings_ent = {
         'aphyield': 58.0,
-        'apprYield': 58.0,
+        'appryield': 58.0,
         'tayield': 61.0,
         'acres': 300,
         'hailfire': 0,
@@ -538,7 +538,7 @@ def test_300_acres_fac_soy_madison():
     # Premiums for 300 acres Fac soybeans in Madison (verified)
     settings_ent = {
         'aphyield': 47.0,
-        'apprYield': 47.0,
+        'appryield': 47.0,
         'tayield': 49.0,
         'acres': 300,
         'hailfire': 0,
@@ -615,7 +615,7 @@ def test_100_acres_corn_st_charles_mo_risk_BBB():
     # Premiums for 100 acres corn in St. Charles, MO (verified)
     settings_ent = {
         'aphyield': 147.0,
-        'apprYield': 147.0,
+        'appryield': 147.0,
         'tayield': 156.0,
         'acres': 100,
         'hailfire': 0,
@@ -692,7 +692,7 @@ def test_100_acres_madison_corn_NO_TA():
     # Premiums for Madison County corn without trend adjustment (verified)
     settings_ent = {
         'aphyield': 154,
-        'apprYield': 154,
+        'appryield': 154,
         'tayield': 164,
         'acres': 100,
         'hailfire': 0,

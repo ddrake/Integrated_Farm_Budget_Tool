@@ -19,7 +19,7 @@ def test_total_crop_ins():
            'protection': {Crop.CORN: Prot.RP},
            'level': {Crop.CORN: 75}, 'sco_level': {Crop.CORN: Lvl.DFLT},
            'eco_level': {Crop.CORN: Lvl.NONE},
-           'selected_pmt_factor': {Crop.CORN: 1}}
+           'prot_factor': {Crop.CORN: 1}}
 
     c = CropIns(2023, overrides=ovr, prem=prem)
 
@@ -43,7 +43,7 @@ def test_premiums_and_revenue_are_zero_for_a_crop_without_insurance():
     ovr = {'insure': {Crop.CORN: Ins.NO}, 'unit': {Crop.CORN: Unit.ENT},
            'protection': {Crop.CORN: Prot.RP}, 'level': {Crop.CORN: 75},
            'sco_level': {Crop.CORN: Lvl.NONE}, 'eco_level': {Crop.CORN: Lvl.NONE},
-           'selected_pmt_factor': {Crop.CORN: 1}, }
+           'prot_factor': {Crop.CORN: 1}, }
 
     c = CropIns(2023, overrides=ovr, prem=prem)
     crop = Crop.CORN
@@ -58,7 +58,7 @@ def test_no_indemnity_attribute_is_added_without_base_insurance():
     ovr = {'insure': {Crop.CORN: Ins.NO}, 'unit': {Crop.CORN: Unit.ENT},
            'protection': {Crop.CORN: Prot.RP}, 'level': {Crop.CORN: 75},
            'sco_level': {Crop.CORN: Lvl.DFLT}, 'eco_level': {Crop.CORN: Lvl.NONE},
-           'selected_pmt_factor': {Crop.CORN: 1}, }
+           'prot_factor': {Crop.CORN: 1}, }
     c = CropIns(2023, overrides=ovr, prem=prem)
     assert not hasattr(c, 'indemnity') or Crop.CORN not in c.indemnity
 
@@ -69,7 +69,7 @@ def test_cannot_add_sco_if_base_insurance_is_area():
     ovr = {'insure': {Crop.CORN: Ins.YES}, 'unit': {Crop.CORN: Unit.AREA},
            'protection': {Crop.CORN: Prot.RP}, 'level': {Crop.CORN: 75},
            'sco_level': {Crop.CORN: Lvl.DFLT}, 'eco_level': {Crop.CORN: Lvl.NONE},
-           'selected_pmt_factor': {Crop.CORN: 1}, }
+           'prot_factor': {Crop.CORN: 1}, }
 
     with pytest.raises(ValueError):
         CropIns(2023, overrides=ovr, prem=prem)
@@ -85,7 +85,7 @@ def test_can_add_eco_without_sco():
     ovr = {'insure': {Crop.CORN: Ins.YES}, 'unit': {Crop.CORN: Unit.ENT},
            'protection': {Crop.CORN: Prot.RP}, 'level': {Crop.CORN: 75},
            'sco_level': {Crop.CORN: Lvl.NONE}, 'eco_level': {Crop.CORN: 90},
-           'selected_pmt_factor': {Crop.CORN: 1}, }
+           'prot_factor': {Crop.CORN: 1}, }
 
     ci = CropIns(2023, overrides=ovr, prem=prem)
     assert (ci.total_indemnity_crop(Crop.CORN, pf=.8, yf=.8) ==
@@ -103,7 +103,7 @@ def test_cannot_add_eco_with_area_unit():
     ovr = {'insure': {Crop.CORN: Ins.YES}, 'unit': {Crop.CORN: Unit.AREA},
            'protection': {Crop.CORN: Prot.RP}, 'level': {Crop.CORN: 75},
            'sco_level': {Crop.CORN: Lvl.NONE}, 'eco_level': {Crop.CORN: 90},
-           'selected_pmt_factor': {Crop.CORN: 1}, }
+           'prot_factor': {Crop.CORN: 1}, }
 
     with pytest.raises(ValueError):
         CropIns(2023, overrides=ovr, prem=prem)
@@ -120,7 +120,7 @@ def test_sco_level_greater_than_base_level_is_ok():
     ovr = {'insure': {Crop.CORN: Ins.YES}, 'unit': {Crop.CORN: Unit.ENT},
            'protection': {Crop.CORN: Prot.RP}, 'level': {Crop.CORN: 75},
            'sco_level': {Crop.CORN: 80}, 'eco_level': {Crop.CORN: 90},
-           'selected_pmt_factor': {Crop.CORN: 1}, }
+           'prot_factor': {Crop.CORN: 1}, }
 
     ci = CropIns(2023, overrides=ovr, prem=prem)
     assert (ci.total_indemnity_crop(Crop.CORN, pf=.8, yf=.8) ==
@@ -137,7 +137,7 @@ def test_sco_level_equal_to_base_level_is_ok():
     ovr = {'insure': {Crop.CORN: Ins.YES}, 'unit': {Crop.CORN: Unit.ENT},
            'protection': {Crop.CORN: Prot.RP}, 'level': {Crop.CORN: 75},
            'sco_level': {Crop.CORN: 75}, 'eco_level': {Crop.CORN: 90},
-           'selected_pmt_factor': {Crop.CORN: 1}, }
+           'prot_factor': {Crop.CORN: 1}, }
 
     ci = CropIns(2023, overrides=ovr, prem=prem)
     assert (ci.total_net_crop_ins_indemnity(pf=.8, yf=.8) ==
@@ -153,7 +153,7 @@ def test_sco_level_less_than__base_level_throws():
     ovr = {'insure': {Crop.CORN: Ins.YES}, 'unit': {Crop.CORN: Unit.ENT},
            'protection': {Crop.CORN: Prot.RP}, 'level': {Crop.CORN: 75},
            'sco_level': {Crop.CORN: 65}, 'eco_level': {Crop.CORN: 90},
-           'selected_pmt_factor': {Crop.CORN: 1}, }
+           'prot_factor': {Crop.CORN: 1}, }
 
     with pytest.raises(ValueError):
         CropIns(2023, overrides=ovr, prem=prem)
@@ -166,7 +166,7 @@ def test_indemnity_and_its_parts_cannot_be_less_than_zero():
     ovr = {'insure': {Crop.CORN: Ins.YES}, 'unit': {Crop.CORN: Unit.ENT},
            'protection': {Crop.CORN: Prot.RP}, 'level': {Crop.CORN: 65},
            'sco_level': {Crop.CORN: Lvl.DFLT}, 'eco_level': {Crop.CORN: 90},
-           'selected_pmt_factor': {Crop.CORN: 1}, }
+           'prot_factor': {Crop.CORN: 1}, }
 
     c = CropIns(2023, overrides=ovr, prem=prem)
     crop = Crop.CORN
@@ -242,7 +242,7 @@ def test_multiple_configurations():
                                  Crop.WHEAT: s},
                    'eco_level': {Crop.CORN: e, Crop.FULL_SOY: e, Crop.DC_SOY: e,
                                  Crop.WHEAT: e},
-                   'selected_pmt_factor': {Crop.CORN: 1, Crop.FULL_SOY: 1,
+                   'prot_factor': {Crop.CORN: 1, Crop.FULL_SOY: 1,
                                            Crop.DC_SOY: 1, Crop.WHEAT: 1}, }
             ci = CropIns(2023, overrides=ovr, prem=prem)
             assert (ci.total_net_crop_ins_indemnity(pf, yf)
@@ -293,7 +293,7 @@ def test_pmt_factor_scales_premiums_and_indemnities_for_area_unit():
                              Crop.WHEAT: s},
                'eco_level': {Crop.CORN: e, Crop.FULL_SOY: e, Crop.DC_SOY: e,
                              Crop.WHEAT: e},
-               'selected_pmt_factor': {Crop.CORN: .9, Crop.FULL_SOY: .9,
+               'prot_factor': {Crop.CORN: .9, Crop.FULL_SOY: .9,
                                        Crop.DC_SOY: .9, Crop.WHEAT: .9}, }
         ci = CropIns(2023, overrides=ovr, prem=prem)
         assert (ci.total_premium() == pytest.approx(premiums[idx], TOL))

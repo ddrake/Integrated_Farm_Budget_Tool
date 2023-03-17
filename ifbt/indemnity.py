@@ -167,7 +167,7 @@ class IndemnityArea(Indemnity):
         """
         return (self.hist_yield_for_ins_area[self.crop] *
                 self.fall_futures_price[self.basecrop()] *
-                self.selected_pmt_factor[self.crop])
+                self.prot_factor[self.crop])
 
     def harvest_indemnity_pmt_per_acre(self, pf=1, yf=1):
         """
@@ -359,7 +359,7 @@ class IndemnityAreaRp(IndemnityArea):
         Government Crop Insurance F44: Sensitized revised dollars of protection.
         """
         return (self.hist_yield_for_ins_area[self.crop] *
-                self.selected_pmt_factor[self.crop] *
+                self.prot_factor[self.crop] *
                 self.rev_trigger_condition(pf, yf))
 
     def harvest_indemnity_pmt_per_acre(self, pf=1, yf=1):

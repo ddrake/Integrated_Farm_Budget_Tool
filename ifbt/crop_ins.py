@@ -88,7 +88,7 @@ class CropIns(Analysis):
             sco_level, eco_level = self.sco_level[crop], self.eco_level[crop]
             base_unit, base_protection = self.unit[crop], self.protection[crop]
             base_level = self.level[crop]
-            base_pmt_factor = self.selected_pmt_factor[crop]
+            base_pmt_factor = self.prot_factor[crop]
             if ins:
                 add_indemnity_attr_for('indemnity', base_unit)
             if ins and sco_level > Lvl.NONE:
@@ -101,7 +101,7 @@ class CropIns(Analysis):
                 add_indemnity_attr_for('eco', Unit.AREA)
 
     def _add_indemnity_attr(self, crop_year, crop, attr_name, unit,
-                            prot, level, sco_level, eco_level, pmt_factor):
+                            prot, level, sco_level, eco_level, prot_factor):
         """
         1. Get an instance of the appropriate Indemnity class.
         2. Set that instance as a property of the CropInsurance instance.
@@ -137,7 +137,7 @@ class CropIns(Analysis):
         for name, val in [
                 ('unit', unit), ('protection', prot), ('level', level),
                 ('sco_level', sco_level), ('eco_level', eco_level),
-                ('selected_pmt_factor', pmt_factor)]:
+                ('prot_factor', prot_factor)]:
             getattr(new_attr[crop], name).update({crop: val})
         return None
 
@@ -155,15 +155,16 @@ class CropIns(Analysis):
         for crop, insure in self.insure.items():
             if insure:
                 d = {'crop': crop, 'unit': self.unit[crop],
-                     'aphyield': self.aphyield[crop], 'apprYield': self.apprYield[crop],
+                     'aphyield': self.aphyield[crop], 'appryield': self.appryield[crop],
                      'tayield': self.tayield[crop], 'acres': self.acres[crop],
                      'hailfire': self.hailfire[crop], 'prevplant': self.prevplant[crop],
                      'risk': self.risk[crop], 'tause': self.tause[crop],
                      'yieldexcl': self.yieldexcl[crop], 'county': self.county,
                      'practice': self.practice[crop], 'croptype': self.croptype[crop],
                      'level': self.level[crop], 'eco_level': self.eco_level[crop],
-                     'sco_level': self.sco_level[crop], 'prot': self.protection[crop],
-                     'prot_factor': self.selected_pmt_factor[crop]}
+                     'sco_level': self.sco_level[crop],
+                     'protection': self.protection[crop],
+                     'prot_factor': self.prot_factor[crop]}
                 dicts.append(d)
         self.premiums = self.prem.get_all_premiums(dicts)
         return self.premiums
