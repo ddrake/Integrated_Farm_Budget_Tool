@@ -611,6 +611,84 @@ def test_300_acres_fac_soy_madison():
     assert np.all((prem - expected) == pytest.approx(0, TOL)), "values don't all match"
 
 
+def test_300_acres_fac_soy_madison_numeric_values():
+    # Premiums for 300 acres Fac soybeans in Madison (verified)
+    # We can pass numeric codes for county, crop, practice and croptype
+    settings_ent = {
+        'aphyield': 47.0,
+        'appryield': 47.0,
+        'tayield': 49.0,
+        'acres': 300,
+        'hailfire': 0,
+        'prevplant': 0,
+        'risk': 'None',
+        'tause': 1,
+        'yieldexcl': 0,
+        'county': 17119,
+        'crop': 81,
+        'practice': 43,
+        'croptype': 997,
+    }
+    settings_arc = {
+        'county': 'Madison, IL',
+        'crop': 'Soybeans',
+        'practice': 'Fac (non-irrigated)',
+        'croptype': 'No Type Specified',
+        'prot_factor': 1.2,
+    }
+    settings_opt = {
+        'aphyield': 47.0,
+        'tayield': 49.0,
+        'tause': 1,
+        'county': 'Madison, IL',
+        'crop': 'Soybeans',
+        'practice': 'Fac (non-irrigated)',
+        'croptype': 'No Type Specified'
+    }
+    prem = p.compute_prems_ent(**settings_ent)
+    expected = np.array(
+      [[01.7 ,  1.28,  1.47],
+       [02.26,  1.66,  1.90],
+       [03.11,  2.26,  2.53],
+       [04.05,  2.94,  3.24],
+       [05.16,  3.72,  4.11],
+       [07.57,  5.47,  6.01],
+       [13.34,  9.66, 10.56],
+       [25.34, 18.62, 19.73]])
+
+    assert np.all((prem - expected) == pytest.approx(0, TOL)), "values don't all match"
+
+    prem = p.compute_prems_arc(**settings_arc)
+    print(prem)
+
+    expected = np.array(
+        [[01.44,  2.91,  5.83, 13.63, 26.67],
+         [00.95,  1.71,  4.08,  9.67, 19.31],
+         [01.06,  1.82,  3.2 ,  5.7 , 11.96]])
+
+    assert np.all((prem - expected) == pytest.approx(0, TOL)), "values don't all match"
+
+    prem = p.compute_prems_sco(**settings_opt)
+    print(prem)
+
+    expected = np.array(
+        [[5.25, 5.25, 5.25, 5.23, 5.03, 4.49, 3.2 , 0.68],
+         [3.74, 3.74, 3.74, 3.73, 3.62, 3.26, 2.36, 0.51],
+         [2.52, 2.52, 2.52, 2.52, 2.43, 2.18, 1.58, 0.36]])
+
+    assert np.all((prem - expected) == pytest.approx(0, TOL)), "values don't all match"
+
+    prem = p.compute_prems_eco(**settings_opt)
+    print(prem)
+
+    expected = np.array(
+        [[05.6 , 15.32],
+         [04.15, 11.53],
+         [03.15,  9.12]])
+
+    assert np.all((prem - expected) == pytest.approx(0, TOL)), "values don't all match"
+
+
 def test_100_acres_corn_st_charles_mo_risk_BBB():
     # Premiums for 100 acres corn in St. Charles, MO (verified)
     settings_ent = {
