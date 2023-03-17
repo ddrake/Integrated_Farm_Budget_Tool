@@ -18,9 +18,14 @@ Django is flexible and powerful, and will be introduced soon, but we may save de
 ## Prerequisites 
 
 - [Python 3.10 or above](https://www.python.org/)
+- [Windows Terminal](https://apps.microsoft.com/store/detail/windows-terminal/9N0DX20HK701) (This is optional, but highly recommended if you are running Windows.)
 - [pip (Python package manager)](https://pip.pypa.io/en/stable/installation/)
 - [git version control](https://git-scm.com/downloads)
+- You should also sign up for a free account at [Github](https://github.com) if you haven't got one.
+- [NumPy](https://numpy.org/) `pip install numpy`
 - [tabulate](https://pypi.org/project/tabulate/) `pip install tabulate`
+- A text editor or IDE of your choice.  [Notepad++](https://notepad-plus-plus.org/downloads/) should do just fine for a small project like this.  For more on this, see [this section](#recommendations-for-collaborators).
+
 
 ## Installation
 
@@ -31,6 +36,8 @@ git clone https://github.com/ddrake/Integrated_Farm_Budget_Tool.git
 cd Integrated_Farm_Budget_Tool
 pip install -e .
 ```
+
+The 'dot' at the end of the third command is important.  It means 'current directory'.
 
 Download the data directory from the Google Drive folder corresponding to the branch you want to work with and place it inside ifbt/.  Note: The data on Google Drive contains only textfiles, which are compact, but slow to load.  The current implementation for crop insurance premiums on the main branch looks for data in pickle (.pkl) files.  If a pickle file is not found, the corresponding textfile is loaded, converted to a dict, and the dict saved to a pickle file.  Currently, 1.3 GB of drive space is required for data for the main branch.  The drive space required for the benchmarking branch data is less then 1 MB.
 
