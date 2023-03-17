@@ -23,8 +23,9 @@ class CropIns(Analysis):
     settings in the data files(s) do not cause tests to fail.
 
     Sample usage in a python or ipython console:
-      from ifbt import CropIns
-      c = CropIns(2023)
+      from ifbt import Premiums, CropIns
+      prem = Premiums()
+      c = CropIns(2023, prem=prem)
       c.total_cost(pf=.7)        # yield factor defaults to 1
       c.total_cost(pf=.7, yf=.8) # specifies both price and yield factors
     """
@@ -145,6 +146,8 @@ class CropIns(Analysis):
         Construct a list of dicts, one for each Crop.
         Get back a dict of dicts with the outer dict keyed on Crop and the inner dicts
         with key in {'base', 'sco', 'eco'} and value premium per acre.
+        This dict of results is currently cached, which we may want to rethink if we
+        start changing settings between calls.
         """
         if self.premiums is not None:
             return self.premiums

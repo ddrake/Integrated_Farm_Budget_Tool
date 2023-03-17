@@ -4,7 +4,7 @@ from math import log, exp
 import os
 import pickle
 
-from util import Crop, Unit, Prot, Lvl
+from util import Crop, Unit, Lvl
 
 DATADIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data')
 np.set_printoptions(precision=6)
@@ -664,7 +664,7 @@ class Premiums:
     def get_all_premiums(self, cropdicts=None):
         """
         Given a list of dicts, one for each crop, including specific choices of unit,
-        protection, level, sco_level, eco_level, Return a dict of dicts, each containing
+        level, sco_level, eco_level, Return a dict of dicts, each containing
         individual premiums for the base product and options.
         """
         premiums = {}
