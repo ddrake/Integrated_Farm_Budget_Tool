@@ -28,7 +28,7 @@ class CropIns(Analysis):
       c.total_cost(pf=.7)        # yield factor defaults to 1
       c.total_cost(pf=.7, yf=.8) # specifies both price and yield factors
     """
-    DATA_FILES = 'farm_data crop_ins_data crop_ins_premiums'
+    DATA_FILES = 'farm_data crop_ins_data'
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -38,6 +38,7 @@ class CropIns(Analysis):
         if 'prem' not in kwargs:
             raise ValueError("CropIns constructor needs a Premiums instance")
         self.prem = kwargs['prem']
+        self.premiums = None
 
     def _validate_settings(self, crop):
         """
@@ -139,6 +140,31 @@ class CropIns(Analysis):
             getattr(new_attr[crop], name).update({crop: val})
         return None
 
+    def get_all_premiums(self):
+        """
+        Construct a list of dicts, one for each Crop.
+        Get back a dict of dicts with the outer dict keyed on Crop and the inner dicts
+        with key in {'base', 'sco', 'eco'} and value premium per acre.
+        """
+        if self.premiums is not None:
+            return self.premiums
+        dicts = []
+        for crop, insure in self.insure.items():
+            if insure:
+                d = {'crop': crop, 'unit': self.unit[crop],
+                     'aphyield': self.aphyield[crop], 'apprYield': self.apprYield[crop],
+                     'tayield': self.tayield[crop], 'acres': self.acres[crop],
+                     'hailfire': self.hailfire[crop], 'prevplant': self.prevplant[crop],
+                     'risk': self.risk[crop], 'tause': self.tause[crop],
+                     'yieldexcl': self.yieldexcl[crop], 'county': self.county,
+                     'practice': self.practice[crop], 'croptype': self.croptype[crop],
+                     'level': self.level[crop], 'eco_level': self.eco_level[crop],
+                     'sco_level': self.sco_level[crop], 'prot': self.protection[crop],
+                     'prot_factor': self.selected_pmt_factor[crop]}
+                dicts.append(d)
+        self.premiums = self.prem.get_all_premiums(dicts)
+        return self.premiums
+
     @crop_in(Crop.CORN, Crop.FULL_SOY, Crop.DC_SOY, Crop.WHEAT)
     def crop_ins_premium_per_acre_crop(self, crop):
         """
@@ -146,14 +172,8 @@ class CropIns(Analysis):
         'unit', 'protection' and 'level' for the crop
         Note: payment factor is used only for area unit as far as we know.
         """
-        unit = self.unit[crop]
-        prot = self.protection[crop]
-        level = self.level[crop]
-        insure = self.insure[crop]
-
-        return (0 if not insure else
-                self.premium[(unit, prot, crop, level)] *
-                (self.selected_pmt_factor[crop] if unit == Unit.AREA else 1))
+        premiums = self.get_all_premiums()
+        return 0 if crop not in premiums else premiums[crop]['base']
 
     @crop_in(Crop.CORN, Crop.FULL_SOY, Crop.DC_SOY, Crop.WHEAT)
     def crop_ins_premium_crop(self, crop):
@@ -171,14 +191,9 @@ class CropIns(Analysis):
         sco_level=DFLT specifies that the SCO coverage should begin at the base
         level.  This prevents a gap in the coverage.
         """
-        prot = self.protection[crop]
-        level = self.level[crop]
-        sco_level = self.sco_level[crop]
-        insure = self.insure[crop]
-        return (
-            0 if not insure or sco_level == Lvl.NONE else
-            self.sco_premium[
-                (prot, crop, level if sco_level == Lvl.DFLT else sco_level)])
+        premiums = self.get_all_premiums()
+        return (0 if crop not in premiums or 'sco' not in premiums[crop] else
+                premiums[crop]['sco'])
 
     @crop_in(Crop.CORN, Crop.FULL_SOY, Crop.DC_SOY, Crop.WHEAT)
     def sco_ins_premium_crop(self, crop):
@@ -194,12 +209,9 @@ class CropIns(Analysis):
         If the crop is not insured or eco has not been added, return zero.
         Otherwise return premium for the specified eco level
         """
-        prot = self.protection[crop]
-        eco_level = self.eco_level[crop]
-        insure = self.insure[crop]
-        return (
-            0 if not insure or eco_level == Lvl.NONE else
-            self.eco_premium[(prot, crop, eco_level)])
+        premiums = self.get_all_premiums()
+        return (0 if crop not in premiums or 'eco' not in premiums[crop]
+                else premiums[crop]['eco'])
 
     @crop_in(Crop.CORN, Crop.FULL_SOY, Crop.DC_SOY, Crop.WHEAT)
     def eco_ins_premium_crop(self, crop):

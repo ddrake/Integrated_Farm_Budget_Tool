@@ -9,7 +9,7 @@ TOL = .01
 # Abbreviations
 # 'hailfire'             # hail and fire protection
 # 'prevplant'             # prevent plant factor: std=0, Plus5%=1, Plus10%=2
-# 'riskname': 'BBB',  # {'None', 'AAA', 'BBB', 'CCC', 'DDD'}
+# 'risk': 'BBB',  # {'None', 'AAA', 'BBB', 'CCC', 'DDD'}
 # 'tause': 1,          # 1 to use trend-adjusted yields 0 else
 # 'yieldexcl': 0,             # 1 to use yield-exclusion 0 else
 #
@@ -77,7 +77,7 @@ def test_3000_acres_corn_in_champaign():
         'acres': 3000,
         'hailfire': 0,
         'prevplant': 0,
-        'riskname': 'None',
+        'risk': 'None',
         'tause': 1,
         'yieldexcl': 0,
         'county': 'Champaign, IL',
@@ -154,7 +154,7 @@ def test_3000_acres_champaign_full_soy():
         'acres': 3000,
         'hailfire': 0,
         'prevplant': 0,
-        'riskname': 'None',
+        'risk': 'None',
         'tause': 1,
         'yieldexcl': 0,
         'county': 'Champaign, IL',
@@ -235,7 +235,7 @@ def test_300_acres_wheat_champaign():
         'acres': 300,
         'hailfire': 0,
         'prevplant': 0,
-        'riskname': 'None',
+        'risk': 'None',
         'tause': 1,
         'yieldexcl': 0,
         'county': 'Champaign, IL',
@@ -312,7 +312,7 @@ def test_100_acres_madison_corn():
         'acres': 100,
         'hailfire': 0,
         'prevplant': 0,
-        'riskname': 'None',
+        'risk': 'None',
         'tause': 1,
         'yieldexcl': 0,
         'county': 'Madison, IL',
@@ -389,7 +389,7 @@ def test_3000_acres_full_soybeans_madison():
         'acres': 3000,
         'hailfire': 0,
         'prevplant': 0,
-        'riskname': 'None',
+        'risk': 'None',
         'tause': 1,
         'yieldexcl': 0,
         'county': 'Madison, IL',
@@ -466,7 +466,7 @@ def test_300_acres_wheat_madison():
         'acres': 300,
         'hailfire': 0,
         'prevplant': 0,
-        'riskname': 'None',
+        'risk': 'None',
         'tause': 1,
         'yieldexcl': 0,
         'county': 'Madison, IL',
@@ -543,7 +543,7 @@ def test_300_acres_fac_soy_madison():
         'acres': 300,
         'hailfire': 0,
         'prevplant': 0,
-        'riskname': 'None',
+        'risk': 'None',
         'tause': 1,
         'yieldexcl': 0,
         'county': 'Madison, IL',
@@ -620,7 +620,7 @@ def test_100_acres_corn_st_charles_mo_risk_BBB():
         'acres': 100,
         'hailfire': 0,
         'prevplant': 0,
-        'riskname': 'BBB',
+        'risk': 'BBB',
         'tause': 1,
         'yieldexcl': 0,
         'county': 'St._Charles, MO',
@@ -697,7 +697,7 @@ def test_100_acres_madison_corn_NO_TA():
         'acres': 100,
         'hailfire': 0,
         'prevplant': 0,
-        'riskname': 'None',
+        'risk': 'None',
         'tause': 0,
         'yieldexcl': 0,
         'county': 'Madison, IL',

@@ -4,6 +4,8 @@ from math import log, exp
 import os
 import pickle
 
+from util import Crop, Unit, Prot, Lvl
+
 DATADIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data')
 np.set_printoptions(precision=6)
 np.set_printoptions(suppress=True)
@@ -112,7 +114,7 @@ class Premiums:
     # MAIN METHOD: COMPUTE PREMIUMS
     # -----------------------------
     def compute_prems_ent(self, aphyield=180, apprYield=180, tayield=190, acres=100,
-                          hailfire=0, prevplant=0, riskname='None', tause=1,
+                          hailfire=0, prevplant=0, risk='None', tause=1,
                           yieldexcl=0, county='Champaign, IL', crop='Corn',
                           practice='Non-irrigated', croptype='Grain'):
         """
@@ -120,7 +122,7 @@ class Premiums:
         units with RP, RP-HPE or YO protection for all coverage levels.
         """
         self.store_user_settings_ent(aphyield, apprYield, tayield, acres, hailfire,
-                                     prevplant, riskname, tause, yieldexcl, county,
+                                     prevplant, risk, tause, yieldexcl, county,
                                      crop, practice, croptype)
         self.initialize_arrays()
         self.set_multfactor()
@@ -368,7 +370,7 @@ class Premiums:
             self.prem[i, j] = round(self.prem[i, j] / self.acres, 2)
 
     def store_user_settings_ent(self, aphyield, apprYield, tayield, acres, hailfire,
-                                prevplant, riskname, tause, yieldexcl, county, crop,
+                                prevplant, risk, tause, yieldexcl, county, crop,
                                 practice, croptype):
         """
         Store settings provide by user when calling calc_premiums, and calculate
@@ -380,8 +382,12 @@ class Premiums:
         self.acres = acres
         self.hailfire = hailfire
         self.prevplant = prevplant
-        self.riskname = riskname
-        self.risk = self.risk_classes[self.riskname]
+        if isinstance(risk, str):
+            self.riskname = risk
+            self.risk = self.risk_classes[risk]
+        else:
+            self.risk = risk
+            self.riskname = self.rev_risk_classes[risk]
         self.highRisk = None
         self.rtype = None
         self.tause = tause
@@ -393,7 +399,7 @@ class Premiums:
         # codes used to key into dicts
         self.code = self.make_code(county, crop, croptype, practice)
         self.fcode = self.code + 0.1 * (1 + self.risk)
-        self.pcode = self.make_pcode(str(self.code))
+        self.pcode = self.make_pcode()
 
         # read price and volatility from parameters
         self.aphPrice, self.pvol = self.parameters[self.pcode]
@@ -451,6 +457,8 @@ class Premiums:
         dicts = (self.arc_rp, self.arc_rphpe, self.arc_yp)
         for i, subsidy in enumerate(subsidies):
             self.compute_prem_arc(subsidy, dicts[i], i)
+        if self.arc_prem.shape != (3, 5):
+            raise ValueError(f'arc_prem has shape {self.arc_prem.shape}')
         return self.arc_prem
 
     def compute_prem_arc(self, subsidy, ardict, idx):
@@ -474,7 +482,7 @@ class Premiums:
         """
         self.code = self.make_code(county, crop, croptype, practice)
         self.ccode = self.make_ccode(county, crop, croptype, practice)
-        self.pcode = self.make_pcode(str(self.code))
+        self.pcode = self.make_pcode()
         self.prot_factor = prot_factor
         # read price and volatility from parameters
         self.aphPrice, self.pvol = self.parameters[self.pcode]
@@ -519,7 +527,7 @@ class Premiums:
         self.tayield = tayield
         self.tause = tause
         self.code = self.make_code(county, crop, croptype, practice)
-        self.pcode = self.make_pcode(str(self.code))
+        self.pcode = self.make_pcode()
         # read price and volatility from parameters
         self.aphPrice, self.pvol = self.parameters[self.pcode]
         self.arevYield = self.tayield if self.tause else self.aphyield
@@ -554,7 +562,8 @@ class Premiums:
         self.tayield = tayield
         self.tause = tause
         self.code = self.make_code(county, crop, croptype, practice)
-        self.pcode = self.make_pcode(str(self.code))
+        self.ccode = self.make_ccode(county, crop, croptype, practice)
+        self.pcode = self.make_pcode()
         # read price and volatility from parameters
         self.aphPrice, self.pvol = self.parameters[self.pcode]
         self.arevYield = self.tayield if self.tause else self.aphyield
@@ -567,24 +576,25 @@ class Premiums:
         """
         Define dicts for lookups
         """
-        self.crops = {'Corn': '41', 'Soybeans': '81', 'Wheat': '11'}
-        self.practices = {'Nfac (non-irrigated)': '053',
-                          'Nfac (Irrigated)': '094',
-                          'Fac (non-irrigated)': '043',
-                          'Fac (Irrigated)': '095',
-                          'Non-irrigated': '003',
-                          'Irrigated': '002'}
-        self.types = {'Grain': '016', 'No Type Specified': '997', 'Winter': '011'}
+        self.crops = {'Corn': 41, 'Soybeans': 81, 'Wheat': 11}
+        self.practices = {'Nfac (non-irrigated)': 53,
+                          'Nfac (Irrigated)': 94,
+                          'Fac (non-irrigated)': 43,
+                          'Fac (Irrigated)': 95,
+                          'Non-irrigated': 3,
+                          'Irrigated': 2}
+        self.types = {'Grain': 16, 'No Type Specified': 997, 'Winter': 11}
 
         # County products have some different practices and types
-        self.cpractices = {'Nfac (non-irrigated)': '053',
-                           'Nfac (Irrigated)': '053',
-                           'Fac (non-irrigated)': '053',
-                           'Fac (Irrigated)': '053',
-                           'Non-irrigated': '003',
-                           'Irrigated': '003'}
+        self.cpractices = {'Nfac (non-irrigated)': 53,
+                           'Nfac (Irrigated)': 53,
+                           'Fac (non-irrigated)': 53,
+                           'Fac (Irrigated)': 53,
+                           'Non-irrigated': 3,
+                           'Irrigated': 3}
 
         self.risk_classes = {'None': 0, 'AAA': 1, 'BBB': 2, 'CCC': 3, 'DDD': 4}
+        self.rev_risk_classes = {0: 'None', 1: 'AAA', 2: 'BBB', 3: 'CCC', 4: 'DDD'}
         self.states = {
             'IL': '17', 'AL': '01', 'AR': '05', 'FL': '12', 'GA': '13', 'IN': '18',
             'IA': '19', 'KS': '20', 'KY': '21', 'LA': '22', 'MD': '24', 'MI': '26',
@@ -624,21 +634,89 @@ class Premiums:
         """
         Construct an integer code used to key in some tabular data
         """
-        return int(f'{self.counties[county]}{self.crops[crop]}' +
-                   f'{self.types[croptype]}{self.practices[practice]}')
+        cty = self.counties[county] if isinstance(county, str) else county
+        crp = self.crops[crop] if isinstance(crop, str) else crop
+        crptype = self.types[croptype] if isinstance(croptype, str) else croptype
+        prac = self.practices[practice] if isinstance(practice, str) else practice
+        return int(f'{int(cty):05d}{crp:02d}{crptype:03d}{prac:03d}')
 
     def make_ccode(self, county, crop, croptype, practice):
         """
         Construct a COUNTY integer code used to key in some tabular data
         """
-        return int(f'{self.counties[county]}{self.crops[crop]}' +
-                   f'{self.types[croptype]}{self.cpractices[practice]}')
+        cty = self.counties[county] if isinstance(county, str) else county
+        crp = self.crops[crop] if isinstance(crop, str) else crop
+        crptype = self.types[croptype] if isinstance(croptype, str) else croptype
+        prac = self.cpractices[practice] if isinstance(practice, str) else practice
+        return int(f'{int(cty):05d}{crp:02d}{crptype:03d}{prac:03d}')
 
-    def make_pcode(self, code):
+    def make_pcode(self):
         """
         Construct a string code (crop + state) to key in parameter data (price, vol)
         """
-        return code[5:7]+code[:2]
+        code = str(self.code)
+        return f'{int(code[-8:-6]):02d}{int(code[:-11]):02d}'
+
+    # ------------------
+    # Convenience Method
+    # ------------------
+
+    def get_all_premiums(self, cropdicts=None):
+        """
+        Given a list of dicts, one for each crop, including specific choices of unit,
+        protection, level, sco_level, eco_level, Return a dict of dicts, each containing
+        individual premiums for the base product and options.
+        """
+        premiums = {}
+        for d in cropdicts:
+            crop = d['crop']
+            name = ('Corn' if crop == Crop.CORN else 'Wheat' if crop == Crop.WHEAT
+                    else 'Soybeans')
+            cropcode = self.crops[name]
+            d['crop'] = cropcode
+            values = {'base': 0, 'sco': 0, 'eco': 0}
+            if d['unit'] == Unit.ENT:
+                d1 = {k: d[k] for k in
+                      ('aphyield', 'apprYield', 'tayield', 'acres', 'hailfire',
+                       'prevplant', 'risk', 'tause', 'yieldexcl', 'county',
+                       'crop', 'practice', 'croptype')}
+                prems = self.compute_prems_ent(**d1)
+                values['base'] = prems[entlevel_idx(d['level']), d['prot']]
+            else:
+                d1 = {k: d[k] for k in
+                      ('county', 'crop', 'practice', 'croptype', 'prot_factor')}
+                prems = self.compute_prems_arc(**d1)
+                values['base'] = prems[d['prot'], arclevel_idx(d['level'])]
+            if d['sco_level'] > Lvl.NONE:
+                d1 = {k: d[k] for k in
+                      ('aphyield', 'tayield', 'tause', 'county', 'crop',
+                       'practice', 'croptype')}
+                prems = self.compute_prems_sco(**d1)
+                sco_level = d['level'] if d['sco_level'] == Lvl.DFLT else d['sco_level']
+                values['sco'] = prems[d['prot'], entlevel_idx(sco_level)]
+            if d['eco_level'] > Lvl.NONE:
+                d1 = {k: d[k] for k in
+                      ('aphyield', 'tayield', 'tause', 'county', 'crop',
+                       'practice', 'croptype')}
+                prems = self.compute_prems_eco(**d1)
+                values['eco'] = prems[d['prot'], 0 if d['eco_level'] == 85 else 1]
+            premiums[crop] = values
+        return premiums
+
+
+# ----------------
+# Helper functions
+# ----------------
+def entlevel_idx(intval):
+    if intval < 50 or intval > 85:
+        raise ValueError('Invalid level for Enterprise unit')
+    return (intval - 50)//5
+
+
+def arclevel_idx(intval):
+    if intval < 70 or intval > 90:
+        raise ValueError('Invalid level for ARC unit')
+    return (intval - 70)//5
 
 
 # -------------------------------------
