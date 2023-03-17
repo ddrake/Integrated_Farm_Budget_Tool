@@ -582,9 +582,9 @@ class Premiums:
                           'Fac (Irrigated)': 95,
                           'Non-irrigated': 3,
                           'Irrigated': 2}
-        self.types = {'Grain': 16, 'No Type Specified': 997, 'Winter': 11}
+        self.croptypes = {'Grain': 16, 'No Type Specified': 997, 'Winter': 11}
 
-        # County products have some different practices and types
+        # County products have some different practices and croptypes
         self.cpractices = {'Nfac (non-irrigated)': 53,
                            'Nfac (Irrigated)': 53,
                            'Fac (non-irrigated)': 53,
@@ -635,7 +635,7 @@ class Premiums:
         """
         cty = self.counties[county] if isinstance(county, str) else county
         crp = self.crops[crop] if isinstance(crop, str) else crop
-        crptype = self.types[croptype] if isinstance(croptype, str) else croptype
+        crptype = self.croptypes[croptype] if isinstance(croptype, str) else croptype
         prac = self.practices[practice] if isinstance(practice, str) else practice
         return int(f'{int(cty):05d}{crp:02d}{crptype:03d}{prac:03d}')
 
@@ -645,7 +645,7 @@ class Premiums:
         """
         cty = self.counties[county] if isinstance(county, str) else county
         crp = self.crops[crop] if isinstance(crop, str) else crop
-        crptype = self.types[croptype] if isinstance(croptype, str) else croptype
+        crptype = self.croptypes[croptype] if isinstance(croptype, str) else croptype
         prac = self.cpractices[practice] if isinstance(practice, str) else practice
         return int(f'{int(cty):05d}{crp:02d}{crptype:03d}{prac:03d}')
 
