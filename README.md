@@ -17,13 +17,14 @@ Django is flexible and powerful, and will be introduced soon, but we may save de
 
 ## Prerequisites 
 
-- [Python 3.10 or above](https://www.python.org/)
+- [Python 3.10 or above](https://www.python.org/) (If installing on Windows, check the box to add python to the path)
 - [Windows Terminal](https://apps.microsoft.com/store/detail/windows-terminal/9N0DX20HK701) (This is optional, but highly recommended if you are running Windows.)
 - [pip (Python package manager)](https://pip.pypa.io/en/stable/installation/)
 - [git version control](https://git-scm.com/downloads)
-- You should also sign up for a free account at [Github](https://github.com) if you haven't got one.
+- You should also sign up for a free account at [Github](https://github.com) if you haven't got one.  Also, unless you really enjoy typing passwords, follow the steps [here](https://docs.github.com/en/authentication/connecting-to-github-with-ssh/adding-a-new-ssh-key-to-your-github-account) to generate an SSH key pair and upload the public key to GitHub.
 - [NumPy](https://numpy.org/) `pip install numpy`
 - [tabulate](https://pypi.org/project/tabulate/) `pip install tabulate`
+- [IPython](https://ipython.org/) `pip install ipython`  (Not essential, but much better than the default Python console.
 - A text editor or IDE of your choice.  [Notepad++](https://notepad-plus-plus.org/downloads/) should do just fine for a small project like this.  For more on this, see [this section](#recommendations-for-collaborators).
 
 
