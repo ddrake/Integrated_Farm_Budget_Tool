@@ -729,7 +729,6 @@ def load(filename, processor, **kwargs):
     """
     picklename = f'{DATADIR}/{filename}.pkl'
     if os.path.isfile(picklename):
-        print(f'Found {picklename}.')
         with open(picklename, 'rb') as f:
             data = pickle.load(f)
     else:
