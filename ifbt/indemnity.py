@@ -35,7 +35,7 @@ class Indemnity(Analysis):
     DO NOT construct an instance of this class.  Instead get an instance of one
     of the six concrete derived classes
     """
-    DATA_FILES = 'farm_data crop_ins_data crop_ins_indemnity'
+    DATA_FILES = 'farm_data crop_ins_data'
 
     def __init__(self, crop_year, crop, *args, **kwargs):
         """
