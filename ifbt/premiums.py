@@ -186,23 +186,23 @@ class Premiums:
         Given a variable (e.g. ratediff), a 2nd index and a roundoff precision,
         first compute some indices, then use them to get a factor (e.g. ratediff_fac)
         """
-        ecv, cv, rd = self.effcov, self.cover, self.ratediff
-        jlow = (0 if ecv < 0.55 else 1 if ecv < 0.6 else 2 if ecv < 0.65 else
-                3 if ecv < 0.7 else 4 if ecv < 0.75 else 5 if ecv < 0.8 else 6)
-        jhigh = (0 if ecv < 0.5 else 1 if ecv < 0.55 else 2 if ecv < 0.6 else
-                 3 if ecv < 0.65 else 4 if ecv < 0.7 else 5 if ecv < 0.75 else
-                 6 if ecv < 0.8 else 7)
-        jfloor = (0 if ecv < 0.55 else 1 if ecv < 0.6 else 2 if ecv < 0.65 else
-                  3 if ecv < 0.7 else 4 if ecv < 0.75 else 5 if ecv < 0.8 else
-                  6 if ecv < 0.85 else 7)
-        if ecv > 0.75 and rd[6, 0] == 0:
-            jlow = 4
-            jhigh = 5
-            jfloor = 5
-        return (
-            round(var[jfloor, j2] + (var[jhigh, j2] - var[jlow, j2]) *
-                  (ecv - cv[jfloor]) * 20 + 1e-11, ro) if self.tause else
-            var[i, j2])
+        def maxind(ifirst, ilast, offset):
+            """
+            Get the largest index of cover for which the condition holds, and
+            return it after subtracting offset.
+            """
+            i = ilast
+            while i >= ifirst and self.effcov < self.cover[i]:
+                i -= 1
+            return i + 1 - offset
+
+        jlow, jhigh, jfloor = maxind(1, 6, 1), maxind(0, 6, 0), maxind(1, 7, 1)
+        if self.effcov > 0.75 and self.ratediff[6, 0] == 0:
+            jlow, jhigh, jfloor = 4, 5, 5
+
+        return (round(var[jfloor, j2] + (var[jhigh, j2] - var[jlow, j2]) *
+                      (self.effcov - self.cover[jfloor]) * 20 + 1e-11, ro)
+                if self.tause else var[i, j2])
 
     def make_ye_adj(self, i):
         """
@@ -310,17 +310,17 @@ class Premiums:
 
         simloss = zeros(3)  # (Yp, Rp, RpExc)
         for yielddraw, pricedraw in self.selected_draws:
-            # yield insurance
+            # yield protection
             yld = max(0, yielddraw * self.adjstdqty + self.adjmeanqty)
             loss = max(0, self.revyield * self.revcov - yld)
             simloss[0] += loss
-            # revenue insurance
+            # revenue protection
             harPrice = min(2 * self.aphprice,
                            exp(pricedraw * self.pvol + self.lnmean))
             guarPrice = max(harPrice, self.aphprice)
             loss = max(0, self.revyield * guarPrice * self.revcov - yld * harPrice)
             simloss[1] += loss
-            # revenue insurance with exclusion
+            # revenue protection with harvest price exclusion
             loss = max(0, self.revyield * self.aphprice * self.revcov - yld * harPrice)
             simloss[2] += loss
         # step 5.05
@@ -499,8 +499,9 @@ class Premiums:
         self.store_user_settings_sco(aphyield, tayield, tause, county,
                                      crop, practice, croptype)
 
+        keys = (self.sco_rp_key[self.ccode], self.sco_rphpe_key[self.ccode], self.ccode)
         self.sco_prem = zeros((3, 8))
-        for i, d in enumerate((self.sco_rp, self.sco_rphpe, self.sco_yp)):
+        for i, d in enumerate(zip((self.sco_rp, self.sco_rphpe, self.sco_yp), keys)):
             self.compute_prem_sco(d, i)
         return self.sco_prem
 
@@ -508,9 +509,11 @@ class Premiums:
         """
         Compute the sco premium for the given dict and unit index
         """
-        if self.ccode not in rate_dict:
-            return
-        rate = rate_dict[self.ccode]
+        rdict, key = rate_dict
+        if key not in rdict:
+            # return
+            raise KeyError('key not in rdict')
+        rate = rdict[key]
         if unit < 2:
             idx = int((self.pvol - 0.05)*100)
             rate = rate[idx, :]
@@ -526,6 +529,7 @@ class Premiums:
         self.tayield = tayield
         self.tause = tause
         self.code = self.make_code(county, crop, croptype, practice)
+        self.ccode = self.make_ccode(county, crop, croptype, practice)
         self.pcode = self.make_pcode()
         # read price and volatility from parameters
         self.aphprice, self.pvol = self.parameters[self.pcode]
@@ -545,9 +549,14 @@ class Premiums:
         self.eco_prem = zeros((3, 2))
         rate = zeros((3, 2))
         idx = int((self.pvol - 0.05)*100)
-        if self.ccode not in self.eco:
-            return
-        rate = self.eco[self.ccode][idx][::-1, :]  # reorder rows as (RP, RP-HPE, YP)
+        if self.ccode not in self.eco_key:
+            # return
+            raise KeyError('self.ccode not in self.eco_key')
+        key = self.eco_key[self.ccode]
+        if key not in self.eco:
+            # return
+            raise KeyError('key not in self.eco')
+        rate = self.eco[key][idx][::-1, :]  # reorder rows as (RP, RP-HPE, YP)
         # Note: excel/vba code multiplies aliab then divides by .85
         self.eco_prem = (self.aliab * mult * rate * (1 - self.subsidy_eco)).round(2)
         return self.eco_prem
@@ -622,11 +631,14 @@ class Premiums:
         self.arc_rphpe = get_arc_rphpe()
         self.arc_yp = get_arc_yp()
         # dict with key code, value array(36, 8) (ivol, cover)
+        self.sco_rp_key = get_sco_rp_key()
         self.sco_rp = get_sco_rp()
+        self.sco_rphpe_key = get_sco_rphpe_key()
         self.sco_rphpe = get_sco_rphpe()
         # dict with key code, value array(8) (cover)
         self.sco_yp = get_sco_yp()
         # dict with key code, value array(36, 3, 2) (ivol, unit, cov)
+        self.eco_key = get_eco_key()
         self.eco = get_eco()
 
     def make_code(self, county, crop, croptype, practice):
@@ -926,17 +938,28 @@ def get_arc_yp():
     return load('grp', int_pair_float_float_tuple, rest=slice(3, None, None))
 
 
+def get_sco_rp_key():
+    return load('scoArp_key', int_key_int_value)
+
+
 def get_sco_rp():
-    return load('scoArp', int_key_float_array, shape=(36, 8), rest=slice(2, None, None))
+    return load('scoArp', int_key_float_array, shape=(36, 8))
+
+
+def get_sco_rphpe_key():
+    return load('scoArpw_key', int_key_int_value)
 
 
 def get_sco_rphpe():
-    return load('scoArpw', int_key_float_array, shape=(36, 8),
-                rest=slice(2, None, None))
+    return load('scoArpw', int_key_float_array, shape=(36, 8))
 
 
 def get_sco_yp():
     return load('scoYp', int_key_float_array, rest=slice(2, None, None))
+
+
+def get_eco_key():
+    return load('eco_key', int_key_int_value)
 
 
 def get_eco():

@@ -8,8 +8,8 @@ p = Premiums()
 
 def test_total_cash_flow():
     cf = CashFlow(2023, prem=p)
-    assert cf.total_cash_flow(pf=1, yf=1) == 3018006
-    assert cf.total_cash_flow(pf=1.3, yf=1) == 3613538
-    assert cf.total_cash_flow(pf=1, yf=1.3) == 5521350
-    assert cf.total_cash_flow(pf=.7, yf=.75) == 4137857
-    assert cf.total_cash_flow(pf=.6, yf=.75) == 5213393
+    assert cf.total_cash_flow(pf=1, yf=1) == 2965458
+    assert cf.total_cash_flow(pf=1.3, yf=1) == 3560990
+    assert cf.total_cash_flow(pf=1, yf=1.3) == 5468801
+    assert cf.total_cash_flow(pf=.7, yf=.75) == 4085308
+    assert cf.total_cash_flow(pf=.6, yf=.75) == 5160844
