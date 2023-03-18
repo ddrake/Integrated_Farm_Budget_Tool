@@ -50,7 +50,8 @@ class Premiums:
 
         # Risk related
         self.riskname = None   # {'None', 'AAA', 'BBB', 'CCC', 'DDD'} dep. on county
-        self.risk = None       # {0: None, 1: 'AAA', 2: 'BBB', 3: 'CCC', 4: 'DDD'}
+        # 0 if riskname == 'None', 1 if riskname in('AAA', 2: 'BBB', 3: 'CCC', 4: 'DDD')
+        self.risk = None
         self.highrisk = None   # float looked up by code and riskname in high_risk dict
         self.rtype = None      # int looked up by code and riskname in high_risk dict
 
@@ -66,7 +67,7 @@ class Premiums:
         self.adjstdqty = None
         self.disenter = None
         self.effcov = None
-        self.jSize = None            # based on acres
+        self.jsize = None            # based on acres
         self.liab = None
         self.aliab = None
         self.maxliab = None
@@ -179,7 +180,7 @@ class Premiums:
         self.efactor_rev[:] = (
             self.get_factor(self.enterfactor_rev, i, 0, 3),
             self.get_factor(self.enterfactor_rev, i, 1, 3))
-        self.disenter = self.get_factor(self.discountenter, i, self.jSize, 4)
+        self.disenter = self.get_factor(self.discountenter, i, self.jsize, 4)
 
     def get_factor(self, var, i, j2, ro):
         """
@@ -294,8 +295,8 @@ class Premiums:
         """
         Compute mqty and stdqty
         """
-        prod = self.revlook[0] * 10000
-        revLookup = int(prod * self.discountenter[3, self.jSize] + 0.5)
+        revLookup = int(
+            self.revlook[0] * 10000 * self.discountenter[3, self.jsize] + 0.5)
         self.mqty, self.stdqty = self.rev_lookup[revLookup]
 
     def simulate_losses(self, i):
@@ -404,7 +405,7 @@ class Premiums:
         self.aphprice, self.pvol = self.parameters[self.pcode]
 
         # Set index based on acreage
-        self.jSize = (0 if self.acres < 50 else 1 if self.acres < 100 else
+        self.jsize = (0 if self.acres < 50 else 1 if self.acres < 100 else
                       2 if self.acres < 200 else 3 if self.acres < 400 else
                       4 if self.acres < 800 else 5)
 
