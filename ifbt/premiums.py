@@ -17,7 +17,8 @@ class Premiums:
     """
     def __init__(self):
         self.load_lookups()
-        self.subsidy = (0.8,  0.8,  0.8,  0.8,  0.8,  0.77, 0.68, 0.53)
+        # preset subsidy values
+        self.subsidy_ent = (0.8,  0.8,  0.8,  0.8,  0.8,  0.77, 0.68, 0.53)
         self.subsidy_sco = 0.65
         self.subsidy_grip = array([0.59, 0.55, 0.55, 0.49, 0.44])
         self.subsidy_grp = array([0.59, 0.59, 0.55, 0.55, 0.51])
@@ -28,87 +29,119 @@ class Premiums:
 
         # User inputs
         # -----------
-        self.acres = None       # acres to insure
-
-        # extras
-        self.hailfire = None         # Hail / Fire protection
-        self.prevplant = None         # Prevent plant protection
-        self.tause = None      # 1 to use trend-adjusted yields else 0
-        self.yieldexcl = None         # 1 to use yield-exclusion else 0
-
-        # yields
-        self.aphyield = None   # Actual production history yield
-        self.appryield = None  # Approved yield
-        self.tayield = None    # Trend-adjusted yield
-        self.expyield = None   # For area base premiums
-        # for area options
-        self.arevyield = self.tayield if self.tause else self.aphyield
-
-        # price / volatility
-        self.aphprice = None   # Actual or estimated production history price
-        self.pvol = None       # Actual or estimate volatility factor
-
+        # acres to insure for given county, crop, croptype and practice.
+        self.acres = None
+        # 0: standard policy, 1: deduction for hail/fire exclusion
+        self.hailfire = None
+        # 0: standard coverage, 1: premium for 5% prevent plant buyup
+        self.prevplant = None
+        # 0: no trend yield adjustment, 1: use trend-adjusted yields
+        self.tause = None
+        # 0: no yield exclusion, 1: allow certain past year's yield data (e.g. 2012)
+        #     and replaced by an alternative yield.
+        self.yieldexcl = None
+        # Actual production history yield
+        self.aphyield = None
+        # Rate yield (Approved yield?)
+        self.appryield = None
+        # Trend-adjusted yield (takes into effect a positive trendline in historical
+        #     yields).
+        self.tayield = None
         # Risk related
+        # Currently, user can provide either string (riskname) or integer(risk))
         self.riskname = None   # {'None', 'AAA', 'BBB', 'CCC', 'DDD'} dep. on county
         # 0 if riskname == 'None', 1 if riskname in('AAA', 2: 'BBB', 3: 'CCC', 4: 'DDD')
         self.risk = None
-        self.highrisk = None   # float looked up by code and riskname in high_risk dict
-        self.rtype = None      # int looked up by code and riskname in high_risk dict
+
+        # scalar variables
+        # -------------------------
+        self.expyield = None   # Looked up for area base premiums
+        # Computed for area options (ECO, SCO)
+        self.arevyield = self.tayield if self.tause else self.aphyield
+        # Actual or estimated price.
+        # Looked up for state, crop.  Actual matches RMA (avg harvest price for Feb).
+        self.aphprice = None
+        # Actual or estimate volatility factor.
+        # Looked up for state, crop.  Actual matches RMA (options prices last week Feb).
+        self.pvol = None
+        # looked up by code and riskname if riskname is not 'None'
+        self.highrisk = None
+        # int looked up by code and riskname if riskname is not 'None'
+        self.rtype = None
 
         # lookup key codes
         self.code = None       # code for state/county/crop/etc..
         self.fcode = None      # code with decimal suffix for risk
-        self.ccode = None       # county code for state/county/crop/etc..
+        self.ccode = None      # county code for state/county/crop/etc..
         self.acode = None      # county code with decimal suffix for volatility
-
-        # scalar variables
-        # -------------------------
+        # computed from revyield and mqty, stdqty, which are looked up based on
+        # (revlook and # discountentr[3, jsize]).  Used in loss simulation
         self.adjmeanqty = None
         self.adjstdqty = None
+        # interpolated lookup used to set RP, RP-HPE premium rates
         self.disenter = None
+        # effective cover: coverage level times ratio of tayield/aphyield
+        # used in intepolation and several other calculations.
         self.effcov = None
-        self.jsize = None            # based on acres
+        self.jsize = None            # index based on acres
+        # dollar amount based on revyield, aphprice, acres and cover.
         self.liab = None
+        # dollar amount used in county options (SCO, ECO)
         self.aliab = None
-        self.maxliab = None
-        self.lnmean = None
-        self.multfactor = None
-        self.premrate = None         # Premium rates array (Erev, E)
+        # revised cover: effcov if tause else cover
         self.revcov = None
+        # revised yield: tayield if tause else appryield
         self.revyield = None
+        # used in ARC: expected yield * price * max prot_factor (1.2)
+        self.maxliab = None
+        # log(aphprice) - pvol**2/2, used to compute harvest price in loss simulation.
+        self.lnmean = None
+        # multiplies in the hail/fire and prev plant rates in premium rate calc.
+        self.multfactor = None
+        self.prot_factor = None      # Protection factor (aka payment factor) for ARC
+        # based on basepremrate and simulated losses
+        self.rphpe_rateuse = None
+        self.rp_rateuse = None
+
+        # Arrays, tuples, vectors
+        self.premrate = None         # Premium rates array (Erev, E)
+        # list of 500 (pricedraw, yielddraw) pairs used in loss simulation
         self.selected_draws = None
         self.simloss = None          # Simulated Loss array (Yp, Rp, RpExc)
-        self.revexc_rateuse = None
-        self.rev_rateuse = None
-        self.prot_factor = None      # Protection factor for ARC
 
         # 3-tuples
-        self.mqty = None
-        self.stdqty = None
+        self.mqty = None             # Mean quantity used in loss simulation
+        self.stdqty = None           # STD quantity used in loss simulation
 
-        # (current/prev) pairs
+        # (cur, prior) pairs
         self.baserate = None          # Continuous rating base rate
+        # Interpolated from enterprisefactor, used to compute basepremrate for YP
         self.efactor = None
+        # Interpolated from enterprisefactorrev, compute basepremrate for RP, RP-HPE
         self.efactor_rev = None
+        # Interpolated from ratediff, used to scale all basepremrates.
         self.ratediff_fac = None
+        # Used to lookup mqty, stdqty for loss simulation
         self.revlook = None
 
-        # Array sized (2, 2)  ('E', 'Erev') by (cur, prior)
+        # Array sized (2, 2)  ('YP', 'RP/RP-HPE') by (cur, prior)
         self.basepremrate = None
 
         # Arrays sized (8, 2) (8 coverage levels) by 2 (cur, prior)
+        # RMA base county differential
         self.ratediff = None
-        self.enterprisefactor = None
-        self.enterfactor_rev = None
+        self.enterprisefactor = None  # used to compute basepremrate for YP
+        self.enterfactor_rev = None   # used to compute basepremrate for RP, RP-HPE
 
         # Arrays sized (8, 6) (8 coverage levels) by (6 acre size values)
+        # RMA Eenterprise unit factor, used to get disenter, used to set premium rates.
         self.discountenter = None
 
         # Premium arrays
-        self.prem = None
-        self.arc_prem = None
-        self.sco_prem = None
-        self.eco_prem = None
+        self.prem_ent = None
+        self.prem_arc = None
+        self.prem_sco = None
+        self.prem_eco = None
 
     # -----------------------------
     # MAIN METHOD: COMPUTE PREMIUMS
@@ -142,11 +175,11 @@ class Premiums:
                 self.set_rates(i)
                 self.set_prems(i)
                 self.apply_subsidy(i)
-        return self.prem
+        return self.prem_ent
 
     def set_multfactor(self):
         """
-        Set Multiplicative Factor
+        Set Multiplicative Factor used to scale rates for hailfire, prevplant
         """
         hfrate, pfrate, ptrate = self.options[self.code]
         self.multfactor = 1
@@ -159,7 +192,7 @@ class Premiums:
 
     def set_effcov(self, i):
         """
-        Set the effective coverage level
+        Set the effective coverage level (Note: depends on tayield regardless of tause)
         """
         self.effcov = round(0.0001 + self.cover[i] *
                             self.tayield / self.appryield, 2)
@@ -169,20 +202,19 @@ class Premiums:
         Set 4 vector factors and 2 scalar factors used to compute base premium rates
         """
         self.ratediff_fac[:] = (
-            self.get_factor(self.ratediff, i, 0, 9),
-            self.get_factor(self.ratediff, i, 1, 9))
+            self.interpolate(self.ratediff, i, 0, 9),
+            self.interpolate(self.ratediff, i, 1, 9))
         self.efactor[:] = (
-            self.get_factor(self.enterprisefactor, i, 0, 3),
-            self.get_factor(self.enterprisefactor, i, 1, 3))
+            self.interpolate(self.enterprisefactor, i, 0, 3),
+            self.interpolate(self.enterprisefactor, i, 1, 3))
         self.efactor_rev[:] = (
-            self.get_factor(self.enterfactor_rev, i, 0, 3),
-            self.get_factor(self.enterfactor_rev, i, 1, 3))
-        self.disenter = self.get_factor(self.discountenter, i, self.jsize, 4)
+            self.interpolate(self.enterfactor_rev, i, 0, 3),
+            self.interpolate(self.enterfactor_rev, i, 1, 3))
+        self.disenter = self.interpolate(self.discountenter, i, self.jsize, 4)
 
-    def get_factor(self, var, i, j2, ro):
+    def interpolate(self, var, i, j2, ro):
         """
-        Given a variable (e.g. ratediff), a 2nd index and a roundoff precision,
-        first compute some indices, then use them to get a factor (e.g. ratediff_fac)
+        Interpolate (or extrapolate up) by nearest cover values to effcov, then round.
         """
         def maxind(ifirst, ilast, offset):
             """
@@ -195,6 +227,8 @@ class Premiums:
             return i + 1 - offset
 
         jlow, jhigh, jfloor = maxind(1, 6, 1), maxind(0, 6, 0), maxind(1, 7, 1)
+
+        # handle special case
         if self.effcov > 0.75 and self.ratediff[6, 0] == 0:
             jlow, jhigh, jfloor = 4, 5, 5
 
@@ -307,47 +341,47 @@ class Premiums:
         yld = max(0, yielddraw * self.adjstdqty + self.adjmeanqty)
         loss = max(0, self.revyield * self.revcov - yld)
         simloss[0] += loss  # yield protection
-        harPrice = min(2 * self.aphprice,
+        harprice = min(2 * self.aphprice,
                        exp(pricedraw * self.pvol + self.lnmean))
-        guarPrice = max(harPrice, self.aphprice)
-        loss = max(0, self.revyield * guarPrice * self.revcov - yld * harPrice)
+        guarprice = max(harprice, self.aphprice)
+        loss = max(0, self.revyield * guarprice * self.revcov - yld * harprice)
         simloss[1] += loss  # revenue protection
-        loss = max(0, self.revyield * self.aphprice * self.revcov - yld * harPrice)
+        loss = max(0, self.revyield * self.aphprice * self.revcov - yld * harprice)
         simloss[2] += loss  # revenue protection with harvest price exclusion
 
     def set_rates(self, i):
         """
         Set the premium rates
         """
-        self.rev_rateuse = round(max(0.01 * self.basepremrate[0, 0],
-                                 self.simloss[1] - self.simloss[0]), 8)
-        self.revexc_rateuse = round(max(-0.5 * self.basepremrate[0, 0],
-                                    self.simloss[2] - self.simloss[0]), 8)
+        self.rp_rateuse = round(max(0.01 * self.basepremrate[0, 0],
+                                self.simloss[1] - self.simloss[0]), 8)
+        self.rphpe_rateuse = round(max(-0.5 * self.basepremrate[0, 0],
+                                   self.simloss[2] - self.simloss[0]), 8)
         self.premrate[0] = self.basepremrate[0, 0] * self.multfactor * self.disenter
         self.premrate[1] = self.basepremrate[1, 0] * self.multfactor * self.disenter
 
     def set_prem(self, rate, i, j, rateuse=0):
         """
         Set a premium with given rate, indices and optional rateuse
-        prem is (8, 3): 8 coverage levels x (RP, RP-HPE, YP)
+        prem_ent is (8, 3): 8 coverage levels x (RP, RP-HPE, YP)
         """
-        self.prem[i, j] = round(self.liab * round(rate + rateuse, 8), 0)
+        self.prem_ent[i, j] = round(self.liab * round(rate + rateuse, 8), 0)
 
     def set_prems(self, i):
         """
         Set the pre-subsidy premiums
         """
-        self.set_prem(self.premrate[1], i, 0, self.rev_rateuse)      # RP
-        self.set_prem(self.premrate[1], i, 1, self.revexc_rateuse)   # RP-HPE
-        self.set_prem(self.premrate[0], i, 2)                        # YP
+        self.set_prem(self.premrate[1], i, 0, self.rp_rateuse)      # RP
+        self.set_prem(self.premrate[1], i, 1, self.rphpe_rateuse)   # RP-HPE
+        self.set_prem(self.premrate[0], i, 2)                       # YP
 
     def apply_subsidy(self, i):
         """
         Apply the subsidy
         """
         for j in range(3):
-            self.prem[i, j] -= round(self.prem[i, j] * self.subsidy[i], 0)
-            self.prem[i, j] = round(self.prem[i, j] / self.acres, 2)
+            self.prem_ent[i, j] -= round(self.prem_ent[i, j] * self.subsidy_ent[i], 0)
+            self.prem_ent[i, j] = round(self.prem_ent[i, j] / self.acres, 2)
 
     def store_user_settings_ent(self, aphyield, appryield, tayield, acres, hailfire,
                                 prevplant, risk, tause, yieldexcl, county, crop,
@@ -401,13 +435,14 @@ class Premiums:
         self.revlook = zeros(2)
 
         # Initialize array to hold premiums
-        self.prem = zeros((8, 3))
+        self.prem_ent = zeros((8, 3))
 
+        # Intermediate keys
         enterId = self.enter_id[self.code]
         betaId = self.beta_id[self.code]
 
-        self.premrate = zeros(2)  # Premium rates array (Erev, E)
-        self.simloss = zeros(3)   # Simulated losses array (Yp, Rp, RpExc)
+        self.premrate = zeros(2)  # Premium rates array (YP, RP/RPHPE)
+        self.simloss = zeros(3)   # Simulated losses array (YP, RP, RPHPE)
 
         # Look up info from the dicts created when the object was constructed
         self.highrisk, self.rtype = ((0, 0) if self.risk == 0 else
@@ -428,18 +463,15 @@ class Premiums:
                           practice='Non-irrigated', croptype='Grain',
                           prot_factor=1):
         """
-        Get 120 pct values for each area type and level from 70:90
-        These are scaled to get the 85 pct and 80 pct columns
+        Get values for each area type and level 70, 75, ..., 90
         """
-        self.arc_prem = zeros((3, 5))
+        self.prem_arc = zeros((5, 3))
         self.store_user_settings_arc(county, crop, practice, croptype, prot_factor)
         subsidies = (self.subsidy_grip, self.subsidy_grip, self.subsidy_grp)
         dicts = (self.arc_rp, self.arc_rphpe, self.arc_yp)
         for i, subsidy in enumerate(subsidies):
             self.compute_prem_arc(subsidy, dicts[i], i)
-        if self.arc_prem.shape != (3, 5):
-            raise ValueError(f'arc_prem has shape {self.arc_prem.shape}')
-        return self.arc_prem
+        return self.prem_arc
 
     def compute_prem_arc(self, subsidy, ardict, idx):
         """
@@ -451,9 +483,9 @@ class Premiums:
         rate = zeros(5)
         self.expyield, rate[:] = ardict[code]
         self.maxliab = round(self.expyield * self.aphprice * 1.2, 2)
-        self.arc_prem[idx, :] = (self.maxliab * 100 * rate).round(0)
-        self.arc_prem[idx, :] -= (self.arc_prem[idx, :] * subsidy).round(0)
-        self.arc_prem[idx, :] = (self.arc_prem[idx, :] / 100 *
+        self.prem_arc[:, idx] = (self.maxliab * 100 * rate).round(0)
+        self.prem_arc[:, idx] -= (self.prem_arc[:, idx] * subsidy).round(0)
+        self.prem_arc[:, idx] = (self.prem_arc[:, idx] / 100 *
                                  self.prot_factor / 1.2).round(2)
 
     def store_user_settings_arc(self, county, crop, practice, croptype, prot_factor):
@@ -481,10 +513,10 @@ class Premiums:
                                      crop, practice, croptype)
 
         keys = (self.sco_rp_key[self.ccode], self.sco_rphpe_key[self.ccode], self.ccode)
-        self.sco_prem = zeros((3, 8))
+        self.prem_sco = zeros((8, 3))
         for i, d in enumerate(zip((self.sco_rp, self.sco_rphpe, self.sco_yp), keys)):
             self.compute_prem_sco(d, i)
-        return self.sco_prem
+        return self.prem_sco
 
     def compute_prem_sco(self, rate_dict, unit):
         """
@@ -497,8 +529,8 @@ class Premiums:
         if unit < 2:
             idx = int((self.pvol - 0.05)*100)
             rate = rate[idx, :]
-        self.sco_prem[unit, :] = (self.aliab * (0.86 - self.cover) * rate).round(2)
-        self.sco_prem[unit, :] -= (self.subsidy_sco * self.sco_prem[unit, :]).round(2)
+        self.prem_sco[:, unit] = (self.aliab * (0.86 - self.cover) * rate).round(2)
+        self.prem_sco[:, unit] -= (self.subsidy_sco * self.prem_sco[:, unit]).round(2)
 
     def store_user_settings_sco(self, aphyield, tayield, tause, county,
                                 crop, practice, croptype):
@@ -525,18 +557,19 @@ class Premiums:
         """ Compute all ECO premiums """
         self.store_user_settings_eco(aphyield, tayield, tause, county,
                                      crop, practice, croptype)
-        mult = array([0.04, 0.09])  # 90% - 86%, 95% - 86%
-        self.eco_prem = zeros((3, 2))
-        rate = zeros((3, 2))
+        mult = array([[0.04, 0.09]]).T  # 90% - 86%, 95% - 86%
+        self.prem_eco = zeros((2, 3))
+        rate = zeros((2, 3))
         idx = int((self.pvol - 0.05)*100)
         if self.ccode not in self.eco_key:
             return
         key = self.eco_key[self.ccode]
         if key not in self.eco:
             return
-        rate = self.eco[key][idx][::-1, :]  # reorder rows as (RP, RP-HPE, YP)
-        self.eco_prem = (self.aliab * mult * rate * (1 - self.subsidy_eco)).round(2)
-        return self.eco_prem
+        rate = self.eco[key][idx][::-1, :].T  # reorder colums as (RP, RP-HPE, YP)
+        print('rate.shape', rate.shape)
+        self.prem_eco = (self.aliab * mult * rate * (1 - self.subsidy_eco)).round(2)
+        return self.prem_eco
 
     def store_user_settings_eco(self, aphyield, tayield, tause, county, crop,
                                 practice, croptype):
@@ -676,20 +709,20 @@ class Premiums:
                 d1 = {k: d[k] for k in
                       ('county', 'crop', 'practice', 'croptype', 'prot_factor')}
                 prems = self.compute_prems_arc(**d1)
-                values['base'] = prems[d['protection'], arclevel_idx(d['level'])]
+                values['base'] = prems[arclevel_idx(d['level']), d['protection']]
             if d['sco_level'] > Lvl.NONE:
                 d1 = {k: d[k] for k in
                       ('aphyield', 'tayield', 'tause', 'county', 'crop',
                        'practice', 'croptype')}
                 prems = self.compute_prems_sco(**d1)
                 sco_level = d['level'] if d['sco_level'] == Lvl.DFLT else d['sco_level']
-                values['sco'] = prems[d['protection'], entlevel_idx(sco_level)]
+                values['sco'] = prems[entlevel_idx(sco_level), d['protection']]
             if d['eco_level'] > Lvl.NONE:
                 d1 = {k: d[k] for k in
                       ('aphyield', 'tayield', 'tause', 'county', 'crop',
                        'practice', 'croptype')}
                 prems = self.compute_prems_eco(**d1)
-                values['eco'] = prems[d['protection'], 0 if d['eco_level'] == 85 else 1]
+                values['eco'] = prems[0 if d['eco_level'] == 85 else 1, d['protection']]
             premiums[crop] = values
         return premiums
 
