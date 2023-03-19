@@ -138,8 +138,6 @@ class Premiums:
                 self.limit_revlook(i)
                 self.limit_baserate(i)
                 self.set_qtys(i)
-                # step 5.01
-                # section 5 revenue calculation
                 self.simulate_losses(i)
                 self.set_rates(i)
                 self.set_prems(i)
@@ -148,9 +146,8 @@ class Premiums:
 
     def set_multfactor(self):
         """
-        Set Multiplicative Factor used in Worksheet step 7.
+        Set Multiplicative Factor
         """
-        # options factor
         hfrate, pfrate, ptrate = self.options[self.code]
         self.multfactor = 1
         if self.hailfire > 0:
@@ -222,7 +219,6 @@ class Premiums:
         """
         Set the revised yield, the revised cover and the liability
         """
-        # step 1
         self.revyield = self.tayield if self.tause else self.appryield
         self.revcov = self.effcov if self.tause else self.cover[i]
         self.liab = round(round(self.revyield * self.cover[i] + 0.001, 1) *
@@ -230,21 +226,15 @@ class Premiums:
 
     def set_base_rates(self, i):
         """
-        Set and limit vector base rates from RMA data
+        Set and limit vector (current/prior) base rates from RMA data
         """
-        # step 2.01: Look up current and previous year rates.
         refyield, refrate, exponent, fixedrate = zeros(2), zeros(2), zeros(2), zeros(2)
         (refyield[0], refrate[0], exponent[0], fixedrate[0],
          refyield[1], refrate[1], exponent[1], fixedrate[1]) = self.rates[self.code]
 
-        # Worksheet steps 1, 2: Continuous rating base rate (current/prior)
         self.baserate = np.minimum(np.maximum(
             (self.aphyield / refyield).round(2), 0.5), 1.5)
-
-        # step 2.02: vectorized (current/prior)
         self.baserate = (self.baserate ** exponent).round(8)
-
-        # step 2.03: vectorized (current/prior)
         self.baserate = (self.highrisk + self.baserate * refrate + fixedrate).round(8)
         if self.rtype > 1.5:
             self.baserate[:] = self.highrisk
@@ -254,19 +244,14 @@ class Premiums:
         """
         Set vector adjusted base premium rates
         """
-        # Worksheet step 8.  Calculate Base Premium Rates Adjusted Base Rate x
-        # coverage level rate differential.
-        # step 2.04
         prod = self.baserate * self.ratediff_fac
         self.basepremrate = array((prod * self.efactor,
                                    prod * self.efactor_rev)).round(8)
 
     def limit_base_prem_rates(self, i):
         """
-        Limit base premium rates based on prior (unpacking vectors)
+        Limit base premium rates min of cur and 1.2 prior (unpacking vectors)
         """
-        # Preliminary base rate is min of cur and 1.2 * prev.
-        # step 2.05
         var = self.basepremrate
         for j in range(2):
             if var[j, 0] > var[j, 1] * 1.2:
@@ -278,7 +263,6 @@ class Premiums:
         """
         Limit revenue lookup based on previous (unpacking vectors)
         """
-        # step 2.06
         if self.revlook[0] > self.revlook[1] * 1.2:
             self.revlook[0] = round(self.revlook[1] * 1.2, 8)
         self.revlook[0] = round(min(self.revlook[0], 0.9999), 4)
@@ -287,44 +271,28 @@ class Premiums:
         """
         Limit base rate based on previous (unpacking vectors)
         """
-        # step 2.07
         if self.baserate[0] > self.baserate[1] * 1.2:
             self.baserate[0] = round(self.baserate[1] * 1.2, 8)
 
     def set_qtys(self, i):
         """
-        Compute mqty and stdqty
+        Compute mqty, stdqty and adjusted quantities
         """
         revLookup = int(
             self.revlook[0] * 10000 * self.discountenter[3, self.jsize] + 0.5)
         self.mqty, self.stdqty = self.rev_lookup[revLookup]
+        self.adjmeanqty = round(self.revyield * self.mqty / 100, 8)
+        self.adjstdqty = round(self.revyield * self.stdqty / 100, 8)
 
     def simulate_losses(self, i):
         """
         Loop through 500 yield, price pairs, incrementing losses.
         """
-        # step 5.02
-        self.adjmeanqty = round(self.revyield * self.mqty / 100, 8)
-        self.adjstdqty = round(self.revyield * self.stdqty / 100, 8)
         self.lnmean = round(log(self.aphprice) - (self.pvol ** 2 / 2), 8)
-        # step 5.04 simulate losses
-
-        simloss = zeros(3)  # (Yp, Rp, RpExc)
+        simloss = zeros(3)
         for yielddraw, pricedraw in self.selected_draws:
-            # yield protection
-            yld = max(0, yielddraw * self.adjstdqty + self.adjmeanqty)
-            loss = max(0, self.revyield * self.revcov - yld)
-            simloss[0] += loss
-            # revenue protection
-            harPrice = min(2 * self.aphprice,
-                           exp(pricedraw * self.pvol + self.lnmean))
-            guarPrice = max(harPrice, self.aphprice)
-            loss = max(0, self.revyield * guarPrice * self.revcov - yld * harPrice)
-            simloss[1] += loss
-            # revenue protection with harvest price exclusion
-            loss = max(0, self.revyield * self.aphprice * self.revcov - yld * harPrice)
-            simloss[2] += loss
-        # step 5.05
+            self.update_losses(yielddraw, pricedraw, simloss)
+
         ct = len(self.selected_draws)
         self.simloss[0] = round((simloss[0] / ct) / (self.revyield * self.revcov), 8)
         self.simloss[1] = round(simloss[1] / ct /
@@ -332,17 +300,29 @@ class Premiums:
         self.simloss[2] = round(simloss[2] / ct /
                                 (self.revyield * self.revcov * self.aphprice), 8)
 
+    def update_losses(self, yielddraw, pricedraw, simloss):
+        """
+        Update simulated loss for each protection type
+        """
+        yld = max(0, yielddraw * self.adjstdqty + self.adjmeanqty)
+        loss = max(0, self.revyield * self.revcov - yld)
+        simloss[0] += loss  # yield protection
+        harPrice = min(2 * self.aphprice,
+                       exp(pricedraw * self.pvol + self.lnmean))
+        guarPrice = max(harPrice, self.aphprice)
+        loss = max(0, self.revyield * guarPrice * self.revcov - yld * harPrice)
+        simloss[1] += loss  # revenue protection
+        loss = max(0, self.revyield * self.aphprice * self.revcov - yld * harPrice)
+        simloss[2] += loss  # revenue protection with harvest price exclusion
+
     def set_rates(self, i):
         """
         Set the premium rates
         """
-        # step 5.06
         self.rev_rateuse = round(max(0.01 * self.basepremrate[0, 0],
                                  self.simloss[1] - self.simloss[0]), 8)
         self.revexc_rateuse = round(max(-0.5 * self.basepremrate[0, 0],
                                     self.simloss[2] - self.simloss[0]), 8)
-        # step 6  No historical revenue capping is performed
-        # step 8.01
         self.premrate[0] = self.basepremrate[0, 0] * self.multfactor * self.disenter
         self.premrate[1] = self.basepremrate[1, 0] * self.multfactor * self.disenter
 
@@ -357,8 +337,8 @@ class Premiums:
         """
         Set the pre-subsidy premiums
         """
-        self.set_prem(self.premrate[1], i, 0, self.rev_rateuse)       # RP
-        self.set_prem(self.premrate[1], i, 1, self.revexc_rateuse)    # RP-HPE
+        self.set_prem(self.premrate[1], i, 0, self.rev_rateuse)      # RP
+        self.set_prem(self.premrate[1], i, 1, self.revexc_rateuse)   # RP-HPE
         self.set_prem(self.premrate[0], i, 2)                        # YP
 
     def apply_subsidy(self, i):
@@ -512,8 +492,7 @@ class Premiums:
         """
         rdict, key = rate_dict
         if key not in rdict:
-            # return
-            raise KeyError('key not in rdict')
+            return
         rate = rdict[key]
         if unit < 2:
             idx = int((self.pvol - 0.05)*100)
@@ -537,9 +516,9 @@ class Premiums:
         self.arevyield = self.tayield if self.tause else self.aphyield
         self.aliab = self.arevyield * self.aphprice
 
-    # -----------------------
+    # ------------
     # ECO PREMIUMS
-    # -----------------------
+    # ------------
     def compute_prems_eco(self, aphyield=180, tayield=190, tause=1,
                           county='Champaign, IL', crop='Corn',
                           practice='Non-irrigated', croptype='Grain'):
@@ -551,14 +530,11 @@ class Premiums:
         rate = zeros((3, 2))
         idx = int((self.pvol - 0.05)*100)
         if self.ccode not in self.eco_key:
-            # return
-            raise KeyError('self.ccode not in self.eco_key')
+            return
         key = self.eco_key[self.ccode]
         if key not in self.eco:
-            # return
-            raise KeyError('key not in self.eco')
+            return
         rate = self.eco[key][idx][::-1, :]  # reorder rows as (RP, RP-HPE, YP)
-        # Note: excel/vba code multiplies aliab then divides by .85
         self.eco_prem = (self.aliab * mult * rate * (1 - self.subsidy_eco)).round(2)
         return self.eco_prem
 
