@@ -24,17 +24,15 @@ def test_total_crop_ins():
     c = CropIns(2023, overrides=ovr, prem=prem)
 
     crop = Crop.CORN
-    assert c.crop_ins_premium_crop(crop) == pytest.approx(39085.875, TOL)
+    assert c.premium_base_crop(crop) == pytest.approx(39085.875, TOL)
 
-    assert (c.indemnity[Crop.CORN].harvest_indemnity_pmt(pf=.7, yf=.75)
-            == pytest.approx(1126643.935, TOL))
+    assert c.indemnity_base_crop(crop, pf=.7, yf=.75) == pytest.approx(1126643.935, TOL)
 
     # there should be an SCO indemnity
-    assert (c.sco[Crop.CORN].harvest_indemnity_pmt(pf=.7, yf=.75)
-            == pytest.approx(593544.579, TOL))
+    assert c.indemnity_sco_crop(crop, pf=.7, yf=.75) == pytest.approx(593544.579, TOL)
 
     # there should not be an ECO indemnity for CORN
-    assert not hasattr(c, 'eco') or Crop.CORN not in c.eco
+    assert c.indemnity_eco_crop(crop, pf=.7, yf=.75) == 0
 
 
 def test_premiums_and_revenue_are_zero_for_a_crop_without_insurance():
@@ -47,12 +45,11 @@ def test_premiums_and_revenue_are_zero_for_a_crop_without_insurance():
 
     c = CropIns(2023, overrides=ovr, prem=prem)
     crop = Crop.CORN
-    assert c.crop_ins_premium_crop(crop) == 0
-    assert c.total_indemnity_crop(crop, pf=.7, yf=.75) == 0
-    assert not hasattr(c, 'indemnity') or Crop.CORN not in c.indemnity
+    assert c.premium_base_crop(crop) == 0
+    assert c.indemnity_base_crop(crop, pf=.7, yf=.75) == 0
 
 
-def test_no_indemnity_attribute_is_added_without_base_insurance():
+def test_indemnity_is_zero_without_base_insurance():
     # DON'T insure corn, but set an enterprise unit, rp protection at a 75% level
     # with supplemental coverage option, and no enhanced coverage
     ovr = {'insure': {Crop.CORN: Ins.NO}, 'unit': {Crop.CORN: Unit.ENT},
@@ -60,7 +57,7 @@ def test_no_indemnity_attribute_is_added_without_base_insurance():
            'sco_level': {Crop.CORN: Lvl.DFLT}, 'eco_level': {Crop.CORN: Lvl.NONE},
            'prot_factor': {Crop.CORN: 1}, }
     c = CropIns(2023, overrides=ovr, prem=prem)
-    assert not hasattr(c, 'indemnity') or Crop.CORN not in c.indemnity
+    assert c.indemnity_base_crop(Crop.CORN) == 0
 
 
 def test_cannot_add_sco_if_base_insurance_is_area():
@@ -140,7 +137,7 @@ def test_sco_level_equal_to_base_level_is_ok():
            'prot_factor': {Crop.CORN: 1}, }
 
     ci = CropIns(2023, overrides=ovr, prem=prem)
-    assert (ci.total_net_crop_ins_indemnity(pf=.8, yf=.8) ==
+    assert (ci.total_net_indemnity(pf=.8, yf=.8) ==
             pytest.approx(2001774.451, TOL))
 
 
@@ -170,12 +167,10 @@ def test_indemnity_and_its_parts_cannot_be_less_than_zero():
 
     c = CropIns(2023, overrides=ovr, prem=prem)
     crop = Crop.CORN
-    assert c.indemnity[Crop.CORN].harvest_indemnity_pmt(pf=1, yf=1) == 0
-    assert (c.indemnity[Crop.CORN].total_indemnity_pmt_received(pf=1, yf=1) ==
-            pytest.approx(0, TOL))
-    assert c.sco[Crop.CORN].harvest_indemnity_pmt(pf=1, yf=1) == 0
-    assert c.eco[Crop.CORN].harvest_indemnity_pmt(pf=1, yf=1) == 0
-    assert c.total_indemnity_crop(crop, pf=1, yf=1) == pytest.approx(0, TOL)
+    assert c.indemnity_base_crop(crop, pf=1, yf=1) == 0
+    assert c.indemnity_sco_crop(crop, pf=1, yf=1) == 0
+    assert c.indemnity_eco_crop(crop, pf=1, yf=1) == 0
+    assert c.total_indemnity_crop(crop, pf=1, yf=1) == 0
 
 
 def test_multiple_configurations():
@@ -245,7 +240,7 @@ def test_multiple_configurations():
                    'prot_factor': {Crop.CORN: 1, Crop.FULL_SOY: 1,
                                    Crop.DC_SOY: 1, Crop.WHEAT: 1}, }
             ci = CropIns(2023, overrides=ovr, prem=prem)
-            assert (ci.total_net_crop_ins_indemnity(pf, yf)
+            assert (ci.total_net_indemnity(pf, yf)
                     == pytest.approx(values[idx], TOL))
             idx += 1
 

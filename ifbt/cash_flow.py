@@ -55,7 +55,7 @@ class CashFlow(Analysis):
         indemnity is subtracted to give net crop insurance cost.
         """
         return round(self.cost.total_variable_cost(yf) -
-                     self.crop_ins.total_net_crop_ins_indemnity(pf, yf) +
+                     self.crop_ins.total_net_indemnity(pf, yf) +
                      self.cost.total_overhead(yf))
 
     def cash_flow_before_land_costs(self, pf=1, yf=1):

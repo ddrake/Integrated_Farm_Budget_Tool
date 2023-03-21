@@ -567,7 +567,6 @@ class Premiums:
         if key not in self.eco:
             return
         rate = self.eco[key][idx][::-1, :].T  # reorder colums as (RP, RP-HPE, YP)
-        print('rate.shape', rate.shape)
         self.prem_eco = (self.aliab * mult * rate * (1 - self.subsidy_eco)).round(2)
         return self.prem_eco
 

@@ -1,33 +1,10 @@
 """
-Module indemnity
-
-Defines a base class: Indemnity with two subclasses:
-IndemnityArea and IndemnityEnt.  From these are derived
-six classes which can be instantiated:
-
-IndemnityAreaRp, IndemnityAreaRpHpe, IndemnityAreaYo
-IndemnityEntRp, IndemnityEntRpHpe, IndemnityEntYo
-
-From IndemnityArea is derived IndemnityOption,
-which is a base class for three derived classes representing SCO or ECO optional
-indemnities and which can be instantiated:
-
-IndemnityOptionRp,  IndemnityOptionRpHpe and IndemnityOptionYo
-
-Instances for specific crops are available as attributes of a CropIns instance
-based on user-specified crop insurance choicies.
-
-The concrete class instances load data from text files for a given crop year.
-Their main function is to return the total indemnity payment for the farm for
-the specified crop and crop year corresponding to an arbitrary sensitivity
-factors for yield and price.
-
-Note: Some methods have unused optional arguments.  This is intentional and
-nessary to support the object hierarchy, the purpose of which is to eliminate
-any duplication of functionality
 """
+from numpy import zeros, ones, array
+import numpy as np
+
 from .analysis import Analysis
-from .util import crop_in, Crop
+from .util import Crop, Unit, Lvl
 
 
 class Indemnity(Analysis):
@@ -37,25 +14,64 @@ class Indemnity(Analysis):
     """
     DATA_FILES = 'farm_data crop_ins_data'
 
-    def __init__(self, crop_year, crop, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
         """
         Initialize the base class, then set some useful attributes.
         The 'kind' argument must be one of 'base', 'eco' or 'sco' and should
         correspond to the kind of Indemnity the instance represents.
         The 'crop' argument allows an Indemnity instance to know its crop.
         """
-        super().__init__(crop_year, *args, **kwargs)
+        super().__init__(*args, **kwargs)
+        self.crop = None  # set when one of the main methods is called
+        self.cover = array(range(50, 86, 5))
+        self.cover_arc = array(range(70, 91, 5))
+        self.cover_eco = array([90, 95])
+        self.indemnity_ent = None
+        self.indemnity_arc = None
+        self.indemnity_sco = None
+        self.indemnity_eco = None
+
+    # --------------------------
+    # MAIN METHOD FOR ENTERPRISE
+    # --------------------------
+    def compute_indems_ent(self, crop, pf=1, yf=1):
+        """ array(8,3)
+        Government Crop Insurance J61: Sensitized total indemnity payment.
+        """
         self.crop = crop
+        self.indemnity_ent = (self.harvest_indemnity_pmt_per_acre(pf, yf))
+        return self.indemnity_ent
 
-    def __repr__(self):
-        class_name = type(self).__name__
-        return '{}({!r}, {!r})'.format(class_name, self.crop_year, self.crop)
+    def harvest_indemnity_pmt_per_acre(self, pf=1, yf=1):
+        """ array(8,3)
+        Government Crop Insurance J52: Sensitized harvest indemnity payment.
+        in dollars per acre.
+        """
+        harv_indem_per_acre = zeros((8, 3))
+        harv_indem_per_acre[:] = self.revenue_loss(pf, yf)
+        harv_indem_per_acre[:, 2] = (self.yield_shortfall(yf) *
+                                     self.fall_futures_price[self.basecrop()])
+        return harv_indem_per_acre
 
-    def basecrop(self):
-        return Crop.SOY if self.crop in (Crop.FULL_SOY, Crop.DC_SOY) else self.crop
+    def yield_shortfall(self, yf=1):
+        """YO  array(8)
+        Government Crop Insurance L47: Yield-sensitized yield shortfall.
+        """
+        return np.maximum(
+            self.yield_trigger() - self.projected_yield_crop(self.crop, yf), 0)
+
+    def revenue_loss(self, pf=1, yf=1):
+        """ array(8, 3)
+        Government Crop Insurance F46: Sensitized revenue loss.
+        """
+        return np.maximum(
+            np.maximum(
+                self.revenue_trigger_feb_price().reshape(8, 1),
+                self.revised_revenue_trigger(pf, yf)) - self.actual_revenue(pf, yf),
+            0)
 
     def revenue_trigger_feb_price(self):
-        """
+        """ array(8)
         Government Crop Insurance F41: The product of the actual fall harvest
         futures price in February with the yield trigger (defined in derived
         classes).
@@ -63,40 +79,34 @@ class Indemnity(Analysis):
         return (self.yield_trigger() *
                 self.fall_futures_price[self.basecrop()])
 
-    def sensitized_fall_price(self, pf=1):
+    def revised_revenue_trigger(self, pf=1, yf=1):
+        """ array(8, 3)
+        Government Crop Insurance F43: Sensitized revised revenue trigger.
         """
-        Government Crop Insurance F12: The price sensitized estimate of the
-        fall harvest futures price.
-        """
-        return self.fall_fut_price_at_harvest[self.crop] * pf
+        revised_rev_trig = ones((8, 3)) * self.yield_trigger().reshape(8, 1)
+        revised_rev_trig[:, 0] *= self.rev_trigger_condition(pf, yf)
+        revised_rev_trig[:, 2] *= self.rev_trigger_condition(pf, yf)
+        revised_rev_trig[:, 1] *= (
+            0 if (self.ins_harvest_price(pf) > self.fall_futures_price[self.basecrop()])
+            else self.fall_futures_price[self.basecrop()])
+        return revised_rev_trig
 
-    def ins_harvest_price(self, pf=1):
+    def actual_revenue(self, pf=1, yf=1):
+        """ scalar
+        Government Crop Insurance J45: Sensitized actual revenue.
         """
-        Government Crop Insurance F13: Insurance harvest price, limited
-        to twice the price-sensitized, projected fall price.
-        """
-        return min((self.fall_futures_price[self.basecrop()] *
-                    self.price_cap_factor),
-                   self.sensitized_fall_price(pf))
+        return (self.projected_yield_crop(self.crop, yf) *
+                self.ins_harvest_price(pf))
 
-    def acres_insured(self):
+    def yield_trigger(self):
+        """ array(8)
+        Government Crop Insurance J40: Yield trigger.
         """
-        Government Crop Insurance F53:
-        For now, we assume that all crop acres or none are insured.
-        This is not a requirement of the program and may change in the future.
-        """
-        return self.acres_crop(self.crop)
-
-    def harvest_indemnity_pmt(self, pf=1, yf=1):
-        """
-        Government Crop Insurance F54: Sensitized harvest indemnity payment
-        in dollars.
-        """
-        return (self.harvest_indemnity_pmt_per_acre(pf, yf) *
-                self.acres_insured())
+        return (self.hist_yield_for_ins_ent[self.crop] *
+                self.cover / 100)
 
     def rev_trigger_condition(self, pf=1, yf=1):
-        """
+        """ scalar
         Helper used by revised_revenue_trigger and revenue_loss.
         """
         return (self.ins_harvest_price(pf)
@@ -104,454 +114,317 @@ class Indemnity(Analysis):
                     self.fall_futures_price[self.basecrop()])
                 else 0)
 
-    def revised_revenue_trigger(self, pf=1, yf=1):
+    def basecrop(self):
+        """ scalar
         """
-        Government Crop Insurance F43: Sensitized revised revenue trigger.
-        """
-        return self.yield_trigger() * self.rev_trigger_condition(pf, yf)
+        return Crop.SOY if self.crop in (Crop.FULL_SOY, Crop.DC_SOY) else self.crop
 
-    def revenue_loss(self, pf=1, yf=1):
+    def sensitized_fall_price(self, pf=1):
+        """ scalar
+        Government Crop Insurance F12: The price sensitized estimate of the
+        fall harvest futures price.
         """
-        Government Crop Insurance F46: Sensitized revenue loss.
-        """
-        return max(max(self.revenue_trigger_feb_price(),
-                       self.revised_revenue_trigger(pf, yf)) -
-                   self.actual_revenue(pf, yf), 0)
+        return self.fall_fut_price_at_harvest[self.crop] * pf
 
+    def ins_harvest_price(self, pf=1):
+        """ scalar
+        Government Crop Insurance F13: Insurance harvest price, limited
+        to twice the price-sensitized, projected fall price.
+        """
+        return min((self.fall_futures_price[self.basecrop()] *
+                    self.price_cap_factor),
+                   self.sensitized_fall_price(pf))
 
-class IndemnityArea(Indemnity):
-    """
-    Base class for Area (county) Indemnity classes
-    DO NOT construct an instance of this class.  Instead get an instance of one
-    of the six concrete derived classes
-    """
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    # -------------------
+    # MAIN METHOD FOR ARC
+    # -------------------
+    def compute_indems_arc(self, crop, pf=1, yf=1):
+        """
+        array(5,3)
+        Sensitized total indemnity payment for all protections and levels.
+        """
+        self.crop = crop
+        self.indemnity_arc = self.harvest_indemnity_pmt_per_acre_arc(pf, yf)
+        return self.indemnity_arc
 
-    @crop_in(Crop.CORN, Crop.FULL_SOY, Crop.DC_SOY, Crop.WHEAT)
-    def county_rma_yield(self, crop, yf=1):
+    def harvest_indemnity_pmt_per_acre_arc(self, pf=1, yf=1):
         """
-        Government Crop Insurance F15: Yield-sensitized county RMA yield for the
-        specified crop.  This formula works if and only if the county yields
-        correlate with the farm yields.  A conservative farm to county premium
-        is used.
+        Government Crop Insurance FGH52: Sensitized per acre indemnity payment
+        in dollars per acre.
+        array(5, 3)
         """
-        return (self.projected_yield_crop(crop, yf) /
-                (1 + self.farm_yield_premium_to_county[crop]))
+        harv_indem_pmt_per_acre = ones((5, 3))
+        harv_indem_pmt_per_acre *= self.payment_factor_arc(pf, yf)
+        harv_indem_pmt_per_acre[:, 0] *= max(
+            self.minimum_dollars_protection_arc(),
+            self.revised_dollars_of_protection_arc(pf, yf))
+        harv_indem_pmt_per_acre[:, 1:] *= self.minimum_dollars_protection_arc()
+        return harv_indem_pmt_per_acre
 
-    def yield_trigger(self):
-        """
-        Government Crop Insurance F40: Trigger based on historical county
-        yield.
-        """
-        return (self.hist_yield_for_ins_area[self.crop] *
-                self.level[self.crop] / 100)
-
-    def actual_revenue(self, pf=1, yf=1):
-        """
-        Government Crop Insurance F45: Sensitized actual revenue.
-        """
-        return (self.county_rma_yield(self.crop, yf) *
-                self.ins_harvest_price(pf))
-
-    def payment_factor(self, pf=1, yf=1):
-        """
-        Government Crop Insurance F50: Sensiized payment factor.
-        """
-        return min(1, (self.revenue_loss(pf, yf) /
-                       self.maximum_loss_pmt(pf, yf)))
-
-    def minimum_dollars_protection(self):
+    def minimum_dollars_protection_arc(self):
         """
         Government Crop Insurance F42: Minimum dollars of protection.
+        scalar
         """
         return (self.hist_yield_for_ins_area[self.crop] *
                 self.fall_futures_price[self.basecrop()] *
                 self.prot_factor[self.crop])
 
-    def harvest_indemnity_pmt_per_acre(self, pf=1, yf=1):
+    def revised_dollars_of_protection_arc(self, pf=1, yf=1):
         """
-        Government Crop Insurance F52: Sensitized per acre indemnity payment
-        in dollars per acre.
-        """
-        return (self.minimum_dollars_protection() *
-                self.payment_factor(pf, yf))
-
-    def total_indemnity_pmt_received(self, pf=1, yf=1):
-        """
-        Government Crop Insurance F61: Sensitized indemnity payment received.
-        """
-        return self.harvest_indemnity_pmt(pf, yf)
-
-
-class IndemnityEnt(Indemnity):
-    """
-    Base class for Enterprise Indemnity classes.
-    DO NOT construct an instance of this class.  Instead, get an instance of one
-    of the six concrete derived classes
-    """
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-    def yield_trigger(self):
-        """
-        Government Crop Insurance J40: Yield trigger.
-        """
-        return (self.hist_yield_for_ins_ent[self.crop] *
-                self.level[self.crop] / 100)
-
-    def actual_revenue(self, pf=1, yf=1):
-        """
-        Government Crop Insurance J45: Sensitized actual revenue.
-        """
-        return (self.projected_yield_crop(self.crop, yf) *
-                self.ins_harvest_price(pf))
-
-    def replant_acres(self):
-        """
-        Government Crop Insurance J57: Replant acres expected.
-        Note: replant protection option is only for Enterprise units.
-        """
-        return (self.replant_frac_acres_assumed[self.crop] *
-                self.acres_crop(self.crop))
-
-    def replant_bushels(self):
-        """
-        Government Crop Insurance J58: Replant bushels expected.
-        """
-        return (self.replant_acres() *
-                self.replant_yield_loss_bpa[self.crop])
-
-    def replant_indemnity_pmt(self):
-        """
-        Government Crop Insurance J59: Replant payment expected.
-        """
-        return (self.replant_bushels() *
-                self.fall_futures_price[self.basecrop()])
-
-    def harvest_indemnity_pmt_per_acre(self, pf=1, yf=1):
-        """
-        Government Crop Insurance J52: Sensitized harvest indemnity payment.
-        in dollars per acre.
-        """
-        return self.revenue_loss(pf, yf)
-
-    def total_indemnity_pmt_received(self, pf=1, yf=1):
-        """
-        Government Crop Insurance J61: Sensitized total indemnity payment.
-        """
-        return (self.harvest_indemnity_pmt(pf, yf) +
-                self.replant_indemnity_pmt())
-
-
-class IndemnityOption(IndemnityArea):
-    """
-    Base class for IndemnityOption classes.
-    DO NOT construct an instance of this class.  Instead, get an instance of one
-    of the three concrete derived classes
-    """
-    def __init__(self, crop_year, crop, kind, *args, **kwargs):
-        super().__init__(crop_year, crop, *args, **kwargs)
-        self.kind = kind
-        self.lvl = None
-        self.diff = None
-
-    def __repr__(self):
-        class_name = type(self).__name__
-        return '{}({!r}, {!r}, {!r})'.format(class_name, self.crop_year,
-                                             self.crop, self.kind)
-
-    def county_insured_revenue(self, pf=1):
-        """
-        Government Crop Insurance J80: Price-sensitized county insured revenue.
-        Used by RP-HPE and YO derived classes.
-        """
-        return (self.fall_futures_price[self.basecrop()] *
-                self.hist_yield_for_ins_area[self.crop])
-
-    def county_rev_as_ratio(self, pf=1, yf=1):
-        """
-        Government Crop Insurance J81: Sensitized ratio of actual to insured
-        county revenue.  Used by all derived classes.
-        """
-        return (self.actual_revenue(pf, yf) /
-                self.county_insured_revenue(pf))
-
-    def payment_factor(self, pf=1, yf=1):
-        """
-        Government Crop Insurance J82: Sensitized payment factor.
-        Used by all derived classes.
-        """
-        return (
-            0 if self.county_rev_as_ratio(pf, yf) > self.lvl else
-            min((self.lvl - self.county_rev_as_ratio(pf, yf)) / self.diff, 1))
-
-    def farm_crop_value(self, pf=1):
-        """
-        Government Crop Insurance J83: Price-sensitized farm crop vaue.
-        Used by RP-HPE and YO derived classes.
-        """
-        return (self.hist_yield_for_ins_ent[self.crop] *
-                self.fall_futures_price[self.basecrop()] * self.diff)
-
-    def harvest_indemnity_pmt_per_acre(self, pf=1, yf=1):
-        """
-        Government Crop Insurance J84: Sensitized harvest indemnity per acre.
-        Used by all derived classes.
-        """
-        is_eco = self.kind == 'eco'
-        level = self.level[self.crop]/100
-        sco_top_level = self.sco_top_level/100
-        eco_level = self.eco_level[self.crop]/100
-        sco_bot_level = (level if self.sco_level[self.crop] == 1 else
-                         self.sco_level[self.crop]/100)
-
-        self.lvl = eco_level if is_eco else sco_top_level
-        self.diff = ((eco_level - sco_top_level) if is_eco else
-                     (sco_top_level - sco_bot_level))
-
-        return (self.farm_crop_value(pf) *
-                self.payment_factor(pf, yf))
-
-    def harvest_indemnity_pmt(self, pf=1, yf=1):
-        """
-        Government Crop Insurance J86: Sensitized harvest indemnity payment.
-        Used by all derived classes.
-        """
-        return (self.harvest_indemnity_pmt_per_acre(pf, yf) *
-                self.acres_insured())
-
-
-# CONCRETE INDEMNITY CLASSES
-# --------------------------
-
-
-class IndemnityAreaRp(IndemnityArea):
-    """
-    Computes crop insurance indemnity payment for County Area unit
-    with RP protection for the farm crop year
-    corresponding to arbitrary sensitivity factors for yield and price.
-    This class is designed to be instantiated by the CropIns class.
-    """
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-    def limiting_revenue_factor(self, pf=1):
-        """
-        Government Crop Insurance F48: Price-sensitized limiting revenue factor.
-        """
-        return (self.hist_yield_for_ins_area[self.crop] *
-                max(self.fall_futures_price[self.basecrop()],
-                    self.ins_harvest_price(pf)) *
-                self.loss_limit_factor)
-
-    def maximum_loss_pmt(self, pf=1, yf=1):
-        """
-        Government Crop Insurance F49: Sensitized maximum loss payment.
-        """
-        return (max(self.revenue_trigger_feb_price(),
-                    self.revised_revenue_trigger(pf, yf)) -
-                self.limiting_revenue_factor(pf))
-
-    def revised_dollars_of_protection(self, pf=1, yf=1):
-        """
+        scalar
+        AREA RP used above
         Government Crop Insurance F44: Sensitized revised dollars of protection.
         """
         return (self.hist_yield_for_ins_area[self.crop] *
                 self.prot_factor[self.crop] *
-                self.rev_trigger_condition(pf, yf))
+                self.rev_trigger_condition(pf, yf))  # not ARC-specific
 
-    def harvest_indemnity_pmt_per_acre(self, pf=1, yf=1):
+    def payment_factor_arc(self, pf=1, yf=1):
         """
-        Government Crop Insurance F52: Sensitized harvest indemnity
-        in dollars per acre.
+        Government Crop Insurance FGH50: Sensiized payment factor.
+        array(5, 3)
         """
-        return (max(self.minimum_dollars_protection(),
-                    self.revised_dollars_of_protection(pf, yf)) *
-                self.payment_factor(pf, yf))
+        rev_yo = np.maximum(
+            0, self.yield_trigger_arc() - self.county_rma_yield(yf))
+        rev = self.revenue_loss_arc(pf, yf)
+        pmt_factor = zeros((5, 3))
+        pmt_factor[:] = rev
+        pmt_factor[:, 2] = rev_yo
+        pmt_factor /= self.maximum_loss_pmt_arc(pf, yf)
+        return pmt_factor
 
-
-class IndemnityAreaRpHpe(IndemnityArea):
-    """
-    Computes crop insurance indemnity payment for County Area unit
-    with RP-HPE protection for the farm crop year
-    corresponding to arbitrary sensitivity factors for yield and price.
-    This class is designed to be instantiated by the CropIns class.
-    """
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-    def revenue_loss(self, pf=1, yf=1):
+    def maximum_loss_pmt_arc(self, pf=1, yf=1):
+        """ AREA RP
+        Government Crop Insurance F49: Sensitized maximum loss payment.
+        array(5,3)
         """
-        Government Crop Insurance G46: Sensitized revenue loss.
-        """
-        return max((self.revenue_trigger_feb_price() -
-                    self.actual_revenue(pf, yf)), 0)
+        max_loss_pmt = zeros((5, 3))
+        max_loss_pmt[:] -= self.limiting_revenue_factor_arc(pf)
+        max_loss_pmt[:, 0] += np.maximum(
+            self.revenue_trigger_feb_price_arc(),
+            self.revised_revenue_trigger_arc(pf, yf))
+        max_loss_pmt[:, 1] += self.revenue_trigger_feb_price_arc()
+        max_loss_pmt[:, 2] += self.yield_trigger_arc()
+        return max_loss_pmt
 
-    def limiting_revenue_factor(self):
+    def limiting_revenue_factor_arc(self, pf=1):
         """
-        Government Crop Insurance G48: Limiting revenue factor.
+        array(3)
+        Government Crop Insurance FGH48: Price-sensitized limiting revenue factor.
         """
-        return (self.hist_yield_for_ins_area[self.crop] *
-                self.fall_futures_price[self.basecrop()] *
-                self.loss_limit_factor)
+        limiting_revenue_fact = (
+            ones(3) * self.hist_yield_for_ins_area[self.crop] *
+            self.loss_limit_factor)
 
-    def maximum_loss_pmt(self, pf=1, yf=1):
-        """
-        Government Crop Insurance G49: Sensitized maximum loss payment.
-        yf and pf are not used here (see note in module docstring), but
-        payment_factor needs to pass them (the RP method needs them).
-        """
-        return (self.revenue_trigger_feb_price() -
-                self.limiting_revenue_factor())
+        limiting_revenue_fact[0] *= max(
+            self.fall_futures_price[self.basecrop()],
+            self.ins_harvest_price(pf))
+        limiting_revenue_fact[1] *= self.fall_futures_price[self.basecrop()]
+        return limiting_revenue_fact
 
-
-class IndemnityAreaYo(IndemnityArea):
-    """
-    Computes crop insurance indemnity payment for County Area unit
-    with YO protection for the farm crop year
-    corresponding to arbitrary sensitivity factors for yield and price.
-    This class is designed to be instantiated by the CropIns class.
-    """
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-    def limiting_revenue_factor(self):
+    def revenue_loss_arc(self, pf=1, yf=1):
         """
-        Government Crop Insurance H48: Limiting revenue factor.
+        array(5, 3) TODO: test maximums
+        Government Crop Insurance F46: Sensitized revenue loss.
         """
-        return (self.hist_yield_for_ins_area[self.crop] *
-                self.loss_limit_factor)
+        maxfactor = np.maximum(
+            self.revenue_trigger_feb_price_arc(),
+            self.revised_revenue_trigger_arc(pf, yf))
+        rev_loss = ones((5, 3))
+        rev_loss[:, 0] = maxfactor
+        rev_loss[:, 1] = self.revenue_trigger_feb_price_arc()
+        rev_loss[:, 2] = maxfactor
+        rev_loss[:, :2] = np.maximum(
+            rev_loss[:, :2] - self.actual_revenue_arc(pf, yf), 0)
+        return rev_loss
+        # rev_loss = ones((5, 3)) * np.maximum(
+        #     self.revenue_trigger_feb_price_arc().reshape(5, 1),
+        #     self.revised_revenue_trigger_arc(pf, yf).reshape(5, 1))
+        # rev_loss[:, :2] = np.maximum(
+        #     rev_loss[:, :2] - self.actual_revenue_arc(pf, yf), 0)
+        # return rev_loss
 
-    def yield_shortfall(self, yf=1):
+    def revised_revenue_trigger_arc(self, pf=1, yf=1):
+        """ from base class
+        Government Crop Insurance F43: Sensitized revised revenue trigger.
+        array(5)
         """
-        Government Crop Insurance H47: Price-sensitized yield shortfall.
-        """
-        return max((self.yield_trigger() -
-                    self.county_rma_yield(self.crop, yf)), 0)
+        return self.yield_trigger_arc() * self.rev_trigger_condition(pf, yf)
 
-    def payment_factor(self, pf=1, yf=1):
+    def revenue_trigger_feb_price_arc(self):
+        """ from base class
+        Government Crop Insurance F41: The product of the actual fall harvest
+        futures price in February with the yield trigger (defined in derived
+        classes).
+        array(5)
         """
-        Government Crop Insurance H50: Sensitized payment factor.
-        """
-        return min(1, (self.yield_shortfall(yf) /
-                       self.maximum_loss_pmt(pf, yf)))
-
-    def maximum_loss_pmt(self, pf=1, yf=1):
-        """
-        Government Crop Insurance H49: Maximum loss payment.
-        """
-        return (self.yield_trigger() -
-                self.limiting_revenue_factor())
-
-
-class IndemnityEntRp(IndemnityEnt):
-    """
-    Computes crop insurance indemnity payment for Enterprise unit
-    with RP protection for the farm crop year
-    corresponding to arbitrary sensitivity factors for yield and price.
-    This class is designed to be instantiated by the CropIns class.
-    """
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-
-class IndemnityEntRpHpe(IndemnityEnt):
-    """
-    Computes crop insurance indemnity payment for Enterprise unit
-    with RP-HPE protection for the farm crop year
-    corresponding to arbitrary sensitivity factors for yield and price.
-    This class is designed to be instantiated by the CropIns class.
-    """
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-    def revised_revenue_trigger(self, pf=1, yf=1):
-        """
-        Government Crop Insurance K43: Price-sensitized revised revenue
-        trigger.
-        """
-        return (self.yield_trigger() *
-                (0 if (self.ins_harvest_price(pf) >
-                       self.fall_futures_price[self.basecrop()])
-                else self.fall_futures_price[self.basecrop()]))
-
-
-class IndemnityEntYo(IndemnityEnt):
-    """
-    Computes crop insurance indemnity payment for Enterprise unit
-    with YO protection for the farm crop year
-    corresponding to arbitrary sensitivity factors for yield and price.
-    This class is designed to be instantiated by the CropIns class.
-    """
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-    def yield_shortfall(self, yf=1):
-        """
-        Government Crop Insurance L47: Yield-sensitized yield shortfall.
-        """
-        return max((self.yield_trigger() -
-                    self.projected_yield_crop(self.crop, yf)), 0)
-
-    def harvest_indemnity_pmt_per_acre(self, pf=1, yf=1):
-        """
-        Government Crop Insurance L52: Yield-sensitized harvest indemnity payment
-        in dollars per acre.
-        """
-        return (self.yield_shortfall(yf) *
+        return (self.yield_trigger_arc() *
                 self.fall_futures_price[self.basecrop()])
 
-
-# INDEMNITY OPTION CONCRETE CLASSES
-# ---------------------------------
-
-
-class IndemnityOptionRp(IndemnityOption):
-    """
-    An indemnity option (SCO or ECO) with RP protection
-    """
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-    def county_insured_revenue(self, pf=1):
+    def actual_revenue_arc(self, pf=1, yf=1):
         """
-        Government Crop Insurance J80: Price-sensitized county insured revenue.
+        Government Crop Insurance F45: Sensitized actual revenue.
+        scalar
+        """
+        return (self.county_rma_yield(yf) *
+                self.ins_harvest_price(pf))
+
+    def county_rma_yield(self, yf=1):
+        """
+        Government Crop Insurance F15: Yield-sensitized county RMA yield for the
+        specified crop.  This formula works if and only if the county yields
+        correlate with the farm yields.  A conservative farm to county premium
+        is used.
+        scalar
+        """
+        return (self.projected_yield_crop(self.crop, yf) /
+                (1 + self.farm_yield_premium_to_county[self.crop]))
+
+    def yield_trigger_arc(self):
+        """
+        Government Crop Insurance F40: Trigger based on historical county
+        yield.
+        array(5)
         """
         return (self.hist_yield_for_ins_area[self.crop] *
-                max(self.ins_harvest_price(pf),
-                    self.fall_futures_price[self.basecrop()]))
+                self.cover_arc / 100)
 
-    def farm_crop_value(self, pf=1):
+    # ------------------
+    # OPTIONS (SCO, ECO)
+    # ------------------
+    def compute_indems_sco(self, crop, pf=1, yf=1):
+        self.crop = crop
+        self.indemnity_sco = self.harvest_indemnity_pmt_per_acre_opt(self.cover, pf, yf)
+        return self.indemnity_sco
+
+    def compute_indems_eco(self, crop, pf=1, yf=1):
+        self.crop = crop
+        self.indemnity_eco = self.harvest_indemnity_pmt_per_acre_opt(self.cover_eco,
+                                                                     pf, yf)
+        return self.indemnity_eco
+
+    def harvest_indemnity_pmt_per_acre_opt(self, cov, pf=1, yf=1):
         """
-        Government Crop Insurance J83: Price-sensitized farm crop value.
+        Government Crop Insurance J84: Sensitized harvest indemnity per acre.
+        Used by all derived classes.
+        array(len(cov))
         """
-        return (self.hist_yield_for_ins_ent[self.crop] *
-                max(self.ins_harvest_price(pf),
-                    self.fall_futures_price[self.basecrop()]) * self.diff)
+        is_eco = len(cov) == 2
+        sco_top_level = self.sco_top_level/100
+        lvl = cov/100 if is_eco else ones(len(cov)) * sco_top_level
+        diff = (cov/100 - sco_top_level if is_eco
+                else sco_top_level - cov/100)
+        return (self.farm_crop_value(diff, pf) *
+                self.payment_factor(lvl, diff, pf, yf))
 
-
-class IndemnityOptionRpHpe(IndemnityOption):
-    """
-    An indemnity option (SCO or ECO) with RP-HPE protection
-    """
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-
-class IndemnityOptionYo(IndemnityOption):
-    """
-    An indemnity option (SCO or ECO) with YO protection
-    """
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-    def actual_revenue(self, pf=1, yf=1):
+    def farm_crop_value(self, diff, pf=1):
         """
-        Government Crop Insurance J79: Yield-sensitized county actual revenue.
+        Government Crop Insurance J83: Price-sensitized farm crop vaue.
+        Used by RP-HPE and YO derived classes.
+        array(len(diff), 3)
         """
-        return (self.fall_futures_price[self.basecrop()] *
-                self.county_rma_yield(self.crop, yf))
+        farm_crop_val = ones((len(diff), 3))
+        farm_crop_val *= self.hist_yield_for_ins_ent[self.crop]
+        farm_crop_val *= diff.reshape(len(diff), 1)
+        farm_crop_val[:, 0] *= max(
+            self.ins_harvest_price(pf),
+            self.fall_futures_price[self.basecrop()])
+        farm_crop_val[:, 1:] *= self.fall_futures_price[self.basecrop()]
+        return farm_crop_val
+
+    def payment_factor(self, lvl, diff, pf=1, yf=1):
+        """ array(len(lvl), 3)
+        Government Crop Insurance J82: Sensitized payment factor.
+        Used by all derived classes.
+        """
+        lvlrs = lvl.reshape(len(lvl), 1)
+        diffrs = diff.reshape(len(lvl), 1)
+        return np.where(
+            self.county_rev_as_ratio(diff, pf, yf) > lvlrs,
+            zeros((len(lvl), 3)),
+            np.minimum((lvlrs - self.county_rev_as_ratio(diff, pf, yf)) / diffrs, 1))
+
+    def county_rev_as_ratio(self, diff, pf=1, yf=1):
+        """ array(len(diff), 3)
+        Government Crop Insurance J81: Sensitized ratio of actual to insured
+        county revenue.  Used by all derived classes.
+        """
+        cty_rev_as_ratio = ones((len(diff), 3))
+        cty_rev_as_ratio[:] *= (
+            self.actual_revenue_opt(pf, yf) /
+            self.county_insured_revenue(pf))
+        return cty_rev_as_ratio
+
+    def actual_revenue_opt(self, pf=1, yf=1):
+        """
+        Government Crop Insurance F45: Sensitized actual revenue.
+        scalar
+        array(3)
+        """
+        actual_rev_arc = ones(3) * self.county_rma_yield(yf)
+        actual_rev_arc[:2] *= self.ins_harvest_price(pf)
+        actual_rev_arc[2] *= self.fall_futures_price[self.basecrop()]
+        return actual_rev_arc
+
+    def county_insured_revenue(self, pf=1):
+        """option base
+        Government Crop Insurance J80: Price-sensitized county insured revenue.
+        Used by RP-HPE and YO derived classes.
+        array(3)
+        """
+        cty_insured_rev = ones(3)
+        cty_insured_rev *= self.hist_yield_for_ins_area[self.crop]
+        cty_insured_rev[1:] *= self.fall_futures_price[self.basecrop()]
+        cty_insured_rev[0] *= max(
+             self.ins_harvest_price(pf),
+             self.fall_futures_price[self.basecrop()])
+        return cty_insured_rev
+
+    # ------------------
+    # Convenience Method
+    # ------------------
+    def get_all_indemnities(self, cropdicts=None, pf=1, yf=1):
+        """
+        Given a list of dicts, one for each crop, containing specific choices of
+        unit, level, sco_level, eco_level, Return a dict of dicts, each containing
+        individual indemnities for the base product and options.
+        """
+        indemnities = {}
+        if cropdicts is None:
+            return indemnities
+        for d in cropdicts:
+            crop = d['crop']
+            self.prot_factor[crop] = d['prot_factor']
+            values = {'base': 0, 'sco': 0, 'eco': 0}
+            if d['unit'] == Unit.ENT:
+                indems = self.compute_indems_ent(crop, pf, yf)
+                values['base'] = indems[entlevel_idx(d['level']), d['protection']]
+            else:
+                indems = self.compute_indems_arc(crop, pf, yf)
+                values['base'] = indems[arclevel_idx(d['level']), d['protection']]
+            if d['sco_level'] > Lvl.NONE:
+                indems = self.compute_indems_sco(crop, pf, yf)
+                sco_level = d['level'] if d['sco_level'] == Lvl.DFLT else d['sco_level']
+                values['sco'] = indems[entlevel_idx(sco_level), d['protection']]
+            if d['eco_level'] > Lvl.NONE:
+                indems = self.compute_indems_eco(crop, pf, yf)
+                values['eco'] = (indems[0 if d['eco_level'] == 90
+                                        else 1, d['protection']])
+            indemnities[crop] = values
+        return indemnities
+
+
+# ----------------
+# Helper functions
+# ----------------
+def entlevel_idx(intval):
+    if intval < 50 or intval > 85:
+        raise ValueError('Invalid level for Enterprise unit')
+    return (intval - 50)//5
+
+
+def arclevel_idx(intval):
+    if intval < 70 or intval > 90:
+        raise ValueError('Invalid level for ARC unit')
+    return (intval - 70)//5
