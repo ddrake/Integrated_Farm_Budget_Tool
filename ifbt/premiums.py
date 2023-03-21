@@ -722,7 +722,7 @@ class Premiums:
                       ('aphyield', 'tayield', 'tause', 'county', 'crop',
                        'practice', 'croptype')}
                 prems = self.compute_prems_eco(**d1)
-                values['eco'] = prems[0 if d['eco_level'] == 85 else 1, d['protection']]
+                values['eco'] = prems[0 if d['eco_level'] == 90 else 1, d['protection']]
             premiums[crop] = values
         return premiums
 

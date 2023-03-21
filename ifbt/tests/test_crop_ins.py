@@ -90,7 +90,7 @@ def test_can_add_eco_without_sco():
     ci = CropIns(2023, overrides=ovr, prem=prem)
     assert (ci.total_indemnity_crop(Crop.CORN, pf=.8, yf=.8) ==
             pytest.approx(704796.216, TOL))
-    assert (ci.total_premium_crop(Crop.CORN) == pytest.approx(154230.75, TOL))
+    assert (ci.total_premium_crop(Crop.CORN) == pytest.approx(83622.644, TOL))
 
 
 def test_cannot_add_eco_with_area_unit():
@@ -125,7 +125,7 @@ def test_sco_level_greater_than_base_level_is_ok():
     ci = CropIns(2023, overrides=ovr, prem=prem)
     assert (ci.total_indemnity_crop(Crop.CORN, pf=.8, yf=.8) ==
             pytest.approx(1028547.804, TOL))
-    assert (ci.total_premium_crop(Crop.CORN) == pytest.approx(184316.31, TOL))
+    assert (ci.total_premium_crop(Crop.CORN) == pytest.approx(113708.204, TOL))
 
 
 def test_sco_level_equal_to_base_level_is_ok():
@@ -141,7 +141,7 @@ def test_sco_level_equal_to_base_level_is_ok():
 
     ci = CropIns(2023, overrides=ovr, prem=prem)
     assert (ci.total_net_crop_ins_indemnity(pf=.8, yf=.8) ==
-            pytest.approx(1876037.952, TOL))
+            pytest.approx(2001774.451, TOL))
 
 
 def test_sco_level_less_than__base_level_throws():
@@ -204,27 +204,27 @@ def test_multiple_configurations():
     values = [2911813.731, 2900808.448, 422779.864,
               1713861.057, 1737592.052, 134047.695,
               2628448.099, 2633551.801, 1091737.875,
-              2820491.529, 2860826.522, 1335464.778,
+              2943715.023, 2957304.175, 1413836.992,
 
               52322.103, 75633.544, -72393.002,
               -53938.197, -30207.202, -45773.352,
               581527.718, 624403.846, -77977.773,
-              753541.359, 843226.888, -170929.514,
+              864260.816, 926090.001, -104676.781,
 
               407594.038, 385149.846, 422779.864,
               114605.960, 138336.955, 134047.695,
               1060654.827, 1056362.923, 1091737.875,
-              1249820.480, 1275185.964, 1335464.778,
+              1360539.937, 1358049.077, 1413836.992,
 
               -107681.166, -84369.725, -72393.002,
               -65215.088, -41484.093, -45773.352,
               -129783.684, -86907.556, -77977.773,
-              -296951.743, -207266.214, -170929.514,
+              -186232.286, -124403.101, -104676.781,
 
               882664.567, -84369.725, 422779.864,
               294427.008, -41484.093, 134047.695,
               2191131.776, -88061.536, 1091737.875,
-              2740308.924, -220003.370, 1335464.778,
+              2863532.418, -137140.258, 1413836.992,
               ]
 
     idx = 0
@@ -272,7 +272,7 @@ def test_pmt_factor_scales_premiums_and_indemnities_for_area_unit():
     premiums = [96896.783, 75918.264, 65169.606,
                 65215.088, 41484.093, 45773.352,
                 130937.663, 88061.536, 79131.753,
-                309688.9, 220003.370, 183666.671,]
+                198969.443, 137140.258, 117413.938,]
 
     indemnities = [2717545.407, 2686660.355, 445655.580,
                    1779076.145, 1779076.145, 179821.048,
