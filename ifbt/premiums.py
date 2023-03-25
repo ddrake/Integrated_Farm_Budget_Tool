@@ -763,21 +763,13 @@ def load(filename, processor, **kwargs):
     return data
 
 
-def readfile(filename):
-    """
-    Read a tab-separated textfile into a string and return it
-    """
-    with open(filename, 'r') as f:
-        contents = f.read()
-    return contents
-
-
 def get_file_items(filename):
     """
     Get file contents then return a nested list of the tab separated
     values for each line.
     """
-    contents = readfile(filename)
+    with open(filename, 'r') as f:
+        contents = f.read()
     return (line.split() for line in contents.strip().split('\n'))
 
 
