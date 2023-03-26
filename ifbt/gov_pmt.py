@@ -11,10 +11,15 @@ import os
 import numpy as np
 
 from .analysis import Analysis
-from .util import crop_in, Crop, Prog
+from .util import crop_in, Crop, Prog, Prac
 
 
 DATADIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data')
+
+# practices
+IRR = 1
+NONIRR = 2
+ALL = 3
 
 
 class GovPmt(Analysis):
@@ -40,11 +45,6 @@ class GovPmt(Analysis):
 
         assert self.crop_year >= 2019, "Crop year must be greater than or equal to 2019"
         self.crop_ids = {Crop.CORN: 1, Crop.SOY: 2, Crop.WHEAT: 3}
-        # TODO: this is not correct yet.  The last digit represents the 'Practice',
-        # which for many counties is 3 (All) for all crops, but for some counties,
-        # may be 1 (irrigated) or 2 (non-irrigated) and the user must select
-        self.codes = {crop: self.county * 1000 + self.crop_ids[crop] * 10 + 3
-                      for crop in self.crop_ids.keys()}
         self.fsa_yields = get_fsa_yields()
         self.mya_prices = get_mya_prices()
         self.ref_prices = get_ref_prices()
@@ -53,6 +53,13 @@ class GovPmt(Analysis):
         # Instead co_tayields is used directly.
         self.tyields = get_tyields()
         self.tayields = get_tayields()
+        self.counties = get_counties()
+        self.practices = ((Prac.IRR, Prac.NONIRR)
+                          if self.counties[str(self.county)] == 1 else
+                          (Prac.ALL,))
+        self.codes = {crop: {prac: self.county * 1000 + self.crop_ids[crop] * 10 + prac
+                             for prac in self.practices}
+                      for crop in self.crop_ids.keys()}
 
     # Government Payment Totals
     # -------------------------
@@ -79,18 +86,19 @@ class GovPmt(Analysis):
         Government Payments AB56: Sensitized, pre-sequestration
         government program payment total
         """
-        return sum([self.prog_pmt_pre_sequest_crop(crop, pf, yf)
-                    for crop in [Crop.CORN, Crop.SOY, Crop.WHEAT]])
+        return sum([self.prog_pmt_pre_sequest_crop(crop, prac, pf, yf)
+                    for crop in [Crop.CORN, Crop.SOY, Crop.WHEAT]
+                    for prac in self.practices])
 
     @crop_in(Crop.CORN, Crop.SOY, Crop.WHEAT)
-    def prog_pmt_pre_sequest_crop(self, crop, pf=1, yf=1):
+    def prog_pmt_pre_sequest_crop(self, crop, prac, pf=1, yf=1):
         """
         Government Payments Y56:AA56: Sensitized pre-sequestration payment
         for the selected program and specified crop.
         """
-        return (self.arc_pmt_pre_sequest(crop, pf, yf)
+        return (self.arc_pmt_pre_sequest(crop, prac, pf, yf)
                 if self.program[crop] == Prog.ARC_CO else
-                self.plc_pmt_pre_sequest(crop, pf))
+                self.plc_pmt_pre_sequest(crop, prac, pf))
 
     @crop_in(Crop.CORN, Crop.SOY, Crop.WHEAT)
     def mya_prices_2yr_lag(self, crop):
@@ -104,23 +112,24 @@ class GovPmt(Analysis):
     # PLC
     # ---
     @crop_in(Crop.CORN, Crop.SOY, Crop.WHEAT)
-    def plc_pmt_pre_sequest(self, crop, pf=1):
+    def plc_pmt_pre_sequest(self, crop, prac, pf=1):
         """
         Price-sensitized pre-sequestration PLC payment for the crop.
         """
-        return self.plc_payment_per_base_acre(crop, pf) * self.farm_base_acres[crop]
+        return (self.plc_payment_per_base_acre(crop, prac, pf) *
+                self.farm_base_acres[crop][prac])
 
     @crop_in(Crop.CORN, Crop.SOY, Crop.WHEAT)
-    def plc_payment_per_base_acre(self, crop, pf=1):
+    def plc_payment_per_base_acre(self, crop, prac, pf=1):
         """
         H76
         Government Payments Y19:AA19: Price-sensitized helper for plc_payment rate
         for the crop
         """
         return (self.plc_payment_rate(crop, pf) *
-                self.base_to_net_pmt_frac * self.plc_yield(crop))
+                self.base_to_net_pmt_frac * self.plc_yield(crop, prac))
 
-    def plc_yield(self, crop):
+    def plc_yield(self, crop, prac):
         """
         (H76): If the farmer has provided this info, use it;
         otherwise use the default yield.
@@ -132,8 +141,8 @@ class GovPmt(Analysis):
         """
         idx_2013 = 0
         idx = idx_2013 + self.crop_year - 2013 - 7
-        return (self.farm_plc_yield[crop] if hasattr(self, 'farm_plc_yield') else
-                round(safe_avg(self.fsa_yields[self.codes[crop]][idx:idx+5]), 0))
+        return (self.farm_plc_yield[crop][prac] if hasattr(self, 'farm_plc_yield') else
+                round(safe_avg(self.fsa_yields[self.codes[crop][prac]][idx:idx+5]), 0))
 
     @crop_in(Crop.CORN, Crop.SOY, Crop.WHEAT)
     def plc_payment_rate(self, crop, pf=1):
@@ -143,7 +152,8 @@ class GovPmt(Analysis):
         for the crop
         """
         return max(0, self.effective_reference_price(crop) -
-                   max(self.cur_year_mya_price(crop, pf), self.loan_rate(crop)))
+                   max(self.cur_year_mya_price(crop, pf),
+                       self.loan_rate(crop)))
 
     @crop_in(Crop.CORN, Crop.SOY, Crop.WHEAT)
     def effective_reference_price(self, crop):
@@ -191,44 +201,46 @@ class GovPmt(Analysis):
     # ARC-CO
     # ------
     @crop_in(Crop.CORN, Crop.SOY, Crop.WHEAT)
-    def arc_pmt_pre_sequest(self, crop, pf=1, yf=1):
+    def arc_pmt_pre_sequest(self, crop, prac, pf=1, yf=1):
         """
         Government Payments Y48:AA48: Sensitized ARC payment pre-sequestration
         for the crop.
         """
-        return self.farm_base_acres[crop] * self.arc_payment_per_base_acre(crop, pf, yf)
+        return (self.farm_base_acres[crop][prac] *
+                self.arc_payment_per_base_acre(crop, prac, pf, yf))
 
     @crop_in(Crop.CORN, Crop.SOY, Crop.WHEAT)
-    def arc_payment_per_base_acre(self, crop, pf=1, yf=1):
+    def arc_payment_per_base_acre(self, crop, prac, pf=1, yf=1):
         """
         H16
         """
         return round(self.base_to_net_pmt_frac *
-                     min(max(0, self.guarantee(crop) -
-                             self.county_revenue(crop, pf)),
-                         self.cap_on_bmk_county_rev * self.benchmark_yield(crop) *
+                     min(max(0, self.guarantee(crop, prac) -
+                             self.county_revenue(crop, prac, pf)),
+                         self.cap_on_bmk_county_rev * self.benchmark_yield(crop, prac) *
                          self.benchmark_price(crop)), 2)
 
     @crop_in(Crop.CORN, Crop.SOY, Crop.WHEAT)
-    def guarantee(self, crop):
+    def guarantee(self, crop, prac):
         """
         M16
         """
-        return round(self.guar_rev_frac * self.benchmark_yield(crop) *
+        return round(self.guar_rev_frac * self.benchmark_yield(crop, prac) *
                      self.benchmark_price(crop), 2)
 
     @crop_in(Crop.CORN, Crop.SOY, Crop.WHEAT)
-    def county_revenue(self, crop, pf=1):
+    def county_revenue(self, crop, prac, pf=1):
         """
         N16: County Revenue
         TODO: I don't think we should sensitize county_yield, since county_yield is just
         benchmark yield, which is trend-adjusted, but with a two year lag, and hence
         doesn't include the current crop year's actual or projected yield.
         """
-        return round(self.county_yield(crop) * self.mya_price(crop, pf), 2)
+        return round(self.county_yield(crop, prac) *
+                     self.mya_price(crop, pf), 2)
 
     @crop_in(Crop.CORN, Crop.SOY, Crop.WHEAT)
-    def benchmark_yield(self, crop):
+    def benchmark_yield(self, crop, prac):
         """
         K16: Olympic average over first five values of set of six, where there is a
         one year gap between the last of the five and the sixth.
@@ -243,9 +255,10 @@ class GovPmt(Analysis):
         years_in_group, group1_year = 6, 2019
         group = self.crop_year - group1_year
         start = years_in_group * group
-        return round(olympic_avg(self.co_tayields[self.codes[crop]][start:start+5]), 2)
+        return round(olympic_avg(
+            self.co_tayields[self.codes[crop][prac]][start:start+5]), 2)
 
-    def alt_co_tayields(self, crop):
+    def alt_co_tayields(self, crop, prac):
         """
         Try to compute co_tayields 5-years values based on headings in Table 3.
         TODO: Column D heading 'County Yield' is potentially confusing.  These are
@@ -259,14 +272,15 @@ class GovPmt(Analysis):
         """
         idx2019 = 0
         idx = idx2019 + self.crop_year-2019
-        tayield = get_tayields()[self.codes[crop]][idx]
+        tayield = get_tayields()[self.codes[crop][prac]][idx]
         # Not the same as self.county_yield(crop), comes from RMA e.g. Madison Cty
         idx2013 = 0
         start = idx2013 + 2017-2013
-        county_yields = np.array(self.fsa_yields[self.codes[crop]][start: start+5])
+        county_yields = np.array(
+            self.fsa_yields[self.codes[crop][prac]][start: start+5])
         idx2013 = 0
         start = idx2013 + 2017-2013
-        tyields = np.array(get_tyields()[self.codes[crop]][start:start+5])
+        tyields = np.array(get_tyields()[self.codes[crop][prac]][start:start+5])
         nyears_trend = np.arange(6, 1, -1)
         trend_yield_adj = nyears_trend * tayield
         co_tayield = np.maximum(county_yields, tyields) + trend_yield_adj
@@ -284,7 +298,7 @@ class GovPmt(Analysis):
                        self.effective_reference_price(crop))), 2)
 
     @crop_in(Crop.CORN, Crop.SOY, Crop.WHEAT)
-    def county_yield(self, crop):
+    def county_yield(self, crop, prac):
         """
         D16
         TODO: According to footnote 1. in Calculation of PLC and ARC-CO payments, the
@@ -294,9 +308,9 @@ class GovPmt(Analysis):
         idx2013 = 0
         idx2018 = idx2013 + 2018-2013
 
-        return (self.fsa_yields[self.codes[crop]][idx2018]
+        return (self.fsa_yields[self.codes[crop][prac]][idx2018]
                 if self.crop_year == 2019 else
-                self.benchmark_yield(crop))
+                self.benchmark_yield(crop, prac))
 
     @crop_in(Crop.CORN, Crop.SOY, Crop.WHEAT)
     def mya_price(self, crop, pf=1):
@@ -330,6 +344,11 @@ def load(filename, processor, **kwargs):
         items = (line.split() for line in contents.strip().split('\n'))
         data = processor(items, **kwargs)
     return data
+
+
+def special_counties(items):
+    return {f'{int(stcode):02}{int(ctycode):03}': irrig
+            for stcode, ctycode, _, _, irrig in items}
 
 
 def int_key_float_tuple(items):
@@ -368,6 +387,10 @@ def get_tayields():
     # Note: many missing and #N/A values are present
     # TA columns: code, 2019 taYield, 2020 taYield, ..., 2023 taYield
     return load('TA', int_key_float_tuple)
+
+
+def get_counties():
+    return load('counties', special_counties)
 
 
 def safe_avg(nums):

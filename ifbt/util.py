@@ -13,6 +13,7 @@ Unit = IntEnum('Unit', ['AREA', 'ENT'], start=0)
 Prot = IntEnum('Prot', ['RP', 'RPHPE', 'YO'], start=0)
 Lvl = IntEnum('Lvl', ['NONE', 'DFLT'], start=0)
 Prog = IntEnum('Prog', ['PLC', 'ARC_CO'], start=0)
+Prac = IntEnum('Prac', ['IRR', 'NONIRR', 'ALL'], start=1)
 
 
 def crop_in(*crops):

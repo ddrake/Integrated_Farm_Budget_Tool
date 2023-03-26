@@ -654,7 +654,7 @@ class Premiums:
         """
         Construct an integer code used to key in some tabular data
         """
-        cty = self.counties[county] if isinstance(county, str) else county
+        cty = self.counties[county][0] if isinstance(county, str) else county
         crp = self.crops[crop] if isinstance(crop, str) else crop
         crptype = self.croptypes[croptype] if isinstance(croptype, str) else croptype
         prac = self.practices[practice] if isinstance(practice, str) else practice
@@ -664,7 +664,7 @@ class Premiums:
         """
         Construct a COUNTY integer code used to key in some tabular data
         """
-        cty = self.counties[county] if isinstance(county, str) else county
+        cty = self.counties[county][0] if isinstance(county, str) else county
         crp = self.crops[crop] if isinstance(crop, str) else crop
         crptype = self.croptypes[croptype] if isinstance(croptype, str) else croptype
         prac = self.cpractices[practice] if isinstance(practice, str) else practice
@@ -812,8 +812,8 @@ def int_key_float_array(items, shape=None, rest=None):
 
 
 def special_counties(items):
-    return {f'{cty}, {st}': f'{int(stcode):02}{int(ctycode):03}'
-            for stcode, ctycode, cty, st in items}
+    return {f'{cty}, {st}': (f'{int(stcode):02}{int(ctycode):03}', irrig)
+            for stcode, ctycode, cty, st, irrig in items}
 
 
 def special_high_risk(items):

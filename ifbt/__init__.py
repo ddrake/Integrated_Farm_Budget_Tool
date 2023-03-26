@@ -1,5 +1,5 @@
 __all__ = ['Cost', 'Analysis', 'CashFlow', 'GovPmt', 'CropIns', 'Indemnity', 'Revenue',
-           'Crop', 'Prog', 'Ins', 'Unit', 'Prot', 'Lvl', 'crop_in', 'Premiums']
+           'Crop', 'Prog', 'Ins', 'Unit', 'Prot', 'Lvl', 'Prac', 'crop_in', 'Premiums']
 
 from .premiums import Premiums
 from .analysis import Analysis
@@ -9,4 +9,4 @@ from .indemnity import Indemnity
 from .gov_pmt import GovPmt
 from .cash_flow import CashFlow
 from .crop_ins import CropIns
-from .util import Crop, crop_in, Ins, Unit, Prot, Lvl, Prog
+from .util import Crop, crop_in, Ins, Unit, Prot, Lvl, Prog, Prac
