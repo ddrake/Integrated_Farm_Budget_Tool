@@ -9,17 +9,13 @@ from .util import Crop, Unit, Lvl
 
 class Indemnity(Analysis):
     """
-    DO NOT construct an instance of this class.  Instead get an instance of one
-    of the six concrete derived classes
+    Class encapsulating crop insurance indemnitiy payments
     """
     DATA_FILES = 'farm_data crop_ins_data'
 
     def __init__(self, *args, **kwargs):
         """
-        Initialize the base class, then set some useful attributes.
-        The 'kind' argument must be one of 'base', 'eco' or 'sco' and should
-        correspond to the kind of Indemnity the instance represents.
-        The 'crop' argument allows an Indemnity instance to know its crop.
+        Initialize the class, setting some useful attributes.
         """
         super().__init__(*args, **kwargs)
         self.crop = None  # set when one of the main methods is called

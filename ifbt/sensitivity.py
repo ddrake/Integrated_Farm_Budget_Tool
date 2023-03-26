@@ -5,9 +5,9 @@ Generate a table of values from two sensitivity parameters
 """
 from tabulate import tabulate
 
-from ifbt import Crop, Cost, GovPmt, Revenue, CropIns, CashFlow, Premiums
+from ifbt import Crop, Cost, GovPmt, Revenue, CropIns, CashFlow, Premium
 
-prem = Premiums()
+prem = Premium()
 
 
 yield_pcts = "40 55 70 80 90 95 100 105".split()
@@ -94,7 +94,7 @@ def sens_crop_ins(crop_year, overrides=None):
     Optionally override some textfile settings by passing a dict.
     """
     c = CropIns(crop_year, overrides=overrides, prem=prem)
-    show_table(c, c.total_net_crop_ins_indemnity, 'CROP INS REV')
+    show_table(c, c.total_net_indemnity, 'CROP INS REV')
 
 
 def sens_cash_flow(crop_year, overrides=None):

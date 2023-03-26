@@ -11,9 +11,9 @@ from datetime import datetime
 import reprlib
 from sys import argv
 
-from ifbt import Crop, Ins, Unit, Prot, Lvl, Prog, CashFlow, Premiums
+from ifbt import Crop, Ins, Unit, Prot, Lvl, Prog, CashFlow, Premium
 
-p = Premiums()
+p = Premium()
 
 INS = ['No', 'Yes']
 PROG = ['PLC', 'ARC_CO']
@@ -56,13 +56,13 @@ class Scenario(object):
         for i, c in enumerate(self.choices):
             gp_ovr = {'program': {Crop.CORN: c.prog_c, Crop.SOY: c.prog_s,
                                   Crop.WHEAT: c.prog_w}}
-            ci_ovr = {'insure': {Crop.CORN: c.ins_c, Crop.SOY: c.ins_s},
-                      'unit': {Crop.CORN: c.unit_c, Crop.SOY: c.unit_s},
-                      'protection': {Crop.CORN: c.prot_c, Crop.SOY: c.prot_s},
-                      'level': {Crop.CORN: c.lvl_c, Crop.SOY: c.lvl_s},
-                      'sco_level': {Crop.CORN: c.sco_lvl_c, Crop.SOY: c.sco_lvl_s},
-                      'eco_level': {Crop.CORN: c.eco_lvl_c, Crop.SOY: c.eco_lvl_s},
-                      'selected_pmt_factor': {Crop.CORN: 1, Crop.SOY: 1}, }
+            ci_ovr = {'insure': {Crop.CORN: c.ins_c, Crop.FULL_SOY: c.ins_s},
+                      'unit': {Crop.CORN: c.unit_c, Crop.FULL_SOY: c.unit_s},
+                      'protection': {Crop.CORN: c.prot_c, Crop.FULL_SOY: c.prot_s},
+                      'level': {Crop.CORN: c.lvl_c, Crop.FULL_SOY: c.lvl_s},
+                      'sco_level': {Crop.CORN: c.sco_lvl_c, Crop.FULL_SOY: c.sco_lvl_s},
+                      'eco_level': {Crop.CORN: c.eco_lvl_c, Crop.FULL_SOY: c.eco_lvl_s},
+                      'prot_factor': {Crop.CORN: 1, Crop.FULL_SOY: 1}, }
 
             cf = CashFlow(2023, crop_ins_overrides=ci_ovr, gov_pmt_overrides=gp_ovr,
                           prem=p)

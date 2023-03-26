@@ -1,6 +1,6 @@
 import pytest
 
-from ifbt import CropIns, Premiums, Crop, Ins, Unit, Prot, Lvl
+from ifbt import CropIns, Premium, Crop, Ins, Unit, Prot, Lvl
 
 # Note: tests may fail if changes are made to the data files
 # 2023_crop_ins_indemnity.txt or 2023_crop_ins_premiums.txt
@@ -9,7 +9,7 @@ from ifbt import CropIns, Premiums, Crop, Ins, Unit, Prot, Lvl
 
 TOL = .01
 
-prem = Premiums()
+prem = Premium()
 
 
 def test_total_crop_ins():

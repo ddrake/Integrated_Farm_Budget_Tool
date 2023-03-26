@@ -21,8 +21,8 @@ class CropIns(Analysis):
     settings in the data files(s) do not cause tests to fail.
 
     Sample usage in a python or ipython console:
-      from ifbt import Premiums, CropIns
-      prem = Premiums()
+      from ifbt import Premium, CropIns
+      prem = Premium()
       c = CropIns(2023, prem=prem)
       c.total_cost(pf=.7)        # yield factor defaults to 1
       c.total_cost(pf=.7, yf=.8) # specifies both price and yield factors
@@ -34,7 +34,7 @@ class CropIns(Analysis):
         for crop in [Crop.CORN, Crop.FULL_SOY, Crop.DC_SOY, Crop.WHEAT]:
             self._validate_settings(crop)
         if 'prem' not in kwargs:
-            raise ValueError("CropIns constructor needs a Premiums instance")
+            raise ValueError("CropIns constructor needs a Premium instance")
         self.prem = kwargs['prem']
         self.indem = Indemnity(self.crop_year)
         # cached arrays

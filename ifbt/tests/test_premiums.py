@@ -1,6 +1,6 @@
 import numpy as np
 import pytest
-from ifbt import Premiums
+from ifbt import Premium
 
 TOL = .01
 # Note: 'expected' arrays marked 'verified' have been checked against excel
@@ -17,7 +17,7 @@ TOL = .01
 # Note: arc premiums use the 120% protection factor to match an Excel column.
 
 # This loads all data from textfiles (expensive), so we only do it once!
-p = Premiums()
+p = Premium()
 
 
 def test_with_default_values():

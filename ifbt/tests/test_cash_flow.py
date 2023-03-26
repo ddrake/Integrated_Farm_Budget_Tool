@@ -1,9 +1,9 @@
-from ifbt import CashFlow, Premiums
+from ifbt import CashFlow, Premium
 
 # Note: tests may fail if changes are made to the data textfile,
 # but changes to pricing for uncontracted grain and cash_flow_wheat are OK.
 
-p = Premiums()
+p = Premium()
 
 
 def test_total_cash_flow():

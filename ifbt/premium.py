@@ -11,7 +11,7 @@ np.set_printoptions(precision=6)
 np.set_printoptions(suppress=True)
 
 
-class Premiums:
+class Premium:
     """
     Class for computing Enterprise and ARC premiums for RP, RP-HPE, YO
     """
