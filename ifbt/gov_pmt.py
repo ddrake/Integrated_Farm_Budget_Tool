@@ -16,19 +16,20 @@ from .util import crop_in, Crop, Prog, Prac
 
 DATADIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data')
 
-# practices
-IRR = 1
-NONIRR = 2
-ALL = 3
-
 
 class GovPmt(Analysis):
     """
     Computes total estimated cost for the farm crop year
     corresponding to arbitrary sensitivity factors for price and yield.
     TODO: Do we need to support ARC-IC?
+    TODO: If a farmer has e.g. irrigated and non-irrigated full and dc
+    soybeans, in two counties, she has to maintain separate base acres and plc yields
+    for all 16 combinations -- right? If not, how can she use the spreadsheet tools?
+    Gov payment doesn't distinguish full and dc, but crop insurance does.
+    Does this give the farmer any flexibility, or must she put all soybean acres in
+    the same program, unit, protection, level, option, tause, etc..?
 
-    User inputs are base_acres[crop] and plc_yield[crop]
+    User inputs are base_acres[crop][prac] and plc_yield[crop][prac]
 
     Sample usage in a python or ipython console:
       from ifbt import GovPmt
@@ -129,9 +130,10 @@ class GovPmt(Analysis):
         return (self.plc_payment_rate(crop, pf) *
                 self.base_to_net_pmt_frac * self.plc_yield(crop, prac))
 
+    @crop_in(Crop.CORN, Crop.SOY, Crop.WHEAT)
     def plc_yield(self, crop, prac):
         """
-        (H76): If the farmer has provided this info, use it;
+        (H76): If the farmer has provided this info (plc_yield[crop][prac]), use it;
         otherwise use the default yield.
         TODO: I think there is a bug in Excel; they are multiplying in the
         base_to_net_pmt_frac (0.85) twice!  First, it is multiplied into the plc_yield
@@ -192,7 +194,8 @@ class GovPmt(Analysis):
         H72: Current year marketing price.
         TODO: It seems to me that the price factor should have a smaller effect on this
         price, the farther we are into the marketing year, e.g. if we are in month 9
-        of the marketing year, we could do (9/12*mya_price + 3/12*harvest_futures).
+        of the marketing year, we could do:
+        (9/12*mya_price + 3/12*offset_harvest_futures*pf).
         """
         first_year = 2013
         idx = self.crop_year - first_year
@@ -247,10 +250,12 @@ class GovPmt(Analysis):
         TODO: The spreadsheet column names in Table 3. are misleading.  They do not
         accurately represent the corresponding formulas.  They seem to be artifacts
         from an earlier version, in which the Trend-Adjusted ARC-CO yields were
-        calculated in that table, from values in TA and Tyields but, these yields are
-        simply read from coTAyields.  If we think that the coTAyields sheet is computed
-        by U of I from the TA and Tyields tables, we could compute coTAyields ourselves.
-        However, TA has missing values for many years/counties.
+        calculated in that table, from values in TA and Tyields.  Now, these yields are
+        simply read from coTAyields and the preceding columns are values trying to
+        indicate how they are computed.  If we think that the coTAyields sheet is
+        computed by U of I from the TA and Tyields tables, we could compute coTAyields
+        ourselves.  However, TA has missing values for many years/counties and some of
+        the yields do not match fsa yields (see alt_co_tayields)
         """
         years_in_group, group1_year = 6, 2019
         group = self.crop_year - group1_year
@@ -258,14 +263,17 @@ class GovPmt(Analysis):
         return round(olympic_avg(
             self.co_tayields[self.codes[crop][prac]][start:start+5]), 2)
 
+    @crop_in(Crop.CORN, Crop.SOY, Crop.WHEAT)
     def alt_co_tayields(self, crop, prac):
         """
         Try to compute co_tayields 5-years values based on headings in Table 3.
-        TODO: Column D heading 'County Yield' is potentially confusing.  These are
-        simply FSA yields, except for a couple years that are different.  The footnote
-        says they come from RMA, which seems odd.
+        TODO: Column D heading 'County Yield' is potentially confusing.  These look like
+        FSA yields, except for a couple years that are different.  The footnote
+        says they come from RMA, which, if true, may be the key.
         TODO: Column E heading states 0.85 of T-yield, but no factor is applied. Is the
-        factor already applied to all values on the Tyields sheet?
+        factor already applied to all values on the Tyields sheet?  Or perhaps omitted
+        by accident?  Maybe they intended to multiply in the factor in BT2:BX2, but
+        duplicated it in X2 by mistake (see above)
         TODO: Values match for Madison Cty. corn except for 2018 and 2021
               Values match for Madison Cty. soy except for same two years.
               Values match for Madison Cty. wheat except for 2017, 2018, and 2021
@@ -393,10 +401,14 @@ def get_counties():
     return load('counties', special_counties)
 
 
+# Averaging helpers
+# -----------------
 def safe_avg(nums):
     """
     Given some numbers, which may contain N/A or missing values represented by -1,
     return the average of the postive values or raise an error if they are all missing.
+    TODO:  For our purposes, I think an approximate average or olympic average
+    is better than refusing to compute anything.
     """
     if -1 in nums:
         clean = [n for n in nums if n != -1]

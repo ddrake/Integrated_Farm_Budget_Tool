@@ -116,7 +116,7 @@ class TextfileAttributeLoader(object):
     Handles loading attribute data from textfiles.
     """
     CROPS = 'corn soy wheat soy_fs soy_dc'.split()
-    PRACS = 'na irr nonirr all'.split()
+    PRACS = 'na irr ni all'.split()
     UNITS = 'area ent'.split()
     PROTS = 'rp rphpe yo'.split()
     INS_CROPS = 'corn wheat soy_fs soy_dc'.split()
