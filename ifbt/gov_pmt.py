@@ -22,9 +22,9 @@ class GovPmt(Analysis):
     Computes total estimated cost for the farm crop year
     corresponding to arbitrary sensitivity factors for price and yield.
     TODO: Do we need to support ARC-IC?
-    TODO: If a farmer has e.g. irrigated and non-irrigated full and dc
-    soybeans, in two counties, she has to maintain separate base acres and plc yields
-    for all 16 combinations -- right? If not, how can she use the spreadsheet tools?
+    TODO: If a farmer has e.g. irrigated and non-irrigated, full and dc soybeans
+    in two counties, she has to maintain separate base acres and plc yields
+    for all 8 combinations -- right? If not, how can she use the spreadsheet tools?
     Gov payment doesn't distinguish full and dc, but crop insurance does.
     Does this give the farmer any flexibility, or must she put all soybean acres in
     the same program, unit, protection, level, option, tause, etc..?
