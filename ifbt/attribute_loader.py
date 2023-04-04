@@ -122,7 +122,6 @@ class TextfileAttributeLoader(object):
     INS_CROPS = 'corn wheat soy_fs soy_dc'.split()
     PREM_KINDS = 'premium sco_premium eco_premium'.split()
     CROP_PAT = f'^(.*)_({"|".join(CROPS)})$'
-    CROP_PRAC_PAT = f'^(.*)_({"|".join(CROPS)})_({"|".join(PRACS)})$'
     PREM_PATS = [
             (f'^({"|".join(UNITS)})_({"|".join(PROTS)})_({"|".join(INS_CROPS)})' +
              f'_({"|".join(str(i) for i in range(50, 91, 5))})$'),
@@ -147,8 +146,7 @@ class TextfileAttributeLoader(object):
             load_key_value_pairs(inst.crop_year, prem_filenames))
         crop_pairs, simple_pairs = self.group_values_crop(
             load_key_value_pairs(inst.crop_year, std_filenames))
-        crop_prac_pairs, simple_pairs = self.group_values_crop_prac(simple_pairs)
-        pairs = prem_pairs + crop_pairs + crop_prac_pairs + simple_pairs
+        pairs = prem_pairs + crop_pairs + simple_pairs
         for k, v in pairs:
             setattr(inst, k, v)
 
@@ -178,35 +176,6 @@ class TextfileAttributeLoader(object):
         groups = {}
         for (name, crop), v in with_crop:
             groups.setdefault(name, {})[Crop(self.CROPS.index(crop))] = v
-        return list(groups.items())
-
-    def group_values_crop_prac(self, pairs):
-        """
-        Given an iterable of key/value pairs, with string keys and Number values,
-        return two lists of key/value pairs, one with dict values with dict key crop,
-        the other with the original number values.
-        """
-        with_crop = []
-        simple = []
-        for k, v in pairs:
-            m = re.match(self.CROP_PRAC_PAT, k)
-            if m:
-                with_crop.append((m.groups(), v))
-            else:
-                simple.append((k, v))
-        return self.group_crop_prac(with_crop), simple
-
-    def group_crop_prac(self, with_crop):
-        """
-        Given a list of crop-specific, ungrouped key/value pairs, use a temporary dict
-        (groups) to generate a new, shorter list of key/value pairs where each key
-        is the original key with crop name removed, and the corresponding value
-        is a dict with key Crop and crop-specific values.
-        """
-        groups = defaultdict(dict)
-        for (name, crop, prac), v in with_crop:
-            groups[name][Crop(self.CROPS.index(crop))] = defaultdict(dict)
-            groups[name][Crop(self.CROPS.index(crop))][Prac(self.PRACS.index(prac))] = v
         return list(groups.items())
 
     def group_values_ins_prem(self, pairs):
