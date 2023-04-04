@@ -616,7 +616,7 @@ class Premium:
             'IL': '17', 'AL': '01', 'AR': '05', 'FL': '12', 'GA': '13', 'IN': '18',
             'IA': '19', 'KS': '20', 'KY': '21', 'LA': '22', 'MD': '24', 'MI': '26',
             'MN': '27', 'MS': '28', 'MO': '29', 'NE': '31', 'NC': '37', 'ND': '38',
-            'OH': '39', 'PA': '41', 'SC': '45', 'SD': '46', 'TN': '47', 'VA': '51',
+            'OH': '39', 'PA': '42', 'SC': '45', 'SD': '46', 'TN': '47', 'VA': '51',
             'WV': '54', 'WI': '55', 'OK': '40', 'TX': '48'}
 
         self.counties = get_counties()
@@ -654,7 +654,7 @@ class Premium:
         """
         Construct an integer code used to key in some tabular data
         """
-        cty = self.counties[county][0] if isinstance(county, str) else county
+        cty = self.counties[county] if isinstance(county, str) else county
         crp = self.crops[crop] if isinstance(crop, str) else crop
         crptype = self.croptypes[croptype] if isinstance(croptype, str) else croptype
         prac = self.practices[practice] if isinstance(practice, str) else practice
@@ -664,7 +664,7 @@ class Premium:
         """
         Construct a COUNTY integer code used to key in some tabular data
         """
-        cty = self.counties[county][0] if isinstance(county, str) else county
+        cty = self.counties[county] if isinstance(county, str) else county
         crp = self.crops[crop] if isinstance(crop, str) else crop
         crptype = self.croptypes[croptype] if isinstance(croptype, str) else croptype
         prac = self.cpractices[practice] if isinstance(practice, str) else practice
@@ -812,8 +812,8 @@ def int_key_float_array(items, shape=None, rest=None):
 
 
 def special_counties(items):
-    return {f'{cty}, {st}': (f'{int(stcode):02}{int(ctycode):03}', irrig)
-            for stcode, ctycode, cty, st, irrig in items}
+    return {f'{cty}, {st}': (f'{int(stcode):02}{int(ctycode):03}')
+            for stcode, ctycode, cty, st in items}
 
 
 def special_high_risk(items):
