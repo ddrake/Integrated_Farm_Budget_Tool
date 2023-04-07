@@ -70,8 +70,8 @@ class Premium:
         self.rtype = None
 
         # lookup key codes
-        self.code = None       # code for state/county/crop/etc..
-        self.fcode = None      # code with decimal suffix for risk
+        self.code = None       # int code for state/county/crop/etc..
+        self.fcode = None      # int code with one extra digit for risk
         self.ccode = None      # county code for state/county/crop/etc..
         self.acode = None      # county code with decimal suffix for volatility
         # computed from revyield and mqty, stdqty, which are looked up based on
@@ -181,7 +181,7 @@ class Premium:
         """
         Set Multiplicative Factor used to scale rates for hailfire, prevplant
         """
-        hfrate, pfrate, ptrate = self.options[self.code]
+        hfrate, pfrate, ptrate = self.options[self.options_key[self.code]]
         self.multfactor = 1
         if self.hailfire > 0:
             self.multfactor *= hfrate
@@ -263,8 +263,10 @@ class Premium:
         Set and limit vector (current/prior) base rates from RMA data
         """
         refyield, refrate, exponent, fixedrate = zeros(2), zeros(2), zeros(2), zeros(2)
+
+        rkey = self.rates_key[self.code]
         (refyield[0], refrate[0], exponent[0], fixedrate[0],
-         refyield[1], refrate[1], exponent[1], fixedrate[1]) = self.rates[self.code]
+         refyield[1], refrate[1], exponent[1], fixedrate[1]) = self.rates[rkey]
 
         self.baserate = np.minimum(np.maximum(
             (self.aphyield / refyield).round(2), 0.5), 1.5)
@@ -412,7 +414,7 @@ class Premium:
 
         # codes used to key into dicts
         self.code = self.make_code(county, crop, croptype, practice)
-        self.fcode = self.code + 0.1 * (1 + self.risk)
+        self.fcode = self.code * 10 + 1 + self.risk
         self.pcode = self.make_pcode()
 
         # read price and volatility from parameters
@@ -440,6 +442,12 @@ class Premium:
         # Intermediate keys
         enterId = self.enter_id[self.code]
         betaId = self.beta_id[self.code]
+        rd_key = self.rate_diff_key[self.fcode]
+        prd_key = self.prate_diff_key[self.fcode]
+        ef_key = self.enterprise_factor_key[self.fcode]
+        pef_key = self.penterprise_factor_key[self.fcode]
+        efr_key = self.enter_factor_rev_key[self.fcode]
+        pefr_key = self.penter_factor_rev_key[self.fcode]
 
         self.premrate = zeros(2)  # Premium rates array (YP, RP/RPHPE)
         self.simloss = zeros(3)   # Simulated losses array (YP, RP, RPHPE)
@@ -448,12 +456,12 @@ class Premium:
         self.highrisk, self.rtype = ((0, 0) if self.risk == 0 else
                                      self.high_risk[str(self.code)+self.riskname])
         self.discountenter = self.discount_enter[enterId]
-        self.ratediff = array((self.rate_diff[self.fcode],
-                               self.prate_diff[self.fcode])).T
-        self.enterprisefactor = array((self.enterprise_factor[self.fcode],
-                                       self.penterprise_factor[self.fcode])).T
-        self.enterfactor_rev = array((self.enter_factor_rev[self.fcode],
-                                     self.penter_factor_rev[self.fcode])).T
+        self.ratediff = array((self.rate_diff[rd_key],
+                               self.prate_diff[prd_key])).T
+        self.enterprisefactor = array((self.enterprise_factor[ef_key],
+                                       self.penterprise_factor[pef_key])).T
+        self.enterfactor_rev = array((self.enter_factor_rev[efr_key],
+                                     self.penter_factor_rev[pefr_key])).T
         self.selected_draws = self.draws[betaId]
 
     # -----------------------
@@ -474,20 +482,24 @@ class Premium:
         self.prem_arc = zeros((5, 3))
         self.store_user_settings_arc(county, crop, practice, croptype, prot_factor)
         subsidies = (self.subsidy_grip, self.subsidy_grip, self.subsidy_grp)
-        dicts = (self.arc_rp, self.arc_rphpe, self.arc_yp)
+        if (self.acode not in self.arc_rp_key or
+                self.acode not in self.arc_rphpe_key or
+                self.ccode not in self.arc_yp_key):
+            raise ValueError('No ARC data for specified county/crop/type/practice')
+
+        dictvals = (self.arc_rp[self.arc_rp_key[self.acode]],
+                    self.arc_rphpe[self.arc_rphpe_key[self.acode]],
+                    self.arc_yp[self.arc_yp_key[self.ccode]])
         for i, subsidy in enumerate(subsidies):
-            self.compute_prem_arc(subsidy, dicts[i], i)
+            self.compute_prem_arc(subsidy, dictvals[i], i)
         return self.prem_arc
 
-    def compute_prem_arc(self, subsidy, ardict, idx):
+    def compute_prem_arc(self, subsidy, ardictval, idx):
         """
         Compute premiums for the given unit info
         """
-        code = self.acode if idx != 2 else self.ccode
-        if code not in ardict:
-            return
         rate = zeros(5)
-        self.expyield, rate[:] = ardict[code]
+        self.expyield, rate[:] = ardictval
         self.maxliab = round(self.expyield * self.aphprice * 1.2, 2)
         self.prem_arc[:, idx] = (self.maxliab * 100 * rate).round(0)
         self.prem_arc[:, idx] -= (self.prem_arc[:, idx] * subsidy).round(0)
@@ -504,8 +516,8 @@ class Premium:
         self.prot_factor = prot_factor
         # read price and volatility from parameters
         self.aphprice, self.pvol = self.parameters[self.pcode]
-        # codes used to key into dicts
-        self.acode = self.ccode + self.pvol
+        # int code used to key into dicts
+        self.acode = self.ccode * 100 + int(100 * self.pvol)
 
     # -----------------------
     # SCO PREMIUMS
@@ -518,20 +530,18 @@ class Premium:
         self.store_user_settings_sco(aphyield, tayield, tause, county,
                                      crop, practice, croptype)
 
-        keys = (self.sco_rp_key[self.ccode], self.sco_rphpe_key[self.ccode], self.ccode)
+        vals = (self.sco_rp[self.sco_rp_key[self.ccode]],
+                self.sco_rphpe[self.sco_rphpe_key[self.ccode]],
+                self.sco_yp[self.sco_yp_key[self.ccode]])
         self.prem_sco = zeros((8, 3))
-        for i, d in enumerate(zip((self.sco_rp, self.sco_rphpe, self.sco_yp), keys)):
-            self.compute_prem_sco(d, i)
+        for i, val in enumerate(vals):
+            self.compute_prem_sco(val, i)
         return self.prem_sco
 
-    def compute_prem_sco(self, rate_dict, unit):
+    def compute_prem_sco(self, rate, unit):
         """
         Compute the sco premium for the given dict and unit index
         """
-        rdict, key = rate_dict
-        if key not in rdict:
-            return
-        rate = rdict[key]
         if unit < 2:
             idx = int((self.pvol - 0.05)*100)
             rate = rate[idx, :]
@@ -629,22 +639,33 @@ class Premium:
         self.rev_counties = {v: k for k, v in self.counties.items()}
         self.enter_id = get_enter_id()
         self.beta_id = get_beta_id()
+        self.options_key = get_options_key()
         self.options = get_options()
         self.discount_enter = get_discount_enter()
+        self.rates_key = get_rates_key()
         self.rates = get_rates()
+        self.rate_diff_key = get_rate_diff_key()
         self.rate_diff = get_rate_diff()
+        self.prate_diff_key = get_prate_diff_key()
         self.prate_diff = get_prate_diff()
+        self.enterprise_factor_key = get_enterprise_factor_key()
         self.enterprise_factor = get_enterprise_factor()
+        self.penterprise_factor_key = get_penterprise_factor_key()
         self.penterprise_factor = get_penterprise_factor()
+        self.enter_factor_rev_key = get_enter_factor_rev_key()
         self.enter_factor_rev = get_enter_factor_rev()
+        self.penter_factor_rev_key = get_penter_factor_rev_key()
         self.penter_factor_rev = get_penter_factor_rev()
         self.rev_lookup = get_rev_lookup()
         self.draws = get_draws()
         self.high_risk = get_high_risk()
         self.parameters = get_parameters()
         # dicts with float key and value tuple(1, tuple(5))
+        self.arc_rp_key = get_arc_rp_key()
         self.arc_rp = get_arc_rp()
+        self.arc_rphpe_key = get_arc_rphpe_key()
         self.arc_rphpe = get_arc_rphpe()
+        self.arc_yp_key = get_arc_yp_key()
         self.arc_yp = get_arc_yp()
         # dict with key code, value array(36, 8) (ivol, cover)
         self.sco_rp_key = get_sco_rp_key()
@@ -652,6 +673,7 @@ class Premium:
         self.sco_rphpe_key = get_sco_rphpe_key()
         self.sco_rphpe = get_sco_rphpe()
         # dict with key code, value array(8) (cover)
+        self.sco_yp_key = get_sco_yp_key()
         self.sco_yp = get_sco_yp()
         # dict with key code, value array(36, 3, 2) (ivol, unit, cov)
         self.eco_key = get_eco_key()
@@ -826,7 +848,7 @@ def special_counties(items):
 
 
 def special_high_risk(items):
-    return {itm[0]+itm[1]: (float(itm[2]), float(itm[3])) for itm in items}
+    return {itm[0]+itm[1]: (float(itm[2]), int(itm[3])) for itm in items}
 
 
 def special_parameters(items):
@@ -877,32 +899,64 @@ def get_beta_id():
     return load('betaid', int_key_int_value)
 
 
+def get_options_key():
+    return load('options_key', int_key_int_value)
+
+
 def get_options():
-    return load('options', int_key_float_tuple, rest=slice(1, 4, None))
+    return load('options', int_key_float_tuple)
+
+
+def get_rates_key():
+    return load('rates_key', int_key_int_value)
 
 
 def get_rates():
     return load('rates', int_key_float_tuple)
 
 
+def get_rate_diff_key():
+    return load('rateDiff_key', int_key_int_value)
+
+
 def get_rate_diff():
     return load('rateDiff', float_key_float_tuple)
+
+
+def get_prate_diff_key():
+    return load('prateDiff_key', int_key_int_value)
 
 
 def get_prate_diff():
     return load('prateDiff', float_key_float_tuple)
 
 
+def get_enterprise_factor_key():
+    return load('enterpriseFactor_key', int_key_int_value)
+
+
 def get_enterprise_factor():
     return load('enterpriseFactor', float_key_float_tuple)
+
+
+def get_penterprise_factor_key():
+    return load('penterpriseFactor_key', int_key_int_value)
 
 
 def get_penterprise_factor():
     return load('penterpriseFactor', float_key_float_tuple)
 
 
+def get_enter_factor_rev_key():
+    return load('enterFactorRev_key', int_key_int_value)
+
+
 def get_enter_factor_rev():
     return load('enterFactorRev', float_key_float_tuple)
+
+
+def get_penter_factor_rev_key():
+    return load('pEnterFactorRev_key', int_key_int_value)
 
 
 def get_penter_factor_rev():
@@ -933,17 +987,29 @@ def get_parameters():
     return load('parameters', special_parameters)
 
 
+def get_arc_rp_key():
+    return load('griphr_key', int_key_int_value)
+
+
 def get_arc_rp():
     return load('griphr', float_pair_float_float_tuple)
+
+
+def get_arc_rphpe_key():
+    return load('grip_key', int_key_int_value)
 
 
 def get_arc_rphpe():
     return load('grip', float_pair_float_float_tuple)
 
 
+def get_arc_yp_key():
+    return load('grp_key', int_key_int_value)
+
+
 def get_arc_yp():
     """
-    The second column in the table is 65 coverage, which is not used
+    The first rate column is 65 coverage, which is not used.
     """
     return load('grp', int_pair_float_float_tuple, rest=slice(3, None, None))
 
@@ -964,8 +1030,12 @@ def get_sco_rphpe():
     return load('scoArpw', int_key_float_array, shape=(36, 8))
 
 
+def get_sco_yp_key():
+    return load('scoYp_key', int_key_int_value)
+
+
 def get_sco_yp():
-    return load('scoYp', int_key_float_array, rest=slice(2, None, None))
+    return load('scoYp', int_key_float_array)
 
 
 def get_eco_key():

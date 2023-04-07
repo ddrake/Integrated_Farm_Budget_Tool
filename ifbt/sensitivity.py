@@ -5,7 +5,7 @@ Generate a table of values from two sensitivity parameters
 """
 from tabulate import tabulate
 
-from ifbt import Crop, Cost, GovPmt, Revenue, CropIns, CashFlow, Premium
+from ifbt import Crop, GovPmt, Revenue, CropIns, CashFlow, Premium
 
 prem = Premium()
 
@@ -66,17 +66,8 @@ def sens_revenue(crop_year, overrides=None):
     Display a revenue sensitivity table for the specified crop year
     Optionally override some textfile settings by passing a dict.
     """
-    r = Revenue(crop_year, overrides=overrides)
-    show_table(r, r.total_revenue, 'REVENUE')
-
-
-def sens_cost(crop_year, overrides=None):
-    """
-    Display a cost sensitivity table for the specified crop year
-    Optionally override some textfile settings by passing a dict.
-    """
-    c = Cost(crop_year, overrides=overrides)
-    show_table(c, c.total_cost, 'COST', takes_pf=False)
+    r = Revenue(crop_year, overrides=overrides, prem=prem)
+    show_table(r, r.gross_revenue, 'REVENUE')
 
 
 def sens_gov_pmt(crop_year, overrides=None):

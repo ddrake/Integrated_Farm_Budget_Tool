@@ -249,15 +249,9 @@ def test_300_acres_wheat_champaign():
 
     assert np.all((prem - expected) == pytest.approx(0, TOL)), "values don't all match"
 
-    prem = p.compute_prems_arc(**settings_arc)
-    print(prem)
-
-    expected = np.array(
-        [[0., 0., 0., 0., 0.],
-         [0., 0., 0., 0., 0.],
-         [0., 0., 0., 0., 0.]]).T
-
-    assert np.all((prem - expected) == pytest.approx(0, TOL)), "values don't all match"
+    # Note: There is no ARC data for wheat for this county.
+    with pytest.raises(ValueError):
+        prem = p.compute_prems_arc(**settings_arc)
 
     prem = p.compute_prems_sco(**settings_opt)
     print(prem)
