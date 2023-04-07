@@ -465,6 +465,12 @@ class Premium:
         """
         Get values for each area type and level 70, 75, ..., 90
         """
+
+        county = int(self.counties[county]) if isinstance(county, str) else county
+        state = self.rev_states[f'{county:02d}'[:-3]]
+        if state in 'AL FL PA VA WV GA'.split():
+            raise ValueError(f'Cannot calculate ARC premiums for {state}.')
+
         self.prem_arc = zeros((5, 3))
         self.store_user_settings_arc(county, crop, practice, croptype, prot_factor)
         subsidies = (self.subsidy_grip, self.subsidy_grip, self.subsidy_grp)
@@ -611,15 +617,16 @@ class Premium:
                            'Irrigated': 3}
 
         self.risk_classes = {'None': 0, 'AAA': 1, 'BBB': 2, 'CCC': 3, 'DDD': 4}
-        self.rev_risk_classes = {0: 'None', 1: 'AAA', 2: 'BBB', 3: 'CCC', 4: 'DDD'}
+        self.rev_risk_classes = {v: k for k, v in self.risk_classes.items()}
         self.states = {
             'IL': '17', 'AL': '01', 'AR': '05', 'FL': '12', 'GA': '13', 'IN': '18',
             'IA': '19', 'KS': '20', 'KY': '21', 'LA': '22', 'MD': '24', 'MI': '26',
             'MN': '27', 'MS': '28', 'MO': '29', 'NE': '31', 'NC': '37', 'ND': '38',
             'OH': '39', 'PA': '42', 'SC': '45', 'SD': '46', 'TN': '47', 'VA': '51',
             'WV': '54', 'WI': '55', 'OK': '40', 'TX': '48'}
-
+        self.rev_states = {v: k for k, v in self.states.items()}
         self.counties = get_counties()
+        self.rev_counties = {v: k for k, v in self.counties.items()}
         self.enter_id = get_enter_id()
         self.beta_id = get_beta_id()
         self.options = get_options()
@@ -654,21 +661,23 @@ class Premium:
         """
         Construct an integer code used to key in some tabular data
         """
-        cty = self.counties[county] if isinstance(county, str) else county
+        cty = int(self.counties[county]) if isinstance(county, str) else county
+        if f'{cty:05d}' not in self.rev_counties:
+            raise ValueError('Cannot compute premiums for county; no data available')
         crp = self.crops[crop] if isinstance(crop, str) else crop
         crptype = self.croptypes[croptype] if isinstance(croptype, str) else croptype
         prac = self.practices[practice] if isinstance(practice, str) else practice
-        return int(f'{int(cty):05d}{crp:02d}{crptype:03d}{prac:03d}')
+        return int(f'{cty:05d}{crp:02d}{crptype:03d}{prac:03d}')
 
     def make_ccode(self, county, crop, croptype, practice):
         """
         Construct a COUNTY integer code used to key in some tabular data
         """
-        cty = self.counties[county] if isinstance(county, str) else county
+        cty = int(self.counties[county]) if isinstance(county, str) else county
         crp = self.crops[crop] if isinstance(crop, str) else crop
         crptype = self.croptypes[croptype] if isinstance(croptype, str) else croptype
         prac = self.cpractices[practice] if isinstance(practice, str) else practice
-        return int(f'{int(cty):05d}{crp:02d}{crptype:03d}{prac:03d}')
+        return int(f'{cty:05d}{crp:02d}{crptype:03d}{prac:03d}')
 
     def make_pcode(self):
         """
