@@ -1,16 +1,13 @@
 """
 Module cash_flow
 
-Contains a single class, CashFlow, which loads some data from a text file
-for a given crop year when an instance is created, and uses results from other modules
-Its main function is to return total estimated cost for the farm for the given crop year
-corresponding to arbitrary sensitivity factors for price and yield.
+Contains a single class, CashFlow, which loads some data for a given crop year
+when an instance is created, and uses results from the Cost and Revenue modules
 """
 from .analysis import Analysis
 from .cost import Cost
-from .crop_ins import CropIns
-from .gov_pmt import GovPmt
 from .revenue import Revenue
+from .util import SEASON_CROPS
 
 
 class CashFlow(Analysis):
@@ -19,8 +16,8 @@ class CashFlow(Analysis):
     corresponding to arbitrary sensitivity factors for price and yield.
 
     Sample usage in a python or ipython console:
-      from ifbt import CashFlow
-      c = CashFlow(2023)
+      from ifbt import CashFlow, Premium
+      c = CashFlow(2023, prem=Premium())
       c.total_cash_flow()                 # pf and yf default to 1
       c.total_cash_flow(pf=.9, yf=1.1)    # specifies both price and yield factors
       c.total_cash_flow(yf=1.2)           # uses default for pf
@@ -34,40 +31,21 @@ class CashFlow(Analysis):
         """
         super().__init__(*args, **kwargs)
         if 'prem' not in kwargs:
-            raise ValueError('CashFlow constructor needs a Premiums instance')
-        self.cost = Cost(self.crop_year)
-        self.crop_ins = CropIns(self.crop_year, overrides=crop_ins_overrides,
-                                prem=kwargs['prem'])
-        self.gov_pmt = GovPmt(self.crop_year, overrides=gov_pmt_overrides)
-        self.revenue = Revenue(self.crop_year)
+            raise ValueError('CashFlow constructor needs a Premium instance')
+        self.cost = Cost(self.crop_year, prem=kwargs['prem'])
+        self.revenue = Revenue(self.crop_year, prem=kwargs['prem'])
 
-    def total_revenue(self, pf=1, yf=1):
-        """
-        GVBudget G37: Total revenue including government payments.
-        """
-        return round(self.revenue.total_revenue_grain(pf, yf) +
-                     self.revenue.total_revenue_other() +
-                     self.gov_pmt.total_gov_pmt(pf, yf))
+    def cash_flow_crop(self, crop, pf=1, yf=1):
+        return (self.revenue.gross_revenue_crop(crop, pf, yf) -
+                self.cost.total_cost_crop(crop))
 
-    def total_non_land_operating_costs(self, pf=1, yf=1):
-        """
-        GVBudget G41: Total non-land operating costs.  Net crop insurance
-        indemnity is subtracted to give net crop insurance cost.
-        """
-        return round(self.cost.total_variable_cost(yf) -
-                     self.crop_ins.total_net_indemnity(pf, yf) +
-                     self.cost.total_overhead(yf))
+    def cash_flow_non_crop(self, pf=1, yf=1):
+        return (self.revenue.gross_revenue_non_crop(pf, yf) -
+                self.cost.total_nongrain_cost())
 
-    def cash_flow_before_land_costs(self, pf=1, yf=1):
-        """
-        GVBudget G43: Cash flow before land costs.
-        """
-        return (self.total_revenue(pf, yf) -
-                self.total_non_land_operating_costs(pf, yf))
+    def total_crop_cash_flow(self, pf=1, yf=1):
+        return sum((self.cash_flow_crop(crop, pf, yf) for crop in SEASON_CROPS))
 
     def total_cash_flow(self, pf=1, yf=1):
-        """
-        GVBudget G52: Total net cash flow, including land expenses.
-        """
-        return round(self.cash_flow_before_land_costs(pf, yf) -
-                     self.cost.total_land_expenses_over_crops(yf))
+        return (self.total_crop_cash_flow(pf, yf) +
+                self.cash_flow_non_crop(pf, yf))
