@@ -6,7 +6,7 @@ Defines class Analysis, the base class for all ifbt components
 from collections import abc
 
 from .attribute_loader import TextfileAttributeLoader, DatabaseAttributeLoader
-from .util import Crop, crop_in
+from .util import Crop, crop_in, ALL_CROPS, BASE_CROPS, SEASON_CROPS
 
 
 class Analysis(object):
@@ -45,13 +45,21 @@ class Analysis(object):
             else:
                 setattr(self, k, v)
 
+    def base_crop(self, crop=None):
+        """
+        Get the Base Crop for the provided crop or the instance's crop if not given.
+        """
+        if crop is None:
+            crop = self.crop
+        return Crop.SOY if crop in (Crop.FULL_SOY, Crop.DC_SOY) else crop
+
     def acres_soy(self):
         """
         Compute the total soy acres
         """
         return self.acres[Crop.DC_SOY] + self.acres[Crop.FULL_SOY]
 
-    @crop_in(Crop.CORN, Crop.SOY, Crop.WHEAT, Crop.DC_SOY, Crop.FULL_SOY)
+    @crop_in(*ALL_CROPS)
     def acres_crop(self, crop):
         return self.acres_soy() if crop == Crop.SOY else self.acres[crop]
 
@@ -63,18 +71,33 @@ class Analysis(object):
         return ((self.acres[Crop.DC_SOY] * self.proj_yield_farm[Crop.DC_SOY] +
                  self.acres[Crop.FULL_SOY] * self.proj_yield_farm[Crop.FULL_SOY]) * yf)
 
-    @crop_in(Crop.CORN, Crop.SOY)
+    @crop_in(*SEASON_CROPS)
+    def projected_bu_scrop(self, crop, yf=1):
+        """
+        Compute the projected, sensitized total bushels for the given season crop
+        """
+        return self.acres[crop] * self.proj_yield_farm[crop] * yf
+
+    @crop_in(*BASE_CROPS)
     def projected_bu_crop(self, crop, yf=1):
         """
-        Compute the projected, sensitized total bushels for the given crop
+        Compute the projected, sensitized total bushels for the given base crop
         """
         return (self.projected_bu_soy(yf) if crop == Crop.SOY else
                 self.proj_yield_farm[crop] * self.acres[crop] * yf)
 
-    @crop_in(Crop.CORN, Crop.SOY, Crop.FULL_SOY, Crop.DC_SOY, Crop.WHEAT)
+    @crop_in(*ALL_CROPS)
     def projected_yield_crop(self, crop, yf=1):
         """
         Compute the projected, sensitized yield for any crop
         """
         return (self.projected_bu_soy(yf)/self.acres_soy() if crop == Crop.SOY else
                 self.proj_yield_farm[crop] * yf)
+
+    # TOTALS
+    # ------
+    def total_planted_acres(self):
+        return sum((self.acres[crop] for crop in SEASON_CROPS))
+
+    def total_production_bushels(self, yf=1):
+        return sum((self.projected_bu_scrop(crop, yf) for crop in SEASON_CROPS))
