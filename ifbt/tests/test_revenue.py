@@ -1,7 +1,11 @@
-from ifbt import Revenue
+import pytest
+
+from ifbt import Revenue, Premium
 
 # Note: tests may fail if changes are made to the data textfile,
 # but changes to pricing for uncontracted grain and revenue_wheat are OK.
+
+prem = Premium()
 
 
 def test_total_revenue():
@@ -11,15 +15,15 @@ def test_total_revenue():
            'est_basis_soy': 0.35,
            'revenue_wheat': 300341, }
 
-    rev = Revenue(2023, overrides=ovr)
-    total_revenue = rev.total_revenue()
-    assert total_revenue == 9905774
+    rev = Revenue(2023, overrides=ovr, prem=prem)
+    gross_revenue = rev.gross_revenue()
+    assert gross_revenue == pytest.approx(9977249)
 
-    total_revenue = rev.total_revenue(yf=0.4)
-    assert total_revenue == 4204997
+    gross_revenue = rev.gross_revenue(yf=0.4)
+    assert gross_revenue == pytest.approx(8379167)
 
-    total_revenue = rev.total_revenue(pf=0.6)
-    assert total_revenue == 9116827
+    gross_revenue = rev.gross_revenue(pf=0.6)
+    assert gross_revenue == pytest.approx(11844769)
 
-    total_revenue = rev.total_revenue(pf=.9, yf=.9)
-    assert total_revenue == 8851353
+    gross_revenue = rev.gross_revenue(pf=.9, yf=.9)
+    assert gross_revenue == pytest.approx(9270065)

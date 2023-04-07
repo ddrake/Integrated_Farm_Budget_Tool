@@ -26,7 +26,7 @@ def test_total_crop_ins():
     crop = Crop.CORN
     assert c.premium_base_crop(crop) == pytest.approx(39085.875, TOL)
 
-    assert c.indemnity_base_crop(crop, pf=.7, yf=.75) == pytest.approx(1126643.935, TOL)
+    assert c.indemnity_base_crop(crop, pf=.7, yf=.75) == pytest.approx(1225310.792, TOL)
 
     # there should be an SCO indemnity
     assert c.indemnity_sco_crop(crop, pf=.7, yf=.75) == pytest.approx(593544.579, TOL)
@@ -86,7 +86,7 @@ def test_can_add_eco_without_sco():
 
     ci = CropIns(2023, overrides=ovr, prem=prem)
     assert (ci.total_indemnity_crop(Crop.CORN, pf=.8, yf=.8) ==
-            pytest.approx(704796.216, TOL))
+            pytest.approx(821049.889, TOL))
     assert (ci.total_premium_crop(Crop.CORN) == pytest.approx(83622.644, TOL))
 
 
@@ -121,7 +121,7 @@ def test_sco_level_greater_than_base_level_is_ok():
 
     ci = CropIns(2023, overrides=ovr, prem=prem)
     assert (ci.total_indemnity_crop(Crop.CORN, pf=.8, yf=.8) ==
-            pytest.approx(1028547.804, TOL))
+            pytest.approx(1145783.420, TOL))
     assert (ci.total_premium_crop(Crop.CORN) == pytest.approx(113708.204, TOL))
 
 
@@ -138,7 +138,7 @@ def test_sco_level_equal_to_base_level_is_ok():
 
     ci = CropIns(2023, overrides=ovr, prem=prem)
     assert (ci.total_net_indemnity(pf=.8, yf=.8) ==
-            pytest.approx(2001774.451, TOL))
+            pytest.approx(1751889.003, TOL))
 
 
 def test_sco_level_less_than__base_level_throws():
@@ -196,32 +196,32 @@ def test_multiple_configurations():
         (Unit.ENT, Prot.RPHPE, Lvl.DFLT, 90),
         (Unit.ENT, Prot.YO, Lvl.DFLT, 90), ]
 
-    values = [2911813.731, 2900808.448, 422779.864,
-              1713861.057, 1737592.052, 134047.695,
-              2628448.099, 2633551.801, 1091737.875,
-              2943715.023, 2957304.175, 1413836.992,
+    values = [2407471.968, 2430786.518, -19368.658,
+              1673260.289, 1696993.759, 107695.511,
+              2574958.878, 2617839.538, 811322.296,
+              2858712.536, 2920548.096, 1124828.574,
 
-              52322.103, 75633.544, -72393.002,
-              -53938.197, -30207.202, -45773.352,
-              581527.718, 624403.846, -77977.773,
-              864260.816, 926090.001, -104676.781,
+              -106902.829, -83588.279, -72403.560,
+              -54424.279, -30690.809, -45779.920,
+              374062.117, 416942.777, -79142.220,
+              594344.398, 656179.958, -117428.250,
 
-              407594.038, 385149.846, 422779.864,
-              114605.960, 138336.955, 134047.695,
-              1060654.827, 1056362.923, 1091737.875,
-              1360539.937, 1358049.077, 1413836.992,
+              152462.612, 175777.162, -19368.658,
+              215466.993, 239200.463, 107695.511,
+              890525.672, 933406.332, 811322.296,
+              1174279.331, 1236114.891, 1124828.574,
 
-              -107681.166, -84369.725, -72393.002,
-              -65215.088, -41484.093, -45773.352,
-              -129783.684, -86907.556, -77977.773,
-              -186232.286, -124403.101, -104676.781,
+              -107698.830, -84384.280, -72403.560,
+              -65224.350, -41490.880, -45779.920,
+              -130954.610, -88073.950, -79142.220,
+              -198993.260, -137157.700, -117428.250,
 
-              882664.567, -84369.725, 422779.864,
-              294427.008, -41484.093, 134047.695,
-              2191131.776, -88061.536, 1091737.875,
-              2863532.418, -137140.258, 1413836.992,
-              ]
+              -1629.027, -84384.280, -19368.658,
+              241726.511, -41490.880, 107695.511,
+              1649974.421, -88073.950, 811322.296,
+              2285520.388, -137157.700, 1124828.574, ]
 
+    print()
     idx = 0
     for pf, yf in factors:
         for u, p, s, e in configs:
@@ -269,11 +269,12 @@ def test_pmt_factor_scales_premiums_and_indemnities_for_area_unit():
                 130937.663, 88061.536, 79131.753,
                 198969.443, 137140.258, 117413.938,]
 
-    indemnities = [2717545.407, 2686660.355, 445655.580,
-                   1779076.145, 1779076.145, 179821.048,
-                   2779055.580, 2743679.556, 1170869.628,
-                   3142684.466, 3094444.433, 1531250.930,]
+    indemnities = [2263653.718, 2263653.718, 47731.411,
+                   1738484.639, 1738484.639, 153475.431,
+                   2705913.488, 2705913.488, 890464.516,
+                   3057705.796, 3057705.796, 1242256.824,]
 
+    print()
     idx = 0
     for u, p, s, e in configs:
         ovr = {'insure': {Crop.CORN: Ins.YES, Crop.FULL_SOY: Ins.YES,
