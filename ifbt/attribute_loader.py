@@ -4,11 +4,10 @@ Module attribute_loader
 Defines classes DatabaseAttributeLoader and TextfileAttributeLoader.
 Subclasses are responsible for loading key value pairs into object attributes.
 """
-from collections import defaultdict
 from os import path
 import re
 
-from .util import Crop, Ins, Unit, Prot, Lvl, Prog, Prac
+from .util import Crop, Ins, Unit, Prot, Lvl
 
 
 DATADIR = path.join(path.dirname(path.abspath(__file__)), 'data')
@@ -247,9 +246,7 @@ def get_value_crop(tag, v):
     levels = 'level, sco_level, eco_level'.split()
     val = (Ins(v) if tag == 'insure' else Unit(v) if tag == 'unit' else
            Prot(v) if tag == 'protection' else
-           to_lvl(v) if tag in levels else
-           Prog(v) if tag == 'program' else v)
-
+           to_lvl(v) if tag in levels else v)
     return val
 
 

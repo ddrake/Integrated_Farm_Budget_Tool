@@ -12,8 +12,11 @@ Ins = IntEnum('Ins', ['NO', 'YES'], start=0)
 Unit = IntEnum('Unit', ['AREA', 'ENT'], start=0)
 Prot = IntEnum('Prot', ['RP', 'RPHPE', 'YO'], start=0)
 Lvl = IntEnum('Lvl', ['NONE', 'DFLT'], start=0)
-Prog = IntEnum('Prog', ['PLC', 'ARC_CO'], start=0)
 Prac = IntEnum('Prac', ['IRR', 'NONIRR', 'ALL'], start=1)
+
+ALL_CROPS = [Crop.CORN, Crop.SOY, Crop.WHEAT, Crop.FULL_SOY, Crop.DC_SOY]
+BASE_CROPS = [Crop.CORN, Crop.SOY, Crop.WHEAT]
+SEASON_CROPS = [Crop.CORN, Crop.FULL_SOY, Crop.WHEAT, Crop.DC_SOY]
 
 
 def crop_in(*crops):
@@ -26,7 +29,9 @@ def crop_in(*crops):
     def decorator(f):
         @wraps(f)
         def new_f(*args, **kwds):
-            if args[1] not in crops:
+            if len(args) < 2 or args[1] not in ALL_CROPS:
+                raise ValueError('The first argument must be a Crop')
+            elif args[1] not in crops:
                 crop_msg = ', '.join(str(c) for c in crops)
                 raise ValueError(f'Crop must be one of: {crop_msg}')
             else:
