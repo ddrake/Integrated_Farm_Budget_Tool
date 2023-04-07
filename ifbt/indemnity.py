@@ -4,7 +4,7 @@ from numpy import zeros, ones, array
 import numpy as np
 
 from .analysis import Analysis
-from .util import Crop, Unit, Lvl
+from .util import Crop, crop_in, SEASON_CROPS, Unit, Lvl
 
 
 class Indemnity(Analysis):
@@ -30,6 +30,7 @@ class Indemnity(Analysis):
     # --------------------------
     # MAIN METHOD FOR ENTERPRISE
     # --------------------------
+    @crop_in(*SEASON_CROPS)
     def compute_indems_ent(self, crop, pf=1, yf=1):
         """ array(8,3)
         Government Crop Insurance J61: Sensitized total indemnity payment.
@@ -46,7 +47,7 @@ class Indemnity(Analysis):
         harv_indem_per_acre = zeros((8, 3))
         harv_indem_per_acre[:] = self.revenue_loss(pf, yf)
         harv_indem_per_acre[:, 2] = (self.yield_shortfall(yf) *
-                                     self.fall_futures_price[self.basecrop()])
+                                     self.ins_spring_proj_harv_price[self.crop])
         return harv_indem_per_acre
 
     def yield_shortfall(self, yf=1):
@@ -72,8 +73,7 @@ class Indemnity(Analysis):
         futures price in February with the yield trigger (defined in derived
         classes).
         """
-        return (self.yield_trigger() *
-                self.fall_futures_price[self.basecrop()])
+        return self.yield_trigger() * self.ins_spring_proj_harv_price[self.crop]
 
     def revised_revenue_trigger(self, pf=1, yf=1):
         """ array(8, 3)
@@ -83,8 +83,9 @@ class Indemnity(Analysis):
         revised_rev_trig[:, 0] *= self.rev_trigger_condition(pf, yf)
         revised_rev_trig[:, 2] *= self.rev_trigger_condition(pf, yf)
         revised_rev_trig[:, 1] *= (
-            0 if (self.ins_harvest_price(pf) > self.fall_futures_price[self.basecrop()])
-            else self.fall_futures_price[self.basecrop()])
+            0 if (self.ins_harvest_price(pf) >
+                  self.ins_spring_proj_harv_price[self.crop])
+            else self.ins_spring_proj_harv_price[self.crop])
         return revised_rev_trig
 
     def actual_revenue(self, pf=1, yf=1):
@@ -107,33 +108,28 @@ class Indemnity(Analysis):
         """
         return (self.ins_harvest_price(pf)
                 if (self.ins_harvest_price(pf) >
-                    self.fall_futures_price[self.basecrop()])
+                    self.ins_spring_proj_harv_price[self.crop])
                 else 0)
-
-    def basecrop(self):
-        """ scalar
-        """
-        return Crop.SOY if self.crop in (Crop.FULL_SOY, Crop.DC_SOY) else self.crop
 
     def sensitized_fall_price(self, pf=1):
         """ scalar
         Government Crop Insurance F12: The price sensitized estimate of the
         fall harvest futures price.
         """
-        return self.fall_fut_price_at_harvest[self.crop] * pf
+        return self.fall_futures_price[self.base_crop()] * pf
 
     def ins_harvest_price(self, pf=1):
         """ scalar
-        Government Crop Insurance F13: Insurance harvest price, limited
-        to twice the price-sensitized, projected fall price.
+        Government Crop Insurance F13:
         """
-        return min((self.fall_futures_price[self.basecrop()] *
+        return min((self.ins_spring_proj_harv_price[self.crop] *
                     self.price_cap_factor),
                    self.sensitized_fall_price(pf))
 
     # -------------------
     # MAIN METHOD FOR ARC
     # -------------------
+    @crop_in(*SEASON_CROPS)
     def compute_indems_arc(self, crop, pf=1, yf=1):
         """
         array(5,3)
@@ -163,7 +159,7 @@ class Indemnity(Analysis):
         scalar
         """
         return (self.hist_yield_for_ins_area[self.crop] *
-                self.fall_futures_price[self.basecrop()] *
+                self.ins_spring_proj_harv_price[self.crop] *
                 self.prot_factor[self.crop])
 
     def revised_dollars_of_protection_arc(self, pf=1, yf=1):
@@ -214,9 +210,9 @@ class Indemnity(Analysis):
             self.loss_limit_factor)
 
         limiting_revenue_fact[0] *= max(
-            self.fall_futures_price[self.basecrop()],
+            self.ins_spring_proj_harv_price[self.crop],
             self.ins_harvest_price(pf))
-        limiting_revenue_fact[1] *= self.fall_futures_price[self.basecrop()]
+        limiting_revenue_fact[1] *= self.ins_spring_proj_harv_price[self.crop]
         return limiting_revenue_fact
 
     def revenue_loss_arc(self, pf=1, yf=1):
@@ -234,12 +230,6 @@ class Indemnity(Analysis):
         rev_loss[:, :2] = np.maximum(
             rev_loss[:, :2] - self.actual_revenue_arc(pf, yf), 0)
         return rev_loss
-        # rev_loss = ones((5, 3)) * np.maximum(
-        #     self.revenue_trigger_feb_price_arc().reshape(5, 1),
-        #     self.revised_revenue_trigger_arc(pf, yf).reshape(5, 1))
-        # rev_loss[:, :2] = np.maximum(
-        #     rev_loss[:, :2] - self.actual_revenue_arc(pf, yf), 0)
-        # return rev_loss
 
     def revised_revenue_trigger_arc(self, pf=1, yf=1):
         """ from base class
@@ -256,7 +246,7 @@ class Indemnity(Analysis):
         array(5)
         """
         return (self.yield_trigger_arc() *
-                self.fall_futures_price[self.basecrop()])
+                self.ins_spring_proj_harv_price[self.crop])
 
     def actual_revenue_arc(self, pf=1, yf=1):
         """
@@ -272,10 +262,13 @@ class Indemnity(Analysis):
         specified crop.  This formula works if and only if the county yields
         correlate with the farm yields.  A conservative farm to county premium
         is used.
+        Note: County RMA doesn't distinguish between soy_fs and soy_dc, so we
+        return the same value for full and dc here.
         scalar
         """
-        return (self.projected_yield_crop(self.crop, yf) /
-                (1 + self.farm_yield_premium_to_county[self.crop]))
+        crop = Crop.FULL_SOY if self.crop == Crop.DC_SOY else self.crop
+        return (self.projected_yield_crop(crop, yf) /
+                (1 + self.farm_yield_premium_to_county[crop]))
 
     def yield_trigger_arc(self):
         """
@@ -289,11 +282,13 @@ class Indemnity(Analysis):
     # ------------------
     # OPTIONS (SCO, ECO)
     # ------------------
+    @crop_in(*SEASON_CROPS)
     def compute_indems_sco(self, crop, pf=1, yf=1):
         self.crop = crop
         self.indemnity_sco = self.harvest_indemnity_pmt_per_acre_opt(self.cover, pf, yf)
         return self.indemnity_sco
 
+    @crop_in(*SEASON_CROPS)
     def compute_indems_eco(self, crop, pf=1, yf=1):
         self.crop = crop
         self.indemnity_eco = self.harvest_indemnity_pmt_per_acre_opt(self.cover_eco,
@@ -325,8 +320,8 @@ class Indemnity(Analysis):
         farm_crop_val *= diff.reshape(len(diff), 1)
         farm_crop_val[:, 0] *= max(
             self.ins_harvest_price(pf),
-            self.fall_futures_price[self.basecrop()])
-        farm_crop_val[:, 1:] *= self.fall_futures_price[self.basecrop()]
+            self.ins_spring_proj_harv_price[self.crop])
+        farm_crop_val[:, 1:] *= self.ins_spring_proj_harv_price[self.crop]
         return farm_crop_val
 
     def payment_factor(self, lvl, diff, pf=1, yf=1):
@@ -360,7 +355,7 @@ class Indemnity(Analysis):
         """
         actual_rev_arc = ones(3) * self.county_rma_yield(yf)
         actual_rev_arc[:2] *= self.ins_harvest_price(pf)
-        actual_rev_arc[2] *= self.fall_futures_price[self.basecrop()]
+        actual_rev_arc[2] *= self.ins_spring_proj_harv_price[self.crop]
         return actual_rev_arc
 
     def county_insured_revenue(self, pf=1):
@@ -371,10 +366,10 @@ class Indemnity(Analysis):
         """
         cty_insured_rev = ones(3)
         cty_insured_rev *= self.hist_yield_for_ins_area[self.crop]
-        cty_insured_rev[1:] *= self.fall_futures_price[self.basecrop()]
+        cty_insured_rev[1:] *= self.ins_spring_proj_harv_price[self.crop]
         cty_insured_rev[0] *= max(
              self.ins_harvest_price(pf),
-             self.fall_futures_price[self.basecrop()])
+             self.ins_spring_proj_harv_price[self.crop])
         return cty_insured_rev
 
     # ------------------
