@@ -8,7 +8,7 @@ crop year corresponding to an arbitrary sensitivity factor for yield.
 """
 from .analysis import Analysis
 from .indemnity import Indemnity
-from .util import Crop, crop_in, Ins, Unit, Prot, Lvl
+from .util import crop_in, Ins, Unit, Prot, Lvl, SEASON_CROPS
 
 
 class CropIns(Analysis):
@@ -31,7 +31,7 @@ class CropIns(Analysis):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        for crop in [Crop.CORN, Crop.FULL_SOY, Crop.DC_SOY, Crop.WHEAT]:
+        for crop in SEASON_CROPS:
             self._validate_settings(crop)
         if 'prem' not in kwargs:
             raise ValueError("CropIns constructor needs a Premium instance")
@@ -106,7 +106,7 @@ class CropIns(Analysis):
     # -------
     # PREMIUM
     # -------
-    @crop_in(Crop.CORN, Crop.FULL_SOY, Crop.DC_SOY, Crop.WHEAT)
+    @crop_in(*SEASON_CROPS)
     def premium_base_per_acre_crop(self, crop):
         """
         Crop insurance per-acre premium based on choices of
@@ -117,7 +117,7 @@ class CropIns(Analysis):
         return (0 if crop not in premiums or 'base' not in premiums[crop] else
                 premiums[crop]['base'])
 
-    @crop_in(Crop.CORN, Crop.FULL_SOY, Crop.DC_SOY, Crop.WHEAT)
+    @crop_in(*SEASON_CROPS)
     def premium_base_crop(self, crop):
         """
         Crop insurance premium in dollars
@@ -125,7 +125,7 @@ class CropIns(Analysis):
         return (self.premium_base_per_acre_crop(crop) *
                 self.acres_crop(crop))
 
-    @crop_in(Crop.CORN, Crop.FULL_SOY, Crop.DC_SOY, Crop.WHEAT)
+    @crop_in(*SEASON_CROPS)
     def premium_sco_per_acre_crop(self, crop):
         """
         If the crop is not insured, return zero, otherwise, get the
@@ -137,7 +137,7 @@ class CropIns(Analysis):
         return (0 if crop not in premiums or 'sco' not in premiums[crop] else
                 premiums[crop]['sco'])
 
-    @crop_in(Crop.CORN, Crop.FULL_SOY, Crop.DC_SOY, Crop.WHEAT)
+    @crop_in(*SEASON_CROPS)
     def premium_sco_crop(self, crop):
         """
         SCO premium in dollars
@@ -145,7 +145,7 @@ class CropIns(Analysis):
         return (self.premium_sco_per_acre_crop(crop) *
                 self.acres_crop(crop))
 
-    @crop_in(Crop.CORN, Crop.FULL_SOY, Crop.DC_SOY, Crop.WHEAT)
+    @crop_in(*SEASON_CROPS)
     def premium_eco_per_acre_crop(self, crop):
         """
         If the crop is not insured or eco has not been added, return zero.
@@ -155,7 +155,7 @@ class CropIns(Analysis):
         return (0 if crop not in premiums or 'eco' not in premiums[crop]
                 else premiums[crop]['eco'])
 
-    @crop_in(Crop.CORN, Crop.FULL_SOY, Crop.DC_SOY, Crop.WHEAT)
+    @crop_in(*SEASON_CROPS)
     def premium_eco_crop(self, crop):
         """
         ECO premium in dollars
@@ -163,7 +163,12 @@ class CropIns(Analysis):
         return (self.premium_eco_per_acre_crop(crop) *
                 self.acres_crop(crop))
 
-    @crop_in(Crop.CORN, Crop.FULL_SOY, Crop.DC_SOY, Crop.WHEAT)
+    def total_premium_per_acre_crop(self, crop):
+        return (self.premium_base_per_acre_crop(crop) +
+                self.premium_sco_per_acre_crop(crop) +
+                self.premium_eco_per_acre_crop(crop))
+
+    @crop_in(*SEASON_CROPS)
     def total_premium_crop(self, crop):
         """
         Return the premium for the crop insurance and option selection
@@ -177,8 +182,7 @@ class CropIns(Analysis):
         """
         Return the premium for the crop insurance and selected options.
         """
-        return sum([self.total_premium_crop(crop) for crop in
-                    [Crop.CORN, Crop.FULL_SOY, Crop.DC_SOY, Crop.WHEAT]])
+        return sum([self.total_premium_crop(crop) for crop in SEASON_CROPS])
 
     # ---------
     # INDEMNITY
@@ -203,7 +207,7 @@ class CropIns(Analysis):
         self.indemnities = self.indem.get_all_indemnities(dicts, pf, yf)
         return self.indemnities
 
-    @crop_in(Crop.CORN, Crop.FULL_SOY, Crop.DC_SOY, Crop.WHEAT)
+    @crop_in(*SEASON_CROPS)
     def indemnity_base_per_acre_crop(self, crop, pf=1, yf=1):
         """
         Crop insurance per-acre indemnity based on choices of
@@ -214,7 +218,7 @@ class CropIns(Analysis):
         return (0 if crop not in indemnities or 'base' not in indemnities[crop] else
                 indemnities[crop]['base'])
 
-    @crop_in(Crop.CORN, Crop.FULL_SOY, Crop.DC_SOY, Crop.WHEAT)
+    @crop_in(*SEASON_CROPS)
     def indemnity_base_crop(self, crop, pf=1, yf=1):
         """
         Crop insurance indemnity in dollars
@@ -222,7 +226,7 @@ class CropIns(Analysis):
         return (self.indemnity_base_per_acre_crop(crop, pf, yf) *
                 self.acres_crop(crop))
 
-    @crop_in(Crop.CORN, Crop.FULL_SOY, Crop.DC_SOY, Crop.WHEAT)
+    @crop_in(*SEASON_CROPS)
     def indemnity_sco_per_acre_crop(self, crop, pf=1, yf=1):
         """
         If the crop is not insured, return zero, otherwise, get the
@@ -234,7 +238,7 @@ class CropIns(Analysis):
         return (0 if crop not in indemnities or 'sco' not in indemnities[crop] else
                 indemnities[crop]['sco'])
 
-    @crop_in(Crop.CORN, Crop.FULL_SOY, Crop.DC_SOY, Crop.WHEAT)
+    @crop_in(*SEASON_CROPS)
     def indemnity_sco_crop(self, crop, pf=1, yf=1):
         """
         SCO indemnity in dollars
@@ -242,7 +246,7 @@ class CropIns(Analysis):
         return (self.indemnity_sco_per_acre_crop(crop, pf, yf) *
                 self.acres_crop(crop))
 
-    @crop_in(Crop.CORN, Crop.FULL_SOY, Crop.DC_SOY, Crop.WHEAT)
+    @crop_in(*SEASON_CROPS)
     def indemnity_eco_per_acre_crop(self, crop, pf=1, yf=1):
         """
         If the crop is not insured or eco has not been added, return zero.
@@ -252,7 +256,7 @@ class CropIns(Analysis):
         return (0 if crop not in indemnities or 'eco' not in indemnities[crop]
                 else indemnities[crop]['eco'])
 
-    @crop_in(Crop.CORN, Crop.FULL_SOY, Crop.DC_SOY, Crop.WHEAT)
+    @crop_in(*SEASON_CROPS)
     def indemnity_eco_crop(self, crop, pf=1, yf=1):
         """
         ECO indemnity in dollars
@@ -260,7 +264,7 @@ class CropIns(Analysis):
         return (self.indemnity_eco_per_acre_crop(crop, pf, yf) *
                 self.acres_crop(crop))
 
-    @crop_in(Crop.CORN, Crop.FULL_SOY, Crop.DC_SOY, Crop.WHEAT)
+    @crop_in(*SEASON_CROPS)
     def total_indemnity_crop(self, crop, pf=1, yf=1):
         """
         Return the indemnity for the crop insurance and option selection
@@ -274,10 +278,10 @@ class CropIns(Analysis):
         """
         Return the price/yield sensitized total indemnity.
         """
-        return sum([self.total_indemnity_crop(crop, pf, yf) for crop in
-                    [Crop.CORN, Crop.FULL_SOY, Crop.DC_SOY, Crop.WHEAT]])
+        return sum([self.total_indemnity_crop(crop, pf, yf)
+                    for crop in SEASON_CROPS])
 
-    @crop_in(Crop.CORN, Crop.FULL_SOY, Crop.DC_SOY, Crop.WHEAT)
+    @crop_in(*SEASON_CROPS)
     def net_indemnity_crop(self, crop, pf=1, yf=1):
         """
         Return the sensitized net crop insurance payment (subtracting premium)
