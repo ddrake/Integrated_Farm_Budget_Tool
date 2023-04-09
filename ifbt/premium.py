@@ -1,6 +1,5 @@
-from numpy import zeros, array
+from numpy import zeros, array, log, exp
 import numpy as np
-from math import log, exp
 import os
 import pickle
 
@@ -105,7 +104,7 @@ class Premium:
 
         # Arrays, tuples, vectors
         self.premrate = None         # Premium rates array (Erev, E)
-        # list of 500 (pricedraw, yielddraw) pairs used in loss simulation
+        # Array sized (500, 2) 500 (pricedraw, yielddraw) pairs used in loss simulation
         self.selected_draws = None
         self.simloss = None          # Simulated Loss array (Yp, Rp, RpExc)
 
@@ -322,18 +321,26 @@ class Premium:
 
     def simulate_losses(self, i):
         """
-        Loop through 500 yield, price pairs, incrementing losses.
+        Simulate losses for 500 (yield_draw, price_draw) pairs
+        for cases (yp, rp, rphpe)
         """
         self.lnmean = round(log(self.aphprice) - (self.pvol ** 2 / 2), 8)
-        simloss = zeros(3)
-        for yielddraw, pricedraw in self.selected_draws:
-            self.update_losses(yielddraw, pricedraw, simloss)
-
-        ct = len(self.selected_draws)
-        self.simloss[0] = round((simloss[0] / ct) / (self.revyield * self.revcov), 8)
-        self.simloss[1] = round(simloss[1] / ct /
+        simloss = zeros((500, 3))
+        draws = self.selected_draws
+        yld = np.maximum(0, draws[:, 0] * self.adjstdqty + self.adjmeanqty)
+        simloss[:, 0] = np.maximum(0, self.revyield * self.revcov - yld)
+        harprice = np.minimum(2 * self.aphprice,
+                              exp(draws[:, 1] * self.pvol + self.lnmean))
+        guarprice = np.maximum(harprice, self.aphprice)
+        simloss[:, 1] = np.maximum(0, (self.revyield * guarprice * self.revcov -
+                                       yld * harprice))
+        simloss[:, 2] = np.maximum(0, (self.revyield * self.aphprice * self.revcov -
+                                       yld * harprice))
+        self.simloss = simloss.mean(0)
+        self.simloss[0] = round(self.simloss[0] / (self.revyield * self.revcov), 8)
+        self.simloss[1] = round(self.simloss[1] /
                                 (self.revyield * self.revcov * self.aphprice), 8)
-        self.simloss[2] = round(simloss[2] / ct /
+        self.simloss[2] = round(self.simloss[2] /
                                 (self.revyield * self.revcov * self.aphprice), 8)
 
     def update_losses(self, yielddraw, pricedraw, simloss):
@@ -462,7 +469,7 @@ class Premium:
                                        self.penterprise_factor[pef_key])).T
         self.enterfactor_rev = array((self.enter_factor_rev[efr_key],
                                      self.penter_factor_rev[pefr_key])).T
-        self.selected_draws = self.draws[betaId]
+        self.selected_draws = np.array(self.draws[betaId])
 
     # -----------------------
     # ARC PREMIUMS
