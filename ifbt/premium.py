@@ -17,7 +17,7 @@ class Premium:
     def __init__(self):
         self.load_lookups()
         # preset subsidy values
-        self.subsidy_ent = (0.8,  0.8,  0.8,  0.8,  0.8,  0.77, 0.68, 0.53)
+        self.subsidy_ent = array((0.8,  0.8,  0.8,  0.8,  0.8,  0.77, 0.68, 0.53))
         self.subsidy_sco = 0.65
         self.subsidy_grip = array([0.59, 0.55, 0.55, 0.49, 0.44])
         self.subsidy_grp = array([0.59, 0.59, 0.55, 0.55, 0.51])
@@ -177,8 +177,8 @@ class Premium:
         # edge case, which can't occur with the current data.
         # Perhaps it would be better to raise an error or put a negative
         # premium value if this ever happens...
-        # self.prem_ent = np.where(self.ratediff[:, 0].reshape(8, 1) < 0,
-        #                          np.zeros_like(self.prem_ent), self.prem_ent)
+        self.prem_ent = np.where(self.ratediff[:, 0].reshape(8, 1) < 0,
+                                 np.zeros_like(self.prem_ent), self.prem_ent)
         return self.prem_ent
 
     def set_multfactor(self):
@@ -201,36 +201,45 @@ class Premium:
         self.effcov = (0.0001 + self.cover * self.tayield / self.appryield).round(2)
 
     def set_factors(self):
-        """
-        Set 4 vector factors and 2 scalar factors used to compute base premium rates
-        """
+        varpairs = [
+            (self.ratediff, 9), (self.enterprisefactor, 3),
+            (self.enterfactor_rev, 3), (self.discountenter[:, self.jsize], 4)]
         for i in range(8):
-            for j in range(2):
-                self.ratediff_fac[i, j] = self.interp(self.ratediff[:, j], i, 9)
-                self.efactor[i, j] = self.interp(self.enterprisefactor[:, j], i, 3)
-                self.efactor_rev[i, j] = self.interp(self.enterfactor_rev[:, j], i, 3)
-            self.disenter[i] = self.interp(self.discountenter[:, self.jsize], i, 4)
+            rslts = self.interp(varpairs, i)
+            (self.ratediff_fac[i, :], self.efactor[i, :], self.efactor_rev[i, :],
+             self.disenter[i]) = rslts
 
-    def interp(self, var, i, ro):
+    def interp(self, varpairs, i):
         """
         Interpolate (or extrapolate up) by nearest cover values to effcov, then round.
         """
         cov, effcov = self.cover, self.effcov
         gap = cov[1] - cov[0]
-
-        # handle three special cases
-        if not self.tause:
-            return var[i]
-        if effcov[i] < cov[0]:
-            return round(var[0], ro)
-        if effcov[i] > 0.75 and self.ratediff[6, 0] == 0:
-            return round(var[5] + (var[5] - var[4]) * (effcov[i] - cov[5]) / gap, ro)
-
         j = np.argmin(np.where(effcov[i] - cov >= 0,
                                effcov[i] - cov, np.ones_like(cov)*10))
-
-        vdiff = var[j+1] - var[j] if j < 7 else var[j] - var[j-1]
-        return round(var[j] + vdiff * (effcov[i] - cov[j]) / gap, ro)
+        rslts = []
+        for var, ro in varpairs:
+            cols = len(var.shape)
+            # handle three special cases
+            if not self.tause:
+                rslts.append(var[i])
+            elif effcov[i] < cov[0]:
+                rslts.append((var[0, :]).round(ro) if cols > 1 else round(var[0], ro))
+            elif effcov[i] > 0.75 and self.ratediff[6, 0] == 0:
+                rslts.append((
+                    (var[5, :] + (var[5, :] - var[4, :]) *
+                     (effcov[i] - cov[5]) / gap).round(ro) if cols > 1 else
+                    round(var[5] + (var[5] - var[4]) * (effcov[i] - cov[5]) / gap, ro)))
+            else:
+                # handle general case with possible extrapolation
+                vdiff = ((var[j+1, :] - var[j, :] if j < 7 else var[j, :] - var[j-1, :])
+                         if cols > 1 else
+                         (var[j+1] - var[j] if j < 7 else var[j] - var[j-1]))
+                rslts.append((
+                    var[j, :] + vdiff * (effcov[i] - cov[j]) / gap).round(ro)
+                    if cols > 1 else
+                    round(var[j] + vdiff * (effcov[i] - cov[j]) / gap, ro))
+        return rslts
 
     def make_ye_adj(self):
         """
@@ -396,9 +405,9 @@ class Premium:
         """
         Apply the subsidy
         """
-        for j in range(3):
-            self.prem_ent[:, j] -= (self.prem_ent[:, j] * self.subsidy_ent[:]).round(0)
-            self.prem_ent[:, j] = (self.prem_ent[:, j] / self.acres).round(2)
+        self.prem_ent[:] -= (self.prem_ent[:] *
+                             self.subsidy_ent[:].reshape(8, 1)).round(0)
+        self.prem_ent[:] = (self.prem_ent[:] / self.acres).round(2)
 
     def store_user_settings_ent(self, aphyield, appryield, tayield, acres, hailfire,
                                 prevplant, risk, tause, yieldexcl, county, crop,
