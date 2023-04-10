@@ -99,6 +99,7 @@ class Premium:
         self.multfactor = None
         self.prot_factor = None      # Protection factor (aka payment factor) for ARC
         # based on basepremrate and simulated losses
+        # Arrays sized (8)
         self.rphpe_rateuse = None
         self.rp_rateuse = None
 
@@ -123,7 +124,7 @@ class Premium:
         # Used to lookup mqty, stdqty for loss simulation
         self.revlook = None
 
-        # Array sized (2, 2)  ('YP', 'RP/RP-HPE') by (cur, prior)
+        # Array sized (2, 8, 2) ('YP', 'RP/RP-HPE') by levels by (cur, prior)
         self.basepremrate = None
 
         # Arrays sized (8, 2) (8 coverage levels) by 2 (cur, prior)
@@ -158,22 +159,26 @@ class Premium:
                                      crop, practice, croptype)
         self.initialize_arrays()
         self.set_multfactor()
-        for i in range(8):  # index i corresponds to coverage level
-            if self.ratediff[i, 0] > 0:
-                self.set_effcov(i)
-                self.set_factors(i)
-                self.make_ye_adj(i)
-                self.make_rev_liab(i)
-                self.set_base_rates(i)
-                self.set_base_prem_rates(i)
-                self.limit_base_prem_rates(i)
-                self.limit_revlook(i)
-                self.limit_baserate(i)
-                self.set_qtys(i)
-                self.simulate_losses(i)
-                self.set_rates(i)
-                self.set_prems(i)
-                self.apply_subsidy(i)
+        self.set_effcov()
+        self.set_factors()
+        self.make_ye_adj()
+        self.make_rev_liab()
+        self.set_base_rates()
+        self.set_base_prem_rates()
+        self.limit_base_prem_rates()
+        self.limit_revlook()
+        self.limit_baserate()
+        self.set_qtys()
+        self.simulate_losses()
+        self.set_rates()
+        self.set_prems()
+        self.apply_subsidy()
+        # TODO: Think about this more.  The orig code sets the premium to zero in this
+        # edge case, which can't occur with the current data.
+        # Perhaps it would be better to raise an error or put a negative
+        # premium value if this ever happens...
+        # self.prem_ent = np.where(self.ratediff[:, 0].reshape(8, 1) < 0,
+        #                          np.zeros_like(self.prem_ent), self.prem_ent)
         return self.prem_ent
 
     def set_multfactor(self):
@@ -189,75 +194,73 @@ class Premium:
         if self.prevplant == 2:
             self.multfactor *= ptrate
 
-    def set_effcov(self, i):
+    def set_effcov(self):
         """
         Set the effective coverage level (Note: depends on tayield regardless of tause)
         """
-        self.effcov = round(0.0001 + self.cover[i] *
-                            self.tayield / self.appryield, 2)
+        self.effcov = (0.0001 + self.cover * self.tayield / self.appryield).round(2)
 
-    def set_factors(self, i):
+    def set_factors(self):
         """
         Set 4 vector factors and 2 scalar factors used to compute base premium rates
         """
-        self.ratediff_fac[:] = (
-            self.interpolate(self.ratediff, i, 0, 9),
-            self.interpolate(self.ratediff, i, 1, 9))
-        self.efactor[:] = (
-            self.interpolate(self.enterprisefactor, i, 0, 3),
-            self.interpolate(self.enterprisefactor, i, 1, 3))
-        self.efactor_rev[:] = (
-            self.interpolate(self.enterfactor_rev, i, 0, 3),
-            self.interpolate(self.enterfactor_rev, i, 1, 3))
-        self.disenter = self.interpolate(self.discountenter, i, self.jsize, 4)
+        for i in range(8):
+            for j in range(2):
+                self.ratediff_fac[i, j] = self.interp(self.ratediff[:, j], i, 9)
+                self.efactor[i, j] = self.interp(self.enterprisefactor[:, j], i, 3)
+                self.efactor_rev[i, j] = self.interp(self.enterfactor_rev[:, j], i, 3)
+            self.disenter[i] = self.interp(self.discountenter[:, self.jsize], i, 4)
 
-    def interpolate(self, var, i, j2, ro):
+    def interp(self, var, i, ro):
         """
         Interpolate (or extrapolate up) by nearest cover values to effcov, then round.
         """
-        def maxind(ifirst, ilast, offset):
-            """
-            Get the largest index of cover for which the condition holds, and
-            return it after subtracting offset.
-            """
-            i = ilast
-            while i >= ifirst and self.effcov < self.cover[i]:
-                i -= 1
-            return i + 1 - offset
+        cov, effcov = self.cover, self.effcov
+        gap = cov[1] - cov[0]
 
-        jlow, jhigh, jfloor = maxind(1, 6, 1), maxind(0, 6, 0), maxind(1, 7, 1)
+        # handle three special cases
+        if not self.tause:
+            return var[i]
+        if effcov[i] < cov[0]:
+            return round(var[0], ro)
+        if effcov[i] > 0.75 and self.ratediff[6, 0] == 0:
+            return round(var[5] + (var[5] - var[4]) * (effcov[i] - cov[5]) / gap, ro)
 
-        # handle special case
-        if self.effcov > 0.75 and self.ratediff[6, 0] == 0:
-            jlow, jhigh, jfloor = 4, 5, 5
+        j = np.argmin(np.where(effcov[i] - cov >= 0,
+                               effcov[i] - cov, np.ones_like(cov)*10))
 
-        return (round(var[jfloor, j2] + (var[jhigh, j2] - var[jlow, j2]) *
-                      (self.effcov - self.cover[jfloor]) * 20 + 1e-11, ro)
-                if self.tause else var[i, j2])
+        vdiff = var[j+1] - var[j] if j < 7 else var[j] - var[j-1]
+        return round(var[j] + vdiff * (effcov[i] - cov[j]) / gap, ro)
 
-    def make_ye_adj(self, i):
+    def make_ye_adj(self):
         """
         Adjust factors for YE (vectorized)
+        ratediff_fac: (8,2), enterprisefactor: (8,2), efactor: (8,2)
+        yeadj: (8), effcov: (8)
         """
         jjhigh = 5 if self.ratediff[6, 0] == 0 else 7
-        yeadj = 0
-        if self.effcov > 0.85:
-            if self.yieldexcl > 0.5:
-                yeadj = (self.effcov - 0.85) / 0.15
-            yeadj = 1 + round(min(1, yeadj) ** 3, 7) * 0.05
-            self.ratediff_fac[0] *= yeadj
-            self.efactor = np.minimum(self.efactor, self.enterprisefactor[jjhigh, :])
+        yeadj = np.where(np.logical_and(self.effcov > 0.85, self.yieldexcl > 0.5),
+                         (self.effcov - 0.85) / 0.15, np.zeros_like(self.effcov))
+        yeadj = np.where(self.effcov > 0.85,
+                         1 + (np.minimum(1, yeadj) ** 3).round(7) * 0.05, yeadj)
+        self.ratediff_fac[:, 0] = np.where(self.effcov > 0.85,
+                                           self.ratediff_fac[:, 0] * yeadj,
+                                           self.ratediff_fac[:, 0])
+        self.efactor = np.where(self.effcov.reshape(8, 1) > 0.85,
+                                np.minimum(self.efactor,
+                                           self.enterprisefactor[jjhigh, :]),
+                                self.efactor)
 
-    def make_rev_liab(self, i):
+    def make_rev_liab(self):
         """
         Set the revised yield, the revised cover and the liability
         """
         self.revyield = self.tayield if self.tause else self.appryield
-        self.revcov = self.effcov if self.tause else self.cover[i]
-        self.liab = round(round(self.revyield * self.cover[i] + 0.001, 1) *
-                          self.aphprice * self.acres, 0)
+        self.revcov = self.effcov if self.tause else self.cover
+        self.liab = ((self.revyield * self.cover + 0.001).round(1) *
+                     self.aphprice * self.acres).round(0)
 
-    def set_base_rates(self, i):
+    def set_base_rates(self):
         """
         Set and limit vector (current/prior) base rates from RMA data
         """
@@ -275,7 +278,7 @@ class Premium:
             self.baserate[:] = self.highrisk
         self.revlook[:] = self.baserate
 
-    def set_base_prem_rates(self, i):
+    def set_base_prem_rates(self):
         """
         Set vector adjusted base premium rates
         """
@@ -283,18 +286,18 @@ class Premium:
         self.basepremrate = array((prod * self.efactor,
                                    prod * self.efactor_rev)).round(8)
 
-    def limit_base_prem_rates(self, i):
+    def limit_base_prem_rates(self):
         """
         Limit base premium rates min of cur and 1.2 prior (unpacking vectors)
+        basepremrate (2,8,2)
         """
-        var = self.basepremrate
-        for j in range(2):
-            if var[j, 0] > var[j, 1] * 1.2:
-                var[j, 0] = round(var[j, 1] * 1.2, 8)
-            if var[j, 0] > 0.99:
-                var[j, 0] = 0
+        bpr = self.basepremrate
+        bpr[:, :, 0] = np.where(bpr[:, :, 0] > bpr[:, :, 1] * 1.2,
+                                (bpr[:, :, 1] * 1.2).round(8), bpr[:, :, 0])
+        bpr[:, :, 0] = np.where(bpr[:, :, 0] > 0.99,
+                                zeros(2).reshape(2, 1), bpr[:, :, 0])
 
-    def limit_revlook(self, i):
+    def limit_revlook(self):
         """
         Limit revenue lookup based on previous (unpacking vectors)
         """
@@ -302,14 +305,14 @@ class Premium:
             self.revlook[0] = round(self.revlook[1] * 1.2, 8)
         self.revlook[0] = round(min(self.revlook[0], 0.9999), 4)
 
-    def limit_baserate(self, i):
+    def limit_baserate(self):
         """
         Limit base rate based on previous (unpacking vectors)
         """
         if self.baserate[0] > self.baserate[1] * 1.2:
             self.baserate[0] = round(self.baserate[1] * 1.2, 8)
 
-    def set_qtys(self, i):
+    def set_qtys(self):
         """
         Compute mqty, stdqty and adjusted quantities
         """
@@ -319,78 +322,83 @@ class Premium:
         self.adjmeanqty = round(self.revyield * self.mqty / 100, 8)
         self.adjstdqty = round(self.revyield * self.stdqty / 100, 8)
 
-    def simulate_losses(self, i):
+    def simulate_losses(self):
         """
         Simulate losses for 500 (yield_draw, price_draw) pairs
         for cases (yp, rp, rphpe)
+        yld (500, 8), simloss(500, 8, 3), revyield scalar, revcov (8)
+        guarprice, harprice (500, 8)
+        self.simloss(8, 3)
         """
         self.lnmean = round(log(self.aphprice) - (self.pvol ** 2 / 2), 8)
-        simloss = zeros((500, 3))
+        simloss = zeros((500, 8, 3))
         draws = self.selected_draws
         yld = np.maximum(0, draws[:, 0] * self.adjstdqty + self.adjmeanqty)
-        simloss[:, 0] = np.maximum(0, self.revyield * self.revcov - yld)
+        yld = np.repeat(yld[:, np.newaxis], 8, axis=1)
+        simloss[:, :, 0] = np.maximum(0, self.revyield * self.revcov - yld)
         harprice = np.minimum(2 * self.aphprice,
                               exp(draws[:, 1] * self.pvol + self.lnmean))
+        harprice = np.repeat(harprice[:, np.newaxis], 8, axis=1)
         guarprice = np.maximum(harprice, self.aphprice)
-        simloss[:, 1] = np.maximum(0, (self.revyield * guarprice * self.revcov -
-                                       yld * harprice))
-        simloss[:, 2] = np.maximum(0, (self.revyield * self.aphprice * self.revcov -
-                                       yld * harprice))
+        simloss[:, :, 1] = np.maximum(0, (self.revyield * guarprice * self.revcov -
+                                          yld * harprice))
+        simloss[:, :, 2] = np.maximum(0, (self.revyield * self.aphprice * self.revcov -
+                                          yld * harprice))
         self.simloss = simloss.mean(0)
-        self.simloss[0] = round(self.simloss[0] / (self.revyield * self.revcov), 8)
-        self.simloss[1] = round(self.simloss[1] /
-                                (self.revyield * self.revcov * self.aphprice), 8)
-        self.simloss[2] = round(self.simloss[2] /
-                                (self.revyield * self.revcov * self.aphprice), 8)
+        self.simloss[:, 0] = (self.simloss[:, 0] /
+                              (self.revyield * self.revcov)).round(8)
+        self.simloss[:, 1] = (self.simloss[:, 1] /
+                              (self.revyield * self.revcov * self.aphprice)).round(8)
+        self.simloss[:, 2] = (self.simloss[:, 2] /
+                              (self.revyield * self.revcov * self.aphprice)).round(8)
+        print('simulate_losses: simloss', self.simloss)
 
-    def update_losses(self, yielddraw, pricedraw, simloss):
-        """
-        Update simulated loss for each protection type
-        """
-        yld = max(0, yielddraw * self.adjstdqty + self.adjmeanqty)
-        loss = max(0, self.revyield * self.revcov - yld)
-        simloss[0] += loss  # yield protection
-        harprice = min(2 * self.aphprice,
-                       exp(pricedraw * self.pvol + self.lnmean))
-        guarprice = max(harprice, self.aphprice)
-        loss = max(0, self.revyield * guarprice * self.revcov - yld * harprice)
-        simloss[1] += loss  # revenue protection
-        loss = max(0, self.revyield * self.aphprice * self.revcov - yld * harprice)
-        simloss[2] += loss  # revenue protection with harvest price exclusion
-
-    def set_rates(self, i):
+    def set_rates(self):
         """
         Set the premium rates
+        basepremrate(2, 8, 2), self.simloss(8, 3)
+        rp_rateuse(8), rphpe_ratuse(8), premrate(8, 2)
         """
-        self.rp_rateuse = round(max(0.01 * self.basepremrate[0, 0],
-                                self.simloss[1] - self.simloss[0]), 8)
-        self.rphpe_rateuse = round(max(-0.5 * self.basepremrate[0, 0],
-                                   self.simloss[2] - self.simloss[0]), 8)
-        self.premrate[0] = self.basepremrate[0, 0] * self.multfactor * self.disenter
-        self.premrate[1] = self.basepremrate[1, 0] * self.multfactor * self.disenter
+        self.rp_rateuse = (
+            np.maximum(0.01 * self.basepremrate[0, :,  0],
+                       self.simloss[:, 1] - self.simloss[:, 0])).round(8)
+        self.rphpe_rateuse = (
+            np.maximum(-0.5 * self.basepremrate[0, :, 0],
+                       self.simloss[:, 2] - self.simloss[:, 0])).round(8)
+        self.premrate[:] = (self.basepremrate[:, :, 0].T *
+                            self.multfactor * self.disenter.reshape(8, 1))
+        print(self.premrate)
 
-    def set_prem(self, rate, i, j, rateuse=0):
+    def set_prem(self, rate, j, rateuse=0):
         """
         Set a premium with given rate, indices and optional rateuse
         prem_ent is (8, 3): 8 coverage levels x (RP, RP-HPE, YP)
         """
-        self.prem_ent[i, j] = round(self.liab * round(rate + rateuse, 8), 0)
+        self.prem_ent[:, j] = (self.liab * (rate + rateuse).round(8)).round(0)
 
-    def set_prems(self, i):
+    def set_prems(self):
         """
         Set the pre-subsidy premiums
+        premrate(8, 2)
         """
-        self.set_prem(self.premrate[1], i, 0, self.rp_rateuse)      # RP
-        self.set_prem(self.premrate[1], i, 1, self.rphpe_rateuse)   # RP-HPE
-        self.set_prem(self.premrate[0], i, 2)                       # YP
+        self.prem_ent[:] = array((self.liab[:], self.liab[:], self.liab[:])).T
+        self.prem_ent[:, 0] = (
+            self.prem_ent[:, 0] *
+            (self.premrate[:, 1] + self.rp_rateuse).round(8)).round(0)     # RP
+        self.prem_ent[:, 1] = (
+            self.prem_ent[:, 1] *
+            (self.premrate[:, 1] + self.rphpe_rateuse).round(8)).round(0)  # RP-HPE
+        self.prem_ent[:, 2] = (self.prem_ent[:, 2] *
+                               self.premrate[:, 0].round(8)).round(0)      # YP
+        print('set_prems: prem_ent', self.prem_ent)
 
-    def apply_subsidy(self, i):
+    def apply_subsidy(self):
         """
         Apply the subsidy
         """
         for j in range(3):
-            self.prem_ent[i, j] -= round(self.prem_ent[i, j] * self.subsidy_ent[i], 0)
-            self.prem_ent[i, j] = round(self.prem_ent[i, j] / self.acres, 2)
+            self.prem_ent[:, j] -= (self.prem_ent[:, j] * self.subsidy_ent[:]).round(0)
+            self.prem_ent[:, j] = (self.prem_ent[:, j] / self.acres).round(2)
 
     def store_user_settings_ent(self, aphyield, appryield, tayield, acres, hailfire,
                                 prevplant, risk, tause, yieldexcl, county, crop,
@@ -437,9 +445,10 @@ class Premium:
         Initialize arrays for premium calculation
         """
         # Initialize current/prev arrays
-        self.ratediff_fac = zeros(2)
-        self.efactor = zeros(2)
-        self.efactor_rev = zeros(2)
+        self.ratediff_fac = zeros((8, 2))
+        self.efactor = zeros((8, 2))
+        self.efactor_rev = zeros((8, 2))
+        self.disenter = zeros(8)
         self.baserate = zeros(2)
         self.revlook = zeros(2)
 
@@ -456,8 +465,8 @@ class Premium:
         efr_key = self.enter_factor_rev_key[self.fcode]
         pefr_key = self.penter_factor_rev_key[self.fcode]
 
-        self.premrate = zeros(2)  # Premium rates array (YP, RP/RPHPE)
-        self.simloss = zeros(3)   # Simulated losses array (YP, RP, RPHPE)
+        self.premrate = zeros((8, 2))  # Premium rates array (YP, RP/RPHPE)
+        self.simloss = zeros((8, 3))   # Simulated losses array (YP, RP, RPHPE)
 
         # Look up info from the dicts created when the object was constructed
         self.highrisk, self.rtype = ((0, 0) if self.risk == 0 else
