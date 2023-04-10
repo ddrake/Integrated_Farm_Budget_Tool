@@ -6,7 +6,7 @@ Based on farm specific inputs, this tool will assist an operator in 1) evaluatin
 
 The current implementation is beginning the second phase of development.  The first phase was to devolop a Python codebase which could be validated against the sensitivity tables in Kelley's benchmarking.xlsx Excel workbook.  This is now complete and reasonably well-tested, and has been moved to a new _benchmarking_ branch for further testing.  Although this implementation can compute the indemnity payments for crop insurance, it relies on a set of pre-computed premiums, which is not a feasible option, since premiums depend on the county and the farm history.
 
-The final phase will be to implement a more general version of this tool, as a Django application.  This application will allow a logged-in user to select from a set of preset budget models and customize it as needed, then enter their farm-specific data.  This application will treat wheat and FAC soybeans as first-class crops.  A new workbook 'simplebudgettool.xlsx' has been developed by Kelley as a model for this tool.
+The final phase will be to implement a more general version of this tool, as a Django application.  This application will allow a logged-in user to select from a set of preset budget models and customize it as needed, then enter their farm-specific data.  This application will treat wheat and FAC soybeans as first-class crops.  A new workbook 'simplebudgettool.xlsx' has been developed by Kelley as a model for this tool.  This is available on the collaborators' Google Drive in the IFBT folder.
 
 This new tool will replace the hard-coded crop insurance premiums in 'crop_ins_premiums.txt' file with premium computation logic and data sourced by the RMA (Risk Management Agency).  The computational logic has now been largely implemented, but we are working out how to source some of its data.  It will support irrigated and non irrigated corn, winter wheat and soybeans, including soybeans following another crop (FAC).  It will support all counties in the following 28 states: IL, AL, AR, FL, GA, IN, IA, KS, KY, LA, MD, MI, MN, MS, MO, NE, NC, ND, OH, PA, SC, SD, TN, VA, WV, WI, OK, TX.
 
@@ -95,9 +95,9 @@ pytest
 ```
 
 The test files are located in the directory `ifbt/tests` and will be found by pytest automatically.  If you get a message that pytest is not found, you may need to add the location of the pytest executable to your PATH.
-- Note: many of the tests depend on the data text files, which take their values from a slightly modified copy of the 1/30/2023 'benchmarks.xslx' workbook.  If you are a collaborator and would like a copy of that workbook for testing purposes, please contact Dow.
+- Note: many of the tests depend on the data text files, which take their values from a slightly modified copy of the 1/30/2023 'benchmarks.xslx' workbook, named 'benchmarks_comparison.xlsx', which is available on the Collaborators' Google Drive IFBT folder.
 
-## Project collaborators
+- ## Project collaborators
 
 - Kelley Drake
 - Dow Drake
