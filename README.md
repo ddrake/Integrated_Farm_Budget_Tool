@@ -104,6 +104,7 @@ The test files are located in the directory `ifbt/tests` and will be found by py
 - Bennett Drake
 - Varun Sadasivam
 - Danny Huang
+- Osanna Drake
 
 ## Recommendations for collaborators
 

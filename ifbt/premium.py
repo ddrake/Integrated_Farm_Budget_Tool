@@ -215,8 +215,9 @@ class Premium:
         """
         cov, effcov = self.cover, self.effcov
         gap = cov[1] - cov[0]
+        bignum = 10  # dummy value large enough to never be the minimum
         j = np.argmin(np.where(effcov[i] - cov >= 0,
-                               effcov[i] - cov, np.ones_like(cov)*10))
+                               effcov[i] - cov, np.ones_like(cov)*bignum))
         rslts = []
         for var, ro in varpairs:
             cols = len(var.shape)
