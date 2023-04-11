@@ -202,45 +202,53 @@ class Premium:
 
     def set_factors(self):
         varpairs = [
-            (self.ratediff, 9), (self.enterprisefactor, 3),
-            (self.enterfactor_rev, 3), (self.discountenter[:, self.jsize], 4)]
-        for i in range(8):
-            rslts = self.interp(varpairs, i)
-            (self.ratediff_fac[i, :], self.efactor[i, :], self.efactor_rev[i, :],
-             self.disenter[i]) = rslts
+            (self.ratediff[:, 0], 9), (self.ratediff[:, 1], 9),
+            (self.enterprisefactor[:, 0], 3), (self.enterprisefactor[:, 0], 3),
+            (self.enterfactor_rev[:, 0], 3), (self.enterfactor_rev[:, 0], 3),
+            (self.discountenter[:, self.jsize], 4), ]
+        rslts = self.interp(varpairs)
+        self.ratediff_fac[:] = array(rslts[:2]).T
+        self.efactor[:] = array(rslts[2:4]).T
+        self.efactor_rev[:] = array(rslts[4:6]).T
+        self.disenter[:] = rslts[6]
 
-    def interp(self, varpairs, i):
+    def interp(self, varpairs):
         """
         Interpolate (or extrapolate up) by nearest cover values to effcov, then round.
         """
         cov, effcov = self.cover, self.effcov
         gap = cov[1] - cov[0]
-        bignum = 10  # dummy value large enough to never be the minimum
-        j = np.argmin(np.where(effcov[i] - cov >= 0,
-                               effcov[i] - cov, np.ones_like(cov)*bignum))
+        js, jps, jms = self.get_indices()
         rslts = []
         for var, ro in varpairs:
-            cols = len(var.shape)
-            # handle three special cases
-            if not self.tause:
-                rslts.append(var[i])
-            elif effcov[i] < cov[0]:
-                rslts.append((var[0, :]).round(ro) if cols > 1 else round(var[0], ro))
-            elif effcov[i] > 0.75 and self.ratediff[6, 0] == 0:
-                rslts.append((
-                    (var[5, :] + (var[5, :] - var[4, :]) *
-                     (effcov[i] - cov[5]) / gap).round(ro) if cols > 1 else
-                    round(var[5] + (var[5] - var[4]) * (effcov[i] - cov[5]) / gap, ro)))
-            else:
-                # handle general case with possible extrapolation
-                vdiff = ((var[j+1, :] - var[j, :] if j < 7 else var[j, :] - var[j-1, :])
-                         if cols > 1 else
-                         (var[j+1] - var[j] if j < 7 else var[j] - var[j-1]))
-                rslts.append((
-                    var[j, :] + vdiff * (effcov[i] - cov[j]) / gap).round(ro)
-                    if cols > 1 else
-                    round(var[j] + vdiff * (effcov[i] - cov[j]) / gap, ro))
+            # handle general case with possible extrapolation
+            vdiff = np.where(js < 7,
+                             var[jps] - var[js], var[js] - var[jms])
+            rslt = (var[js] + vdiff * (effcov - cov[js]) / gap).round(ro)
+            # modify result by three special cases
+            rslt = np.where(
+                np.logical_and(effcov > 0.75, self.ratediff[6, 0] == 0),
+                (var[5] + (var[5] - var[4]) * (effcov - cov[5]) / gap).round(ro),
+                rslt)
+            rslt = np.where(effcov < cov[0], round(var[0], ro), rslt)
+            rslt = np.where(not self.tause, var, rslt)
+            rslts.append(rslt)
         return rslts
+
+    def get_indices(self):
+        """
+        Get indices needed for interpolation
+        """
+        bignum = 10  # dummy value large enough to never be the minimum
+        diff = np.empty((8, 8))
+        for i in range(8):
+            diff[i, :] = self.effcov[i] - self.cover
+        js = np.argmin(np.where(diff >= 0,
+                                diff, np.ones_like(diff)*bignum), axis=1)
+        jps, jms = js + 1, js - 1
+        jps = np.where(jps > 7, np.ones_like(jps)*7, jps)
+        jms = np.where(jms < 0, np.zeros_like(jms), jms)
+        return js, jps, jms
 
     def make_ye_adj(self):
         """
@@ -361,7 +369,6 @@ class Premium:
                               (self.revyield * self.revcov * self.aphprice)).round(8)
         self.simloss[:, 2] = (self.simloss[:, 2] /
                               (self.revyield * self.revcov * self.aphprice)).round(8)
-        print('simulate_losses: simloss', self.simloss)
 
     def set_rates(self):
         """
@@ -377,7 +384,6 @@ class Premium:
                        self.simloss[:, 2] - self.simloss[:, 0])).round(8)
         self.premrate[:] = (self.basepremrate[:, :, 0].T *
                             self.multfactor * self.disenter.reshape(8, 1))
-        print(self.premrate)
 
     def set_prem(self, rate, j, rateuse=0):
         """
@@ -400,7 +406,6 @@ class Premium:
             (self.premrate[:, 1] + self.rphpe_rateuse).round(8)).round(0)  # RP-HPE
         self.prem_ent[:, 2] = (self.prem_ent[:, 2] *
                                self.premrate[:, 0].round(8)).round(0)      # YP
-        print('set_prems: prem_ent', self.prem_ent)
 
     def apply_subsidy(self):
         """
