@@ -253,8 +253,6 @@ class Premium:
     def make_ye_adj(self):
         """
         Adjust factors for YE (vectorized)
-        ratediff_fac: (8,2), enterprisefactor: (8,2), efactor: (8,2)
-        yeadj: (8), effcov: (8)
         """
         jjhigh = 5 if self.ratediff[6, 0] == 0 else 7
         yeadj = np.where(np.logical_and(self.effcov > 0.85, self.yieldexcl > 0.5),
@@ -306,8 +304,7 @@ class Premium:
 
     def limit_base_prem_rates(self):
         """
-        Limit base premium rates min of cur and 1.2 prior (unpacking vectors)
-        basepremrate (2,8,2)
+        Limit base premium rates min of cur and 1.2*prior (unpacking vectors)
         """
         bpr = self.basepremrate
         bpr[:, :, 0] = np.where(bpr[:, :, 0] > bpr[:, :, 1] * 1.2,
@@ -344,9 +341,6 @@ class Premium:
         """
         Simulate losses for 500 (yield_draw, price_draw) pairs
         for cases (yp, rp, rphpe)
-        yld (500, 8), simloss(500, 8, 3), revyield scalar, revcov (8)
-        guarprice, harprice (500, 8)
-        self.simloss(8, 3)
         """
         self.lnmean = round(log(self.aphprice) - (self.pvol ** 2 / 2), 8)
         simloss = zeros((500, 8, 3))
@@ -373,8 +367,6 @@ class Premium:
     def set_rates(self):
         """
         Set the premium rates
-        basepremrate(2, 8, 2), self.simloss(8, 3)
-        rp_rateuse(8), rphpe_ratuse(8), premrate(8, 2)
         """
         self.rp_rateuse = (
             np.maximum(0.01 * self.basepremrate[0, :,  0],
@@ -388,14 +380,12 @@ class Premium:
     def set_prem(self, rate, j, rateuse=0):
         """
         Set a premium with given rate, indices and optional rateuse
-        prem_ent is (8, 3): 8 coverage levels x (RP, RP-HPE, YP)
         """
         self.prem_ent[:, j] = (self.liab * (rate + rateuse).round(8)).round(0)
 
     def set_prems(self):
         """
         Set the pre-subsidy premiums
-        premrate(8, 2)
         """
         self.prem_ent[:] = array((self.liab[:], self.liab[:], self.liab[:])).T
         self.prem_ent[:, 0] = (
