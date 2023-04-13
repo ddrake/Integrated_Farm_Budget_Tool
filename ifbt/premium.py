@@ -185,14 +185,12 @@ class Premium:
         """
         Set Multiplicative Factor used to scale rates for hailfire, prevplant
         """
-        hfrate, pfrate, ptrate = self.options[self.options_key[self.code]]
+        hfrate, pfrate, _ = self.options[self.options_key[self.code]]
         self.multfactor = 1
         if self.hailfire > 0:
             self.multfactor *= hfrate
         if self.prevplant == 1:
             self.multfactor *= pfrate
-        if self.prevplant == 2:
-            self.multfactor *= ptrate
 
     def set_effcov(self):
         """
@@ -203,8 +201,8 @@ class Premium:
     def set_factors(self):
         varpairs = [
             (self.ratediff[:, 0], 9), (self.ratediff[:, 1], 9),
-            (self.enterprisefactor[:, 0], 3), (self.enterprisefactor[:, 0], 3),
-            (self.enterfactor_rev[:, 0], 3), (self.enterfactor_rev[:, 0], 3),
+            (self.enterprisefactor[:, 0], 3), (self.enterprisefactor[:, 1], 3),
+            (self.enterfactor_rev[:, 0], 3), (self.enterfactor_rev[:, 1], 3),
             (self.discountenter[:, self.jsize], 4), ]
         rslts = self.interp(varpairs)
         self.ratediff_fac[:] = array(rslts[:2]).T
@@ -369,19 +367,13 @@ class Premium:
         Set the premium rates
         """
         self.rp_rateuse = (
-            np.maximum(0.01 * self.basepremrate[0, :,  0],
+            np.maximum(0.01 * self.basepremrate[1, :,  0],
                        self.simloss[:, 1] - self.simloss[:, 0])).round(8)
         self.rphpe_rateuse = (
-            np.maximum(-0.5 * self.basepremrate[0, :, 0],
+            np.maximum(-0.5 * self.basepremrate[1, :, 0],
                        self.simloss[:, 2] - self.simloss[:, 0])).round(8)
         self.premrate[:] = (self.basepremrate[:, :, 0].T *
                             self.multfactor * self.disenter.reshape(8, 1))
-
-    def set_prem(self, rate, j, rateuse=0):
-        """
-        Set a premium with given rate, indices and optional rateuse
-        """
-        self.prem_ent[:, j] = (self.liab * (rate + rateuse).round(8)).round(0)
 
     def set_prems(self):
         """
@@ -637,7 +629,8 @@ class Premium:
                           'Fac (Irrigated)': 95,
                           'Non-irrigated': 3,
                           'Irrigated': 2}
-        self.croptypes = {'Grain': 16, 'No Type Specified': 997, 'Winter': 11}
+        self.croptypes = {'Grain': 16, 'No Type Specified': 997, 'Winter': 11,
+                          'Spring': 12}
 
         # County products have some different practices and croptypes
         self.cpractices = {'Nfac (non-irrigated)': 53,
