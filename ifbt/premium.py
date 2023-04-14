@@ -98,6 +98,8 @@ class Premium:
         # multiplies in the hail/fire and prev plant rates in premium rate calc.
         self.multfactor = None
         self.prot_factor = None      # Protection factor (aka payment factor) for ARC
+        # Used to lookup mqty, stdqty for loss simulation
+        self.revlook = None
         # based on basepremrate and simulated losses
         # Arrays sized (8)
         self.rphpe_rateuse = None
@@ -121,8 +123,6 @@ class Premium:
         self.efactor_rev = None
         # Interpolated from ratediff, used to scale all basepremrates.
         self.ratediff_fac = None
-        # Used to lookup mqty, stdqty for loss simulation
-        self.revlook = None
 
         # Array sized (2, 8, 2) ('YP', 'RP/RP-HPE') by levels by (cur, prior)
         self.basepremrate = None
@@ -166,7 +166,6 @@ class Premium:
         self.set_base_rates()
         self.set_base_prem_rates()
         self.limit_base_prem_rates()
-        self.limit_revlook()
         self.limit_baserate()
         self.set_qtys()
         self.simulate_losses()
@@ -290,7 +289,6 @@ class Premium:
         self.baserate = (self.highrisk + self.baserate * refrate + fixedrate).round(8)
         if self.rtype > 1.5:
             self.baserate[:] = self.highrisk
-        self.revlook[:] = self.baserate
 
     def set_base_prem_rates(self):
         """
@@ -310,27 +308,21 @@ class Premium:
         bpr[:, :, 0] = np.where(bpr[:, :, 0] > 0.99,
                                 zeros(2).reshape(2, 1), bpr[:, :, 0])
 
-    def limit_revlook(self):
-        """
-        Limit revenue lookup based on previous (unpacking vectors)
-        """
-        if self.revlook[0] > self.revlook[1] * 1.2:
-            self.revlook[0] = round(self.revlook[1] * 1.2, 8)
-        self.revlook[0] = round(min(self.revlook[0], 0.9999), 4)
-
     def limit_baserate(self):
         """
         Limit base rate based on previous (unpacking vectors)
+        and set revlook as min of baserate and 0.9999
         """
         if self.baserate[0] > self.baserate[1] * 1.2:
             self.baserate[0] = round(self.baserate[1] * 1.2, 8)
+        self.revlook = round(min(self.baserate[0], 0.9999), 4)
 
     def set_qtys(self):
         """
         Compute mqty, stdqty and adjusted quantities
         """
         revLookup = int(
-            self.revlook[0] * 10000 * self.discountenter[3, self.jsize] + 0.5)
+            self.revlook * 10000 * self.discountenter[3, self.jsize] + 0.5)
         self.mqty, self.stdqty = self.rev_lookup[revLookup]
         self.adjmeanqty = round(self.revyield * self.mqty / 100, 8)
         self.adjstdqty = round(self.revyield * self.stdqty / 100, 8)
@@ -447,7 +439,6 @@ class Premium:
         self.efactor_rev = zeros((8, 2))
         self.disenter = zeros(8)
         self.baserate = zeros(2)
-        self.revlook = zeros(2)
 
         # Initialize array to hold premiums
         self.prem_ent = zeros((8, 3))
