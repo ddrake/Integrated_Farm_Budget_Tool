@@ -2,45 +2,38 @@
 
 An integrated tool allowing midwest grain farmers to budget farm profitability and readily visualize outcomes sensitized to price and yield.
 
-Based on farm specific inputs, this tool will assist an operator in 1) evaluating crop profitability and acreage allocation, 2) budgeting revenues reflective of already marketed and unmarketed grain, 3) assessing the implications of crop insurance alternatives, and 4) assessing the implications of title selection.  Farm operators can easily change any key inputs or assumptions to quickly test alternatives and visualize the holistic impact on their farm's budgeted profitability.   Furthermore, all the drivers of revenue, costs, crop insurance and title are sensitized to actual harvest price and yield.  Therefore an operator can readily visualize not only the implications of decisions on a static budget, but also the range of potential outomes of farm profitability dependant upon a range of possible actual harvest prices and yields.
+Based on farm specific inputs, this tool will assist an operator in 1) evaluating crop profitability and acreage allocation, 2) budgeting revenues reflective of already marketed and unmarketed grain, 3) assessing the implications of crop insurance alternatives, and 4) assessing the implications of title selection.  Farm operators can easily change any key inputs or assumptions to quickly test alternatives and visualize the holistic impact on their farm's budgeted profitability.   Furthermore, all the drivers of revenue, costs, crop insurance and title are sensitized to actual harvest price and yield.  Therefore an operator can readily visualize not only the implications of decisions on a static budget, but also the range of potential outomes of farm profitability dependent upon a range of possible actual harvest prices and yields.
 
-The current implementation is beginning the second phase of development.  The first phase was to devolop a Python codebase which could be validated against the sensitivity tables in Kelley's benchmarking.xlsx Excel workbook.  This is now complete and reasonably well-tested, and has been moved to a new _benchmarking_ branch for further testing.  Although this implementation can compute the indemnity payments for crop insurance, it relies on a set of pre-computed premiums, which is not a feasible option, since premiums depend on the county and the farm history.
+The application will support irrigated and non irrigated corn, winter wheat and soybeans, including soybeans following another crop (FAC).  It will support all counties in the following 28 states: IL, AL, AR, FL, GA, IN, IA, KS, KY, LA, MD, MI, MN, MS, MO, NE, NC, ND, OH, PA, SC, SD, TN, VA, WV, WI, OK, TX.   For simplicity, we currently limit the Farm-based products to the Enterprise unit, and will ask users to specify the main county and cropping practice (irrigated or non-irrigated) for their operations.
 
-The final phase will be to implement a more general version of this tool, as a Django application.  This application will allow a logged-in user to select from a set of preset budget models and customize it as needed, then enter their farm-specific data.  This application will treat wheat and FAC soybeans as first-class crops.  A new workbook 'simplebudgettool.xlsx' has been developed by Kelley as a model for this tool.  This is available on the collaborators' Google Drive in the IFBT folder.
+The project is now in transition to a Django web application with a PostgreSQL database.  This application will allow a logged-in user to select from a set of preset budget models and customize it as needed, then enter their farm-specific data.  A new workbook 'simplebudgettool.xlsx' has been developed by Kelley as a model for the future user interface.  This is available on the collaborators' Google Drive in the IFBT folder.
 
-This new tool will replace the hard-coded crop insurance premiums in 'crop_ins_premiums.txt' file with premium computation logic and data sourced by the RMA (Risk Management Agency).  The computational logic has now been largely implemented, but we are working out how to source some of its data.  It will support irrigated and non irrigated corn, winter wheat and soybeans, including soybeans following another crop (FAC).  It will support all counties in the following 28 states: IL, AL, AR, FL, GA, IN, IA, KS, KY, LA, MD, MI, MN, MS, MO, NE, NC, ND, OH, PA, SC, SD, TN, VA, WV, WI, OK, TX.
+The current implementation is entering the final phase of development.  The first phase was to devolop a Python codebase which could be validated against the sensitivity tables in Kelley's benchmarking.xlsx Excel workbook.  This is now complete and reasonably well-tested, and has been moved to a _benchmarking_ branch, which is now fairly stale.  Although this implementation computed the indemnity payments for crop insurance, it relied on a set of pre-computed premiums, not a feasible option, since premiums depend on the county and the farm history.
 
-Ideally we would like the application to support every legal crop insurance option.  However, for simplicity, we currently limit the Farm-based products to the Enterprise unit, assume that every user's farm operation is restricted to a single county, and that all acres for a crop adhere to the same practice (e.g. irrigated or non-irrigated).  There may be other implicit assumptions that will have to be dealt with in a production version of the code.
+2023 RMA data files (21 GB) needed to compute premiums are being analyzed, transformed and imported into a PostgreSQL database.  This process is complicated and time-consuming, but all structural changes and data operations are being scripted using Django migrations and SQL scripts, respectively, in an effort to streamline the process for future years. 
 
-Django is flexible and powerful, and will be introduced soon, but we may save development time by fleshing out the model using a simple command-line interface, tabular display tools, and textfile vs. database storage before introducing the complexity of the framework.
-
-
-## Prerequisites 
+## Prerequisites for local installation and testing 
 
 - [Python 3.10 or above](https://www.python.org/) (If installing on Windows, check the box to add python to the path)
 - [Windows Terminal](https://apps.microsoft.com/store/detail/windows-terminal/9N0DX20HK701) (This is optional, but highly recommended if you are running Windows.)
+- [PostgreSQL/pgAdmin](https://www.postgresql.org/download/windows/)
 - [pip (Python package manager)](https://pip.pypa.io/en/stable/installation/)
 - [git version control](https://git-scm.com/downloads)
 - You should also sign up for a free account at [Github](https://github.com) if you haven't got one.  Also, unless you really enjoy typing passwords, follow the steps [here](https://docs.github.com/en/authentication/connecting-to-github-with-ssh/adding-a-new-ssh-key-to-your-github-account) to generate an SSH key pair and upload the public key to GitHub.
+- [Django](https://numpy.org/) `pip install django`
+- [psycopg2](https://numpy.org/) `pip install psycopg2`
 - [NumPy](https://numpy.org/) `pip install numpy`
 - [tabulate](https://pypi.org/project/tabulate/) `pip install tabulate`
 - [IPython](https://ipython.org/) `pip install ipython`  (Not essential, but much better than the default Python console.
 - A text editor or IDE of your choice.  [Notepad++](https://notepad-plus-plus.org/downloads/) should do just fine for a small project like this.  For more on this, see [this section](#recommendations-for-collaborators).
 
-
-## Installation
-
-The following steps install this tool locally as an 'editable' Python package: `ifbt`
+## Get the code
 
 ```
 git clone https://github.com/ddrake/Integrated_Farm_Budget_Tool.git
-cd Integrated_Farm_Budget_Tool
-pip install -e .
 ```
 
-The 'dot' at the end of the third command is important.  It means 'current directory'.
-
-Download the data directory from the Google Drive folder corresponding to the branch you want to work with and place it inside ifbt/.  Note: The data on Google Drive contains only textfiles, which are compact, but slow to load.  The current implementation for crop insurance premiums on the main branch looks for data in pickle (.pkl) files.  If a pickle file is not found, the corresponding textfile is loaded, converted to a dict, and the dict saved to a pickle file.  Currently, 1.3 GB of drive space is required for data for the main branch.  The drive space required for the benchmarking branch data is less then 1 MB.
+Download the postgreSQL dump file from the Google Drive folder and restore it to your local database. There are more notes and instructions in the Google Drive folder.  During the transition phase, you may still need to download the data directory to get the tests to pass.
 
 ## Usage
 
@@ -58,7 +51,7 @@ sens_crop_ins(2023)
 sens_cash_flow(2023)
 ```
 
-To compute a single cell of the table (or test wih arbitrary sensitivity factors): 
+To compute a single cell of the table (or test with arbitrary sensitivity factors): 
 
 ```
 from ifbt import Revenue
@@ -68,34 +61,17 @@ r = Revenue(2023)
 r.total_revenue(pf=.95, yf=1.05)
 ```
 
-The module/sript `scenario_mgr` allows a user to evaluate net cash flow scenarios for a range of price and yield sensitivity factors and return the top 10 best legal configurations of farm program and crop insurance choices for each scenario.  Since there are 500,000 legal configurations and 88 scenarios, this script may take 10 hours or so to complete depending on your machine.  It uses minimal memory and only one CPU core.  To try this feature, run at a command prompt:
-
-```
-python3 ifbt/scenario_mgr.py
-```
-
-To get the top *n* best legal configurations for each scenario in the output file, call the script with that argument.  For example, the following usage writes the best 5 configurations for each scenario:
-
-```
-python3 ifbt/scenario_mgr.py 5
-```
-
-This script generates a tab-separated values file 'bestcases.txt', which can easily be imported into a spreadsheet or a Pandas dataset for further analysis.
-
-Note that the "best legal configuration" depends on budget items, especially the proportion of contracted grain for each crop, and hence will generally be different for each user.  Also, it's not possible to use directly the results of this table to make farm program and crop insurance choices since knowledge of the harvest yields and prices is not available in the time frame when crop insurance can be purchased.
-
 ## Testing
 
 - You will need pytest for now.  Install it via `pip install pytest`.
 - To run all tests,
 
 ```
-cd ifbt 
+cd core/models 
 pytest
 ```
 
-The test files are located in the directory `ifbt/tests` and will be found by pytest automatically.  If you get a message that pytest is not found, you may need to add the location of the pytest executable to your PATH.
-- Note: many of the tests depend on the data text files, which take their values from a slightly modified copy of the 1/30/2023 'benchmarks.xslx' workbook, named 'benchmarks_comparison.xlsx', which is available on the Collaborators' Google Drive IFBT folder.
+- Note: many of the tests depend on the data text files, which take their values from a copy of the 'simpleBudgetTool.xlsx', which is available on the Collaborators' Google Drive IFBT folder.
 
 - ## Project collaborators
 
@@ -107,6 +83,8 @@ The test files are located in the directory `ifbt/tests` and will be found by py
 - Osanna Drake
 
 ## Recommendations for collaborators
+
+I recommend we use [CodePen](https://codepen.io) for developing and presenting front end components.  It may be better to search for and integrate existing components or build from scratch.  Either approach is fine.
 
 If you're unfamiliar with the Git version control system, a good place to start is this [tutorial](https://docs.github.com/en/get-started/quickstart/hello-world).
 
