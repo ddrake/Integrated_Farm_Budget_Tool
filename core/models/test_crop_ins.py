@@ -1,6 +1,8 @@
 import pytest
 
-from ifbt import CropIns, Premium, Crop, Ins, Unit, Prot, Lvl
+from .crop_ins import CropIns
+from .premium import Premium
+from .util import Crop, Ins, Unit, Prot, Lvl
 
 # Note: tests may fail if changes are made to the data files
 # 2023_crop_ins_indemnity.txt or 2023_crop_ins_premiums.txt

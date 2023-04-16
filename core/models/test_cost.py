@@ -1,6 +1,7 @@
 import pytest
 
-from ifbt import Cost, Premium
+from .cost import Cost
+from .premium import Premium
 
 # Note: tests may fail if changes are made to the data textfile
 

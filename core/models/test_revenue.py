@@ -1,6 +1,7 @@
 import pytest
 
-from ifbt import Revenue, Premium
+from .revenue import Revenue
+from .premium import Premium
 
 # Note: tests may fail if changes are made to the data textfile,
 # but changes to pricing for uncontracted grain and revenue_wheat are OK.

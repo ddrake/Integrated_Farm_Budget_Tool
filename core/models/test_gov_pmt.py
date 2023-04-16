@@ -1,6 +1,7 @@
 import pytest
 
-from ifbt import GovPmt, Crop
+from .gov_pmt import GovPmt
+from .util import Crop
 
 # Note: tests may fail if changes are made to the data textfile,
 # but changes to program selections are OK.

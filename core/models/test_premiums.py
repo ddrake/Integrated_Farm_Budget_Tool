@@ -1,6 +1,6 @@
 import numpy as np
 import pytest
-from ifbt import Premium
+from premium import Premium
 
 TOL = .01
 # Note: 'expected' arrays marked 'verified' have been checked against excel
