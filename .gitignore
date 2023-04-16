@@ -131,4 +131,4 @@ dmypy.json
 # Added by Dow
 *.xlsx
 bestcases.txt
-/ifbt/data
+data
