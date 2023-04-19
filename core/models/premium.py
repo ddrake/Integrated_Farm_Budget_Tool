@@ -286,6 +286,8 @@ class Premium:
         self.baserate = np.minimum(np.maximum(
             (self.aphyield / refyield).round(2), 0.5), 1.5)
         self.baserate = (self.baserate ** exponent).round(8)
+        # TODO: I believe this logic is incorrect.  Forget about rtype, check whether
+        # the subcountyrate is multiplicative (ND) or additive (all other states)
         self.baserate = (self.highrisk + self.baserate * refrate + fixedrate).round(8)
         if self.rtype > 1.5:
             self.baserate[:] = self.highrisk

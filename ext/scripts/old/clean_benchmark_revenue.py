@@ -15,7 +15,10 @@ STATES = {
 
 def clean_benchmark_revenue(crop_year=2023):
     """
-    Preparations:
+    Preparations: From the url:
+    https://www.fsa.usda.gov/programs-and-services/arcplc_program/arcplc-program-data/
+    click program year specific data, then download the first link in Program Year Data
+    <crop year> ARC-County Benchmark Yields and Revenues as of February 16.
     Open the file 'arcco_2023_data_2023-02-16.xlsx' in LibreCalc, delete all columns
     except ST_Cty, Crop Name, ARC-CO Yield Designation, and 2023 Benchmark Revenue.
     Delete header rows, format the benchmark revenue column as basic number without

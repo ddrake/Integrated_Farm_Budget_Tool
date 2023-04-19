@@ -202,3 +202,117 @@ FROM
 	GROUP BY state_id, county_code, commodity_id, commodity_type_id, practice, coverage_level,
 	high_risk, col) qq
 GROUP BY state_id, county_code, commodity_id, commodity_type_id, practice, high_risk;
+
+-- after migration 0016
+INSERT INTO public.ext_optionrate1(
+	state_id, county_code, commodity_id, commodity_type_id, practice, option_rate)
+select state_id, county_code, commodity_id, commodity_type_id, practice, array_agg(option_rate)
+from
+	(SELECT id, state_id, county_code, commodity_id, commodity_type_id, practice, insurance_option_id,
+	option_rate FROM public.ext_optionrate
+	order by state_id, county_code, commodity_id, commodity_type_id, practice, insurance_option_id) q
+group by state_id, county_code, commodity_id, commodity_type_id, practice;
+
+
+-- after migration 0020
+INSERT INTO public.ext_arearate1(
+	insurance_offer_id, price_volatility_factor, base_rate)
+SELECT insurance_offer_id, vol_factor, array_agg(base_rate)
+FROM
+	(SELECT insurance_offer_id, ROUND(100*price_volatility_factor) vol_factor, coverage_level, base_rate
+		FROM public.ext_areacoveragelevel acl inner join public.ext_arearate ar on acl.area_rate_id = ar.area_rate_id
+		order by insurance_offer_id, price_volatility_factor, coverage_level) q
+GROUP BY insurance_offer_id, vol_factor;
+
+
+-- after migration 0023
+INSERT INTO public.ext_arearate2(
+	state_id, county_code, commodity_id, commodity_type_id, practice,
+	price_volatility_factor, base_rate)
+SELECT state_id, county_code, commodity_id, commodity_type_id, practice,
+	price_volatility_factor, array_agg(brate) as base_rate
+FROM
+	(SELECT state_id, county_code, commodity_id, commodity_type_id, practice,
+	price_volatility_factor, insurance_plan_id,
+	 base_rate || array_fill(NULL::real, array[8 - array_length(base_rate, 1)]) brate
+	  FROM public.ext_insuranceofferarea ioa inner join public.ext_arearate1 ar1
+	  on ioa.id = ar1.insurance_offer_id
+	Order by state_id, county_code, commodity_id, commodity_type_id, practice,
+	price_volatility_factor, insurance_plan_id) q
+GROUP BY state_id, county_code, commodity_id, commodity_type_id, practice,
+	price_volatility_factor;
+
+
+-- after migration 0024
+-- I decided it's better not to bundle up rates for all insurance plans, because
+-- data is missing for some combinations of insurance plan, county, crop.  So
+-- the business logic would have to do extra work to unpack, count non-None values, etc.
+-- The table arearate2 has 1,923,769 records, which is not that bad.
+INSERT INTO public.ext_arearate2(
+	state_id, county_code, commodity_id, commodity_type_id, practice,
+	price_volatility_factor, insurance_plan_id, base_rate)
+SELECT state_id, county_code, commodity_id, commodity_type_id, practice,
+  price_volatility_factor, insurance_plan_id, base_rate
+    FROM public.ext_insuranceofferarea ioa inner join public.ext_arearate1 ar1
+    on ioa.id = ar1.insurance_offer_id
+Order by state_id, county_code, commodity_id, commodity_type_id, practice,
+  price_volatility_factor, insurance_plan_id;
+	
+-- Delete practices from arearate2 to remove duplicates
+-- See cpractices in premium.py
+delete from ext_arearate2 where practice not in(3, 53)
+
+-- Remove the first base rate (65% not used) for AYP 
+UPDATE public.ext_arearate2
+SET base_rate = base_rate[2:6]
+	WHERE insurance_plan_id=4;
+
+
+-- after migration 0025 (add price)
+DELETE FROM public.ext_price where expected_yield is NULL;
+DELETE FROM public.ext_price where insurance_plan_id <> 4;
+DELETE FROM public.ext_price where practice not in (3, 53);
+
+-- after migration 0028
+-- No rates for 'URA'
+DELETE FROM public.ext_subcountyrate where subcounty_id = 'URA';
+-- Remove duplicates
+DELETE FROM public.ext_subcountyrate where practice not in (3, 53);
+
+-- After migration 0032 (make beta, unit_discount foreign keys)
+UPDATE public.ext_insuranceofferent
+	SET beta_id = beta1_id, unit_discount_id=unit1_discount_id;
+
+-- After migration 0034
+-- This sets high_risk=true for all.
+UPDATE public.ext_subcountyrate
+	SET high_risk=true where subcounty_id is not null and subcounty_id <> 'URA';
+
+-- Working on stored view for all enterprise data.  Getting multiple rows.  Thoughts:
+-- Maybe make the 'main table' insuranceofferent cross joined to subsidy
+-- full joined to subcountyrate with high risk and subcounty_id in the select set.
+-- 
+-- Then left join to all the other tables
+SELECT ioe.id, ioe.state_id, ioe.county_code, scr.subcounty_id, ioe.commodity_id, ioe.commodity_type_id, ioe.practice,
+ud.enterprise_discount_factor, b.draw, scr.rate_method_id, scr.subcounty_rate, sub.subsidy,
+br.refyield, br.refrate, br.exponent, br.fixedrate, rd.rate_differential_factor, ef.enterprise_residual_factor_r,
+ef.enterprise_residual_factor_y, opr.option_rate
+	FROM public.ext_insuranceofferent ioe
+LEFT JOIN public.ext_beta b on ioe.beta_id=b.id
+LEFT JOIN public.ext_unitdiscount ud on ioe.unit_discount_id=ud.id
+LEFT JOIN public.ext_subcountyrate scr on ioe.state_id=scr.state_id
+	and ioe.county_code=scr.county_code and ioe.commodity_id=scr.commodity_id
+	and ioe.commodity_type_id=scr.commodity_type_id
+CROSS JOIN public.ext_subsidy sub
+LEFT JOIN public.ext_baserate br on ioe.state_id=br.state_id and ioe.county_code=br.county_code
+    and ioe.commodity_id=br.commodity_id and ioe.commodity_type_id=br.commodity_type_id 
+	and ioe.practice=br.practice
+LEFT JOIN public.ext_ratedifferential rd on ioe.state_id = rd.state_id and ioe.county_code=rd.county_code
+  	and ioe.commodity_id=rd.commodity_id and ioe.commodity_type_id=rd.commodity_type_id
+	and ioe.practice = rd.practice
+LEFT JOIN public.ext_enterprisefactor ef on ioe.state_id = ef.state_id and ioe.county_code=ef.county_code
+	and ioe.commodity_id=ef.commodity_id and ioe.commodity_type_id=ef.commodity_type_id and ioe.practice=ef.practice
+LEFT JOIN public.ext_optionrate opr on ioe.state_id=opr.state_id and ioe.county_code=opr.county_code
+	and ioe.commodity_id=opr.commodity_id and ioe.commodity_type_id=opr.commodity_type_id and ioe.practice=opr.practice
+where ioe.state_id=1 and ioe.county_code=19;
+
