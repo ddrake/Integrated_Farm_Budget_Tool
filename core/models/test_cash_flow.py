@@ -1,7 +1,7 @@
 import pytest
 
-from .cash_flow import CashFlow
-from .premium import Premium
+from cash_flow import CashFlow
+from premium import Premium
 
 # Note: tests may fail if changes are made to the data textfile,
 # but changes to pricing for uncontracted grain and cash_flow_wheat are OK.

@@ -5,7 +5,12 @@ Generate a table of values from two sensitivity parameters
 """
 from tabulate import tabulate
 
-from ifbt import Crop, GovPmt, Revenue, CropIns, CashFlow, Premium
+from util import Crop
+from gov_pmt import GovPmt
+from revenue import Revenue
+from crop_ins import CropIns
+from cash_flow import CashFlow
+from premium import Premium
 
 prem = Premium()
 

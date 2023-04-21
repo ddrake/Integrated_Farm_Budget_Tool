@@ -16,8 +16,8 @@ import pickle
 
 # import numpy as np
 
-from .analysis import Analysis
-from .util import crop_in, Crop, BASE_CROPS
+from analysis import Analysis
+from util import crop_in, Crop, BASE_CROPS
 
 DATADIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data')
 

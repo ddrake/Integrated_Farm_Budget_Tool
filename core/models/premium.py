@@ -3,7 +3,7 @@ import numpy as np
 import os
 import pickle
 
-from util import Crop, Unit, Lvl
+from util import Crop, Unit, Lvl, call_postgres_func
 
 DATADIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data')
 np.set_printoptions(precision=6)
@@ -1051,3 +1051,47 @@ def get_eco_key():
 
 def get_eco():
     return load('eco', int_key_float_array, shape=(36, 3, 2))
+
+
+def get_crop_ins_data(state_id, county_code, commodity_id, commodity_type_id,
+                      practice, cpractice, price_volatility_factor,
+                      subcounty_id=None):
+    """
+    Get data needed to compute crop insurance from a postgreSQL user-defined function
+    """
+    names = ('ayp_base_rate arp_base_rate arphpe_base_rate scoyp_base_rate ' +
+             'scorp_base_rate scorphpe_base_rate ecoyp_base_rate ecorp_base_rate ' +
+             'ecorphpe_base_rate expected_yield subcounty_rate refyield refrate ' +
+             'exponent fixedrate enterprise_residual_factor_r ' +
+             'enterprise_residual_factor_y rate_differential_factor ' +
+             'enterprise_discount_factor option_rate draw').split()
+
+    shapes = [(5,), (5,), (5,), (8,), (8,), (8,), (2,), (2,), (2,), (1,),
+              (1,), (2,), (2,), (2,), (2,), (8, 2), (8, 2), (8, 2), (8, 6),
+              (2,), (500, 2)]
+
+    cmd = """ SELECT """ + ', '.join(names) + """
+              FROM
+              public.prem_data(%s, %s, %s, %s, %s, %s, %s, %s)
+              AS (ayp_base_rate real[], arp_base_rate real[],
+                  arphpe_base_rate real[], scoyp_base_rate real[],
+                  scorp_base_rate real[], scorphpe_base_rate real[],
+                  ecoyp_base_rate real[], ecorp_base_rate real[],
+                  ecorphpe_base_rate real[], expected_yield real,
+                  subcounty_rate real, refyield real[], refrate real[],
+                  exponent real[], fixedrate real[],
+                  enterprise_residual_factor_r real[],
+                  enterprise_residual_factor_y real[],
+                  rate_differential_factor real[],
+                  enterprise_discount_factor real[],
+                  option_rate real[], draw real[]);
+          """
+    record = call_postgres_func(cmd, state_id, county_code, commodity_id,
+                                commodity_type_id, practice, cpractice,
+                                price_volatility_factor, subcounty_id)
+
+    converted = (np.array(it).reshape(shp) if len(shp) == 2 else
+                 np.array(it) if shp[0] > 1 else float(it)
+                 for it, shp in zip(record, shapes))
+
+    return list(zip(names, converted))

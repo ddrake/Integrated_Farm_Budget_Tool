@@ -4,10 +4,10 @@ Module revenue
 Contains a single class, Revenue, which loads its data for a given crop year
 when an instance is created.
 """
-from .analysis import Analysis
-from .crop_ins import CropIns
-from .gov_pmt import GovPmt
-from .util import Crop, crop_in, BASE_CROPS, SEASON_CROPS
+from analysis import Analysis
+from crop_ins import CropIns
+from gov_pmt import GovPmt
+from util import Crop, crop_in, BASE_CROPS, SEASON_CROPS
 
 
 class Revenue(Analysis):

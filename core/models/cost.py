@@ -4,10 +4,10 @@ Module cost
 Contains a single class, Cost, which loads its data
 for a given crop year when an instance is created.
 """
-from .analysis import Analysis
-from .crop_ins import CropIns
-from .revenue import Revenue
-from .util import crop_in, SEASON_CROPS
+from analysis import Analysis
+from crop_ins import CropIns
+from revenue import Revenue
+from util import crop_in, SEASON_CROPS
 
 
 class Cost(Analysis):

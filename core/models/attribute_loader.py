@@ -7,7 +7,7 @@ Subclasses are responsible for loading key value pairs into object attributes.
 from os import path
 import re
 
-from .util import Crop, Ins, Unit, Prot, Lvl
+from util import Crop, Ins, Unit, Prot, Lvl
 
 
 DATADIR = path.join(path.dirname(path.abspath(__file__)), 'data')

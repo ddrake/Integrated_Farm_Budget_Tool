@@ -4,10 +4,10 @@ Module cash_flow
 Contains a single class, CashFlow, which loads some data for a given crop year
 when an instance is created, and uses results from the Cost and Revenue modules
 """
-from .analysis import Analysis
-from .cost import Cost
-from .revenue import Revenue
-from .util import SEASON_CROPS
+from analysis import Analysis
+from cost import Cost
+from revenue import Revenue
+from util import SEASON_CROPS
 
 
 class CashFlow(Analysis):

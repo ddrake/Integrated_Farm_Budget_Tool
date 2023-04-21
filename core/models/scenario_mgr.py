@@ -11,7 +11,9 @@ from datetime import datetime
 import reprlib
 from sys import argv
 
-from ifbt import Crop, Ins, Unit, Prot, Lvl, CashFlow, Premium
+from util import Crop, Ins, Unit, Prot, Lvl
+from cash_flow import CashFlow
+from premium import Premium
 
 p = Premium()
 

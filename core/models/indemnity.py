@@ -3,8 +3,8 @@
 from numpy import zeros, ones, array
 import numpy as np
 
-from .analysis import Analysis
-from .util import Crop, crop_in, SEASON_CROPS, Unit, Lvl
+from analysis import Analysis
+from util import Crop, crop_in, SEASON_CROPS, Unit, Lvl
 
 
 class Indemnity(Analysis):

@@ -3,9 +3,13 @@ Module util
 
 Definitions used by many classes
 """
-
 from enum import IntEnum
 from functools import wraps
+import os
+from pathlib import Path
+
+import environ
+import psycopg2
 
 Crop = IntEnum('Crop', ['CORN', 'SOY', 'WHEAT', 'FULL_SOY', 'DC_SOY'], start=0)
 Ins = IntEnum('Ins', ['NO', 'YES'], start=0)
@@ -38,3 +42,36 @@ def crop_in(*crops):
                 return f(*args, **kwds)
         return new_f
     return decorator
+
+
+def call_postgres_func(cmd, *args):
+    """
+    Get data needed to compute crop insurance
+    """
+    # Build paths inside the project like this: BASE_DIR / 'subdir'.
+    BASE_DIR = Path(__file__).resolve().parent.parent
+    environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
+    env = environ.Env()
+    conn = None
+    row = None
+    try:
+        # connect to the PostgreSQL database
+        conn = psycopg2.connect(
+            host='localhost', database=env('DATABASE_NAME'),
+            user=env('DATABASE_USER'), password=env('DATABASE_PASS'))
+        # create a cursor object for execution
+        cur = conn.cursor()
+        cur.execute(cmd, *args)
+        # process the result set
+        row = cur.fetchone()
+        while row is not None:
+            print(row)
+            row = cur.fetchone()
+        # close the communication with the PostgreSQL database server
+        cur.close()
+    except (Exception, psycopg2.DatabaseError) as error:
+        print(error)
+    finally:
+        if conn is not None:
+            conn.close()
+    return row
