@@ -22,6 +22,8 @@ ALL_CROPS = [Crop.CORN, Crop.SOY, Crop.WHEAT, Crop.FULL_SOY, Crop.DC_SOY]
 BASE_CROPS = [Crop.CORN, Crop.SOY, Crop.WHEAT]
 SEASON_CROPS = [Crop.CORN, Crop.FULL_SOY, Crop.WHEAT, Crop.DC_SOY]
 
+BASE_DIR = Path(__file__).resolve().parent.parent
+
 
 def crop_in(*crops):
     """
@@ -44,12 +46,12 @@ def crop_in(*crops):
     return decorator
 
 
-def call_postgres_func(cmd, *args):
+def call_postgres_func(*args):
     """
     Get data needed to compute crop insurance
     """
-    # Build paths inside the project like this: BASE_DIR / 'subdir'.
-    BASE_DIR = Path(__file__).resolve().parent.parent
+    arglist = list(args)
+    cmd = arglist.pop(0)
     environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
     env = environ.Env()
     conn = None
@@ -61,12 +63,46 @@ def call_postgres_func(cmd, *args):
             user=env('DATABASE_USER'), password=env('DATABASE_PASS'))
         # create a cursor object for execution
         cur = conn.cursor()
-        cur.execute(cmd, *args)
+        print(cmd)
+        print(arglist)
+        cur.execute(cmd, tuple((None if arg is None else str(arg) for arg in arglist)))
         # process the result set
         row = cur.fetchone()
-        while row is not None:
-            print(row)
-            row = cur.fetchone()
+        # while row is not None:
+        #     row = cur.fetchone()
+        # close the communication with the PostgreSQL database server
+        cur.close()
+    except (Exception, psycopg2.DatabaseError) as error:
+        print(error)
+    finally:
+        if conn is not None:
+            conn.close()
+    return row
+
+
+def get_postgres_row(*args):
+    """
+    Get a specified row from a postgreSQL table
+    """
+    arglist = list(args)
+    query = arglist.pop(0)
+    environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
+    env = environ.Env()
+    conn = None
+    row = None
+    try:
+        # connect to the PostgreSQL database
+        conn = psycopg2.connect(
+            host='localhost', database=env('DATABASE_NAME'),
+            user=env('DATABASE_USER'), password=env('DATABASE_PASS'))
+        # create a cursor object for execution
+        cur = conn.cursor()
+        print(query)
+        print(arglist)
+        cur.execute(query, tuple((None if arg is None else str(arg)
+                                  for arg in arglist)))
+        # fetch the record
+        row = cur.fetchone()
         # close the communication with the PostgreSQL database server
         cur.close()
     except (Exception, psycopg2.DatabaseError) as error:
