@@ -15,7 +15,7 @@ class Premium:
         self.load_lookups()
         self.cover = array([x/100 for x in range(50, 86, 5)])  # coverage levels
         self.arc_cover = array([x/100 for x in range(70, 91, 5)])  # arc coverage levels
-        self.sco_level = .86
+        self.sco_top_level = 0.86
         self.eco_cover = array([x/100 for x in [90, 95]])
 
         # User inputs
@@ -114,8 +114,6 @@ class Premium:
         self.revcov = None
         # revised yield: tayield if tause else appryield
         self.revyield = None
-        # used in ARC: expected yield * price * max prot_factor (1.2)
-        self.maxliab = None
         # log(aphprice) - pvol**2/2, used to compute harvest price in loss simulation.
         self.lnmean = None
         # multiplies in the hail/fire and prev plant rates in premium rate calc.
@@ -184,10 +182,8 @@ class Premium:
                 self.croptype, self.practice, self.cpractice,
                 self.price_volatility_factor, self.subcounty)
 
-        print('printing data')
         for name, val in data:
             setattr(self, name, val)
-            print(name, getattr(self, name))
 
         self.compute_prems_ent()
         self.compute_prems_arc()
@@ -466,24 +462,14 @@ class Premium:
         Can't calculate ARC premiums for AL FL PA VA WV GA using 2023 data
         TODO: return None in this case without raising error.
         """
-        self.prem_arc = zeros((5, 3))
-        rates = (self.arp_base_rate, self.arphpe_base_rate, self.ayp_base_rate)
-        print('arc rates', rates)
-        subs = (self.subsidy_ar, self.subsidy_ar, self.subsidy_ay)
-        print('arc subsidies', subs)
-        for i, (rate, sub) in enumerate(zip(rates, subs)):
-            self.compute_prem_arc(sub, rate, i)
-        return self.prem_arc
-
-    def compute_prem_arc(self, subsidy, rate, idx):
-        """
-        Compute premiums for the given unit info
-        """
-        self.maxliab = round(self.expected_yield * self.projected_price * 1.2, 2)
-        self.prem_arc[:, idx] = (self.maxliab * 100 * rate).round(0)
-        self.prem_arc[:, idx] -= (self.prem_arc[:, idx] * subsidy).round(0)
-        self.prem_arc[:, idx] = (self.prem_arc[:, idx] / 100 *
-                                 self.prot_factor / 1.2).round(2)
+        rates = np.array((self.arp_base_rate, self.arphpe_base_rate,
+                          self.ayp_base_rate))
+        subs = np.array((self.subsidy_ar, self.subsidy_ar, self.subsidy_ay))
+        maxliab = round(self.expected_yield * self.projected_price * 1.2, 2)
+        self.prem_arc = (maxliab * 100 * rates.T).round(0)
+        self.prem_arc[:] -= (self.prem_arc * subs.T).round(0)
+        self.prem_arc[:] = (self.prem_arc / 100 *
+                            self.prot_factor / 1.2).round(2)
 
     # ------------
     # SCO PREMIUMS
@@ -491,9 +477,9 @@ class Premium:
     def compute_prems_sco(self):
         """ Compute all SCO premiums """
         rates = array([self.scorp_base_rate, self.scorphpe_base_rate,
-                       self.scoyp_base_rate]).reshape(8, 3)
-        self.prem_sco = (self.aliab * rates *
-                         (self.sco_level - self.cover).reshape(8, 1)).round(2)
+                       self.scoyp_base_rate])
+        self.prem_sco = (self.aliab * rates.T *
+                         (self.sco_top_level - self.cover).reshape(8, 1)).round(2)
         self.prem_sco[:] -= (self.subsidy_s * self.prem_sco).round(2)
         return self.prem_sco
 
@@ -502,12 +488,13 @@ class Premium:
     # ------------
     def compute_prems_eco(self):
         """ Compute all ECO premiums """
+        # Note: these don't match the UI tool because it applies the revenue subsidy
+        # to all products, instead of using the higher yield subsidy for YP.
         rate = np.array([self.ecorp_base_rate, self.ecorphpe_base_rate,
-                         self.ecoyp_base_rate]).reshape(2, 3)
+                         self.ecoyp_base_rate])
         subsidy = np.array([self.subsidy_er, self.subsidy_er, self.subsidy_ey])
-        self.prem_eco = (self.aliab * rate *
-                         (self.eco_cover - self.sco_level).reshape(2, 1) *
-                         (1 - subsidy)).round(2)
+        self.prem_eco = ((self.eco_cover - self.sco_top_level).reshape(2, 1) *
+                         self.aliab * rate.T * (1 - subsidy)).round(2)
         return self.prem_eco
 
     def make_aliab(self):
@@ -700,10 +687,6 @@ def get_crop_ins_data_pre_pvol(state_id, county_code, commodity_id, commodity_ty
                                 commodity_type_id, practice, cpractice,
                                 price_volatility_factor, subcounty_id)
 
-    print('len(record)', len(record))
-    print('len(shapes)', len(shapes))
-    print('len(names)', len(names))
-
     converted = (None if it is None else
                  np.array(it).reshape(shp) if len(shp) == 2 else
                  np.array(it) if shp[0] > 1 else
@@ -754,10 +737,6 @@ def get_crop_ins_data(state_id, county_code, commodity_id, commodity_type_id,
     record = call_postgres_func(cmd, state_id, county_code, commodity_id,
                                 commodity_type_id, practice, cpractice,
                                 subcounty_id)
-
-    print('len(record)', len(record))
-    print('len(shapes)', len(shapes))
-    print('len(names)', len(names))
 
     converted = (None if it is None else
                  np.array(it).reshape(shp) if len(shp) == 2 else

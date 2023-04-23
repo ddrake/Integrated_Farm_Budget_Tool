@@ -63,14 +63,9 @@ def call_postgres_func(*args):
             user=env('DATABASE_USER'), password=env('DATABASE_PASS'))
         # create a cursor object for execution
         cur = conn.cursor()
-        print(cmd)
-        print(arglist)
         cur.execute(cmd, tuple((None if arg is None else str(arg) for arg in arglist)))
         # process the result set
         row = cur.fetchone()
-        # while row is not None:
-        #     row = cur.fetchone()
-        # close the communication with the PostgreSQL database server
         cur.close()
     except (Exception, psycopg2.DatabaseError) as error:
         print(error)
@@ -97,8 +92,6 @@ def get_postgres_row(*args):
             user=env('DATABASE_USER'), password=env('DATABASE_PASS'))
         # create a cursor object for execution
         cur = conn.cursor()
-        print(query)
-        print(arglist)
         cur.execute(query, tuple((None if arg is None else str(arg)
                                   for arg in arglist)))
         # fetch the record
