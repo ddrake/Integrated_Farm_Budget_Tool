@@ -58,7 +58,8 @@ class Premium:
         self.appryield = None
         # Trend-adjusted yield (takes into effect a positive trendline in historical
         #     yields).
-        self.tayield = None
+        self.tayield = None  # modified in compute_prems_ent
+        self.atayield = None  # need unmodified value for area SCO, ECO
 
         # External data
         # -------------
@@ -510,9 +511,12 @@ class Premium:
         return self.prem_eco
 
     def make_aliab(self):
-        arevyield = self.tayield if self.tause else self.aphyield
+        arevyield = self.atayield if self.tause else self.aphyield
         self.aliab = arevyield * self.projected_price
 
+    # -------------------
+    # STORE USER SETTINGS
+    # -------------------
     def store_user_settings(self, aphyield, appryield, tayield, acres, hailfire,
                             prevplant, tause, yieldexcl, state, county,
                             crop, croptype, practice, prot_factor, projected_price,
@@ -524,6 +528,7 @@ class Premium:
         self.aphyield = aphyield
         self.appryield = appryield
         self.tayield = tayield
+        self.atayield = tayield
         self.acres = acres
         self.hailfire = hailfire
         self.prevplant = prevplant
