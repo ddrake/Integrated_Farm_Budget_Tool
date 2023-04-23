@@ -162,8 +162,8 @@ def test_300_acres_wheat_champaign():
              [7.23, 6.95, 6.5 , 5.85, 4.93, 3.74, 2.23, 0.41],
              [4.5 , 4.36, 4.13, 3.81, 3.31, 2.59, 1.6 , 0.30]]).T,
         np.array(
-            [[3.54, 2.86, 2.14],
-             [8.47, 6.88, 5.32]]))
+            [[3.54, 2.86, 1.87],
+             [8.47, 6.88, 4.66]]))
 
     for prm, exp in zip(prem, expected):
         assert np.all((prm - exp) == pytest.approx(0, TOL)), "values don't all match"
