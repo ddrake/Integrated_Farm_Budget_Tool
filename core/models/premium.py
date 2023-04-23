@@ -74,6 +74,7 @@ class Premium:
         self.enterprise_discount_factor = None
         self.enterprise_residual_factor_r = None
         self.enterprise_residual_factor_y = None
+        # Needed to compute ARC premiums (missing for some counties)
         self.expected_yield = None
         self.option_rate = None
         self.rate_differential_factor = None
@@ -184,12 +185,23 @@ class Premium:
 
         for name, val in data:
             setattr(self, name, val)
+            print(f'self.{name} = {val}')
 
-        self.compute_prems_ent()
-        self.compute_prems_arc()
-        self.make_aliab()
-        self.compute_prems_sco()
-        self.compute_prems_eco()
+        if self.projected_price is None:
+            print("Projected Price is missing.",
+                  "Can't compute any premiums.")
+            self.prem_ent = self.prem_arc = self.prem_sco = self.prem_eco = None
+        else:
+            self.compute_prems_ent()
+            if self.expected_yield is None:
+                print("Expected Yield is not available for county/crop",
+                      "Can't compute Area premiums")
+                self.prem_arc = None
+            else:
+                self.compute_prems_arc()
+            self.make_aliab()
+            self.compute_prems_sco()
+            self.compute_prems_eco()
 
         return self.prem_ent, self.prem_arc, self.prem_sco, self.prem_eco
 
@@ -655,14 +667,14 @@ def get_crop_ins_data_pre_pvol(state_id, county_code, commodity_id, commodity_ty
     """
     names = ('''ayp_base_rate arp_base_rate arphpe_base_rate scoyp_base_rate
              scorp_base_rate scorphpe_base_rate ecoyp_base_rate ecorp_base_rate
-             ecorphpe_base_rate expected_yield subcounty_rate refyield refrate
-             exponent fixedrate enterprise_residual_factor_r
+             ecorphpe_base_rate expected_yield subcounty_rate rate_method_id
+             refyield refrate exponent fixedrate enterprise_residual_factor_r
              enterprise_residual_factor_y rate_differential_factor
              enterprise_discount_factor option_rate draw subsidy_ent subsidy_ay
              subsidy_ar subsidy_s subsidy_ey subsidy_er''').split()
 
     shapes = [(5,), (5,), (5,), (8,), (8,), (8,), (2,), (2,), (2,), (1,),
-              (1,), (2,), (2,), (2,), (2,), (8, 2), (8, 2), (8, 2), (8, 6),
+              (1,), (1,), (2,), (2,), (2,), (2,), (8, 2), (8, 2), (8, 2), (8, 6),
               (2,), (500, 2), (8,), (5,), (5,), (1,), (1,), (1,)]
 
     cmd = 'SELECT ' + ', '.join(names) + """
@@ -673,8 +685,8 @@ def get_crop_ins_data_pre_pvol(state_id, county_code, commodity_id, commodity_ty
                   scorp_base_rate real[], scorphpe_base_rate real[],
                   ecoyp_base_rate real[], ecorp_base_rate real[],
                   ecorphpe_base_rate real[], expected_yield real,
-                  subcounty_rate real, refyield real[], refrate real[],
-                  exponent real[], fixedrate real[],
+                  subcounty_rate real, rate_method_id char(1), refyield real[],
+                  refrate real[], exponent real[], fixedrate real[],
                   enterprise_residual_factor_r real[],
                   enterprise_residual_factor_y real[],
                   rate_differential_factor real[],
@@ -688,10 +700,11 @@ def get_crop_ins_data_pre_pvol(state_id, county_code, commodity_id, commodity_ty
                                 price_volatility_factor, subcounty_id)
 
     converted = (None if it is None else
+                 it if name == 'rate_method_id' else
                  np.array(it).reshape(shp) if len(shp) == 2 else
                  np.array(it) if shp[0] > 1 else
                  float(it)
-                 for it, shp in zip(record, shapes))
+                 for it, shp, name in zip(record, shapes, names))
 
     return zip(names, converted)
 
@@ -705,14 +718,14 @@ def get_crop_ins_data(state_id, county_code, commodity_id, commodity_type_id,
     names = ('''ayp_base_rate arp_base_rate arphpe_base_rate scoyp_base_rate
              scorp_base_rate scorphpe_base_rate ecoyp_base_rate ecorp_base_rate
              ecorphpe_base_rate expected_yield projected_price
-             price_volatility_factor subcounty_rate refyield refrate
+             price_volatility_factor subcounty_rate rate_method_id refyield refrate
              exponent fixedrate enterprise_residual_factor_r
              enterprise_residual_factor_y rate_differential_factor
              enterprise_discount_factor option_rate draw subsidy_ent subsidy_ay
              subsidy_ar subsidy_s subsidy_ey subsidy_er''').split()
 
     shapes = [(5,), (5,), (5,), (8,), (8,), (8,), (2,), (2,), (2,), (1,),
-              (1,), (1,), (1,), (2,), (2,), (2,), (2,), (8, 2), (8, 2), (8, 2),
+              (1,), (1,), (1,), (1,), (2,), (2,), (2,), (2,), (8, 2), (8, 2), (8, 2),
               (8, 6), (2,), (500, 2), (8,), (5,), (5,), (1,), (1,), (1,)]
 
     cmd = """ SELECT """ + ', '.join(names) + """
@@ -724,8 +737,8 @@ def get_crop_ins_data(state_id, county_code, commodity_id, commodity_type_id,
                   ecoyp_base_rate real[], ecorp_base_rate real[],
                   ecorphpe_base_rate real[], expected_yield real,
                   projected_price real, price_volatility_factor smallint,
-                  subcounty_rate real, refyield real[], refrate real[],
-                  exponent real[], fixedrate real[],
+                  subcounty_rate real, rate_method_id char(1), refyield real[],
+                  refrate real[], exponent real[], fixedrate real[],
                   enterprise_residual_factor_r real[],
                   enterprise_residual_factor_y real[],
                   rate_differential_factor real[],
@@ -739,9 +752,10 @@ def get_crop_ins_data(state_id, county_code, commodity_id, commodity_type_id,
                                 subcounty_id)
 
     converted = (None if it is None else
+                 it if name == 'rate_method_id' else
+                 int(it) if name == 'price_volatility_factor' else
                  np.array(it).reshape(shp) if len(shp) == 2 else
                  np.array(it) if shp[0] > 1 else
-                 int(it) if name == 'price_volatility_factor' else
                  float(it)
                  for it, shp, name in zip(record, shapes, names))
 
