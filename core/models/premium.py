@@ -10,6 +10,8 @@ np.set_printoptions(suppress=True)
 class Premium:
     """
     Class for computing Enterprise and ARC premiums for RP, RP-HPE, YO
+    Section and page numbers in docstrings refer to the relevant RMA premium calculation
+    handbooks.
     """
     def __init__(self):
         self.load_lookups()
@@ -249,10 +251,15 @@ class Premium:
     def set_effcov(self):
         """
         Set the effective coverage level (Note: depends on tayield regardless of tause)
+        (Section 13, p. 44)
         """
         self.effcov = (0.0001 + self.cover * self.tayield_adj / self.appryield).round(2)
 
     def set_factors(self):
+        """
+        Interpolate current and previous rate differential, enterprise residual, and
+        enterprise discount factors based on effective coverage. (section 15, p. 65-75)
+        """
         varpairs = [
             (self.rate_differential_factor[:, 0], 9),
             (self.rate_differential_factor[:, 1], 9),
@@ -270,6 +277,7 @@ class Premium:
     def interp(self, varpairs):
         """
         Interpolate (or extrapolate up) by nearest cover values to effcov, then round.
+        (section 15, p. 65-75)
         """
         cov, effcov = self.cover, self.effcov
         gap = cov[1] - cov[0]
@@ -307,10 +315,10 @@ class Premium:
 
     def make_ye_adj(self):
         """
-        Adjust factors for YE (vectorized)
+        Adjust factors for YE (vectorized) (section 19, p. 74)
         """
         jjhigh = 5 if self.rate_differential_factor[6, 0] == 0 else 7
-        yeadj = np.where(np.logical_and(self.effcov > 0.85, self.yieldexcl > 0.5),
+        yeadj = np.where(np.logical_and(self.effcov > 0.85, self.yieldexcl == 1),
                          (self.effcov - 0.85) / 0.15, np.zeros_like(self.effcov))
         yeadj = np.where(self.effcov > 0.85,
                          1 + (np.minimum(1, yeadj) ** 3).round(7) * 0.05, yeadj)
@@ -426,7 +434,7 @@ class Premium:
 
     def set_rates(self):
         """
-        Set the premium rates
+        Set the premium rates (p. 38)
         """
         self.rp_rateuse = (
             np.maximum(0.01 * self.basepremrate[1, :,  0],
@@ -453,7 +461,7 @@ class Premium:
 
     def apply_subsidy(self):
         """
-        Apply the subsidy
+        Apply the subsidy (section 17, p. 73)
         """
         self.prem_ent[:] -= (self.prem_ent[:] *
                              self.subsidy_ent[:].reshape(8, 1)).round(0)
