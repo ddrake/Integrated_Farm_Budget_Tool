@@ -13,8 +13,9 @@ TOL = .01
 # 'tause': 1,     # 1 to use trend-adjusted yields 0 else
 # 'yieldexcl': 0, # 1 to use yield-exclusion 0 else
 #
-# Note: An premium array of zeros means no premiums are avaiable for the product
+# Note: None is returned if premiums cannot be computed for a product
 # Note: arc premiums use the 120% protection factor to match an Excel column.
+# Note: If price_volatility_factor is specified, it must be an integer value.
 
 
 def test_with_default_values():
@@ -48,7 +49,7 @@ def test_with_default_values():
 def test_3000_acres_corn_in_champaign():
     # Premiums for 3000 acres corn (verified)
     settings = {
-        'aphyield': 180,
+        'rateyield': 180,
         'appryield': 180,
         'tayield': 190,
         'acres': 3000,
@@ -89,7 +90,7 @@ def test_3000_acres_corn_in_champaign():
 def test_3000_acres_champaign_full_soy():
     # Premiums for 3000 acres full season soybeans in Champaign (verified)
     settings = {
-        'aphyield': 58,
+        'rateyield': 58,
         'appryield': 58,
         'tayield': 60,
         'acres': 3000,
@@ -132,7 +133,7 @@ def test_300_acres_wheat_champaign():
     # Premiums for 300 acres wheat in Champaign (verified)
     # NOTE: The ARP premiums are not available for this case.
     settings = {
-        'aphyield': 39,
+        'rateyield': 39,
         'appryield': 39,
         'tayield': 38.5,
         'acres': 300,
@@ -170,7 +171,7 @@ def test_300_acres_wheat_champaign():
 def test_100_acres_madison_corn():
     # Premiums for Madison County corn (verified)
     settings = {
-        'aphyield': 154,
+        'rateyield': 154,
         'appryield': 154,
         'tayield': 164,
         'acres': 100,
@@ -211,7 +212,7 @@ def test_100_acres_madison_corn():
 def test_3000_acres_full_soybeans_madison():
     # Premiums for 3000 acres full season soybeans in Madison (verified)
     settings = {
-        'aphyield': 47,
+        'rateyield': 47,
         'appryield': 47,
         'tayield': 50,
         'acres': 3000,
@@ -252,7 +253,7 @@ def test_3000_acres_full_soybeans_madison():
 def test_300_acres_wheat_madison():
     # Premiums for 300 acres wheat in Madison (verified)
     settings = {
-        'aphyield': 58,
+        'rateyield': 58,
         'appryield': 58,
         'tayield': 61,
         'acres': 300,
@@ -293,7 +294,7 @@ def test_300_acres_wheat_madison():
 def test_300_acres_fac_soy_madison():
     # Premiums for 300 acres Fac soybeans in Madison (verified)
     settings = {
-        'aphyield': 47,
+        'rateyield': 47,
         'appryield': 47,
         'tayield': 49,
         'acres': 300,
@@ -334,7 +335,7 @@ def test_300_acres_fac_soy_madison():
 def test_100_acres_corn_st_charles_mo_risk_BBB():
     # Premiums for 100 acres corn in St. Charles, MO (verified)
     settings = {
-        'aphyield': 147,
+        'rateyield': 147,
         'appryield': 147,
         'tayield': 156,
         'acres': 100,
@@ -376,7 +377,7 @@ def test_100_acres_corn_st_charles_mo_risk_BBB():
 def test_100_acres_madison_corn_NO_TA():
     # Premiums for Madison County corn without trend adjustment (verified)
     settings = {
-        'aphyield': 154,
+        'rateyield': 154,
         'appryield': 154,
         'tayield': 164,
         'acres': 100,
