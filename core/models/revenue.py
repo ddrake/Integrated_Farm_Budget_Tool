@@ -4,10 +4,10 @@ Module revenue
 Contains a single class, Revenue, which loads its data for a given crop year
 when an instance is created.
 """
-from analysis import Analysis
-from crop_ins import CropIns
-from gov_pmt import GovPmt
-from util import Crop, crop_in, BASE_CROPS, SEASON_CROPS
+from core.models.analysis import Analysis
+from core.models.crop_ins import CropIns
+from core.models.gov_pmt import GovPmt
+from core.models.util import Crop, crop_in, BASE_CROPS, SEASON_CROPS
 
 
 class Revenue(Analysis):
@@ -26,10 +26,8 @@ class Revenue(Analysis):
 
     def __init__(self, *args, **kwargs):
         super(Revenue, self).__init__(*args, **kwargs)
-        if 'prem' not in kwargs:
-            raise ValueError('Revenue constructor needs a Premium instance')
         self.gov_pmt = GovPmt(self.crop_year)
-        self.crop_ins = CropIns(self.crop_year, prem=kwargs['prem'])
+        self.crop_ins = CropIns(self.crop_year)
 
     @crop_in(*BASE_CROPS)
     def price_crop_contracted(self, crop):

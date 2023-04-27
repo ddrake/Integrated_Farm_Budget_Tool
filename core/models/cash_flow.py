@@ -4,10 +4,10 @@ Module cash_flow
 Contains a single class, CashFlow, which loads some data for a given crop year
 when an instance is created, and uses results from the Cost and Revenue modules
 """
-from analysis import Analysis
-from cost import Cost
-from revenue import Revenue
-from util import SEASON_CROPS
+from core.models.analysis import Analysis
+from core.models.cost import Cost
+from core.models.revenue import Revenue
+from core.models.util import SEASON_CROPS
 
 
 class CashFlow(Analysis):
@@ -30,10 +30,8 @@ class CashFlow(Analysis):
         Initialize base class, then set attributes to instances of the four models.
         """
         super().__init__(*args, **kwargs)
-        if 'prem' not in kwargs:
-            raise ValueError('CashFlow constructor needs a Premium instance')
-        self.cost = Cost(self.crop_year, prem=kwargs['prem'])
-        self.revenue = Revenue(self.crop_year, prem=kwargs['prem'])
+        self.cost = Cost(self.crop_year)
+        self.revenue = Revenue(self.crop_year)
 
     def cash_flow_crop(self, crop, pf=1, yf=1):
         return (self.revenue.gross_revenue_crop(crop, pf, yf) -

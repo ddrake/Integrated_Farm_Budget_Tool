@@ -1,15 +1,13 @@
 import pytest
 
 from .cost import Cost
-from .premium import Premium
 
 # Note: tests may fail if changes are made to the data textfile
 
 TOL = 1e-7  # relative tolerance
-prem = Premium()
 
 
 def test_total_cost():
-    c = Cost(2023, prem=prem)
+    c = Cost(2023)
     total_cost = c.total_cost()
-    assert total_cost == pytest.approx(6840894, TOL)
+    assert total_cost == pytest.approx(6843967, TOL)

@@ -4,10 +4,10 @@ Module cost
 Contains a single class, Cost, which loads its data
 for a given crop year when an instance is created.
 """
-from analysis import Analysis
-from crop_ins import CropIns
-from revenue import Revenue
-from util import crop_in, SEASON_CROPS
+from core.models.analysis import Analysis
+from core.models.crop_ins import CropIns
+from core.models.revenue import Revenue
+from core.models.util import crop_in, SEASON_CROPS
 
 
 class Cost(Analysis):
@@ -24,10 +24,8 @@ class Cost(Analysis):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        if 'prem' not in kwargs:
-            raise ValueError('Cost constructor needs a Premiums instance')
-        self.crop_ins = CropIns(self.crop_year, prem=kwargs['prem'])
-        self.revenue = Revenue(self.crop_year, prem=kwargs['prem'])
+        self.crop_ins = CropIns(self.crop_year)
+        self.revenue = Revenue(self.crop_year)
 
     @crop_in(*SEASON_CROPS)
     def total_direct_cost_crop(self, crop):

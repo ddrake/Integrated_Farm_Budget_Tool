@@ -12,12 +12,11 @@ https://www.fsa.usda.gov/programs-and-services/arcplc_program/arcplc-program-dat
 in the form of two spreadsheets, e.g. 2023_erp.xls and arcco_2023_data_2023-02-16.xlsx
 """
 import os
-import pickle
 
 # import numpy as np
 
-from analysis import Analysis
-from util import crop_in, Crop, BASE_CROPS
+from core.models.analysis import Analysis
+from core.models.util import crop_in, Crop, BASE_CROPS, get_postgres_rows
 
 DATADIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data')
 
@@ -40,10 +39,12 @@ class GovPmt(Analysis):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self.benchmark_revenue = self.load_benchmark_revenue()
-        # Lookup keys for benchmark county revenue
-        self.codes = [f'{self.county:05d}{crop:d}{self.arc_practice[crop]}'
-                      for crop in (Crop.CORN, Crop.SOY, Crop.WHEAT)]
+        # Crops and practices for benchmark county revenue lookup
+        cropprac = [item for pair in ((int(crop), self.arc_practice[crop])
+                                      for crop in (Crop.CORN, Crop.SOY, Crop.WHEAT))
+                    for item in pair]
+        self.benchmark_revenues = get_benchmark_revenue(self.state, self.county,
+                                                        cropprac)
 
     # Government Payment Totals
     # -------------------------
@@ -191,7 +192,7 @@ class GovPmt(Analysis):
         """
         Government Payments Y35:AA35: ARC Benchmark County Revenue for the crop.
         """
-        return self.benchmark_revenue[self.codes[crop]]
+        return self.benchmark_revenues[int(crop)]
 
     @crop_in(*BASE_CROPS)
     def arc_guar_revenue(self, crop):
@@ -232,14 +233,19 @@ class GovPmt(Analysis):
         return (self.fall_futures_price[crop] * pf -
                 self.decrement_from_futures_to_mya[crop])
 
-    # Data loaded in constructor
-    # --------------------------
-    def load_benchmark_revenue(self):
-        """
-        Load textfile, create and return a dict with key county-crop and value
-        benchmark revenue.
-        """
-        picklename = f'{DATADIR}/benchmark_revenue_{self.crop_year}.pkl'
-        with open(picklename, 'rb') as f:
-            data = pickle.load(f)
-        return data
+
+def get_benchmark_revenue(state_id, county_code, cropprac):
+    """
+    Get the std_deviation_qty and mean_qty values from comborevenuefactor
+    for the given lookupid
+    """
+    query = '''SELECT benchmark_revenue
+               FROM public.ext_govpmt_benchmark_revenue
+               WHERE state_id=%s AND county_code=%s AND
+               (crop=%s AND practice=%s OR
+                crop=%s AND practice=%s OR
+                crop=%s AND practice=%s)
+               ;'''
+    records = get_postgres_rows(query, state_id, county_code,
+                                *cropprac)
+    return [record[0] for record in records]

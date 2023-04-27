@@ -5,8 +5,9 @@ Defines class Analysis, the base class for all ifbt components
 """
 from collections import abc
 
-from attribute_loader import TextfileAttributeLoader, DatabaseAttributeLoader
-from util import Crop, crop_in, ALL_CROPS, BASE_CROPS, SEASON_CROPS
+from core.models.attribute_loader import (TextfileAttributeLoader,
+                                          DatabaseAttributeLoader)
+from core.models.util import Crop, crop_in, ALL_CROPS, BASE_CROPS, SEASON_CROPS
 
 
 class Analysis(object):

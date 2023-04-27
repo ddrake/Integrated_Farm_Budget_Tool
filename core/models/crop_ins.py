@@ -6,9 +6,10 @@ for a given crop year when an instance is created.  Its main function
 is to return total estimated net insurance cost for the farm for the given
 crop year corresponding to an arbitrary sensitivity factor for yield.
 """
-from analysis import Analysis
-from indemnity import Indemnity
-from util import crop_in, Ins, Unit, Prot, Lvl, SEASON_CROPS
+from core.models.analysis import Analysis
+from core.models.indemnity import Indemnity
+from core.models.premium import Premium
+from core.models.util import crop_in, Ins, Unit, Prot, Lvl, SEASON_CROPS
 
 
 class CropIns(Analysis):
@@ -33,9 +34,7 @@ class CropIns(Analysis):
         super().__init__(*args, **kwargs)
         for crop in SEASON_CROPS:
             self._validate_settings(crop)
-        if 'prem' not in kwargs:
-            raise ValueError("CropIns constructor needs a Premium instance")
-        self.prem = kwargs['prem']
+        self.prem = Premium()
         self.indem = Indemnity(self.crop_year)
         # cached arrays
         self.premiums = None
@@ -77,31 +76,60 @@ class CropIns(Analysis):
 
     def get_all_premiums(self):
         """
-        Construct a list of dicts, one for each Crop.
-        Get back a dict of dicts with the outer dict keyed on Crop and the inner dicts
-        with key in {'base', 'sco', 'eco'} and value premium per acre.
+        For each crop, make a dict of data needed to compute premiums and a second with
+        premium option selections.  Pass the first to get all premiums.
+        Use the second to construct a results dict with keys {'base', 'sco', 'eco'}
+        and value premium per acre.
         This dict of results is currently cached, which we may want to rethink if we
         start changing settings between calls.
         """
         if self.premiums is not None:
             return self.premiums
-        dicts = []
+        self.premiums = {}
+        prems = self.premiums
         for crop, insure in self.insure.items():
             if insure:
-                d = {'crop': crop, 'unit': self.unit[crop],
-                     'aphyield': self.aphyield[crop], 'appryield': self.appryield[crop],
-                     'tayield': self.tayield[crop], 'acres': self.acres[crop],
-                     'hailfire': self.hailfire[crop], 'prevplant': self.prevplant[crop],
-                     'risk': self.risk[crop], 'tause': self.tause[crop],
-                     'yieldexcl': self.yieldexcl[crop], 'county': self.county,
-                     'practice': self.practice[crop], 'croptype': self.croptype[crop],
-                     'level': self.level[crop], 'eco_level': self.eco_level[crop],
-                     'sco_level': self.sco_level[crop],
-                     'protection': self.protection[crop],
-                     'prot_factor': self.prot_factor[crop]}
-                dicts.append(d)
-        self.premiums = self.prem.get_all_premiums(dicts)
-        return self.premiums
+                crop_id = self.prem.crops[self.base_crop(crop)]
+                pd = {'crop': crop_id,
+                      'rateyield': self.rateyield[crop],
+                      'appryield': self.appryield[crop],
+                      'tayield': self.tayield[crop], 'acres': self.acres[crop],
+                      'hailfire': self.hailfire[crop],
+                      'prevplant': self.prevplant[crop],
+                      'tause': self.tause[crop], 'yieldexcl': self.yieldexcl[crop],
+                      'state': self.state, 'county': self.county,
+                      'practice': self.practice[crop], 'croptype': self.croptype[crop],
+                      'prot_factor': self.prot_factor[crop], }
+
+                cd = {'unit': self.unit[crop], 'protection': self.protection[crop],
+                      'level': self.level[crop], 'eco_level': self.eco_level[crop],
+                      'sco_level': self.sco_level[crop], }
+                crop_prems = self.prem.compute_prems(**pd)
+
+                prems[crop] = {'base': 0, 'sco': 0, 'eco': 0, }
+                if cd['unit'] == Unit.ENT:
+                    if crop_prems[0] is None:
+                        raise ValueError('Expected base premiums to be computed')
+                    prems[crop]['base'] = crop_prems[0][
+                        entlevel_idx(cd['level']), cd['protection']]
+                else:
+                    if crop_prems[1] is None:
+                        raise ValueError('Expected base premiums to be computed')
+                    prems[crop]['base'] = crop_prems[1][
+                        arclevel_idx(cd['level']), cd['protection']]
+                if cd['sco_level'] > Lvl.NONE:
+                    if crop_prems[2] is None:
+                        raise ValueError('Expected SCO premiums to be computed')
+                    sco_level = (cd['level'] if cd['sco_level'] == Lvl.DFLT else
+                                 cd['sco_level'])
+                    prems[crop]['sco'] = crop_prems[2][
+                        entlevel_idx(sco_level), cd['protection']]
+                if cd['eco_level'] > Lvl.NONE:
+                    if crop_prems[3] is None:
+                        raise ValueError('Expected ECO premiums to be computed')
+                    prems[crop]['eco'] = crop_prems[3][
+                        0 if cd['eco_level'] == 90 else 1, cd['protection']]
+        return prems
 
     # -------
     # PREMIUM
@@ -295,3 +323,15 @@ class CropIns(Analysis):
         Return the sensiztized net crop insurance payment over all crops.
         """
         return (self.total_indemnity(pf, yf) - self.total_premium())
+
+
+def entlevel_idx(intval):
+    if intval < 50 or intval > 85:
+        raise ValueError('Invalid level for Enterprise unit')
+    return (intval - 50)//5
+
+
+def arclevel_idx(intval):
+    if intval < 70 or intval > 90:
+        raise ValueError('Invalid level for ARC unit')
+    return (intval - 70)//5

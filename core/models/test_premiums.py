@@ -165,7 +165,11 @@ def test_300_acres_wheat_champaign():
              [10.69,  8.49,  5.43]]))
 
     for prm, exp in zip(prem, expected):
-        assert np.all((prm - exp) == pytest.approx(0, TOL)), "values don't all match"
+        if prm is None:
+            assert exp is None, "Values don't all match"
+        else:
+            assert np.all((prm - exp) ==
+                          pytest.approx(0, TOL)), "values don't all match"
 
 
 def test_100_acres_madison_corn():
@@ -413,3 +417,47 @@ def test_100_acres_madison_corn_NO_TA():
 
     for prm, exp in zip(prem, expected):
         assert np.all((prm - exp) == pytest.approx(0, TOL)), "values don't all match"
+
+
+# To get SCO and ECO rates, we must specify the county practice directly
+def test_300_acres_adams_cty_colorado_irrigated_wheat():
+    settings = {
+        'rateyield': 65,
+        'appryield': 65,
+        'tayield': 70,
+        'acres': 300,
+        'hailfire': 0,
+        'prevplant': 0,
+        'tause': 0,
+        'yieldexcl': 0,
+        'state': 8,
+        'county': 1,
+        'crop': 11,
+        'croptype': 11,
+        'practice': 2,
+        'prot_factor': 1,
+        'cpractice': 2,
+    }
+    p = Premium()
+    prem = p.compute_prems(**settings)
+    expected = (
+        np.array(
+            [[4.03,  5.2 ,  6.51,  8.03, 10.22, 15.1 , 26.3 , 47.49],
+             [3.56,  4.51,  5.53,  6.73,  8.54, 12.66, 22.09, 39.94],
+             [2.9 ,  3.61,  4.41,  5.34,  6.78, 10.19, 17.98, 32.96]]).T,
+        None,
+        np.array(
+            [[16.39, 16.01, 15.3 , 14.11, 12.2 ,  9.4 ,  5.71,  1.06],
+             [14.06, 13.68, 13.01, 11.93, 10.2 ,  7.75,  4.64,  0.84],
+             [04.2 ,  4.2 ,  4.2 ,  4.1 ,  3.78,  3.07,  2.03,  0.42]]).T,
+
+        np.array(
+            [[07.5 ,  5.89,  2.90],
+             [18.6 , 14.48,  7.84]]))
+
+    for prm, exp in zip(prem, expected):
+        if prm is None:
+            assert exp is None, "Values don't all match"
+        else:
+            assert np.all((prm - exp) ==
+                          pytest.approx(0, TOL)), "values don't all match"

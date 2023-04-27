@@ -1,7 +1,7 @@
 from numpy import zeros, array, log, exp
 import numpy as np
 
-from .util import Crop, Unit, Lvl, call_postgres_func, get_postgres_row
+from core.models.util import Crop, Unit, Lvl, call_postgres_func, get_postgres_row
 
 np.set_printoptions(precision=6)
 np.set_printoptions(suppress=True)
@@ -162,7 +162,7 @@ class Premium:
                       hailfire=0, prevplant=0, tause=1, yieldexcl=0,
                       state=17, county=19, crop=41, croptype=16, practice=3,
                       prot_factor=1, projected_price=None,
-                      price_volatility_factor=None, subcounty=None):
+                      price_volatility_factor=None, subcounty=None, cpractice=None):
         """
         With farm-specific inputs, compute premiums for optional, basic and enterprise,
         units with RP, RP-HPE or YO protection for all coverage levels.
@@ -171,7 +171,7 @@ class Premium:
         self.store_user_settings(
             rateyield, appryield, tayield, acres, hailfire, prevplant, tause,
             yieldexcl, state, county, crop, croptype, practice, prot_factor,
-            projected_price, price_volatility_factor, subcounty)
+            projected_price, price_volatility_factor, subcounty, cpractice)
 
         data = None
         if self.price_volatility_factor is None or self.projected_price is None:
@@ -189,6 +189,7 @@ class Premium:
 
         for name, val in data:
             setattr(self, name, val)
+            # print(f'self.{name} = {val}')
 
         if self.projected_price is None:
             print("Projected Price is missing.",
@@ -203,14 +204,30 @@ class Premium:
             else:
                 self.compute_prems_arc()
             self.make_aliab()  # aliab used in SCO and ECO calculations
-            self.compute_prems_sco()
-            self.compute_prems_eco()
+            if (self.scorp_base_rate is None
+                    or self.scorphpe_base_rate is None
+                    or self.scoyp_base_rate is None):
+                print("SCO Base rates are not available for county/crop",
+                      "Can't compute SCO premiums",
+                      "Try specifying the county practice (cpractice)")
+                self.prem_sco = None
+            else:
+                self.compute_prems_sco()
+            if (self.ecorp_base_rate is None
+                    or self.ecorphpe_base_rate is None
+                    or self.ecoyp_base_rate is None):
+                print("ECO Base rates are not available for county/crop",
+                      "Can't compute ECO premiums",
+                      "Try specifying the county practice (cpractice)")
+                self.prem_eco = None
+            else:
+                self.compute_prems_eco()
 
         return self.prem_ent, self.prem_arc, self.prem_sco, self.prem_eco
 
-    # -----------------------------
-    # MAIN METHOD: COMPUTE PREMIUMS
-    # -----------------------------
+    # -------------------
+    # ENTERPRISE PREMIUMS
+    # -------------------
     def compute_prems_ent(self):
         """
         With farm-specific inputs, compute premiums for optional, basic and enterprise,
@@ -537,7 +554,7 @@ class Premium:
     def store_user_settings(self, rateyield, appryield, tayield, acres, hailfire,
                             prevplant, tause, yieldexcl, state, county,
                             crop, croptype, practice, prot_factor, projected_price,
-                            price_volatility_factor, subcounty):
+                            price_volatility_factor, subcounty, cpractice):
         """
         Store settings provide by user when calling calc_premiums, and calculate
         some values derived from them.
@@ -556,7 +573,7 @@ class Premium:
         self.crop = crop
         self.croptype = croptype
         self.practice = practice
-        self.cpractice = self.prac2cprac[practice]
+        self.cpractice = self.prac2cprac[practice] if cpractice is None else cpractice
         self.prot_factor = prot_factor
         self.projected_price = projected_price
         self.price_volatility_factor = price_volatility_factor
@@ -576,7 +593,7 @@ class Premium:
         Define dicts for lookups.  No longer needed for computation, but
         handy for reference.
         """
-        self.crops = {'Corn': 41, 'Soybeans': 81, 'Wheat': 11}
+        self.crops = {Crop.CORN: 41, Crop.SOY: 81, Crop.WHEAT: 11}
         self.practices = {'Nfac (non-irrigated)': 53,
                           'Nfac (Irrigated)': 94,
                           'Fac (non-irrigated)': 43,
@@ -601,77 +618,14 @@ class Premium:
             'IA': '19', 'KS': '20', 'KY': '21', 'LA': '22', 'MD': '24', 'MI': '26',
             'MN': '27', 'MS': '28', 'MO': '29', 'NE': '31', 'NC': '37', 'ND': '38',
             'OH': '39', 'PA': '42', 'SC': '45', 'SD': '46', 'TN': '47', 'VA': '51',
-            'WV': '54', 'WI': '55', 'OK': '40', 'TX': '48'}
+            'WV': '54', 'WI': '55', 'OK': '40', 'TX': '48', 'WA': '53', 'MT': '30',
+            'ID': '16', 'OR': '41', 'CO': '08'}
         self.rev_states = {v: k for k, v in self.states.items()}
-
-    # ------------------
-    # Convenience Method
-    # ------------------
-
-    def get_all_premiums(self, cropdicts=None):
-        """
-        Given a list of dicts, one for each crop, containing specific choices of
-        unit, level, sco_level, eco_level, Return a dict of dicts, each containing
-        individual premiums for the base product and options.
-        """
-        premiums = {}
-        if cropdicts is None:
-            return premiums
-        for d in cropdicts:
-            crop = d['crop']
-            name = ('Corn' if crop == Crop.CORN else 'Wheat' if crop == Crop.WHEAT
-                    else 'Soybeans')
-            cropcode = self.crops[name]
-            d['crop'] = cropcode
-            values = {'base': 0, 'sco': 0, 'eco': 0}
-            if d['unit'] == Unit.ENT:
-                d1 = {k: d[k] for k in
-                      ('rateyield', 'appryield', 'tayield', 'acres', 'hailfire',
-                       'prevplant', 'risk', 'tause', 'yieldexcl', 'county',
-                       'crop', 'practice', 'croptype')}
-                prems = self.compute_prems_ent(**d1)
-                values['base'] = prems[entlevel_idx(d['level']), d['protection']]
-            else:
-                d1 = {k: d[k] for k in
-                      ('county', 'crop', 'practice', 'croptype', 'prot_factor')}
-                prems = self.compute_prems_arc(**d1)
-                values['base'] = prems[arclevel_idx(d['level']), d['protection']]
-            if d['sco_level'] > Lvl.NONE:
-                d1 = {k: d[k] for k in
-                      ('rateyield', 'tayield', 'tause', 'county', 'crop',
-                       'practice', 'croptype')}
-                prems = self.compute_prems_sco(**d1)
-                sco_level = d['level'] if d['sco_level'] == Lvl.DFLT else d['sco_level']
-                values['sco'] = prems[entlevel_idx(sco_level), d['protection']]
-            if d['eco_level'] > Lvl.NONE:
-                d1 = {k: d[k] for k in
-                      ('rateyield', 'tayield', 'tause', 'county', 'crop',
-                       'practice', 'croptype')}
-                prems = self.compute_prems_eco(**d1)
-                values['eco'] = prems[0 if d['eco_level'] == 90 else 1, d['protection']]
-            premiums[crop] = values
-        return premiums
 
 
 # ----------------
 # Helper functions
 # ----------------
-def nz(maybenone, substitute):
-    return substitute if maybenone is None else maybenone
-
-
-def entlevel_idx(intval):
-    if intval < 50 or intval > 85:
-        raise ValueError('Invalid level for Enterprise unit')
-    return (intval - 50)//5
-
-
-def arclevel_idx(intval):
-    if intval < 70 or intval > 90:
-        raise ValueError('Invalid level for ARC unit')
-    return (intval - 70)//5
-
-
 def get_combo_rev_std_mean(lookupid):
     """
     Get the std_deviation_qty and mean_qty values from comborevenuefactor

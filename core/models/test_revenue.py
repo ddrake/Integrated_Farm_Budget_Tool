@@ -1,12 +1,9 @@
 import pytest
 
 from .revenue import Revenue
-from .premium import Premium
 
 # Note: tests may fail if changes are made to the data textfile,
 # but changes to pricing for uncontracted grain and revenue_wheat are OK.
-
-prem = Premium()
 
 
 def test_total_revenue():
@@ -16,7 +13,7 @@ def test_total_revenue():
            'est_basis_soy': 0.35,
            'revenue_wheat': 300341, }
 
-    rev = Revenue(2023, overrides=ovr, prem=prem)
+    rev = Revenue(2023, overrides=ovr)
     gross_revenue = rev.gross_revenue()
     assert gross_revenue == pytest.approx(9977249)
 

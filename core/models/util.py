@@ -5,11 +5,11 @@ Definitions used by many classes
 """
 from enum import IntEnum
 from functools import wraps
-import os
-from pathlib import Path
 
-import environ
 import psycopg2
+
+from ifbt.settings import DATABASES
+
 
 Crop = IntEnum('Crop', ['CORN', 'SOY', 'WHEAT', 'FULL_SOY', 'DC_SOY'], start=0)
 Ins = IntEnum('Ins', ['NO', 'YES'], start=0)
@@ -21,8 +21,6 @@ Prac = IntEnum('Prac', ['IRR', 'NONIRR', 'ALL'], start=1)
 ALL_CROPS = [Crop.CORN, Crop.SOY, Crop.WHEAT, Crop.FULL_SOY, Crop.DC_SOY]
 BASE_CROPS = [Crop.CORN, Crop.SOY, Crop.WHEAT]
 SEASON_CROPS = [Crop.CORN, Crop.FULL_SOY, Crop.WHEAT, Crop.DC_SOY]
-
-BASE_DIR = Path(__file__).resolve().parent.parent
 
 
 def crop_in(*crops):
@@ -50,17 +48,16 @@ def call_postgres_func(*args):
     """
     Get data needed to compute crop insurance
     """
+    defaultdb = DATABASES['default']
     arglist = list(args)
     cmd = arglist.pop(0)
-    environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
-    env = environ.Env()
     conn = None
     row = None
     try:
         # connect to the PostgreSQL database
         conn = psycopg2.connect(
-            host='localhost', database=env('DATABASE_NAME'),
-            user=env('DATABASE_USER'), password=env('DATABASE_PASS'))
+            host='localhost', database=defaultdb['NAME'],
+            user=defaultdb['USER'], password=defaultdb['PASSWORD'])
         # create a cursor object for execution
         cur = conn.cursor()
         cur.execute(cmd, tuple((None if arg is None else str(arg) for arg in arglist)))
@@ -79,17 +76,16 @@ def get_postgres_row(*args):
     """
     Get a specified row from a postgreSQL table
     """
+    defaultdb = DATABASES['default']
     arglist = list(args)
     query = arglist.pop(0)
-    environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
-    env = environ.Env()
     conn = None
     row = None
     try:
         # connect to the PostgreSQL database
         conn = psycopg2.connect(
-            host='localhost', database=env('DATABASE_NAME'),
-            user=env('DATABASE_USER'), password=env('DATABASE_PASS'))
+            host='localhost', database=defaultdb['NAME'],
+            user=defaultdb['USER'], password=defaultdb['PASSWORD'])
         # create a cursor object for execution
         cur = conn.cursor()
         cur.execute(query, tuple((None if arg is None else str(arg)
@@ -104,3 +100,33 @@ def get_postgres_row(*args):
         if conn is not None:
             conn.close()
     return row
+
+
+def get_postgres_rows(*args):
+    """
+    Get specified rows from a postgreSQL table
+    """
+    defaultdb = DATABASES['default']
+    arglist = list(args)
+    query = arglist.pop(0)
+    conn = None
+    rows = None
+    try:
+        # connect to the PostgreSQL database
+        conn = psycopg2.connect(
+            host='localhost', database=defaultdb['NAME'],
+            user=defaultdb['USER'], password=defaultdb['PASSWORD'])
+        # create a cursor object for execution
+        cur = conn.cursor()
+        cur.execute(query, tuple((None if arg is None else str(arg)
+                                  for arg in arglist)))
+        # fetch the record
+        rows = cur.fetchall()
+        # close the communication with the PostgreSQL database server
+        cur.close()
+    except (Exception, psycopg2.DatabaseError) as error:
+        print(error)
+    finally:
+        if conn is not None:
+            conn.close()
+    return rows
