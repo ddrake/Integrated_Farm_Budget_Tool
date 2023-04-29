@@ -436,7 +436,6 @@ def test_300_acres_adams_cty_colorado_irrigated_wheat():
         'croptype': 11,
         'practice': 2,
         'prot_factor': 1,
-        'cpractice': 2,
     }
     p = Premium()
     prem = p.compute_prems(**settings)

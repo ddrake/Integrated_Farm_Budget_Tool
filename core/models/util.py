@@ -8,8 +8,9 @@ from functools import wraps
 
 import psycopg2
 
-from ifbt.settings import DATABASES
+from django.conf import settings
 
+DATABASES = settings.DATABASES
 
 Crop = IntEnum('Crop', ['CORN', 'SOY', 'WHEAT', 'FULL_SOY', 'DC_SOY'], start=0)
 Ins = IntEnum('Ins', ['NO', 'YES'], start=0)

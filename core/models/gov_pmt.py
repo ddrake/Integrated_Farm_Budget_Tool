@@ -130,7 +130,7 @@ class GovPmt(Analysis):
         """
         Government Payments Y20:AA20: The maximum PLC payment rate for the crop
         """
-        return self.stat_ref_rate_farm_bill[crop] - self.natl_loan_rate[crop]
+        return self.effective_ref_price[crop] - self.natl_loan_rate[crop]
 
     @crop_in(*BASE_CROPS)
     def effective_price(self, crop, pf=1):

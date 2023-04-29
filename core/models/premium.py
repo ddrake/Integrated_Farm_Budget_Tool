@@ -1,7 +1,7 @@
 from numpy import zeros, array, log, exp
 import numpy as np
 
-from core.models.util import Crop, Unit, Lvl, call_postgres_func, get_postgres_row
+from core.models.util import Crop, call_postgres_func, get_postgres_row
 
 np.set_printoptions(precision=6)
 np.set_printoptions(suppress=True)
@@ -162,7 +162,7 @@ class Premium:
                       hailfire=0, prevplant=0, tause=1, yieldexcl=0,
                       state=17, county=19, crop=41, croptype=16, practice=3,
                       prot_factor=1, projected_price=None,
-                      price_volatility_factor=None, subcounty=None, cpractice=None):
+                      price_volatility_factor=None, subcounty=None):
         """
         With farm-specific inputs, compute premiums for optional, basic and enterprise,
         units with RP, RP-HPE or YO protection for all coverage levels.
@@ -171,20 +171,18 @@ class Premium:
         self.store_user_settings(
             rateyield, appryield, tayield, acres, hailfire, prevplant, tause,
             yieldexcl, state, county, crop, croptype, practice, prot_factor,
-            projected_price, price_volatility_factor, subcounty, cpractice)
+            projected_price, price_volatility_factor, subcounty)
 
         data = None
         if self.price_volatility_factor is None or self.projected_price is None:
             # assume these values are present in the RMA data
             data = get_crop_ins_data(
-                self.state, self.county, self.crop,
-                self.croptype, self.practice, self.cpractice,
-                self.subcounty)
+                self.state, self.county, self.crop, self.croptype,
+                self.practice, self.subcounty)
         else:
             # pass user-specified estimate of price_volatility_factor
             data = get_crop_ins_data_pre_pvol(
-                self.state, self.county, self.crop,
-                self.croptype, self.practice, self.cpractice,
+                self.state, self.county, self.crop, self.croptype, self.practice,
                 self.price_volatility_factor, self.subcounty)
 
         for name, val in data:
@@ -554,7 +552,7 @@ class Premium:
     def store_user_settings(self, rateyield, appryield, tayield, acres, hailfire,
                             prevplant, tause, yieldexcl, state, county,
                             crop, croptype, practice, prot_factor, projected_price,
-                            price_volatility_factor, subcounty, cpractice):
+                            price_volatility_factor, subcounty):
         """
         Store settings provide by user when calling calc_premiums, and calculate
         some values derived from them.
@@ -573,7 +571,6 @@ class Premium:
         self.crop = crop
         self.croptype = croptype
         self.practice = practice
-        self.cpractice = self.prac2cprac[practice] if cpractice is None else cpractice
         self.prot_factor = prot_factor
         self.projected_price = projected_price
         self.price_volatility_factor = price_volatility_factor
@@ -638,8 +635,7 @@ def get_combo_rev_std_mean(lookupid):
 
 
 def get_crop_ins_data_pre_pvol(state_id, county_code, commodity_id, commodity_type_id,
-                               practice, cpractice, price_volatility_factor,
-                               subcounty_id=None):
+                               practice, price_volatility_factor, subcounty_id=None):
     """
     Get data needed to compute crop insurance from a postgreSQL user-defined function
     """
@@ -657,7 +653,7 @@ def get_crop_ins_data_pre_pvol(state_id, county_code, commodity_id, commodity_ty
 
     cmd = 'SELECT ' + ', '.join(names) + """
               FROM
-              public.prem_data_pre_pvol(%s, %s, %s, %s, %s, %s, %s, %s)
+              public.prem_data_pre_pvol(%s, %s, %s, %s, %s, %s, %s)
               AS (ayp_base_rate real[], arp_base_rate real[],
                   arphpe_base_rate real[], scoyp_base_rate real[],
                   scorp_base_rate real[], scorphpe_base_rate real[],
@@ -674,7 +670,7 @@ def get_crop_ins_data_pre_pvol(state_id, county_code, commodity_id, commodity_ty
                   subsidy_ey real, subsidy_er real);
           """
     record = call_postgres_func(cmd, state_id, county_code, commodity_id,
-                                commodity_type_id, practice, cpractice,
+                                commodity_type_id, practice,
                                 price_volatility_factor, subcounty_id)
 
     converted = (None if it is None else
@@ -688,8 +684,7 @@ def get_crop_ins_data_pre_pvol(state_id, county_code, commodity_id, commodity_ty
 
 
 def get_crop_ins_data(state_id, county_code, commodity_id, commodity_type_id,
-                      practice, cpractice,
-                      subcounty_id=None):
+                      practice, subcounty_id=None):
     """
     Get data needed to compute crop insurance from a postgreSQL user-defined function
     """
@@ -708,7 +703,7 @@ def get_crop_ins_data(state_id, county_code, commodity_id, commodity_type_id,
 
     cmd = """ SELECT """ + ', '.join(names) + """
               FROM
-              public.prem_data(%s, %s, %s, %s, %s, %s, %s)
+              public.prem_data(%s, %s, %s, %s, %s, %s)
               AS (ayp_base_rate real[], arp_base_rate real[],
                   arphpe_base_rate real[], scoyp_base_rate real[],
                   scorp_base_rate real[], scorphpe_base_rate real[],
@@ -726,8 +721,7 @@ def get_crop_ins_data(state_id, county_code, commodity_id, commodity_type_id,
                   subsidy_ey real, subsidy_er real);
           """
     record = call_postgres_func(cmd, state_id, county_code, commodity_id,
-                                commodity_type_id, practice, cpractice,
-                                subcounty_id)
+                                commodity_type_id, practice, subcounty_id)
 
     converted = (None if it is None else
                  it if name == 'rate_method_id' else
