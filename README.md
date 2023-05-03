@@ -8,7 +8,9 @@ The application is designed to be used for budgetting for a crop year for the pe
 
 The application will support common conventional crops: irrigated and non irrigated corn, winter wheat, spring wheat and soybeans, including soybeans following another crop (FAC).  It will support all counties in the following 33 states: AL, AR, CO, FL, GA, ID, IL, IN, IA, KS, KY, LA, MD, MI, MN, MO, MS, MT, NE, NC, ND, OH, OK, OR, PA, SC, SD, TN, VA, WA, WV, WI, TX.   Estimated premiums and indemnities are computed for both farm-based and county-based crop insurance (and optional policies SCO and ECO), but for simplicity, the farm-based crop-insurance products are limited to the Enterprise unit.  The PLC and ARC-CO government title programs will be supported. Users will need to specify the 'main county' for their operation and the 'main cropping practice' (irrigated or non-irrigated) for each of their crops.
 
-The project is now in transition to a Django web application with a PostgreSQL database.  This application will allow a logged-in user to select from a set of preset budget models and customize it as needed, then enter their farm-specific data.  A new workbook 'simplebudgettool.xlsx' has been developed by Kelley as a model for the future user interface.  This is available on the collaborators' Google Drive in the IFBT folder.
+See the [wiki](https://github.com/ddrake/Integrated_Farm_Budget_Tool/wiki) for thoughts on some details of the application functionality.
+
+The project is now in transition to a Django web application with a PostgreSQL database.  This application will allow a logged-in user to make use of set of preset budget models in creating a custom Farm Year budget.  A new workbook 'simplebudgettool.xlsx' has been developed by Kelley as a model for the future user interface.  This is available on the collaborators' Google Drive in the IFBT folder.
 
 The current implementation is entering the final phase of development.  The first phase was to develop a Python codebase, the logic of which could be validated against the sensitivity tables in Kelley's benchmarking.xlsx Excel workbook.  This is now complete and reasonably well-tested, and has been moved to a _benchmarking_ branch, which is now fairly stale.  Although this implementation computed the indemnity payments for crop insurance, it relied on a set of pre-computed premiums, not a feasible option, since premiums depend on the county and the farm history.
 
@@ -35,7 +37,7 @@ The current implementation is entering the final phase of development.  The firs
 git clone https://github.com/ddrake/Integrated_Farm_Budget_Tool.git
 ```
 
-Download the postgreSQL dump file from the Google Drive folder and restore it to your local database. There are more notes and instructions on Django and PostgreSQL in the Google Drive folder.  During the transition phase, you may still need to download the data directory to get the tests to pass.
+You can download the zipped postgreSQL export file (ifbt.zip) from the Google Drive folder and restore it to an ifbt database on your local machine. There are more notes and instructions on Django and PostgreSQL in the Google Drive folder.  During the transition phase, you may still need to download the data directory to get the tests to pass, but the plan is to soon move the remaining settings into the database or store them as constants in the code base.
 
 ## Usage
 
@@ -73,7 +75,7 @@ cd core/models
 pytest
 ```
 
-- Note: many of the tests depend on the data text files, which take their values from a copy of the 'simpleBudgetTool.xlsx', which is available on the Collaborators' Google Drive IFBT folder.
+- Note: some of the tests depend on values defined in the 'simpleBudgetTool.xlsx', which is available on the Collaborators' Google Drive IFBT folder.
 
 - ## Project collaborators
 
@@ -86,7 +88,9 @@ pytest
 
 ## Recommendations for collaborators
 
-I recommend we use [CodePen](https://codepen.io) for developing and presenting front end components.  It may be better to search for and integrate existing components or build from scratch.  Either approach is fine.
+I recommend we use [CodePen](https://codepen.io) for developing and presenting front end components.  It may be better to search for and integrate existing components or build from scratch.  Either approach is fine.  I think [Tailwind CSS](https://tailwindcss.com/) might be a good alternative to pure CSS for this application.
+
+I think the best tutorials on general web development are available at the [Mozilla Developer Network](https://developer.mozilla.org/en-US/).  There are excellent tutorials covering HTML, CSS, Javascript (including AJAX), server applications like Django and various front end applications like as React.
 
 If you're unfamiliar with the Git version control system, a good place to start is this [tutorial](https://docs.github.com/en/get-started/quickstart/hello-world).
 
