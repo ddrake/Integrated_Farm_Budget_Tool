@@ -92,7 +92,7 @@ class CropIns(Analysis):
                 crop_id = self.prem.crops[self.base_crop(crop)]
                 pd = {'crop': crop_id,
                       'rateyield': self.rateyield[crop],
-                      'appryield': self.appryield[crop],
+                      'adjyield': self.adjyield[crop],
                       'tayield': self.tayield[crop], 'acres': self.acres[crop],
                       'hailfire': self.hailfire[crop],
                       'prevplant': self.prevplant[crop],

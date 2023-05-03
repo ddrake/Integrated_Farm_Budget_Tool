@@ -54,13 +54,12 @@ class Premium:
         # 0: no yield exclusion, 1: allow certain past year's yield data (e.g. 2012)
         #     and replaced by an alternative yield.
         self.yieldexcl = None
-        # Actual production history yield
+        # Rate yield (RMA rate yield)
         self.rateyield = None
-        # Rate yield (Approved yield?)
-        self.appryield = None
-        # Trend-adjusted yield (takes into effect a positive trendline in historical
-        #     yields).
-        self.tayield = None  # user-specified tayield
+        # Adjusted yield (RMA adjusted yield)
+        self.adjyield = None
+        # user-specified Trend-Adjusted APY yield (RMA 'approved yield')
+        self.tayield = None
         self.tayield_adj = None  # possibly modified tayield
 
         # External data
@@ -116,7 +115,7 @@ class Premium:
         self.liab = None
         # dollar amount used in county options (SCO, ECO)
         self.aliab = None
-        # revised yield: tayield if tause else appryield
+        # revised yield: tayield if tause else adjyield
         self.revyield = None
         # log(aphprice) - pvol**2/2, used to compute harvest price in loss simulation.
         self.lnmean = None
@@ -158,7 +157,7 @@ class Premium:
     # -----------------------------
     # MAIN METHOD: COMPUTE PREMIUMS
     # -----------------------------
-    def compute_prems(self, rateyield=180, appryield=180, tayield=190, acres=100,
+    def compute_prems(self, rateyield=180, adjyield=180, tayield=190, acres=100,
                       hailfire=0, prevplant=0, tause=1, yieldexcl=0,
                       state=17, county=19, crop=41, croptype=16, practice=3,
                       prot_factor=1, projected_price=None,
@@ -169,7 +168,7 @@ class Premium:
         Note: If specified, price_volatility_factor must be an integer.
         """
         self.store_user_settings(
-            rateyield, appryield, tayield, acres, hailfire, prevplant, tause,
+            rateyield, adjyield, tayield, acres, hailfire, prevplant, tause,
             yieldexcl, state, county, crop, croptype, practice, prot_factor,
             projected_price, price_volatility_factor, subcounty)
 
@@ -268,7 +267,7 @@ class Premium:
         Set the effective coverage level (Note: depends on tayield regardless of tause)
         (Section 13, p. 44)
         """
-        self.effcov = (0.0001 + self.cover * self.tayield_adj / self.appryield).round(2)
+        self.effcov = (0.0001 + self.cover * self.tayield_adj / self.adjyield).round(2)
 
     def set_factors(self):
         """
@@ -351,8 +350,8 @@ class Premium:
         Set the revised yield, the revised cover and the liability (~ p. 1-4)
         """
         # Per page 1, I think this should be:
-        #   self.revyield = max(self.tayield, self.appryield)
-        self.revyield = self.tayield_adj if self.tause else self.appryield
+        #   self.revyield = max(self.tayield, self.adjyield)
+        self.revyield = self.tayield_adj if self.tause else self.adjyield
         self.liab = ((self.revyield * self.cover + 0.001).round(1) *
                      self.projected_price * self.acres).round(0)
 
@@ -549,7 +548,7 @@ class Premium:
     # -------------------
     # STORE USER SETTINGS
     # -------------------
-    def store_user_settings(self, rateyield, appryield, tayield, acres, hailfire,
+    def store_user_settings(self, rateyield, adjyield, tayield, acres, hailfire,
                             prevplant, tause, yieldexcl, state, county,
                             crop, croptype, practice, prot_factor, projected_price,
                             price_volatility_factor, subcounty):
@@ -558,7 +557,7 @@ class Premium:
         some values derived from them.
         """
         self.rateyield = rateyield
-        self.appryield = appryield
+        self.adjyield = adjyield
         self.tayield = tayield
         self.acres = acres
         self.hailfire = hailfire
@@ -591,25 +590,14 @@ class Premium:
         handy for reference.
         """
         self.crops = {Crop.CORN: 41, Crop.SOY: 81, Crop.WHEAT: 11}
+        self.croptypes = {'Grain': 16, 'No Type Specified': 997, 'Winter': 11,
+                          'Spring': 12}
         self.practices = {'Nfac (non-irrigated)': 53,
                           'Nfac (Irrigated)': 94,
                           'Fac (non-irrigated)': 43,
                           'Fac (Irrigated)': 95,
                           'Non-irrigated': 3,
                           'Irrigated': 2}
-        # County products have some different practices and croptypes
-        self.cpractices = {'Nfac (non-irrigated)': 53,
-                           'Nfac (Irrigated)': 53,
-                           'Fac (non-irrigated)': 53,
-                           'Fac (Irrigated)': 53,
-                           'Non-irrigated': 3,
-                           'Irrigated': 3}
-        self.prac2cprac = {53:  53, 94: 53, 43: 53, 95: 53, 3: 3, 2: 3}
-        self.croptypes = {'Grain': 16, 'No Type Specified': 997, 'Winter': 11,
-                          'Spring': 12}
-
-        self.risk_classes = {'None': 0, 'AAA': 1, 'BBB': 2, 'CCC': 3, 'DDD': 4}
-        self.rev_risk_classes = {v: k for k, v in self.risk_classes.items()}
         self.states = {
             'IL': '17', 'AL': '01', 'AR': '05', 'FL': '12', 'GA': '13', 'IN': '18',
             'IA': '19', 'KS': '20', 'KY': '21', 'LA': '22', 'MD': '24', 'MI': '26',
@@ -617,7 +605,6 @@ class Premium:
             'OH': '39', 'PA': '42', 'SC': '45', 'SD': '46', 'TN': '47', 'VA': '51',
             'WV': '54', 'WI': '55', 'OK': '40', 'TX': '48', 'WA': '53', 'MT': '30',
             'ID': '16', 'OR': '41', 'CO': '08'}
-        self.rev_states = {v: k for k, v in self.states.items()}
 
 
 # ----------------
