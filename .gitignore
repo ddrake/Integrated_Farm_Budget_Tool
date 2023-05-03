@@ -132,3 +132,4 @@ dmypy.json
 *.xlsx
 bestcases.txt
 data
+scripts
