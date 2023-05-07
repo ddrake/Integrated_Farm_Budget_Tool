@@ -25,9 +25,15 @@ class County(models.Model):
 
     class Meta:
         managed = False
+        verbose_name_plural = 'counties'
+
+    @classmethod
+    def code_and_name_for_state_id(cls, state_id):
+        return (cls.objects.filter(state_id=state_id)
+                .order_by('name').values_list('code', 'name'))
 
 
-class Crop(models.Model):
+class InsCrop(models.Model):
     id = models.SmallIntegerField(primary_key=True)
     name = models.CharField(max_length=20)
 
@@ -39,11 +45,12 @@ class Crop(models.Model):
         managed = False
 
 
-class CropType(models.Model):
+class InsCropType(models.Model):
     id = models.SmallIntegerField(primary_key=True)
     name = models.CharField(max_length=20)
     abbr = models.CharField(max_length=10)
-    crop = models.ForeignKey('Crop', on_delete=models.CASCADE, db_column='commodity_id')
+    crop = models.ForeignKey('InsCrop', on_delete=models.CASCADE,
+                             db_column='commodity_id')
 
     def __str__(self):
         return f'{self.crop}, {self.name}'
@@ -53,11 +60,12 @@ class CropType(models.Model):
         managed = False
 
 
-class Practice(models.Model):
+class InsPractice(models.Model):
     id = models.IntegerField(primary_key=True)
     code = models.SmallIntegerField()
     name = models.CharField(max_length=40)
-    crop = models.ForeignKey('Crop', on_delete=models.CASCADE, db_column='commodity_id')
+    crop = models.ForeignKey('InsCrop', on_delete=models.CASCADE,
+                             db_column='commodity_id')
 
     def __str__(self):
         return f'{self.crop}, {self.name}'
@@ -77,6 +85,7 @@ class Subcounty(models.Model):
     class Meta:
         db_table = 'ext_subcounty'
         managed = False
+        verbose_name_plural = 'subcounties'
 
 
 class PracticeAvail(models.Model):
@@ -87,8 +96,9 @@ class PracticeAvail(models.Model):
     id = models.IntegerField(primary_key=True)
     state = models.ForeignKey('State', on_delete=models.CASCADE)
     county_code = models.SmallIntegerField()
-    crop = models.ForeignKey('Crop', on_delete=models.CASCADE, db_column='commodity_id')
-    croptype = models.ForeignKey('CropType', on_delete=models.CASCADE,
+    crop = models.ForeignKey('InsCrop', on_delete=models.CASCADE,
+                             db_column='commodity_id')
+    croptype = models.ForeignKey('InsCropType', on_delete=models.CASCADE,
                                  db_column='commodity_type_id')
     practice = models.SmallIntegerField()
 
@@ -104,8 +114,9 @@ class SubcountyAvail(models.Model):
     id = models.IntegerField(primary_key=True)
     state = models.ForeignKey('State', on_delete=models.CASCADE)
     county_code = models.SmallIntegerField()
-    crop = models.ForeignKey('Crop', on_delete=models.CASCADE, db_column='commodity_id')
-    croptype = models.ForeignKey('CropType', on_delete=models.CASCADE,
+    crop = models.ForeignKey('InsCrop', on_delete=models.CASCADE,
+                             db_column='commodity_id')
+    croptype = models.ForeignKey('InsCropType', on_delete=models.CASCADE,
                                  db_column='commodity_type_id')
     practice = models.SmallIntegerField()
     subcounty = models.ForeignKey('Subcounty', on_delete=models.CASCADE, null=True)

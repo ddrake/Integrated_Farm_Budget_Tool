@@ -42,7 +42,7 @@ def test_with_default_values():
             [[11.28,  7.55,  4.59],
              [30.7 , 20.66, 13.29]]))
 
-    for prm, exp in zip(prem, expected):
+    for prm, exp in zip(prem[:4], expected):
         assert np.all((prm - exp) == pytest.approx(0, TOL)), "values don't all match"
 
 
@@ -83,7 +83,7 @@ def test_3000_acres_corn_in_champaign():
             [[11.28,  7.55,  4.59],
              [30.7 , 20.66, 13.29]]))
 
-    for prm, exp in zip(prem, expected):
+    for prm, exp in zip(prem[:4], expected):
         assert np.all((prm - exp) == pytest.approx(0, TOL)), "values don't all match"
 
 
@@ -125,7 +125,7 @@ def test_3000_acres_champaign_full_soy():
             [[05.99,  4.78,  2.20],
              [17.34, 13.64,  7.48]]))
 
-    for prm, exp in zip(prem, expected):
+    for prm, exp in zip(prem[:4], expected):
         assert np.all((prm - exp) == pytest.approx(0, TOL)), "values don't all match"
 
 
@@ -164,7 +164,7 @@ def test_300_acres_wheat_champaign():
             [[04.5 ,  3.57,  2.19],
              [10.69,  8.49,  5.43]]))
 
-    for prm, exp in zip(prem, expected):
+    for prm, exp in zip(prem[:4], expected):
         if prm is None:
             assert exp is None, "Values don't all match"
         else:
@@ -209,7 +209,7 @@ def test_100_acres_madison_corn():
             [[10.54,  7.47,  5.20],
              [27.25, 19.85, 13.83]]))
 
-    for prm, exp in zip(prem, expected):
+    for prm, exp in zip(prem[:4], expected):
         assert np.all((prm - exp) == pytest.approx(0, TOL)), "values don't all match"
 
 
@@ -250,7 +250,7 @@ def test_3000_acres_full_soybeans_madison():
             [[05.71,  4.23,  2.81],
              [15.63, 11.76,  8.14]]))
 
-    for prm, exp in zip(prem, expected):
+    for prm, exp in zip(prem[:4], expected):
         assert np.all((prm - exp) == pytest.approx(0, TOL)), "values don't all match"
 
 
@@ -291,7 +291,7 @@ def test_300_acres_wheat_madison():
             [[07.11,  5.57,  3.11],
              [17.12, 13.39,  7.97]]))
 
-    for prm, exp in zip(prem, expected):
+    for prm, exp in zip(prem[:4], expected):
         assert np.all((prm - exp) == pytest.approx(0, TOL)), "values don't all match"
 
 
@@ -332,7 +332,7 @@ def test_300_acres_fac_soy_madison():
             [[05.6 ,  4.15,  2.76],
              [15.32, 11.53,  7.98]]))
 
-    for prm, exp in zip(prem, expected):
+    for prm, exp in zip(prem[:4], expected):
         assert np.all((prm - exp) == pytest.approx(0, TOL)), "values don't all match"
 
 
@@ -374,7 +374,7 @@ def test_100_acres_corn_st_charles_mo_risk_BBB():
             [[10.35,  7.25,  5.37],
              [26.48, 19.07, 13.92]]))
 
-    for prm, exp in zip(prem, expected):
+    for prm, exp in zip(prem[:4], expected):
         assert np.all((prm - exp) == pytest.approx(0, TOL)), "values don't all match"
 
 
@@ -415,7 +415,7 @@ def test_100_acres_madison_corn_NO_TA():
             [[09.9 ,  7.02,  4.88],
              [25.59, 18.64, 12.98]]))
 
-    for prm, exp in zip(prem, expected):
+    for prm, exp in zip(prem[:4], expected):
         assert np.all((prm - exp) == pytest.approx(0, TOL)), "values don't all match"
 
 
@@ -454,7 +454,7 @@ def test_300_acres_adams_cty_colorado_irrigated_wheat():
             [[07.5 ,  5.89,  2.90],
              [18.6 , 14.48,  7.84]]))
 
-    for prm, exp in zip(prem, expected):
+    for prm, exp in zip(prem[:4], expected):
         if prm is None:
             assert exp is None, "Values don't all match"
         else:

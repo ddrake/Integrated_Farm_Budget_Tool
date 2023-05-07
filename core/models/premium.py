@@ -220,7 +220,8 @@ class Premium:
             else:
                 self.compute_prems_eco()
 
-        return self.prem_ent, self.prem_arc, self.prem_sco, self.prem_eco
+        return (self.prem_ent, self.prem_arc, self.prem_sco, self.prem_eco,
+                self.projected_price, self.expected_yield)
 
     # -------------------
     # ENTERPRISE PREMIUMS

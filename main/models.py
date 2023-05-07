@@ -3,28 +3,322 @@ from django.contrib.postgres.fields import ArrayField
 from django.db import models
 from django.db.models import Q
 from django.utils import timezone
-from ext.models import (State, Subcounty, Crop, CropType,
+from ext.models import (State, Subcounty, InsCrop, InsCropType,
                         InsurableCropsForCty, SubcountyAvail)
 from core.models.premium import Premium
+from core.models.gov_pmt import GovPmt
+from core.models.indemnity import Indemnity
 
 
 def get_current_year():
     return timezone.now().year
 
 
+# ---------
+# Farm Year
+# ---------
+class FarmYear(models.Model):
+    """
+    Holds non-crop-specific values for a crop year for a farm
+    A user can have multiple FarmYears, including multiple farms for the
+    same crop year, but we don't currently try to do any aggregation over
+    a user's farms for a given crop year.
+    A FarmYear has many FarmCrops and many FsaCrops so we should be able
+    to add any needed totalizer methods.
+    I think the farm year should include FarmCrops and FsaCrops if and
+    only if they can be insured.  E.g. a Champaign County user would not
+    see FAC beans.  A Madison County user would see that crop but could
+    set the acres to zero if so desired.
+    We may want to break out a form that lets the user first input a minimal
+    set of data (farm_name, crop_year, state and county) sufficient for
+    determining the set of insurable crops.
+    We probably need a method that creates those insurable farm_crops
+    with default values and associates them with the current instance.
+    """
+    FSA_PMT_CAP_PER_PRINCIPAL = 125000
+    PRETAX_INCOME = 0
+    PRETAX_CASH_FLOW = 1
+    REPORT_TYPES = [(PRETAX_INCOME, 'Pre-tax income'),
+                    (PRETAX_CASH_FLOW, 'Pre-tax cash flow')]
+    farm_name = models.CharField(max_length=60)
+    # TODO: We'll want to populate a counties drop-down via AJAX when the
+    # user selects or changes the state.
+    county_code = models.SmallIntegerField(
+        verbose_name="primary county",
+        help_text="The county where most farm acres are located")
+    crop_year = models.SmallIntegerField(default=get_current_year)
+    report_type = models.SmallIntegerField(
+        default=0, choices=REPORT_TYPES,
+        help_text=("Pre-Tax cash flow deducts land debt interest and principal " +
+                   "payments. Pre-tax Income deducts only interest expense.")
+    )
+    cropland_acres_owned = models.FloatField(default=0)
+    cropland_acres_rented = models.FloatField(default=0)
+    cash_rented_acres = models.FloatField(default=0)
+    var_rent_cap_floor_frac = models.FloatField(
+        default=0, verbose_name="variable rent floor/cap",
+        help_text=("Floor and cap on variable rent as a percent of starting base rent")
+    )
+    annual_land_int_expense = models.FloatField(
+        default=0, verbose_name="land interest expense",
+        help_text="Annual owned land interest expense")
+    annual_land_principal_pmt = models.FloatField(
+        default=0, verbose_name="land principal payment",
+        help_text="Annual owned land principal payment")
+    property_taxes = models.FloatField(default=0)
+    land_repairs = models.FloatField(default=0)
+    eligible_persons_for_cap = models.SmallIntegerField(
+        default=0, verbose_name="# persons for cap",
+        help_text="Number of eligible 'persons' for FSA payment caps.")
+    state = models.ForeignKey(State, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    # When a user sets the baseline for a crop year, copies are made of the farmyear and
+    # all related model records and is_baseline is set True.  These records are never
+    # updated, but remain a static snapshot.  In particular, prices are fixed.
+    # If the user later chooses to set a new
+    # baseline for the year, these records are deleted and replaced by the new baseline
+    # records.  At any time, the user can view a report on variance with respect to
+    # the baseline for the crop year.  Once a baseline has been set, some fields
+    # e.g. planted acres, is_irr, should no longer be allowed to change.  I guess we
+    # could say, if you change that value, your baseline budget will be deleted.
+    # TODO: Add method create_baseline()
+    is_baseline = models.BooleanField(default=False)
+    master_farm_year = models.ForeignKey('FarmYear', on_delete=models.CASCADE,
+                                         null=True, blank=True)
+    # Note: we don't reproduce state of the model as of this date.  User choices do
+    # not change.  We set futures prices, possibly price volatility
+    # and projected price and some other fields (e.g. MYA price) according to this date.
+    model_run_date = models.DateField(
+        default=timezone.now,
+        help_text=('The date for which "current" futures prices and other ' +
+                   'date-specific values are looked up.')
+    )
+
+    @property
+    def full_name(self):
+        return f'{self.farm_name} ({self.crop_year} Crop Year)'
+
+    def __str__(self):
+        return self.full_name
+
+    def add_insured_farm_crops(self):
+
+        fsas = {}
+        mkts = {}
+        for row in (InsurableCropsForCty.objects
+                    .filter(state_id=self.state_id, county_code=self.county_code)
+                    .order_by('id')):
+            fct = FarmCropType.objects.get(
+                ins_crop_id=row.crop_id, ins_crop_type_id=row.crop_type_id,
+                is_fac=row.is_fac)
+            mktct = MarketCropType.objects.get(pk=fct.market_crop_type_id)
+            fsact = FsaCropType.objects.get(pk=mktct.fsa_crop_type_id)
+            if mktct.id in mkts:
+                mkt = mkts[mktct.id]
+            else:
+                if fsact.id in fsas:
+                    fsa = fsas[fsact.id]
+                else:
+                    fsa = FsaCrop.objects.create(farm_year=self, fsa_crop_type=fsact)
+                    fsas[fsact.id] = fsa
+                mkt = MarketCrop.objects.create(
+                    farm_year=self, market_crop_type=mktct, fsa_crop=fsa)
+                mkts[mktct.id] = mkt
+            FarmCrop.objects.create(
+                farm_year=self, farm_crop_type=fct, market_crop=mkt,
+                ins_practices=row.practices, ins_practice=row.practices[0])
+
+    def total_gov_pmt(self, pf=1, yf=1):
+        """
+        Government Payments AB60: Sensitized total government payment after
+        application of cap
+        """
+        # TODO: store the pre_sequest amounts with fsa_crop_type so we can
+        # apportion based on acres
+        total = 0
+        for pc in self.pricedcrops_set:
+            total += pc.gov_payment(pf, yf)
+        return round(
+            min(FarmYear.FSA_PMT_CAP_PER_PRINCIPAL * self.number_of_principals,
+                total * (1 - GovPmt.SEQUEST_FRAC)))
+
+    def apportion_gov_pmt(self):
+        """
+        Apportion the government payment among priced crops based on acres.
+        """
+        # TODO:
+        # def total_gov_pmt_crop(self, pf=1, yf=1):
+        #     tot = self.total_gov_pmt(pf, yf)
+        #     return (0 if tot == 0 else
+        #             tot * self.prog_pmt_pre_sequest_crop(pf, yf) /
+        #             self.prog_pmt_pre_sequest(pf, yf))
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        if self.farmcrop_set.count() == 0:
+            self.add_insured_farm_crops()
+            self.save()
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint('farm_name', 'user', 'crop_year',
+                                    name='farm_name_unique_for_user_crop_year'),
+        ]
+
+
+# -------------
+# FSA Crop Type
+# -------------
+class FsaCropType(models.Model):
+    """
+    Aggregates for government payment, marketing assumptions, basis
+    'Corn', 'Beans', 'Wheat'
+    """
+    name = models.CharField(max_length=20)
+
+    def __str__(self):
+        return self.name
+
+
+class ReferencePrices(models.Model):
+    """
+    Reference prices needed to compute government payments
+    """
+    crop_year = models.SmallIntegerField()
+    fsa_crop_type = models.ForeignKey('FsaCropType', on_delete=models.CASCADE)
+    natl_loan_rate = models.FloatField()
+    effective_ref_price = models.FloatField()
+
+
+class FsaCrop(models.Model):
+    """
+    Priced crop-specific operator input data.  A FsaCrop has many FarmCrops so we
+    should be able to get totals pretty easily.
+    """
+    plc_base_acres = models.FloatField(default=0, verbose_name="Base acres in PLC")
+    arcco_base_acres = models.FloatField(default=0, verbose_name="Base acres in ARC-CO")
+    plc_yield = models.FloatField(
+        default=0, verbose_name="farm avg. PLC yield",
+        help_text="Weighted average PLC yield for farm in bushels per acre.")
+    farm_year = models.ForeignKey(FarmYear, on_delete=models.CASCADE)
+    fsa_crop_type = models.ForeignKey(FsaCropType, on_delete=models.CASCADE)
+
+    def get_projected_mya_price(self):
+        """
+        Use the fancy new logic for this...
+        """
+        # TODO: implement this.
+
+    def estimated_county_yield(self):
+        """
+        Needed for gov_pmt.
+        Get premium_to county from the budget crop Farm yield and county yield
+        """
+        # TODO implement this for the farm crop, then compute a weighted average?
+
+    def gov_payment(self, pf=1, yf=1):
+        rp = ReferencePrices.objects.get(
+            fsa_crop_type_id=self.fsa_crop_type_id,
+            crop_year=self.farm_year.crop_year)
+        gp = GovPmt(
+            self.fsa_crop_type_id, self.plc_base_acres, self.arcco_base_acres,
+            self.plc_yield, self.estimated_county_yield(), rp.effective_ref_price,
+            rp.natl_loan_rate, self.harvest_futures_price(),
+            self.get_projected_mya_price())
+        return gp.compute_gov_pmt(pf, yf)
+
+    def harvest_futures_price(self):
+        """
+        Since a farmer could have both winter and spring wheat, with different
+        prices, we need a weighted average of market prices here.
+        """
+        # TODO: implement something
+
+    def __str__(self):
+        return f'{self.fsa_crop_type} for {self.farm_year}'
+
+
+# --------------
+# MarketCropType
+# --------------
+class MarketCropType(models.Model):
+    """
+    A type of crop that can be marketed, i.e. has a price.
+    'Corn', 'Beans', 'Spring Wheat', 'Winter Wheat'
+    """
+    name = models.CharField(max_length=20)
+    fsa_crop_type = models.ForeignKey('FsaCropType', on_delete=models.CASCADE)
+
+    def __str__(self):
+        return self.name
+
+
+class FuturesPrice(models.Model):
+    """
+    Futures prices for marketed crop types.  Used for computing MYA prices
+    and for estimating insurance indemnity and FSA payments.
+    Data: e.g. ('Wheat SRW', 'CBOT', 'Jul 23', 'ZWN23', 6.3325, '2023-03-15', 3)
+    """
+    croptype = models.CharField(max_length=10)
+    exchange = models.CharField(max_length=6)
+    futures_month = models.CharField(max_length=8)
+    ticker = models.CharField(max_length=8)
+    price = models.FloatField()
+    priced_on = models.DateField()
+    market_crop_type = models.ForeignKey(MarketCropType, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return (f'{self.croptype} {self.exchange} {self.futures_month} ' +
+                f'{self.priced_on} {self.price}')
+
+    class Meta:
+        indexes = [models.Index('croptype', 'futures_month', 'priced_on'),
+                   models.Index('market_crop_type', 'futures_month', 'priced_on')]
+
+
+class MarketCrop(models.Model):
+    """
+    """
+    contracted_bu = models.FloatField(
+        default=0, verbose_name="contracted bushels",
+        help_text="Current contracted bushels on futures.")
+    avg_contract_price = models.FloatField(
+        default=0, verbose_name="avg. contract price",
+        help_text="Average price for futures contracts.")
+    new_target_frac = models.FloatField(
+        default=0, verbose_name="new target as % of production",
+        help_text="New target contracted bushels as a percent of total production.")
+    basis_bu_locked = models.FloatField(
+        default=0, verbose_name="bushels with basis locked",
+        help_text="Number of bushels with contracted basis set.")
+    avg_locked_basis = models.FloatField(
+        default=0, verbose_name="avg. locked basis",
+        help_text="Average basis on basis contracts in place.")
+    assumed_basis_for_new = models.FloatField(default=0)
+    farm_year = models.ForeignKey(FarmYear, on_delete=models.CASCADE)
+    market_crop_type = models.ForeignKey(MarketCropType, on_delete=models.CASCADE)
+    fsa_crop = models.ForeignKey(FsaCrop, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return f'{self.market_crop_type} for {self.farm_year}'
+
+
+# ------------
+# FarmCropType
+# ------------
 class FarmCropType(models.Model):
     """
     Only farm crop types supported by crop insurance are made available to the user.
-    Can get ins_crop through priced_crop_type reference.  Data:
+    Can get ins_crop through fsa_crop_type reference.  Data:
     ('Corn', False, 1, 41, 16), ('FS Beans', False, 2, 81, 997),
     ('Winter Wheat', False, 3, 11, 11), ('Spring Wheat', False, 3, 11, 12),
     ('DC Beans', True, 2, 81, 997)
     """
     name = models.CharField(max_length=20)
     is_fac = models.BooleanField(default=False)
-    priced_crop_type = models.ForeignKey('PricedCropType', on_delete=models.CASCADE)
-    ins_crop = models.ForeignKey(Crop, on_delete=models.CASCADE)
-    ins_crop_type = models.ForeignKey(CropType, on_delete=models.CASCADE)
+    market_crop_type = models.ForeignKey('MarketCropType', on_delete=models.CASCADE)
+    ins_crop = models.ForeignKey(InsCrop, on_delete=models.CASCADE)
+    ins_crop_type = models.ForeignKey(InsCropType, on_delete=models.CASCADE)
 
     def __str__(self):
         return self.name
@@ -33,7 +327,7 @@ class FarmCropType(models.Model):
 class FarmCrop(models.Model):
     """
     Farm crop-specific data.  A column in the operator input sheet.
-    It holds references to the associated priced_crop and farm_year models
+    It holds references to the associated fsa_crop and farm_year models
     for convenience.
     Its name is just the name of its farm_crop_type (TODO: add method)
     We can get its crop insurance type from the farm_crop_type.
@@ -55,13 +349,9 @@ class FarmCrop(models.Model):
     COVERAGE_LEVELS_C = [
         (.7, '70%'), (.75, '75%'), (.8, '80%'), (.85, '85%'), (.9, '90%'), ]
     COVERAGE_LEVELS_ECO = [(.9, '90%'), (.95, '95%'), ]
-    is_irr = models.BooleanField(
-        default=False, verbose_name='irrigated?',
-        help_text="Make sure this is set correctly before adding a budget.")
     planted_acres = models.FloatField(default=0)
-    rotating_acres = models.FloatField(
-        null=True, blank=True,
-        help_text="The number of rotating acres, e.g. corn on beans.")
+    nonrotating_acres = models.FloatField(
+        default=0, help_text="The number of non-rotating acres, e.g. corn on corn.")
     frac_yield_dep_nonland_cost = models.FloatField(
         null=True, blank=True,
         verbose_name="est. % yield-dependent cost",
@@ -95,6 +385,9 @@ class FarmCrop(models.Model):
         max_digits=4, decimal_places=2, null=True, blank=True,
         verbose_name="projected harvest price",
         help_text="Estimate for projected harvest price")
+    cty_expected_yield = models.FloatField(
+        null=True, blank=True, verbose_name="county expected yield",
+        help_text="The RMA expected yield for the county if available")
     coverage_type = models.SmallIntegerField(
         choices=COVERAGE_TYPES, null=True, blank=True,
         help_text="Crop insurance coverage type.")
@@ -117,19 +410,37 @@ class FarmCrop(models.Model):
         default=1, verbose_name="selected payment factor",
         help_text="Selected payment factor for county premiums/indemnities.")
     farm_crop_type = models.ForeignKey(FarmCropType, on_delete=models.CASCADE)
-    priced_crop = models.ForeignKey('PricedCrop', on_delete=models.CASCADE)
-    farm_year = models.ForeignKey('FarmYear', on_delete=models.CASCADE)
+    market_crop = models.ForeignKey(MarketCrop, on_delete=models.CASCADE)
+    farm_year = models.ForeignKey(FarmYear, on_delete=models.CASCADE)
     crop_ins_prems = models.JSONField(null=True, blank=True)
     # holds all allowed practices for this FarmCrop
+    # these will be added to a drop-down with text 'irrigated', 'nonirrigated'
+    # This indirectly specifies whether the farm crop is irrigated or not.
     ins_practices = ArrayField(models.SmallIntegerField(), size=2)
     # holds currently selected practice
     ins_practice = models.SmallIntegerField()
+    new_crop_ticker = models.CharField(max_length=8, null=True)
+    new_crop_fut_harv_price = models.FloatField(
+        default=0, verbose_name="new crop futures price",
+        help_text="Current new crop futures harvest price.")
 
     def __str__(self):
-        return str(self.farm_crop_type)
+        return f'{self.farm_crop_type} for {self.farm_year}'
+
+    def farm_expected_yield(self):
+        """
+        Computed from budget crops and rotating acres
+        """
+
+    def farm_yield_premium_to_cty(self):
+        """
+        Computed from budget crops county yield and rotating acres
+        """
 
     def save(self, *args, **kwargs):
         # TODO: only set prems if really necessary (i.e. if an input field changed)
+        # TODO: if the model_run_date is before the end of discovery, need to set
+        # price_volatility and projected price also.
         if (self.planted_acres > 0 and self.rate_yield > 0 and self.adj_yield > 0
                 and self.ta_aph_yield > 0):
             self.set_prems()
@@ -156,7 +467,16 @@ class FarmCrop(models.Model):
         if prems is not None:
             names = 'Farm County SCO ECO'.split()
             self.crop_ins_prems = {key: ar.tolist()
-                                   for key, ar in zip(names, prems)}
+                                   for key, ar in zip(names, prems[:4])}
+            self.proj_harv_price = prems[4]
+            self.cty_expected_yield = prems[5]
+
+    def get_indemnities(self, pf, yf):
+        indem = Indemnity(
+            self.ta_aph_yield, self.proj_harv_price, self.cur_futures_harv_price.price,
+            self.cty_expected_yield, self.farm_expected_yield(), self.prot_factor,
+            self.farm_yield_premium_to_cty())
+        return indem.compute_indems(pf, yf)
 
     def allowed_subcounties(self):
         # TODO: may need to double up subcounty id in values_list and/or add None
@@ -174,197 +494,13 @@ class FarmCrop(models.Model):
         ]
 
 
-class FarmYear(models.Model):
-    """
-    Holds non-crop-specific values for a crop year for a farm
-    A user can have multiple FarmYears, including multiple farms for the
-    same crop year, but we don't currently try to do any aggregation over
-    a user's farms for a given crop year.
-    A FarmYear has many FarmCrops and many PricedCrops so we should be able
-    to add any needed totalizer methods.
-    I think the farm year should include FarmCrops and PricedCrops if and
-    only if they can be insured.  E.g. a Champaign County user would not
-    see FAC beans.  A Madison County user would see that crop but could
-    set the acres to zero if so desired.
-    We may want to break out a form that lets the user first input a minimal
-    set of data (farm_name, crop_year, state and county) sufficient for
-    determining the set of insurable crops.
-    We probably need a method that creates those insurable farm_crops
-    with default values and associates them with the current instance.
-    """
-    PRETAX_INCOME = 0
-    PRETAX_CASH_FLOW = 1
-    REPORT_TYPES = [(PRETAX_INCOME, 'Pre-tax income'),
-                    (PRETAX_CASH_FLOW, 'Pre-tax cash flow')]
-    farm_name = models.CharField(max_length=60)
-    # TODO: We'll want to populate a counties drop-down via AJAX when the
-    # user selects or changes the state.
-    county_code = models.SmallIntegerField(verbose_name="county")
-    crop_year = models.SmallIntegerField(default=get_current_year)
-    report_type = models.SmallIntegerField(
-        default=0, choices=REPORT_TYPES,
-        help_text=("Pre-Tax cash flow deducts land debt interest and principal " +
-                   "payments. Pre-tax Income deducts only interest expense.")
-    )
-    cropland_acres_owned = models.FloatField(default=0)
-    cropland_acres_rented = models.FloatField(default=0)
-    cash_rented_acres = models.FloatField(default=0)
-    var_rent_cap_floor_frac = models.FloatField(
-        default=0, verbose_name="variable rent floor/cap",
-        help_text=("Floor and cap on variable rent as a percent of starting base rent")
-    )
-    annual_land_int_expense = models.FloatField(
-        default=0, verbose_name="land interest expense",
-        help_text="Annual owned land interest expense")
-    annual_land_principal_pmt = models.FloatField(
-        default=0, verbose_name="land principal payment",
-        help_text="Annual owned land principal payment")
-    property_taxes = models.FloatField(default=0)
-    land_repairs = models.FloatField(default=0)
-    eligible_persons_for_cap = models.SmallIntegerField(
-        default=0, verbose_name="# persons for cap",
-        help_text="Number of eligible 'persons' for FSA payment caps.")
-    state = models.ForeignKey(State, on_delete=models.CASCADE)
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    budget = models.ForeignKey('Budget', on_delete=models.CASCADE,
-                               null=True, blank=True)
-    # When a user sets the baseline for a crop year, copies are made of the farmyear and
-    # all related model records and is_baseline is set True.  These records are never
-    # updated, but remain a static snapshot.  If the user later chooses to set a new
-    # baseline for the year, these records are deleted and replaced by the new baseline
-    # records.  At any time, the user can view a report on variance with respect to
-    # the baseline for the crop year.  Once a baseline has been set, some fields
-    # e.g. planted acres, is_irr, should no longer be allowed to change.  I guess we
-    # could say, if you change that value, your baseline budget will be deleted.
-    # TODO: Add method create_baseline()
-    is_baseline = models.BooleanField(default=False)
-    master_farm_year = models.ForeignKey('FarmYear', on_delete=models.CASCADE,
-                                         null=True, blank=True)
-
-    @property
-    def full_name(self):
-        return f'{self.farm_name} ({self.crop_year} Crop Year)'
-
-    def __str__(self):
-        return self.full_name
-
-    def add_insured_farm_crops(self):
-        for row in (InsurableCropsForCty.objects
-                    .filter(state_id=self.state_id, county_code=self.county_code)
-                    .order_by('id')):
-            fct = FarmCropType.objects.get(
-                ins_crop_id=row.crop_id, ins_crop_type_id=row.crop_type_id,
-                is_fac=row.is_fac)
-            pct = PricedCropType.objects.get(pk=fct.priced_crop_type_id)
-            pc = PricedCrop.objects.create(farm_year=self, priced_crop_type=pct)
-            FarmCrop.objects.create(
-                farm_year=self, farm_crop_type=fct, priced_crop=pc,
-                ins_practices=row.practices, ins_practice=row.practices[0])
-
-    def save(self, *args, **kwargs):
-        super().save(*args, **kwargs)
-        if self.farmcrop_set.count() == 0:
-            self.add_insured_farm_crops()
-            self.save()
-
-    class Meta:
-        constraints = [
-            models.UniqueConstraint('farm_name', 'user', 'crop_year',
-                                    name='farm_name_unique_for_user_crop_year'),
-        ]
-
-
-class PricedCropType(models.Model):
-    """
-    Aggregates for government payment, marketing assumptions, basis
-    'Corn', 'Beans', 'Wheat'
-    """
-    name = models.CharField(max_length=20)
-
-    def __str__(self):
-        return self.name
-
-
-class HarvestFuturesPrice(models.Model):
-    """
-    Harvest futures prices, inserted daily until they go off the board.
-    I think we store prices going back to the beginning of the crop year, but
-    prompt the user that they may wish to update the prices if more recent
-    prices are available for the crop year.  Maybe they could click
-    a button 'set current prices'?  Sample data:
-    ('C', 'CHI', 'Dec 23', 5.20, 16, 2023-04-01),
-    ('S', 'CHI', 'Nov 23', 9.40, 997, 2023-04-01),
-    ('SRW', 'CHI', 'Jul 23', 6.10, 11, 2023-04-01),
-    ('HRW', 'KC', 'Jul 23', 6.10, 11, 2023-04-01),
-    ('HRS', 'MPLS', 'Jul 23', 6.10, 12, 2023-04-01),
-    """
-    CORN = 'C'
-    SOY = 'S'
-    SRW = 'SRW'
-    HRW = 'HRW'
-    HRS = 'HRS'
-    CROPTYPES = [(CORN, 'CORN'), (SOY, 'SOY'), (SRW, 'SRW'), (HRW, 'HRW'), (HRS, 'HRS')]
-    CHI = 'CHI'
-    KC = 'KC'
-    MPLS = 'MPLS'
-    EXCHANGES = [(CHI, CHI), (KC, KC), (MPLS, MPLS)]
-
-    croptype = models.CharField(max_length=6, choices=CROPTYPES)
-    exchange = models.CharField(max_length=6, choices=EXCHANGES)
-    futures_month = models.CharField(max_length=8)
-    price = models.FloatField(default=0)
-    priced_on = models.DateField(default=timezone.now)
-    ins_crop_type = models.ForeignKey(CropType, on_delete=models.CASCADE)
-
-    def __str__(self):
-        return (f'{self.croptype} {self.exchange} {self.futures_month} ' +
-                f'{self.priced_on} {self.price}')
-
-
-class PricedCrop(models.Model):
-    """
-    Priced crop-specific operator input data.  A PricedCrop has many FarmCrops so we
-    should be able to get totals pretty easily.
-    """
-    plc_base_acres = models.FloatField(default=0, verbose_name="Base acres in PLC")
-    arcco_base_acres = models.FloatField(default=0, verbose_name="Base acres in ARC-CO")
-    plc_yield = models.FloatField(
-        default=0, verbose_name="farm avg. PLC yield",
-        help_text="Weighted average PLC yield for farm in bushels per acre.")
-    contracted_bu = models.FloatField(
-        default=0, verbose_name="contracted bushels",
-        help_text="Current contracted bushels on futures.")
-    avg_contract_price = models.FloatField(
-        default=0, verbose_name="avg. contract price",
-        help_text="Average price for futures contracts.")
-    new_target_frac = models.FloatField(
-        default=0, verbose_name="new target as % of production",
-        help_text="New target contracted bushels as a percent of total production.")
-    basis_bu_locked = models.FloatField(
-        default=0, verbose_name="bushels with basis locked",
-        help_text="Number of bushels with contracted basis set.")
-    avg_locked_basis = models.FloatField(
-        default=0, verbose_name="avg. locked basis",
-        help_text="Average basis on basis contracts in place.")
-    assumed_basis_for_new = models.FloatField(default=0)
-    farm_year = models.ForeignKey(FarmYear, on_delete=models.CASCADE)
-    priced_crop_type = models.ForeignKey(PricedCropType, on_delete=models.CASCADE)
-    new_crop_fut_harv_price = models.ForeignKey(
-        HarvestFuturesPrice, on_delete=models.CASCADE, null=True, blank=True,
-        verbose_name="new crop futures price",
-        help_text="Current new crop futures harvest price.")
-
-    def __str__(self):
-        return str(self.priced_crop_type)
-
-
+# --------------
+# BudgetCropType
+# --------------
 class BudgetCropType(models.Model):
     """
-    Can get is_fac through farm_crop_type reference.  Data:
-    ('Corn on Beans', 1, True), ('Corn on Corn', 1, False),
-    ('Beans on Corn' 2, True), ('Beans on Beans', 2, False),
-    ('Winter Wheat', 3, Null), ('Spring Wheat', 4, Null),
-    ('DC Beans', 5, Null)
+    Can get is_fac through farm_crop_type reference.
+    There are 14 Budget crop types
     """
     name = models.CharField(max_length=20)
     farm_crop_type = models.ForeignKey(FarmCropType, on_delete=models.CASCADE)
@@ -378,12 +514,13 @@ class BudgetCropType(models.Model):
 class BudgetCrop(models.Model):
     """
     A column in a budget named by its budget_crop_type name.
-    Cost items are in dollars per acre.
-    I think budget crops should be included in the budget if and only if they can
-    be insured, and a budget with no insurable crops should be removed from the
-    select list.
+    Cost items are in dollars per acre.  One or two budget crops are assigned
+    To each farm crop based on matching the farm_crop_type and irrigated status
+    of the farm crop to the buddget crop type.
     """
     farm_yield = models.FloatField(default=0)
+    # the farm yield value is copied to county yield during import.
+    county_yield = models.FloatField(default=0)
     assumed_basis = models.FloatField(default=0)
     other_gov_pmts = models.FloatField(default=0)
     other_revenue = models.FloatField(default=0)
@@ -411,9 +548,17 @@ class BudgetCrop(models.Model):
     other_overhead_costs = models.FloatField(default=0)
     rented_land_costs = models.FloatField(default=0)
     budget_crop_type = models.ForeignKey(BudgetCropType, on_delete=models.CASCADE)
-    budget = models.ForeignKey('Budget', on_delete=models.CASCADE)
+    # This is set null after copying and assigning to a farm crop
+    budget = models.ForeignKey('Budget', on_delete=models.CASCADE,
+                               null=True, blank=True)
     orig_budget = models.ForeignKey('Budget', on_delete=models.CASCADE,
-                                    null=True, blank=True, related_name="orig_budget")
+                                    related_name="orig_budget")
+    farm_crop = models.ForeignKey(FarmCrop, on_delete=models.CASCADE,
+                                  null=True, blank=True)
+
+    def farm_yield_premium_to_cty(self):
+        return ((self.farm_yield - self.county_yield) / self.county_yield
+                if self.county_yield > 0 else 0)
 
     def __str__(self):
         return f'{self.budget_crop_type} in {self.budget}'
@@ -421,13 +566,15 @@ class BudgetCrop(models.Model):
 
 class Budget(models.Model):
     """
-    A built-in (imported) or user-customized budget. It has many BudgetCrops.
-    A user budget is created with columns from one or more built-in budgets
-    once the farm crops have been added and their irrigated status set.
-    We use some algorithm to do the selection of budget columns based on the
-    user's state/county and insurable crops irr/nonirr.  If they change the
+    A built-in budget. It has many BudgetCrops.
+    Once farm crops have been added to a farm year and their irrigated status set,
+    we use some algorithm to do the selection of budget crops based on the
+    user's state/county and insurable crops irr/nonirr. One or two budget crops
+    will be copied and associated with each farm crop.  If the user changes the
     irr/non-irr status for a farm crop later, we ask them if they want to
     replace the corresponding budget column or keep the one they have.
+    Copies of budget crops assigned to farm crops will have their budget id set to
+    NULL, but keep their orig_budget_id for reference.
     """
     name = models.CharField(max_length=60)
     crop_year = models.SmallIntegerField()
@@ -436,7 +583,6 @@ class Budget(models.Model):
     institution = models.CharField(max_length=150, null=True)
     source_url = models.URLField(null=True)
     created_on = models.DateField()
-    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True)
 
     @property
     def fullname(self):
@@ -448,6 +594,6 @@ class Budget(models.Model):
 
     class Meta:
         constraints = [
-            models.UniqueConstraint('name', 'user', 'crop_year', 'created_on',
-                                    name='name_unique_for_user_crop_year_created'),
+            models.UniqueConstraint('name', 'crop_year', 'created_on',
+                                    name='name_unique_for_crop_year_created'),
         ]

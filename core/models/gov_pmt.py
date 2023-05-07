@@ -13,239 +13,190 @@ in the form of two spreadsheets, e.g. 2023_erp.xls and arcco_2023_data_2023-02-1
 """
 import os
 
-# import numpy as np
-
-from core.models.analysis import Analysis
-from core.models.util import crop_in, Crop, BASE_CROPS, get_postgres_rows
+from core.models.util import get_postgres_row
 
 DATADIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data')
 
 
-class GovPmt(Analysis):
+class GovPmt():
     """
-    Computes total estimated cost for the farm crop year
+    Computes the total pre-sequestration payment (ARC-CO + PLC) for a crop
     corresponding to arbitrary sensitivity factors for price and yield.
-
-    Sample usage in a python or ipython console:
-      from ifbt import GovPmt
-      p = GovPmt(2023)
-      p.total_pmt()               # pf and yf default to 1
-      p.total_pmt(pf=.9, yf=1.1)  # specifies both price and yield factors
-      p.total_pmt(yf=1.2)         # uses default for pf
     """
 
-    DATA_FILES = 'farm_data gov_pmt_data'
+    BASE_TO_NET_PMT_FRAC = 0.85
+    SEQUEST_FRAC = 0.062
+    FSA_PMT_CAP_PER_PRINCIPAL = 125000
+    CAP_ON_BMK_COUNTY_REV = 0.1
+    GUAR_REV_FRAC = 0.86
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    # est_mya_price has been computed by taking the fall futures price and applying
+    # a decrement -- not sure if we're still doing that...
+    def __init__(self, crop_id, is_irr, plc_base_acres, arcco_base_acres, plc_yield,
+                 estimated_county_yield, effective_ref_price, natl_loan_rate,
+                 harvest_futures_price, decrement_from_futures_to_mya):
 
-        # Crops and practices for benchmark county revenue lookup
-        cropprac = [item for pair in ((int(crop), self.arc_practice[crop])
-                                      for crop in (Crop.CORN, Crop.SOY, Crop.WHEAT))
-                    for item in pair]
-        self.benchmark_revenues = get_benchmark_revenue(self.state, self.county,
-                                                        cropprac)
+        self.plc_base_acres = plc_base_acres
+        self.arcco_base_acres = arcco_base_acres
+        self.plc_yield = plc_yield
+        self.estimated_county_yield = estimated_county_yield
+        self.effective_ref_price = effective_ref_price
+        self.natl_loan_rate = natl_loan_rate
+        self.harvest_futures_price = harvest_futures_price
+        self.decrement_from_futures_to_mya = decrement_from_futures_to_mya
+
+        self.benchmark_revenue = get_benchmark_revenue(
+            self.state, self.county, crop_id, is_irr)
 
     # Government Payment Totals
     # -------------------------
-    @crop_in(*BASE_CROPS)
-    def total_gov_pmt_crop(self, crop, pf=1, yf=1):
-        tot = self.total_gov_pmt(pf, yf)
-        return (0 if tot == 0 else
-                tot * self.prog_pmt_pre_sequest_crop(crop, pf, yf) /
-                self.prog_pmt_pre_sequest(pf, yf))
-
-    def total_gov_pmt(self, pf=1, yf=1):
-        """
-        Government Payments AB60: Sensitized total government payment after
-        application of cap
-        """
-        return round(
-            min(self.prog_pmt_post_sequest(pf, yf),
-                self.fsa_pmt_cap_per_principal * self.number_of_principals))
-
-    def prog_pmt_post_sequest(self, pf=1, yf=1):
-        """
-        Government Payments AB58: Sensitized, post-sequestration government
-        program payment total.
-        """
-        return self.prog_pmt_pre_sequest(pf, yf) * (1 - self.sequest_frac)
 
     def prog_pmt_pre_sequest(self, pf=1, yf=1):
         """
-        Government Payments AB56: Sensitized, pre-sequestration
-        government program payment total
+        Government Payments Y56:AA56: Sensitized total pre-sequestration payment
+        over both programs.
         """
-        return sum([self.prog_pmt_pre_sequest_crop(crop, pf, yf)
-                    for crop in BASE_CROPS])
-
-    @crop_in(*BASE_CROPS)
-    def prog_pmt_pre_sequest_crop(self, crop, pf=1, yf=1):
-        """
-        Government Payments Y56:AA56: Sensitized pre-sequestration payment
-        for the selected program and specified crop.
-        """
-        return (self.arc_pmt_pre_sequest(crop, pf, yf) +
-                self.plc_pmt_pre_sequest(crop, pf))
+        return (self.arc_pmt_pre_sequest(pf, yf) +
+                self.plc_pmt_pre_sequest(pf))
 
     # PLC
     # ---
-    @crop_in(*BASE_CROPS)
-    def plc_pmt_pre_sequest(self, crop, pf=1):
+    def plc_pmt_pre_sequest(self, pf=1):
         """
         Government Payments Y23:AA23: Price-sensitized pre-sequestration PLC payment
-        for the crop.
         """
-        return (self.plc_payment_rate(crop, pf) * self.net_payment_acres_plc(crop) *
-                self.farm_plc_yield[crop])
+        return (self.plc_payment_rate(pf) * self.net_payment_acres_plc() *
+                self.plc_yield)
 
-    @crop_in(*BASE_CROPS)
-    def plc_payment_rate(self, crop, pf=1):
+    def plc_payment_rate(self, pf=1):
         """
         Government Payments Y21:AA21: The price-sensitized PLC payment rate
-        for the crop
         """
-        return min(self.plc_payment_rate1(crop, pf),
-                   self.max_plc_payment_rate(crop))
+        return min(self.plc_payment_rate1(pf),
+                   self.max_plc_payment_rate())
 
-    @crop_in(*BASE_CROPS)
-    def net_payment_acres_plc(self, crop):
+    def net_payment_acres_plc(self):
         """
         Government Payments Y10:AA10: Net Payment Acres (85 percent of base)
-        for the crop.
         """
-        return (self.base_to_net_pmt_frac *
-                self.farm_base_acres_plc[crop])
+        return GovPmt.BASE_TO_NET_PMT_FRAC * self.plc_base_acres
 
-    @crop_in(*BASE_CROPS)
-    def plc_payment_rate1(self, crop, pf=1):
+    def plc_payment_rate1(self, pf=1):
         """
         Government Payments Y19:AA19: Price-sensitized helper for plc_payment rate
-        for the crop
         """
-        return max(self.effective_ref_price[crop] - self.effective_price(crop, pf), 0)
+        return max(self.effective_ref_price - self.effective_price(pf), 0)
 
-    @crop_in(*BASE_CROPS)
-    def max_plc_payment_rate(self, crop):
+    def max_plc_payment_rate(self):
         """
-        Government Payments Y20:AA20: The maximum PLC payment rate for the crop
+        Government Payments Y20:AA20: The maximum PLC payment rate
         """
-        return self.effective_ref_price[crop] - self.natl_loan_rate[crop]
+        return self.effective_ref_price - self.natl_loan_rate
 
-    @crop_in(*BASE_CROPS)
-    def effective_price(self, crop, pf=1):
+    def effective_price(self, pf=1):
         """
-        Government Payments Y18:AA18: The price-sensitized effective price
-        for the crop.
+        Government Payments Y18:AA18: The price-sensitized effective price.
         """
-        return max(self.natl_loan_rate[crop],
-                   self.assumed_mya_price(crop, pf))
+        return max(self.natl_loan_rate,
+                   self.assumed_mya_price(pf))
 
     # ARC-CO
     # ------
-    @crop_in(*BASE_CROPS)
-    def arc_pmt_pre_sequest(self, crop, pf=1, yf=1):
+    def arc_pmt_pre_sequest(self, pf=1, yf=1):
         """
-        Government Payments Y48:AA48: Sensitized ARC payment pre-sequestration
-        for the crop.
+        Government Payments Y48:AA48: Sensitized ARC payment pre-sequestration.
         """
-        return self.net_payment_acres_arc(crop) * self.arc_pmt_rate(crop, pf, yf)
+        return self.net_payment_acres_arc() * self.arc_pmt_rate(pf, yf)
 
-    @crop_in(*BASE_CROPS)
-    def net_payment_acres_arc(self, crop):
+    def net_payment_acres_arc(self):
         """
         Government Payments Y10:AA10: Net Payment Acres (85 percent of base)
-        for the crop.
         """
-        return (self.base_to_net_pmt_frac *
-                self.farm_base_acres_arc[crop])
+        return GovPmt.BASE_TO_NET_PMT_FRAC * self.arcco_base_acres
 
-    @crop_in(*BASE_CROPS)
-    def arc_pmt_rate(self, crop, pf=1, yf=1):
+    def arc_pmt_rate(self, pf=1, yf=1):
         """
-        Government Payments Y44:AA44: Sensitized ARC Payment rate
-        for the crop.
+        Government Payments Y44:AA44: Sensitized ARC Payment rate.
         """
-        return min(self.arc_capped_bmk_revenue(crop),
-                   self.revenue_shortfall(crop, pf, yf))
+        return min(self.arc_capped_bmk_revenue(),
+                   self.revenue_shortfall(pf, yf))
 
-    @crop_in(*BASE_CROPS)
-    def arc_capped_bmk_revenue(self, crop):
+    def arc_capped_bmk_revenue(self):
         """
-        Government Payments Y43:AA43: ARC 10 percent cap
-        on Benchmark County Revenue for the crop.
+        Government Payments Y43:AA43: ARC 10 percent cap on Benchmark County Revenue.
         """
-        return (self.arc_bmk_county_revenue(crop) *
-                self.cap_on_bmk_county_rev)
+        return (self.arc_bmk_county_revenue() *
+                GovPmt.CAP_ON_BMK_COUNTY_REV)
 
-    @crop_in(*BASE_CROPS)
-    def revenue_shortfall(self, crop, pf=1, yf=1):
+    def revenue_shortfall(self, pf=1, yf=1):
         """
-        Government Payments Y42:AA42: Sensitized revenue shortfall
-        for the crop.
+        Government Payments Y42:AA42: Sensitized revenue shortfall.
         """
-        return max(0, (self.arc_guar_revenue(crop) -
-                       self.actual_crop_revenue(crop, pf, yf)))
+        return max(0, (self.arc_guar_revenue() -
+                       self.actual_crop_revenue(pf, yf)))
 
-    @crop_in(*BASE_CROPS)
-    def arc_bmk_county_revenue(self, crop):
+    def arc_bmk_county_revenue(self):
         """
         Government Payments Y35:AA35: ARC Benchmark County Revenue for the crop.
         """
-        return self.benchmark_revenues[int(crop)]
+        return self.benchmark_revenue
 
-    @crop_in(*BASE_CROPS)
-    def arc_guar_revenue(self, crop):
+    def arc_guar_revenue(self):
         """
         Government Payments Y36:AA36: ARC Guarantee Revenue
         (86 percent of Benchmark County revenue)
         """
-        return (self.arc_bmk_county_revenue(crop) * self.guar_rev_frac)
+        return (self.arc_bmk_county_revenue() * GovPmt.GUAR_REV_FRAC)
 
-    @crop_in(*BASE_CROPS)
-    def actual_crop_revenue(self, crop, pf=1, yf=1):
+    def actual_crop_revenue(self, pf=1, yf=1):
         """
         Government Payments Y41:AA41: price/yield-sensitized actual
         revenue for the crop.
         """
-        return (max(self.assumed_mya_price(crop, pf),
-                    self.natl_loan_rate[crop]) *
-                self.arc_county_rma_yield(crop, yf))
+        return (max(self.assumed_mya_price(pf),
+                    self.natl_loan_rate) *
+                self.arc_county_rma_yield(yf))
 
-    @crop_in(*BASE_CROPS)
-    def arc_county_rma_yield(self, crop, yf=1):
+    def arc_county_rma_yield(self, yf=1):
         """
         Government Payments Y40:AA40 -> AR25:AT25: Yield-sensitized County
         actual/est yield (RMA) for the crop.
         Note: this is NOT the same as the county_rma_yield in the base class
         """
-        return self.est_county_yield[crop] * yf
+        return self.estimated_county_yield * yf
 
     # Used by both programs
     # ---------------------
-    @crop_in(*BASE_CROPS)
-    def assumed_mya_price(self, crop, pf=1):
+    def assumed_mya_price(self, pf=1):
         """
         Government Payments Y38:AA38 -> AR16:AT16:
         Price-sensitized marketing Year Avg Price for the crop.
         """
+        # TODO: Change this according to the new method for getting MYA price
+        return (self.harvest_futures_price * pf -
+                self.decrement_from_futures_to_mya)
 
-        return (self.fall_futures_price[crop] * pf -
-                self.decrement_from_futures_to_mya[crop])
 
-
-def get_benchmark_revenue(state_id, county_code, cropprac):
+def get_benchmark_revenue(state_id, county_code, crop_id, is_irr):
     """
     Get the std_deviation_qty and mean_qty values from comborevenuefactor
-    for the given lookupid
+    for the given lookupid.   This is dumb, but necessary because there are three
+    different 'practices' 0=all, 1=irr, 2=non-irr.
     """
-    query = '''SELECT benchmark_revenue
-               FROM public.ext_govpmt_benchmark_revenue
-               WHERE state_id=%s AND county_code=%s AND
-               (crop=%s AND practice=%s OR
-                crop=%s AND practice=%s OR
-                crop=%s AND practice=%s)
-               ;'''
-    records = get_postgres_rows(query, state_id, county_code,
-                                *cropprac)
-    return [record[0] for record in records]
+    # This may change if we get the county irr/non-irr acre allocations.
+    if is_irr:
+        query = '''SELECT benchmark_revenue
+                   FROM public.ext_govpmt_benchmark_rev
+                   WHERE state_id=%s AND county_code=%s AND
+                   crop=%s AND is_irr=%s
+                   ;'''
+        record = get_postgres_row(query, state_id, county_code, True)
+    else:
+        query = '''SELECT benchmark_revenue
+                   FROM public.ext_govpmt_benchmark_rev
+                   WHERE state_id=%s AND county_code=%s AND
+                   crop=%s AND is_nonirr=%s
+                   ;'''
+        record = get_postgres_row(query, state_id, county_code, True)
+
+    return record[0]
