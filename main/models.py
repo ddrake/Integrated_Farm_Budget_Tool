@@ -8,6 +8,7 @@ from ext.models import (State, Subcounty, InsCrop, InsCropType,
 from core.models.premium import Premium
 from core.models.gov_pmt import GovPmt
 from core.models.indemnity import Indemnity
+from core.models.util import call_postgres_func
 
 
 def get_current_year():
@@ -80,7 +81,7 @@ class FarmYear(models.Model):
     # records.  At any time, the user can view a report on variance with respect to
     # the baseline for the crop year.  Once a baseline has been set, some fields
     # e.g. planted acres, is_irr, should no longer be allowed to change.  I guess we
-    # could say, if you change that value, your baseline budget will be deleted.
+    # could warn, "If you change that value, your baseline budget will be deleted."
     # TODO: Add method create_baseline()
     is_baseline = models.BooleanField(default=False)
     master_farm_year = models.ForeignKey('FarmYear', on_delete=models.CASCADE,
@@ -91,8 +92,11 @@ class FarmYear(models.Model):
     model_run_date = models.DateField(
         default=timezone.now,
         help_text=('The date for which "current" futures prices and other ' +
-                   'date-specific values are looked up.')
-    )
+                   'date-specific values are looked up.'))
+    price_factor = models.FloatField(default=1,
+                                     verbose_name='price sensititivity factor')
+    yield_factor = models.FloatField(default=1,
+                                     verbose_name='yield sensititivity factor')
 
     @property
     def full_name(self):
@@ -101,8 +105,11 @@ class FarmYear(models.Model):
     def __str__(self):
         return self.full_name
 
-    def add_insured_farm_crops(self):
-
+    def add_insurable_farm_crops(self):
+        """
+        Add farm crops, market crops and fsa crops to the farm year based on the
+        insurable crops, types and practices for the county
+        """
         fsas = {}
         mkts = {}
         for row in (InsurableCropsForCty.objects
@@ -156,7 +163,7 @@ class FarmYear(models.Model):
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
         if self.farmcrop_set.count() == 0:
-            self.add_insured_farm_crops()
+            self.add_insurable_farm_crops()
             self.save()
 
     class Meta:
@@ -185,9 +192,65 @@ class ReferencePrices(models.Model):
     Reference prices needed to compute government payments
     """
     crop_year = models.SmallIntegerField()
-    fsa_crop_type = models.ForeignKey('FsaCropType', on_delete=models.CASCADE)
+    fsa_crop_type = models.ForeignKey(FsaCropType, on_delete=models.CASCADE)
     natl_loan_rate = models.FloatField()
     effective_ref_price = models.FloatField()
+
+
+class MyaPreEstimate(models.Model):
+    """
+    Used to get sensitized MYA prices when the model_run_date is before
+    the May WASDE report
+    """
+    crop_year = models.SmallIntegerField()
+    month = models.SmallIntegerField()
+    year = models.SmallIntegerField()
+    actual_farm_price = models.FloatField(null=True)
+    nearby_futures_month = models.CharField(max_length=8)
+    five_year_avg_basis = models.FloatField()
+    five_year_avg_weight = models.FloatField()
+    fsa_crop_type = models.ForeignKey(FsaCropType, on_delete=models.CASCADE)
+
+    def get_mya_pre_estimate(self, crop_year, for_date, pf=1):
+        """
+        Get the sensitized MYA prices for each FSA crop type for the crop year
+        and the given date.
+        """
+        names = ('''corn_mya_price beans_mya_price wheat_mya_price''').split()
+        cmd = 'SELECT ' + ', '.join(names) + """
+                  FROM
+                  public.main_mya_pre_estimate(%s, %s)
+                  AS (corn_mya_price double precision, beans_mya_price double precision,
+                      wheat_mya_price double precision);
+              """
+        record = call_postgres_func(cmd, crop_year, for_date)
+        return tuple(None if it is None else float(it) * pf for it in record)
+
+
+class MyaPostEstimate(models.Model):
+    """
+    Used to get sensitized MYA prices when the model_run_date is after
+    the May WASDE report
+    """
+    crop_year = models.SmallIntegerField()
+    forecast_month = models.CharField(max_length=8)
+    wasde_release_date = models.DateField(verbose_name='WASDE release date')
+    wasde_estimated_price = models.FloatField(null=True)
+    assumed_pct_locked = models.FloatField()
+    fsa_crop_type = models.ForeignKey(FsaCropType, on_delete=models.CASCADE)
+
+    def get_mya_post_estimate(self, crop_year, for_date, pf=1):
+        """
+        Get the sensitized MYA prices for each FSA crop type for the crop year
+        and the given date.
+        """
+        rows = (MyaPostEstimate.objects
+                .filter(wasde_release_date__lte=for_date, crop_year=crop_year)
+                .order_by("-wasde_release_date", "fsa_crop_type")[:3])
+        mya_prices = [row.wasde_estimated_price *
+                      (row.assumed_pct_locked + pf * (1 - row.assumed_pct_locked))
+                      for row in rows]
+        return mya_prices
 
 
 class FsaCrop(models.Model):
@@ -272,8 +335,10 @@ class FuturesPrice(models.Model):
                 f'{self.priced_on} {self.price}')
 
     class Meta:
-        indexes = [models.Index('croptype', 'futures_month', 'priced_on'),
-                   models.Index('market_crop_type', 'futures_month', 'priced_on')]
+        indexes = [models.Index('croptype', 'futures_month', 'priced_on',
+                                name='fut_price_croptype_mth_pron'),
+                   models.Index('market_crop_type', 'futures_month', 'priced_on',
+                                name='fut_price_mktcroptype_mth_pron')]
 
 
 class MarketCrop(models.Model):
