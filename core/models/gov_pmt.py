@@ -26,15 +26,12 @@ class GovPmt():
 
     BASE_TO_NET_PMT_FRAC = 0.85
     SEQUEST_FRAC = 0.062
-    FSA_PMT_CAP_PER_PRINCIPAL = 125000
     CAP_ON_BMK_COUNTY_REV = 0.1
     GUAR_REV_FRAC = 0.86
 
-    # est_mya_price has been computed by taking the fall futures price and applying
-    # a decrement -- not sure if we're still doing that...
-    def __init__(self, crop_id, is_irr, plc_base_acres, arcco_base_acres, plc_yield,
-                 estimated_county_yield, effective_ref_price, natl_loan_rate,
-                 harvest_futures_price, decrement_from_futures_to_mya):
+    def __init__(self, crop_year, state, county, crop_id, is_irr, plc_base_acres,
+                 arcco_base_acres, plc_yield, estimated_county_yield,
+                 effective_ref_price, natl_loan_rate, sens_mya_price):
 
         self.plc_base_acres = plc_base_acres
         self.arcco_base_acres = arcco_base_acres
@@ -42,12 +39,19 @@ class GovPmt():
         self.estimated_county_yield = estimated_county_yield
         self.effective_ref_price = effective_ref_price
         self.natl_loan_rate = natl_loan_rate
-        self.harvest_futures_price = harvest_futures_price
-        self.decrement_from_futures_to_mya = decrement_from_futures_to_mya
-
+        self.sens_mya_price = sens_mya_price
         self.benchmark_revenue = get_benchmark_revenue(
-            self.state, self.county, crop_id, is_irr)
+            crop_year, state, county, crop_id, is_irr)
 
+        print('cropid', crop_id)
+        print('plc_base', self.plc_base_acres)
+        print('arco_base', self.arcco_base_acres)
+        print('plc_yield', self.plc_yield)
+        print('cty_yield', self.estimated_county_yield)
+        print('eff_ref_price', self.effective_ref_price)
+        print('natl_loan_rate', self.natl_loan_rate)
+        print('sens_myaprice', self.sens_mya_price)
+        print('benchmarkrev', self.benchmark_revenue)
     # Government Payment Totals
     # -------------------------
 
@@ -56,6 +60,8 @@ class GovPmt():
         Government Payments Y56:AA56: Sensitized total pre-sequestration payment
         over both programs.
         """
+        print('arc_preseq', self.arc_pmt_pre_sequest(pf, yf))
+        print('plc_preseq', self.plc_pmt_pre_sequest(pf))
         return (self.arc_pmt_pre_sequest(pf, yf) +
                 self.plc_pmt_pre_sequest(pf))
 
@@ -98,7 +104,7 @@ class GovPmt():
         Government Payments Y18:AA18: The price-sensitized effective price.
         """
         return max(self.natl_loan_rate,
-                   self.assumed_mya_price(pf))
+                   self.sens_mya_price)
 
     # ARC-CO
     # ------
@@ -153,7 +159,7 @@ class GovPmt():
         Government Payments Y41:AA41: price/yield-sensitized actual
         revenue for the crop.
         """
-        return (max(self.assumed_mya_price(pf),
+        return (max(self.sens_mya_price,
                     self.natl_loan_rate) *
                 self.arc_county_rma_yield(yf))
 
@@ -165,38 +171,29 @@ class GovPmt():
         """
         return self.estimated_county_yield * yf
 
-    # Used by both programs
-    # ---------------------
-    def assumed_mya_price(self, pf=1):
-        """
-        Government Payments Y38:AA38 -> AR16:AT16:
-        Price-sensitized marketing Year Avg Price for the crop.
-        """
-        # TODO: Change this according to the new method for getting MYA price
-        return (self.harvest_futures_price * pf -
-                self.decrement_from_futures_to_mya)
 
-
-def get_benchmark_revenue(state_id, county_code, crop_id, is_irr):
+def get_benchmark_revenue(crop_year, state_id, county_code, crop_id, is_irr):
     """
-    Get the std_deviation_qty and mean_qty values from comborevenuefactor
-    for the given lookupid.   This is dumb, but necessary because there are three
+    Get the benchmark revenue values from govpmt_benchmark_rev
+    for the given parameters.   This is dumb, but necessary because there are three
     different 'practices' 0=all, 1=irr, 2=non-irr.
     """
     # This may change if we get the county irr/non-irr acre allocations.
     if is_irr:
         query = '''SELECT benchmark_revenue
                    FROM public.ext_govpmt_benchmark_rev
-                   WHERE state_id=%s AND county_code=%s AND
+                   WHERE crop_year=%s AND state_id=%s AND county_code=%s AND
                    crop=%s AND is_irr=%s
                    ;'''
-        record = get_postgres_row(query, state_id, county_code, True)
+        record = get_postgres_row(query, crop_year, state_id, county_code,
+                                  crop_id, True)
     else:
         query = '''SELECT benchmark_revenue
                    FROM public.ext_govpmt_benchmark_rev
-                   WHERE state_id=%s AND county_code=%s AND
+                   WHERE crop_year=%s AND state_id=%s AND county_code=%s AND
                    crop=%s AND is_nonirr=%s
                    ;'''
-        record = get_postgres_row(query, state_id, county_code, True)
+        record = get_postgres_row(query, crop_year, state_id, county_code,
+                                  crop_id, True)
 
     return record[0]

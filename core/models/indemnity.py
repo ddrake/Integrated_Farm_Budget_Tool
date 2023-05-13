@@ -14,7 +14,7 @@ class Indemnity():
     LOSS_LIMIT_FACTOR = 0.18
     SCO_TOP_LEVEL = 86
 
-    def __init__(self, tayield, projected_price, cur_futures_harvest_price,
+    def __init__(self, tayield, projected_price, harvest_futures_price,
                  cty_expected_yield, farm_expected_yield, prot_factor,
                  farm_yield_premium_to_county):
         """
@@ -25,7 +25,7 @@ class Indemnity():
         # RMA Projected Price set after discovery period
         self.projected_price = projected_price
         # The current futures harvest price for the crop
-        self.cur_futures_harvest_price = cur_futures_harvest_price
+        self.harvest_futures_price = harvest_futures_price
         # The county expected yield (not available for all county/crops)
         self.cty_expected_yield = cty_expected_yield
         # The farm's expected yield
@@ -138,7 +138,7 @@ class Indemnity():
         Government Crop Insurance F12: The price sensitized estimate of the
         fall harvest futures price.
         """
-        return self.fall_futures_price[self.base_crop()] * pf
+        return self.harvest_futures_price * pf
 
     def ins_harvest_price(self, pf=1):
         """ scalar
