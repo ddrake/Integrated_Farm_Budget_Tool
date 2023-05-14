@@ -114,7 +114,9 @@ class FarmYear(models.Model):
                     .filter(state_id=self.state_id, county_code=self.county_code)
                     .order_by('id')):
             fct = FarmCropType.objects.get(
-                ins_crop_id=row.crop_id, ins_crop_type_id=row.crop_type_id,
+                ins_crop_id=row.crop_id,
+                # deal with multiple equivalent bean types
+                ins_crop_type_id=(997 if row.crop_type_id == 91 else row.crop_type_id),
                 is_fac=row.is_fac)
             mktct = MarketCropType.objects.get(pk=fct.market_crop_type_id)
             fsact = FsaCropType.objects.get(pk=mktct.fsa_crop_type_id)

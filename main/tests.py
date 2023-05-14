@@ -11,4 +11,8 @@ class FarmYearTestCase(TestCase):
                                                  state_id=5, county_code=1)
 
     def test_farm_year(self):
-        self.assertEqual(self.farm_year.farm_crops.count(), 2)
+        self.assertEqual(self.farm_year.farm_crops.count(), 4)
+
+    def test_farm_crop_types(self):
+        for fc in self.farm_year.farm_crops.all():
+            self.assertIn(fc.farm_crop_type_id, (1, 2, 3, 5))
