@@ -20,7 +20,7 @@ class Indemnity():
         """
         Initialize the class, setting some useful attributes.
         """
-        # RMA Rate Yield (TA/YE adjusted APH price)
+        # RMA Rate Yield (TA/YE adjusted APH yield)
         self.tayield = tayield
         # RMA Projected Price set after discovery period
         self.projected_price = projected_price
@@ -49,10 +49,10 @@ class Indemnity():
     # MAIN METHOD
     # -----------
     def compute_indems(self, pf=1, yf=1):
-        indemnity_ent = self.compute_indems_ent(pf, yf)
-        indemnity_area = self.compute_indems_area(pf, yf)
-        indemnity_sco = self.compute_indems_sco(pf, yf)
-        indemnity_eco = self.compute_indems_eco(pf, yf)
+        indemnity_ent = self.compute_indems_ent(pf, yf).round(2)
+        indemnity_area = self.compute_indems_area(pf, yf).round(2)
+        indemnity_sco = self.compute_indems_sco(pf, yf).round(2)
+        indemnity_eco = self.compute_indems_eco(pf, yf).round(2)
         return indemnity_ent, indemnity_area, indemnity_sco, indemnity_eco
 
     # --------------------------
