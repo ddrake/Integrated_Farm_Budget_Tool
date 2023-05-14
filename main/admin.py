@@ -1,9 +1,9 @@
 from django.contrib import admin
 
-from .models import (Budget, FarmYear, FsaCropType, MarketCropType, FarmCropType,
-                     BudgetCropType, FuturesPrice, FsaCrop, MarketCrop,
-                     FarmCrop, BudgetCrop)
+from .models import (FarmYear, FsaCrop, MarketCrop, FarmCrop, FarmBudgetCrop)
 
+# This FarmCropInline idea didn't work, because the _meta choices didn't get set
+# in time.
 
 # class FarmCropInline(admin.StackedInline):
 #     model = FarmCrop
@@ -41,10 +41,4 @@ admin.site.register(FarmYear, FarmYearAdmin)
 admin.site.register(FarmCrop)
 admin.site.register(MarketCrop)
 admin.site.register(FsaCrop)
-admin.site.register(Budget)
-admin.site.register(BudgetCrop)
-admin.site.register(BudgetCropType)
-admin.site.register(FuturesPrice)
-admin.site.register(FsaCropType)
-admin.site.register(MarketCropType)
-admin.site.register(FarmCropType)
+admin.site.register(FarmBudgetCrop)
