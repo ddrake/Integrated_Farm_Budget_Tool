@@ -5,15 +5,29 @@ from .models import (FarmYear, FsaCrop, MarketCrop, FarmCrop, FarmBudgetCrop)
 # This FarmCropInline idea didn't work, because the _meta choices didn't get set
 # in time.
 
-# class FarmCropInline(admin.StackedInline):
-#     model = FarmCrop
-#     extra = 0
-#     fields = [
-#         'planted_acres', 'nonrotating_acres', 'ins_practice',
-#         'frac_yield_dep_nonland_cost', 'ta_aph_yield', 'adj_yield', 'rate_yield',
-#         'ye_use', 'ta_use', 'subcounty', 'price_vol_factor', 'proj_harv_price',
-#         'cty_expected_yield', 'coverage_type', 'product_type', 'base_coverage_level',
-#         'sco_use', 'eco_level', 'prot_factor', 'crop_ins_prems']
+
+class FarmCropAdmin(admin.ModelAdmin):
+    model = FarmCrop
+    extra = 0
+    fieldsets = [
+        (
+            'General Information',
+            {
+                'fields': [
+                    'planted_acres', 'ins_practice', 'frac_yield_dep_nonland_cost',
+                    'rate_yield', 'adj_yield', 'ta_aph_yield', 'ta_use', 'ye_use',
+                    'subcounty', 'price_vol_factor', 'proj_harv_price',
+                ],
+            },
+        ),
+        (
+            'Crop insurance selections',
+            {
+                'fields': ['coverage_type', 'product_type', 'base_coverage_level',
+                           'sco_use', 'eco_level', 'prot_factor'],
+            },
+        ),
+    ]
 
 
 class MarketCropInline(admin.StackedInline):
@@ -38,7 +52,7 @@ class FarmYearAdmin(admin.ModelAdmin):
 
 
 admin.site.register(FarmYear, FarmYearAdmin)
-admin.site.register(FarmCrop)
+admin.site.register(FarmCrop, FarmCropAdmin)
 admin.site.register(MarketCrop)
 admin.site.register(FsaCrop)
 admin.site.register(FarmBudgetCrop)

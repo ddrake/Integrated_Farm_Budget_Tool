@@ -11,11 +11,7 @@ downloaded for a crop year here:
 https://www.fsa.usda.gov/programs-and-services/arcplc_program/arcplc-program-data/index
 in the form of two spreadsheets, e.g. 2023_erp.xls and arcco_2023_data_2023-02-16.xlsx
 """
-import os
-
 from core.models.util import get_postgres_row
-
-DATADIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data')
 
 
 class GovPmt():
@@ -29,9 +25,10 @@ class GovPmt():
     CAP_ON_BMK_COUNTY_REV = 0.1
     GUAR_REV_FRAC = 0.86
 
-    def __init__(self, crop_year, state, county, crop_id, is_irr, plc_base_acres,
-                 arcco_base_acres, plc_yield, estimated_county_yield,
-                 effective_ref_price, natl_loan_rate, sens_mya_price):
+    def __init__(self, crop_year=2023, state=17, county=119, crop_id=1, is_irr=False,
+                 plc_base_acres=4220, arcco_base_acres=0, plc_yield=160,
+                 estimated_county_yield=190, effective_ref_price=3.70,
+                 natl_loan_rate=2.20, sens_mya_price=4.80):
 
         self.plc_base_acres = plc_base_acres
         self.arcco_base_acres = arcco_base_acres
@@ -43,42 +40,31 @@ class GovPmt():
         self.benchmark_revenue = get_benchmark_revenue(
             crop_year, state, county, crop_id, is_irr)
 
-        print('cropid', crop_id)
-        print('plc_base', self.plc_base_acres)
-        print('arco_base', self.arcco_base_acres)
-        print('plc_yield', self.plc_yield)
-        print('cty_yield', self.estimated_county_yield)
-        print('eff_ref_price', self.effective_ref_price)
-        print('natl_loan_rate', self.natl_loan_rate)
-        print('sens_myaprice', self.sens_mya_price)
-        print('benchmarkrev', self.benchmark_revenue)
     # Government Payment Totals
     # -------------------------
 
-    def prog_pmt_pre_sequest(self, pf=1, yf=1):
+    def prog_pmt_pre_sequest(self, yf=1):
         """
         Government Payments Y56:AA56: Sensitized total pre-sequestration payment
         over both programs.
         """
-        print('arc_preseq', self.arc_pmt_pre_sequest(pf, yf))
-        print('plc_preseq', self.plc_pmt_pre_sequest(pf))
-        return (self.arc_pmt_pre_sequest(pf, yf) +
-                self.plc_pmt_pre_sequest(pf))
+        return round(self.arc_pmt_pre_sequest(yf) +
+                     self.plc_pmt_pre_sequest(), 2)
 
     # PLC
     # ---
-    def plc_pmt_pre_sequest(self, pf=1):
+    def plc_pmt_pre_sequest(self):
         """
         Government Payments Y23:AA23: Price-sensitized pre-sequestration PLC payment
         """
-        return (self.plc_payment_rate(pf) * self.net_payment_acres_plc() *
+        return (self.plc_payment_rate() * self.net_payment_acres_plc() *
                 self.plc_yield)
 
     def plc_payment_rate(self, pf=1):
         """
         Government Payments Y21:AA21: The price-sensitized PLC payment rate
         """
-        return min(self.plc_payment_rate1(pf),
+        return min(self.plc_payment_rate1(),
                    self.max_plc_payment_rate())
 
     def net_payment_acres_plc(self):
@@ -87,11 +73,11 @@ class GovPmt():
         """
         return GovPmt.BASE_TO_NET_PMT_FRAC * self.plc_base_acres
 
-    def plc_payment_rate1(self, pf=1):
+    def plc_payment_rate1(self):
         """
         Government Payments Y19:AA19: Price-sensitized helper for plc_payment rate
         """
-        return max(self.effective_ref_price - self.effective_price(pf), 0)
+        return max(self.effective_ref_price - self.effective_price(), 0)
 
     def max_plc_payment_rate(self):
         """
@@ -99,20 +85,21 @@ class GovPmt():
         """
         return self.effective_ref_price - self.natl_loan_rate
 
-    def effective_price(self, pf=1):
+    def effective_price(self):
         """
-        Government Payments Y18:AA18: The price-sensitized effective price.
+        Government Payments Y18:AA18: The price-sensitized effective price
+        (because it uses a pre-sensitized mya price).
         """
         return max(self.natl_loan_rate,
                    self.sens_mya_price)
 
     # ARC-CO
     # ------
-    def arc_pmt_pre_sequest(self, pf=1, yf=1):
+    def arc_pmt_pre_sequest(self, yf=1):
         """
         Government Payments Y48:AA48: Sensitized ARC payment pre-sequestration.
         """
-        return self.net_payment_acres_arc() * self.arc_pmt_rate(pf, yf)
+        return self.net_payment_acres_arc() * self.arc_pmt_rate(yf)
 
     def net_payment_acres_arc(self):
         """
@@ -120,12 +107,12 @@ class GovPmt():
         """
         return GovPmt.BASE_TO_NET_PMT_FRAC * self.arcco_base_acres
 
-    def arc_pmt_rate(self, pf=1, yf=1):
+    def arc_pmt_rate(self, yf=1):
         """
         Government Payments Y44:AA44: Sensitized ARC Payment rate.
         """
         return min(self.arc_capped_bmk_revenue(),
-                   self.revenue_shortfall(pf, yf))
+                   self.revenue_shortfall(yf))
 
     def arc_capped_bmk_revenue(self):
         """
@@ -134,12 +121,12 @@ class GovPmt():
         return (self.arc_bmk_county_revenue() *
                 GovPmt.CAP_ON_BMK_COUNTY_REV)
 
-    def revenue_shortfall(self, pf=1, yf=1):
+    def revenue_shortfall(self, yf=1):
         """
         Government Payments Y42:AA42: Sensitized revenue shortfall.
         """
         return max(0, (self.arc_guar_revenue() -
-                       self.actual_crop_revenue(pf, yf)))
+                       self.actual_crop_revenue(yf)))
 
     def arc_bmk_county_revenue(self):
         """
@@ -154,7 +141,7 @@ class GovPmt():
         """
         return (self.arc_bmk_county_revenue() * GovPmt.GUAR_REV_FRAC)
 
-    def actual_crop_revenue(self, pf=1, yf=1):
+    def actual_crop_revenue(self, yf=1):
         """
         Government Payments Y41:AA41: price/yield-sensitized actual
         revenue for the crop.

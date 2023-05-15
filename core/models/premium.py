@@ -189,14 +189,14 @@ class Premium:
             # print(f'self.{name} = {val}')
 
         if self.projected_price is None:
-            print("Projected Price is missing.",
-                  "Can't compute any premiums.")
+            # print("Projected Price is missing.",
+            #       "Can't compute any premiums.")
             self.prem_ent = self.prem_arc = self.prem_sco = self.prem_eco = None
         else:
             self.compute_prems_ent()
             if self.expected_yield is None:
-                print("Expected Yield is not available for county/crop",
-                      "Can't compute Area premiums")
+                # print("Expected Yield is not available for county/crop",
+                #       "Can't compute Area premiums")
                 self.prem_arc = None
             else:
                 self.compute_prems_arc()
@@ -204,18 +204,18 @@ class Premium:
             if (self.scorp_base_rate is None
                     or self.scorphpe_base_rate is None
                     or self.scoyp_base_rate is None):
-                print("SCO Base rates are not available for county/crop",
-                      "Can't compute SCO premiums",
-                      "Try specifying the county practice (cpractice)")
+                # print("SCO Base rates are not available for county/crop",
+                #       "Can't compute SCO premiums",
+                #       "Try specifying the county practice (cpractice)")
                 self.prem_sco = None
             else:
                 self.compute_prems_sco()
             if (self.ecorp_base_rate is None
                     or self.ecorphpe_base_rate is None
                     or self.ecoyp_base_rate is None):
-                print("ECO Base rates are not available for county/crop",
-                      "Can't compute ECO premiums",
-                      "Try specifying the county practice (cpractice)")
+                # print("ECO Base rates are not available for county/crop",
+                #       "Can't compute ECO premiums",
+                #       "Try specifying the county practice (cpractice)")
                 self.prem_eco = None
             else:
                 self.compute_prems_eco()

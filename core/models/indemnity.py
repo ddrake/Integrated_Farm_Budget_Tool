@@ -14,9 +14,9 @@ class Indemnity():
     LOSS_LIMIT_FACTOR = 0.18
     SCO_TOP_LEVEL = 86
 
-    def __init__(self, tayield, projected_price, harvest_futures_price,
-                 cty_expected_yield, farm_expected_yield, prot_factor,
-                 farm_yield_premium_to_county):
+    def __init__(self, tayield=165, projected_price=5.5, harvest_futures_price=5.25,
+                 cty_expected_yield=190, farm_expected_yield=210, prot_factor=1,
+                 farm_yield_premium_to_county=0.09):
         """
         Initialize the class, setting some useful attributes.
         """
@@ -26,7 +26,7 @@ class Indemnity():
         self.projected_price = projected_price
         # The current futures harvest price for the crop
         self.harvest_futures_price = harvest_futures_price
-        # The county expected yield (not available for all county/crops)
+        # The RMA county expected yield (not available for all county/crops)
         self.cty_expected_yield = cty_expected_yield
         # The farm's expected yield
         self.farm_expected_yield = farm_expected_yield

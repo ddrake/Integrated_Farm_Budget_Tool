@@ -8,7 +8,7 @@ from ext.models import (
     State, Subcounty, InsurableCropsForCty, SubcountyAvail,
     ReferencePrices, MyaPreEstimate, MyaPostEstimate, FuturesPrice,
     Budget, BudgetCropType, FarmCropType, MarketCropType, FsaCropType,
-    SoybeanInsTypeForState)
+    InsCropType)
 from core.models.premium import Premium
 from core.models.gov_pmt import GovPmt
 from core.models.indemnity import Indemnity
@@ -114,9 +114,7 @@ class FarmYear(models.Model):
                     .filter(state_id=self.state_id, county_code=self.county_code)
                     .order_by('id')):
             fct = FarmCropType.objects.get(
-                ins_crop_id=row.crop_id,
-                # deal with multiple equivalent bean types
-                ins_crop_type_id=(997 if row.crop_type_id == 91 else row.crop_type_id),
+                ins_crop_id=row.crop_id, is_winter=row.crop_type_id == 11,
                 is_fac=row.is_fac)
             mktct = MarketCropType.objects.get(pk=fct.market_crop_type_id)
             fsact = FsaCropType.objects.get(pk=mktct.fsa_crop_type_id)
@@ -132,8 +130,9 @@ class FarmYear(models.Model):
                     farm_year=self, market_crop_type=mktct, fsa_crop=fsa)
                 mkts[mktct.id] = mkt
             FarmCrop.objects.create(
-                 farm_year=self, farm_crop_type=fct, market_crop=mkt,
-                 ins_practices=row.practices, ins_practice=row.practices[0])
+                farm_year=self, ins_crop_type_id=row.crop_type_id,
+                farm_crop_type=fct, market_crop=mkt, ins_practices=row.practices,
+                ins_practice=row.practices[0])
 
     def total_gov_pmt(self, pf=1, yf=1):
         """
@@ -347,6 +346,19 @@ class FarmCrop(models.Model):
     e.g. coverage_type or level is just a quick lookup.
     Todo: Change premiums.py so it returns nested lists instead of numpy arrays.
     """
+    # Defaults for field frac_yield_dep_nonland_cost, key (farm_crop_type_id, is_irr).
+    DEFAULT_EST_YIELD_DEP = {
+        (1, False): .19,
+        (2, False): .22,
+        (3, False): .14,
+        (5, False): .25,
+        (4, False): .25,
+        (1, True): .17,
+        (2, True): .10,
+        (3, True): .10,
+        (5, True): .15,
+        (4, True): .10,
+    }
     COUNTY = 0
     FARM = 1
     COVERAGE_TYPES = [(0, 'County (area)'), (1, 'Farm (enterprise)'), ]
@@ -359,10 +371,10 @@ class FarmCrop(models.Model):
         (.7, '70%'), (.75, '75%'), (.8, '80%'), (.85, '85%'), (.9, '90%'), ]
     COVERAGE_LEVELS_ECO = [(.9, '90%'), (.95, '95%'), ]
     planted_acres = models.FloatField(default=0)
-    nonrotating_acres = models.FloatField(
-        default=0, help_text="The number of non-rotating acres, e.g. corn on corn.")
+    # Need to set the correct default via AJAX -- it depends on irrigated status.
+    # based on dict above.
     frac_yield_dep_nonland_cost = models.FloatField(
-        null=True, blank=True,
+        default=0.2,
         verbose_name="est. % yield-dependent cost",
         help_text="Estimated % of non-land costs that vary with yield.")
     ta_aph_yield = models.FloatField(
@@ -424,6 +436,8 @@ class FarmCrop(models.Model):
     # TODO: May need to replace the choices for subcounty if this changes.
     # If so, the currently selected subcounty might need to be cleared (if it's
     # not in the updated choices list.
+    ins_crop_type = models.ForeignKey(InsCropType, on_delete=models.CASCADE,
+                                      related_name='farm_crop_types')
     ins_practice = models.SmallIntegerField(
         verbose_name='Irrigated?', choices=list(FarmYear.IRR_PRACTICE.items()),
         blank=False)
@@ -478,11 +492,7 @@ class FarmCrop(models.Model):
             state=self.farm_year.state_id,
             county=self.farm_year.county_code,
             crop=self.farm_crop_type.ins_crop_id,
-            # Some states use 'unspecified: 997' others 'commodity: 91' for soybeans
-            croptype=(SoybeanInsTypeForState.objects
-                      .get(state_id=self.farm_year.state_id).soybean_ins_type
-                      if self.farm_crop_type in (2, 5)  # fs soy, dc soy
-                      else self.farm_crop_type.ins_crop_type_id),
+            croptype=self.ins_crop_type_id,
             practice=self.ins_practice,
             rateyield=self.rate_yield,
             adjyield=self.adj_yield,

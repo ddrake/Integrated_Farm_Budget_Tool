@@ -1,47 +1,90 @@
-import pytest
+from django.test import TestCase
 
-from .gov_pmt import GovPmt
-from .util import Crop
-
-# Note: tests may fail if changes are made to the data textfile,
-# but changes to program selections are OK.
+from core.models.gov_pmt import GovPmt
 
 
-def test_total_gov_pmt_arco():
-    ovr = {'farm_base_acres_arc': {Crop.CORN: 4220, Crop.SOY: 4150,
-                                   Crop.WHEAT: 317},
-           'farm_base_acres_plc': {Crop.CORN: 0, Crop.SOY: 0,
-                                   Crop.WHEAT: 0}, }
-    g = GovPmt(2023, overrides=ovr)
+class GovPmtAllPLCMya4_80TestCase(TestCase):
+    def setUp(self):
+        # Somthing like Grandview corn.
+        # For PLC, the only sensitivity is price sensitivity, which comes in via
+        # the sensitized MYA price
+        self.govpmt = GovPmt(
+            crop_year=2023, state=17, county=119, crop_id=1, is_irr=False,
+            plc_base_acres=4220, arcco_base_acres=0, plc_yield=160,
+            estimated_county_yield=190, effective_ref_price=3.70,
+            natl_loan_rate=2.20, sens_mya_price=4.80)
 
-    total_gov_pmt = g.total_gov_pmt(pf=1, yf=1)
-    assert total_gov_pmt == 0
-
-    total_gov_pmt = g.total_gov_pmt(pf=0.6, yf=1)
-    assert total_gov_pmt == pytest.approx(225973)
-
-    total_gov_pmt = g.total_gov_pmt(pf=1, yf=0.55)
-    assert total_gov_pmt == pytest.approx(375000)
-
-    total_gov_pmt = g.total_gov_pmt(pf=.75, yf=.8)
-    assert total_gov_pmt == pytest.approx(171317)
+    def test_with_default_values(self):
+        pmt = self.govpmt.prog_pmt_pre_sequest()
+        expected = 0
+        self.assertEqual(pmt, expected)
 
 
-def test_total_gov_pmt_plc():
-    ovr = {'farm_base_acres_arc': {Crop.CORN: 0, Crop.SOY: 0,
-                                   Crop.WHEAT: 0},
-           'farm_base_acres_plc': {Crop.CORN: 4220, Crop.SOY: 4150,
-                                   Crop.WHEAT: 317}, }
-    g = GovPmt(2023, overrides=ovr)
+class GovPmtAllPLCMya3_80TestCase(TestCase):
+    def setUp(self):
+        # Somthing like Grandview corn.  Note sens_mya_price.
+        self.govpmt = GovPmt(
+            crop_year=2023, state=17, county=119, crop_id=1, is_irr=False,
+            plc_base_acres=4220, arcco_base_acres=0, plc_yield=160,
+            estimated_county_yield=190, effective_ref_price=3.70,
+            natl_loan_rate=2.20, sens_mya_price=3.80)
 
-    total_gov_pmt = g.total_gov_pmt(pf=1, yf=1)
-    assert total_gov_pmt == 0
+    def test_with_default_values(self):
+        pmt = self.govpmt.prog_pmt_pre_sequest()
+        expected = 0
+        self.assertEqual(pmt, expected)
 
-    total_gov_pmt = g.total_gov_pmt(pf=0.6, yf=1)
-    assert total_gov_pmt == pytest.approx(375000)
 
-    total_gov_pmt = g.total_gov_pmt(pf=1, yf=0.55)
-    assert total_gov_pmt == 0
+class GovPmtAllPLCMya3_20TestCase(TestCase):
+    def setUp(self):
+        # Somthing like Grandview corn.  Note sens_mya_price.
+        self.govpmt = GovPmt(
+            crop_year=2023, state=17, county=119, crop_id=1, is_irr=False,
+            plc_base_acres=4220, arcco_base_acres=0, plc_yield=160,
+            estimated_county_yield=190, effective_ref_price=3.70,
+            natl_loan_rate=2.20, sens_mya_price=3.20)
 
-    total_gov_pmt = g.total_gov_pmt(pf=.75, yf=.8)
-    assert total_gov_pmt == pytest.approx(6865)
+    def test_with_default_values(self):
+        pmt = self.govpmt.prog_pmt_pre_sequest()
+        expected = 286960
+        self.assertEqual(pmt, expected)
+
+
+class GovPmtAllPLCMya2_80TestCase(TestCase):
+    def setUp(self):
+        # Somthing like Grandview corn.  Note sens_mya_price.
+        self.govpmt = GovPmt(
+            crop_year=2023, state=17, county=119, crop_id=1, is_irr=False,
+            plc_base_acres=4220, arcco_base_acres=0, plc_yield=160,
+            estimated_county_yield=190, effective_ref_price=3.70,
+            natl_loan_rate=2.20, sens_mya_price=2.80)
+
+    def test_with_default_values(self):
+        pmt = self.govpmt.prog_pmt_pre_sequest()
+        expected = 516528.0
+        self.assertEqual(pmt, expected)
+
+
+class GovPmtAllARCCOTestCase(TestCase):
+    def setUp(self):
+        # Somthing like Grandview corn
+        self.govpmt = GovPmt(
+            crop_year=2023, state=17, county=119, crop_id=1, is_irr=False,
+            plc_base_acres=0, arcco_base_acres=4220, plc_yield=160,
+            estimated_county_yield=190, effective_ref_price=3.70,
+            natl_loan_rate=2.20, sens_mya_price=4.80)
+
+    def test_with_default_values(self):
+        pmt = self.govpmt.prog_pmt_pre_sequest()
+        expected = 0
+        self.assertEqual(pmt, expected)
+
+    def test_with_yf_0_55(self):
+        pmt = self.govpmt.prog_pmt_pre_sequest(yf=0.55)
+        expected = 287350.98
+        self.assertEqual(pmt, expected)
+
+    def test_with_yf_0_7(self):
+        pmt = self.govpmt.prog_pmt_pre_sequest(yf=0.7)
+        expected = 181277.65
+        self.assertEqual(pmt, expected)

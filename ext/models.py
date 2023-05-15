@@ -332,9 +332,9 @@ class FarmCropType(models.Model):
     """
     Only farm crop types supported by crop insurance are made available to the user.
     Can get ins_crop through fsa_crop_type reference.  Data:
-    ('Corn', False, 1, 41, 16), ('FS Beans', False, 2, 81, 997),
-    ('Winter Wheat', False, 3, 11, 11), ('Spring Wheat', False, 3, 11, 12),
-    ('DC Beans', True, 2, 81, 997)
+    ('Corn', False, 1, 41, False), ('FS Beans', False, 2, 81, False),
+    ('Winter Wheat', False, 3, 11, True), ('Spring Wheat', False, 3, 11, False),
+    ('DC Beans', True, 2, 81, False)
     """
     name = models.CharField(max_length=20)
     is_fac = models.BooleanField(default=False)
@@ -342,8 +342,7 @@ class FarmCropType(models.Model):
                                          related_name='farm_crop_types')
     ins_crop = models.ForeignKey(InsCrop, on_delete=models.CASCADE,
                                  related_name='farm_crop_types')
-    ins_crop_type = models.ForeignKey(InsCropType, on_delete=models.CASCADE,
-                                      related_name='farm_crop_types')
+    is_winter = models.BooleanField(default=False)
 
     def __str__(self):
         return self.name
