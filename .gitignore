@@ -133,3 +133,4 @@ dmypy.json
 bestcases.txt
 data
 scripts
+settings_local.py
