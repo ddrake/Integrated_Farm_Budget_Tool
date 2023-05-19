@@ -24,6 +24,9 @@ INSTALLED_APPS = [
     'core.apps.CoreConfig',
     'main.apps.MainConfig',
     'ext.apps.ExtConfig',
+    'tailwind',
+    'theme',
+    'django_browser_reload',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -32,8 +35,18 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
 ]
 
+# Needed for Tailwind
+TAILWIND_APP_NAME = 'theme'
+
+# Needed for Tailwind
+INTERNAL_IPS = [
+    '127.0.0.1',
+]
+
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    # GZipMiddleware goes here, if needed...
+    'django_browser_reload.middleware.BrowserReloadMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
