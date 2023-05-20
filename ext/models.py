@@ -377,9 +377,8 @@ class BudgetCrop(models.Model):
     of the farm crop to the buddget crop type.
     """
     farm_yield = models.FloatField(default=0)
-    # the farm yield value is copied to county yield during import.
-    county_yield = models.FloatField(default=0)
-    assumed_basis = models.FloatField(default=0)
+    description = models.CharField(max_length=50)
+    yield_variability = models.FloatField(default=0)
     other_gov_pmts = models.FloatField(default=0)
     other_revenue = models.FloatField(default=0)
     fertilizers = models.FloatField(default=0)
@@ -408,6 +407,7 @@ class BudgetCrop(models.Model):
     budget_crop_type = models.ForeignKey(BudgetCropType, on_delete=models.CASCADE)
     budget = models.ForeignKey('Budget', on_delete=models.CASCADE,
                                null=True, blank=True, related_name='budget_crops')
+    state = models.ForeignKey(State, on_delete=models.CASCADE, null=True)
 
     def __str__(self):
         return f'{self.budget_crop_type} in {self.budget}'
@@ -418,17 +418,9 @@ class BudgetCrop(models.Model):
 
 class Budget(models.Model):
     """
-    A built-in budget. It has many BudgetCrops.
-    Once farm crops have been added to a farm year and their irrigated status set,
-    we use some algorithm to do the selection of budget crops based on the
-    user's state/county and insurable crops irr/nonirr. One or two budget crops
-    will be copied and associated with each farm crop.  If the user changes the
-    irr/non-irr status for a farm crop later, we ask them if they want to
-    replace the corresponding budget column or keep the one they have.
-    Copies of budget crops assigned to farm crops will have their budget id set to
-    NULL, but keep their orig_budget_id for reference.
+    A built-in budget. It has many BudgetCrops.  It's essentially a bucket with
+    some source information for reference only.
     """
-    name = models.CharField(max_length=60)
     crop_year = models.SmallIntegerField()
     state = models.CharField(max_length=2)
     authors = models.CharField(max_length=150, null=True)
@@ -446,7 +438,3 @@ class Budget(models.Model):
 
     class Meta:
         managed = False
-        constraints = [
-            models.UniqueConstraint('name', 'crop_year', 'created_on',
-                                    name='name_unique_for_crop_year_created'),
-        ]

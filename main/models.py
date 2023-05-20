@@ -559,9 +559,10 @@ class FarmBudgetCrop(models.Model):
     irrigated status of the farm crop to the buddget crop type.
     """
     farm_yield = models.FloatField(default=0)
-    # the farm yield value is copied to county yield during import.
+    # the farm yield value is copied to county yield when the budget crop is copied.
     county_yield = models.FloatField(default=0)
-    assumed_basis = models.FloatField(default=0)
+    description = models.CharField(max_length=50)
+    yield_variability = models.FloatField(default=0)
     other_gov_pmts = models.FloatField(default=0)
     other_revenue = models.FloatField(default=0)
     fertilizers = models.FloatField(default=0)
@@ -591,6 +592,8 @@ class FarmBudgetCrop(models.Model):
     orig_budget = models.ForeignKey(Budget, on_delete=models.SET_NULL, null=True)
     farm_crop = models.ForeignKey(FarmCrop, on_delete=models.CASCADE,
                                   related_name='budget_crops')
+    state = models.ForeignKey(State, on_delete=models.CASCADE,
+                              null=True, related_name='budget_crops')
 
     def farm_yield_premium_to_cty(self):
         return ((self.farm_yield - self.county_yield) / self.county_yield
