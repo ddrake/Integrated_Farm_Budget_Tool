@@ -1,5 +1,5 @@
-from django.shortcuts import HttpResponse, render
+from django.shortcuts import render
 
 
 def index(request):
-    return HttpResponse('Welcome to the Integrated Farm Budget Tool!')
+    return render(request, 'main/index.html')
