@@ -351,24 +351,6 @@ class FarmCropType(models.Model):
         managed = False
 
 
-class BudgetCropType(models.Model):
-    """
-    Can get is_fac through farm_crop_type reference.
-    There are 14 Budget crop types
-    """
-    name = models.CharField(max_length=20)
-    farm_crop_type = models.ForeignKey(FarmCropType, on_delete=models.CASCADE,
-                                       related_name='budget_crop_types')
-    is_rotated = models.BooleanField(null=True)
-    is_irr = models.BooleanField(null=True)
-
-    def __str__(self):
-        return self.name
-
-    class Meta:
-        managed = False
-
-
 class BudgetCrop(models.Model):
     """
     A column in a budget named by its budget_crop_type name.
@@ -404,10 +386,13 @@ class BudgetCrop(models.Model):
         default=0, verbose_name="non-land interest cost")
     other_overhead_costs = models.FloatField(default=0)
     rented_land_costs = models.FloatField(default=0)
-    budget_crop_type = models.ForeignKey(BudgetCropType, on_delete=models.CASCADE)
+    farm_crop_type = models.ForeignKey(FarmCropType, on_delete=models.CASCADE,
+                                       null=True)
     budget = models.ForeignKey('Budget', on_delete=models.CASCADE,
                                null=True, blank=True, related_name='budget_crops')
     state = models.ForeignKey(State, on_delete=models.CASCADE, null=True)
+    is_rot = models.BooleanField(null=True)
+    is_irr = models.BooleanField(default=False)
 
     def __str__(self):
         return f'{self.budget_crop_type} in {self.budget}'

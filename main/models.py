@@ -7,7 +7,7 @@ from django.utils.functional import lazy
 from ext.models import (
     State, Subcounty, InsurableCropsForCty, SubcountyAvail,
     ReferencePrices, MyaPreEstimate, MyaPostEstimate, FuturesPrice,
-    Budget, BudgetCropType, FarmCropType, MarketCropType, FsaCropType,
+    Budget, FarmCropType, MarketCropType, FsaCropType,
     InsCropType)
 from core.models.premium import Premium
 from core.models.gov_pmt import GovPmt
@@ -588,12 +588,15 @@ class FarmBudgetCrop(models.Model):
         default=0, verbose_name="non-land interest cost")
     other_overhead_costs = models.FloatField(default=0)
     rented_land_costs = models.FloatField(default=0)
-    budget_crop_type = models.ForeignKey(BudgetCropType, on_delete=models.CASCADE)
+    farm_crop_type = models.ForeignKey(FarmCropType, on_delete=models.CASCADE,
+                                       null=True)
     orig_budget = models.ForeignKey(Budget, on_delete=models.SET_NULL, null=True)
     farm_crop = models.ForeignKey(FarmCrop, on_delete=models.CASCADE,
                                   related_name='budget_crops')
     state = models.ForeignKey(State, on_delete=models.CASCADE,
                               null=True, related_name='budget_crops')
+    is_rot = models.BooleanField(null=True)
+    is_irr = models.BooleanField(default=False)
 
     def farm_yield_premium_to_cty(self):
         return ((self.farm_yield - self.county_yield) / self.county_yield
@@ -604,7 +607,7 @@ class FarmBudgetCrop(models.Model):
 
 
 class BaselineFarmBudgetCrop(models.Model):
-    budget_crop_type = models.ForeignKey(BudgetCropType, on_delete=models.CASCADE)
+    farm_crop_type = models.ForeignKey(FarmCropType, on_delete=models.CASCADE)
     farm_crop = models.ForeignKey(BaselineFarmCrop, on_delete=models.CASCADE,
                                   related_name='budget_crops')
     orig_budget = models.ForeignKey(Budget, on_delete=models.SET_NULL, null=True)
