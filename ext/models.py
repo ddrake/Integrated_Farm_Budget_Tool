@@ -395,7 +395,12 @@ class BudgetCrop(models.Model):
     is_irr = models.BooleanField(default=False)
 
     def __str__(self):
-        return f'{self.budget_crop_type} in {self.budget}'
+        rotstr = (' Rotating,' if self.is_rot
+                  else '' if self.is_rot is None else ' Continuous,')
+        descr = '' if self.description == '' else f' {self.description},'
+        yldstr = f' {self.farm_yield} bpa,'
+        rentstr = f' ${self.rented_land_costs}/ac'
+        return (f'{self.state.abbr},{descr}{rotstr}{yldstr}{rentstr}')
 
     class Meta:
         managed = False
@@ -407,7 +412,6 @@ class Budget(models.Model):
     some source information for reference only.
     """
     crop_year = models.SmallIntegerField()
-    state = models.CharField(max_length=2)
     authors = models.CharField(max_length=150, null=True)
     institution = models.CharField(max_length=150, null=True)
     source_url = models.URLField(null=True)
@@ -415,8 +419,7 @@ class Budget(models.Model):
 
     @property
     def fullname(self):
-        datestr = self.created_on.strftime('%b %d %Y').replace(' 0', ' ')
-        return (f"{self.name} - {datestr}")
+        return (f"{self.institution} - {self.created_on}")
 
     def __str__(self):
         return self.fullname

@@ -7,7 +7,7 @@ from django.utils.functional import lazy
 from ext.models import (
     State, Subcounty, InsurableCropsForCty, SubcountyAvail,
     ReferencePrices, MyaPreEstimate, MyaPostEstimate, FuturesPrice,
-    Budget, FarmCropType, MarketCropType, FsaCropType,
+    Budget, BudgetCrop, FarmCropType, MarketCropType, FsaCropType,
     InsCropType)
 from core.models.premium import Premium
 from core.models.gov_pmt import GovPmt
@@ -445,6 +445,8 @@ class FarmCrop(models.Model):
 
     # Cached portion of gov payment (set by method in FarmYear)
     gov_pmt_portion = models.FloatField(null=True, blank=True)
+    farm_budget_crop = models.OneToOneField(
+        'FarmBudgetCrop', on_delete=models.SET_NULL, null=True, blank=True)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -535,6 +537,15 @@ class FarmCrop(models.Model):
             practice=self.ins_practice).values_list('subcounty_id')
         return [(v[0], v[0]) for v in values]
 
+    def add_farm_budget_crop(self, budget_crop_id):
+        if self.farm_budget_crop is not None:
+            self.farm_budget_crop.delete()
+        bc = BudgetCrop.objects.get(budget_crop_id)
+        d = {k: v for k, v in bc.__dict__.items() if k not in ['_state', 'id']}
+        d['county_yield'] = d['farm_yield']
+        self.farm_budget_crop = FarmBudgetCrop.objects.create(**d)
+        self.save()
+
     class Meta:
         constraints = [
             models.CheckConstraint(
@@ -590,11 +601,9 @@ class FarmBudgetCrop(models.Model):
     rented_land_costs = models.FloatField(default=0)
     farm_crop_type = models.ForeignKey(FarmCropType, on_delete=models.CASCADE,
                                        null=True)
-    orig_budget = models.ForeignKey(Budget, on_delete=models.SET_NULL, null=True)
-    farm_crop = models.ForeignKey(FarmCrop, on_delete=models.CASCADE,
-                                  related_name='budget_crops')
+    budget = models.ForeignKey(Budget, on_delete=models.SET_NULL, null=True)
     state = models.ForeignKey(State, on_delete=models.CASCADE,
-                              null=True, related_name='budget_crops')
+                              null=True, related_name='farm_budget_crops')
     is_rot = models.BooleanField(null=True)
     is_irr = models.BooleanField(default=False)
 
