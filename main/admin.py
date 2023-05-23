@@ -6,6 +6,11 @@ from .models import (FarmYear, FsaCrop, MarketCrop, FarmCrop, FarmBudgetCrop)
 # in time.
 
 
+class FarmBudgetCropInline(admin.StackedInline):
+    model = FarmBudgetCrop
+    extra = 0
+
+
 class FarmCropAdmin(admin.ModelAdmin):
     model = FarmCrop
     extra = 0
@@ -28,6 +33,7 @@ class FarmCropAdmin(admin.ModelAdmin):
             },
         ),
     ]
+    inlines = [FarmBudgetCropInline]
 
 
 class MarketCropInline(admin.StackedInline):
@@ -55,4 +61,4 @@ admin.site.register(FarmYear, FarmYearAdmin)
 admin.site.register(FarmCrop, FarmCropAdmin)
 admin.site.register(MarketCrop)
 admin.site.register(FsaCrop)
-admin.site.register(FarmBudgetCrop)
+# admin.site.register(FarmBudgetCrop)

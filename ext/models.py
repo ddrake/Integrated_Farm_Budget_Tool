@@ -398,12 +398,14 @@ class BudgetCrop(models.Model):
         rotstr = (' Rotating,' if self.is_rot
                   else '' if self.is_rot is None else ' Continuous,')
         descr = '' if self.description == '' else f' {self.description},'
-        yldstr = f' {self.farm_yield} bpa,'
-        rentstr = f' ${self.rented_land_costs}/ac'
+        yldstr = f' {int(self.farm_yield)} bpa,'
+        rentstr = f' ${int(self.rented_land_costs)}/ac'
         return (f'{self.state.abbr},{descr}{rotstr}{yldstr}{rentstr}')
 
     class Meta:
         managed = False
+        ordering = ['state__abbr', 'description', 'is_rot',
+                    'farm_yield', 'rented_land_costs']
 
 
 class Budget(models.Model):

@@ -445,8 +445,6 @@ class FarmCrop(models.Model):
 
     # Cached portion of gov payment (set by method in FarmYear)
     gov_pmt_portion = models.FloatField(null=True, blank=True)
-    farm_budget_crop = models.OneToOneField(
-        'FarmBudgetCrop', on_delete=models.SET_NULL, null=True, blank=True)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -538,13 +536,17 @@ class FarmCrop(models.Model):
         return [(v[0], v[0]) for v in values]
 
     def add_farm_budget_crop(self, budget_crop_id):
-        if self.farm_budget_crop is not None:
-            self.farm_budget_crop.delete()
-        bc = BudgetCrop.objects.get(budget_crop_id)
+        FarmBudgetCrop.objects.filter(farm_crop=self.pk).delete()
+        bc = BudgetCrop.objects.get(pk=budget_crop_id)
         d = {k: v for k, v in bc.__dict__.items() if k not in ['_state', 'id']}
         d['county_yield'] = d['farm_yield']
-        self.farm_budget_crop = FarmBudgetCrop.objects.create(**d)
-        self.save()
+        d['farm_crop_id'] = self.pk
+        FarmBudgetCrop.objects.create(**d)
+
+    def get_budget_crops(self):
+        return [(it.id, str(it)) for it in
+                BudgetCrop.objects.filter(farm_crop_type_id=self.farm_crop_type,
+                                          is_irr=self.is_irr)]
 
     class Meta:
         constraints = [
@@ -601,6 +603,8 @@ class FarmBudgetCrop(models.Model):
     rented_land_costs = models.FloatField(default=0)
     farm_crop_type = models.ForeignKey(FarmCropType, on_delete=models.CASCADE,
                                        null=True)
+    farm_crop = models.OneToOneField(FarmCrop, on_delete=models.CASCADE,
+                                     null=True, related_name='farm_budget_crop')
     budget = models.ForeignKey(Budget, on_delete=models.SET_NULL, null=True)
     state = models.ForeignKey(State, on_delete=models.CASCADE,
                               null=True, related_name='farm_budget_crops')
@@ -612,7 +616,10 @@ class FarmBudgetCrop(models.Model):
                 if self.county_yield > 0 else 0)
 
     def __str__(self):
-        return f'{self.budget_crop_type} for {self.farm_crop}'
+        rotstr = (' Rotating' if self.is_rot
+                  else '' if self.is_rot is None else ' Continuous,')
+        descr = '' if self.description == '' else f' {self.description},'
+        return (f'{self.state.abbr},{descr}{rotstr}')
 
 
 class BaselineFarmBudgetCrop(models.Model):
