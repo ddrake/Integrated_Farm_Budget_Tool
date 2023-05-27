@@ -21,6 +21,7 @@
 
       <div class="w-full block flex-grow sm:flex sm:items-center sm:w-auto">
         <div class="text-sm sm:flex-grow">
+          {% if user.is_authenticated %}
           <a
 						href="{% url 'dashboard' %}"
             class="block mt-4 sm:inline-block sm:mt-0 text-teal-200 hover:text-white mr-4"
@@ -39,8 +40,10 @@
           >
             Sensitivity
           </a>
+          {% endif %}
         </div>
         <div>
+          {% if user.is_authenticated %}
           <a
 						href="{% url 'logout' %}"
             class="block mt-4 sm:inline-block sm:mt-0 text-teal-200 hover:text-white"
@@ -51,6 +54,7 @@
             class="block mt-4 sm:inline-block sm:mt-0 text-teal-200 hover:text-white ml-4"
             >Change Password</a
           >
+          {% endif %}
         </div>
       </div>
     </nav>
