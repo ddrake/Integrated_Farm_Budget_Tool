@@ -604,7 +604,7 @@ class FarmBudgetCrop(models.Model):
     farm_crop_type = models.ForeignKey(FarmCropType, on_delete=models.CASCADE,
                                        null=True)
     farm_crop = models.OneToOneField(FarmCrop, on_delete=models.CASCADE,
-                                     null=True, related_name='farm_budget_crop')
+                                     null=True)
     budget = models.ForeignKey(Budget, on_delete=models.SET_NULL, null=True)
     state = models.ForeignKey(State, on_delete=models.CASCADE,
                               null=True, related_name='farm_budget_crops')
