@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 
 from pathlib import Path
 
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -24,8 +25,11 @@ INSTALLED_APPS = [
     'core.apps.CoreConfig',
     'main.apps.MainConfig',
     'ext.apps.ExtConfig',
+    'account.apps.AccountConfig',
     'tailwind',
     'theme',
+    'crispy_forms',
+    'crispy_tailwind',
     'django_browser_reload',
     'django.contrib.admin',
     'django.contrib.auth',
@@ -34,6 +38,8 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 ]
+
+CRISPY_TEMPLATE_PACK = 'tailwind'
 
 # Needed for Tailwind
 TAILWIND_APP_NAME = 'theme'
@@ -72,6 +78,9 @@ TEMPLATES = [
         },
     },
 ]
+
+LOGIN_REDIRECT_URL = '/dashboard/'
+LOGOUT_REDIRECT_URL = '/login/'
 
 WSGI_APPLICATION = 'ifbt.wsgi.application'
 
