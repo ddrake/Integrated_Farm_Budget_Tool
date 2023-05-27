@@ -3,11 +3,22 @@
 {% load static %}
 <div class="p-6 max-w-med mx-auto bg-white rounded-xl shadow-lg flex items-center space-x-4">
   <div class="shrink-0">
-		<img class="h-96 w-96" src="{% static 'main/images/smoketreesucker.png' %}" alt="ChitChat Logo">
+   <img class="h-96 w-96" src="{% static 'main/images/smoketreesucker.png' %}" alt="ChitChat Logo">
   </div>
   <div>
     <div class="text-5xl font-medium text-black">Welcome to the Integrated Farm Budget Tool!</div>
-    <p class="text-4xl text-slate-500">Coming soon...</p>
+    <p class="text-4xl text-slate-500">Work in progress...</p>
   </div>
+  <div>
+    <a class="text-xl text-indigo-700 hover:text-indigo-500"
+       href="{% url 'register' %}">Register</a>  or
+    <a class="text-xl text-indigo-700 hover:text-indigo-500"
+       href="{% url 'login' %}">Log In</a>
+    <br>
+    <hr class="slate-500 mt-3 mb-2">
+    View Source code, Wiki, and Discussions at
+    <a class="text-xl text-indigo-700 hover:text-indigo-500"
+       href="https://github.com/ddrake/Integrated_Farm_Budget_Tool">GitHub</a>
+  <div>
 </div>
 {% endblock %}
