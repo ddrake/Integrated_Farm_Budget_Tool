@@ -44,9 +44,10 @@
         </div>
         <div>
           {% if user.is_authenticated %}
+          <span class="mt-4 text-white">User: {{user}}</span>
           <a
 						href="{% url 'logout' %}"
-            class="block mt-4 sm:inline-block sm:mt-0 text-teal-200 hover:text-white"
+            class="block mt-4 sm:inline-block sm:mt-0 text-teal-200 hover:text-white ml-4"
             >Log out</a
           >
           <a

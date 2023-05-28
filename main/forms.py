@@ -9,7 +9,7 @@ class AjaxChoiceField(forms.ChoiceField):
         return True
 
 
-class FarmYearForm(ModelForm):
+class FarmYearCreateForm(ModelForm):
     county_code = AjaxChoiceField()
 
     class Meta:

@@ -1,11 +1,12 @@
 from django.contrib.auth.models import User
+from django.core.exceptions import PermissionDenied
 from django.db import models
 from django.db.models import Q
 from django.contrib.postgres.fields import ArrayField
 from django.utils import timezone
 from django.utils.functional import lazy
 from ext.models import (
-    State, Subcounty, InsurableCropsForCty, SubcountyAvail,
+    State, County, Subcounty, InsurableCropsForCty, SubcountyAvail,
     ReferencePrices, MyaPreEstimate, MyaPostEstimate, FuturesPrice,
     Budget, BudgetCrop, FarmCropType, MarketCropType, FsaCropType,
     InsCropType)
@@ -103,6 +104,11 @@ class FarmYear(models.Model):
     def __str__(self):
         return self.full_name
 
+    def location(self):
+        county_name = County.objects.get(
+            state_id=self.state, code=self.county_code).name
+        return f'{county_name} County {self.state}'
+
     def add_insurable_farm_crops(self):
         """
         Add farm crops, market crops and fsa crops to the farm year based on the
@@ -173,6 +179,10 @@ class FarmYear(models.Model):
             fc.save()
 
     def save(self, *args, **kwargs):
+        if (self._state.adding and
+            FarmYear.objects.filter(crop_year=get_current_year(),
+                                    user=self.user).count() >= 10):
+            raise PermissionDenied('A user can have at most 10 farms for a crop year')
         super().save(*args, **kwargs)
         if self.farm_crops.count() == 0:
             self.add_insurable_farm_crops()
