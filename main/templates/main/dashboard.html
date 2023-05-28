@@ -3,9 +3,9 @@
 {% load tailwind_tags %}
 <div class="p-6 max-w-med mx-auto bg-white rounded-xl shadow-lg flex items-center space-x-4">
   <div>
+    <h1 class="mb-1 text-2xl font-medium text-black">Farms</h1>
+    <hr class="text-slate-300">
     {% if farm_years %}
-      <h1 class="mb-1 text-2xl font-medium text-black">Farms</h1>
-      <hr class="text-slate-300">
       <ul>
       {% for fy in farm_years %}
       <li>{{ fy }}
@@ -17,8 +17,8 @@
       {% endfor %}
       </ul>
     {% else %}
-    <h1 class="mb-1 text-2xl font-medium text-green-800">
-      You don't have any farms yet.  The first step is to add one.</h1>
+    <p class="mb-1 text-base font-medium text-black">
+      You don't have any farms yet.  The first step is to add one.</p>
     {% endif %}
     <a class="text-lg text-indigo-800 hover:text-indigo-600"
       href="{% url 'farmyear_create' %}">Add a farm</a> 
