@@ -20,7 +20,8 @@
     <h1 class="mb-1 text-2xl font-medium text-green-800">
       You don't have any farms yet.  The first step is to add one.</h1>
     {% endif %}
-    <a class="text-lg text-indigo-800 hover:text-indigo-600" href='#'>Add a farm</a> 
+    <a class="text-lg text-indigo-800 hover:text-indigo-600"
+      href="{% url 'farmyear_create' %}">Add a farm</a> 
   </div>
 </div>
 {% endblock %}

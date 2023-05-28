@@ -1,0 +1,53 @@
+{% extends 'account/base.html' %}
+{% load tailwind_filters %}
+{% block content %}
+<div class="p-6 max-w-med mx-auto bg-white rounded-xl shadow-lg flex items-center space-x-4">
+    <div>
+        <h1 class="block text-xl mb-2">Add a farm for the current crop year</h1>
+        <form action="" method="post">
+            {% csrf_token %}
+            {{ form|crispy }}
+            <button type="submit" class="btn-primary">Create farm</button>
+        </form>
+    </div>
+</div>
+<script>
+ (() => {
+    let httpRequest;
+    document
+      .getElementById("state")
+         .addEventListener("change", (event) => {
+             makeRequest(event.target.value)
+         });
+
+    function makeRequest(state_id) {
+      httpRequest = new XMLHttpRequest();
+
+      if (!httpRequest) {
+        alert("Giving up :( Cannot create an XMLHTTP instance");
+        return false;
+      }
+      httpRequest.onreadystatechange = updateCounties;
+      const url = `counties_for_state/${state_id}`
+        httpRequest.open("GET", url);
+      httpRequest.send();
+    }
+
+    function updateCounties() {
+      if (httpRequest.readyState === XMLHttpRequest.DONE) {
+        if (httpRequest.status === 200) {
+            let options = '';
+            const resp = JSON.parse(httpRequest.responseText);
+            resp.data.forEach(cty => {
+                options += `<option value=${cty[0]}>${cty[1]}</option>\n`;
+            });
+            document.getElementById("county_code").innerHTML = options;
+        } else {
+          alert("Request for counties failed.");
+        }
+      }
+    }
+  })();
+</script>
+{% endblock content %}
+

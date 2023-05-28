@@ -31,8 +31,8 @@ class County(models.Model):
 
     @classmethod
     def code_and_name_for_state_id(cls, state_id):
-        return (cls.objects.filter(state_id=state_id)
-                .order_by('name').values_list('code', 'name'))
+        return list(cls.objects.filter(state_id=state_id)
+                    .order_by('name').values_list('code', 'name'))
 
 
 class InsCrop(models.Model):
