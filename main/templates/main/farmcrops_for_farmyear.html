@@ -1,0 +1,21 @@
+{% extends 'main/base.html' %}
+{% block content %}
+{% load tailwind_tags %}
+<div class="p-6 max-w-med mx-auto bg-white rounded-xl shadow-lg flex items-center space-x-4">
+  {% for farmcrop in farmcrop_list %}
+  <div class="shrink-0">
+    <h1 class="text-xl">{{farmcrop}}</h1>
+    <p><strong>Planted acres</strong>: {{farmcrop.planted_acres}} </p>
+    <p><strong>Trend adjusted APH yield</strong>: {{farmcrop.ta_aph_yield}} </p>
+    <p><strong>Adjusted yield</strong>: {{farmcrop.adj_yield}} </p>
+    <p><strong>Rate yield</strong>: {{farmcrop.rate_yield}} </p>
+    <p><strong>Use yield exclusion (YE)</strong>: {{farmcrop.ye_use}} </p>
+    <p><strong>Use trend adjustment (TA)</strong>: {{farmcrop.ta_use}} </p>
+    <p><strong>Risk class</strong>: {{farmcrop.subcounty|default:"None"}} </p>
+    <p><strong>Title payment portion</strong>: {{farmcrop.gov_pmt_portion}} </p>
+    <a class="text-lg text-indigo-800 hover:text-indigo-600"
+       href="{% url 'farmcrop_update' pk=farmcrop.pk %}">Edit</a>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

@@ -8,19 +8,29 @@
     {% if farm_years %}
       <ul>
       {% for fy in farm_years %}
-      <li>{{ fy }}
-        <a class="text-lg text-indigo-800 hover:text-indigo-600"
-           href="{% url 'farmyear_update' pk=fy.pk %}">Edit</a> |
-        <a class="text-lg text-red-800 hover:text-red-600"
+      <li class="text-xl">
+        <a class="text-xl text-indigo-800 hover:text-indigo-600"
+           href="{% url 'farmyear_detail' pk=fy.pk %}">{{ fy }}</a> |
+        <a class="text-xl text-red-800 hover:text-red-600"
            href="{% url 'farmyear_delete' pk=fy.pk %}">Delete</a>
       </li>
+      <hr class="text-slate-300">
+      <a class="text-lg text-indigo-800 hover:text-indigo-600"
+         href="{% url 'farmcrop_list' farmyear=fy.pk %}">Farm Crops</a>
+      <hr class="text-slate-300">
+      <a class="text-lg text-indigo-800 hover:text-indigo-600"
+         href="{% url 'marketcrop_list' farmyear=fy.pk %}">Market Crops</a>
+      <hr class="text-slate-300">
+      <a class="text-lg text-indigo-800 hover:text-indigo-600"
+         href="{% url 'fsacrop_list' farmyear=fy.pk %}">FSA Crops</a>
       {% endfor %}
       </ul>
     {% else %}
     <p class="mb-1 text-base font-medium text-black">
       You don't have any farms yet.  The first step is to add one.</p>
     {% endif %}
-    <a class="text-lg text-indigo-800 hover:text-indigo-600"
+    <hr class="text-slate-300">
+    <a class="text-xl text-indigo-800 hover:text-indigo-600"
       href="{% url 'farmyear_create' %}">Add a farm</a> 
   </div>
 </div>

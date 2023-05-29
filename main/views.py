@@ -1,12 +1,13 @@
-from django.shortcuts import render
+from django.shortcuts import render, get_object_or_404
 from django.http import JsonResponse
 from django.core.exceptions import PermissionDenied
 from django.views.generic.edit import CreateView, DeleteView, UpdateView
+from django.views.generic import DetailView, ListView
 from django.views import View
 from django.urls import reverse, reverse_lazy
-from .models import FarmYear
+from .models import FarmYear, FarmCrop, MarketCrop, FsaCrop
 from ext.models import County
-from .forms import FarmYearCreateForm
+from .forms import FarmYearCreateForm, FarmCropUpdateForm
 
 
 def index(request):
@@ -58,3 +59,60 @@ class FarmYearUpdateView(UpdateView):
               'var_rent_cap_floor_frac', 'annual_land_int_expense',
               'annual_land_principal_pmt', 'property_taxes', 'land_repairs',
               'eligible_persons_for_cap']
+
+
+class FarmYearDetailView(DetailView):
+    model = FarmYear
+
+
+class FarmYearFarmCropListView(ListView):
+    template_name = 'main/farmcrops_for_farmyear.html'
+
+    def get_queryset(self):
+        self.farmyear = get_object_or_404(FarmYear, pk=self.kwargs['farmyear'])
+        return FarmCrop.objects.filter(farm_year=self.farmyear)
+
+
+class FarmYearMarketCropListView(ListView):
+    template_name = 'main/marketcrops_for_farmyear.html'
+
+    def get_queryset(self):
+        self.farmyear = get_object_or_404(FarmYear, pk=self.kwargs['farmyear'])
+        return MarketCrop.objects.filter(farm_year=self.farmyear)
+
+
+class FarmYearFsaCropListView(ListView):
+    template_name = 'main/fsacrops_for_farmyear.html'
+
+    def get_queryset(self):
+        self.farmyear = get_object_or_404(FarmYear, pk=self.kwargs['farmyear'])
+        return FsaCrop.objects.filter(farm_year=self.farmyear)
+
+
+class FarmCropUpdateView(UpdateView):
+    model = FarmCrop
+    form_class = FarmCropUpdateForm
+
+    def get_success_url(self):
+        return reverse_lazy('farmcrop_list', args=[self.get_object().farm_year_id])
+
+
+class MarketCropUpdateView(UpdateView):
+    model = MarketCrop
+    success_url = reverse_lazy('marketcrop_list')
+    template_name_suffix = "_update_form"
+    fields = ['contracted_bu', 'avg_contract_price', 'basis_bu_locked',
+              'avg_locked_basis', 'assumed_basis_for_new', ]
+
+    def get_success_url(self):
+        return reverse_lazy('farmcrop_list', args=[self.get_object().farm_year_id])
+
+
+class FsaCropUpdateView(UpdateView):
+    model = FsaCrop
+    success_url = reverse_lazy('fsacrop_list')
+    template_name_suffix = "_update_form"
+    fields = ['plc_base_acres', 'arcco_base_acres', 'plc_yield', ]
+
+    def get_success_url(self):
+        return reverse_lazy('farmcrop_list', args=[self.get_object().farm_year_id])

@@ -1,0 +1,21 @@
+{% extends 'main/base.html' %}
+{% block content %}
+{% load tailwind_tags %}
+<div class="p-6 max-w-med mx-auto bg-white rounded-xl shadow-lg flex items-center space-x-4">
+  <div class="shrink-0">
+  <h1 class="text-xl">{{farmyear}} in {{farmyear.location}}</h1>
+  <p><strong>Cropland acres owned</strong>: {{farmyear.cropland_acres_owned}} </p>
+  <p><strong>Cropland acres rented</strong>: {{farmyear.cropland_acres_rented}} </p>
+  <p><strong>Cash rented acres</strong>: {{farmyear.cash_rented_acres}} </p>
+  <p><strong>Variable rent cap/floor %</strong>: {{farmyear.var_rent_cap_floor_frac}} </p>
+  <p><strong>Annual land interest expense</strong>: {{farmyear.annual_land_int_expense}} </p>
+  <p><strong>Annual land principal payment</strong>: {{farmyear.annual_land_principal_pmt}} </p>
+  <p><strong>Property taxes</strong>: {{farmyear.property_taxes}} </p>
+  <p><strong>Land repairs</strong>: {{farmyear.land_repairs}} </p>
+  <p><strong>Eligible persons for FSA cap</strong>: {{farmyear.eligible_persons_for_cap}} </p>
+  <div>
+  <a class="text-xl text-indigo-800 hover:text-indigo-600"
+     href="{% url 'farmyear_update' pk=farmyear.pk %}">Edit</a>
+  </div>
+</div>
+{% endblock %}

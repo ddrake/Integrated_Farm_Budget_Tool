@@ -262,7 +262,7 @@ class FsaCrop(models.Model):
         return sum(prices)/len(prices) * pf
 
     def __str__(self):
-        return f'{self.fsa_crop_type} for {self.farm_year}'
+        return f'{self.fsa_crop_type}'
 
 
 class BaselineFsaCrop(models.Model):
@@ -295,7 +295,7 @@ class MarketCrop(models.Model):
                                  related_name='market_crops')
 
     def __str__(self):
-        return f'{self.market_crop_type} for {self.farm_year}'
+        return f'{self.market_crop_type}'
 
     def harvest_futures_price_info(self, priced_on, price_only=False):
         """
@@ -462,7 +462,8 @@ class FarmCrop(models.Model):
             self.ins_practice_choices, list)()
 
     def __str__(self):
-        return f'{self.farm_crop_type} for {self.farm_year}'
+        irr = 'Irrigated' if self.is_irrigated() else 'Non-irrigated'
+        return f'{self.farm_crop_type}, {irr}'
 
     def is_irrigated(self):
         return FarmYear.IRR_PRACTICE[self.ins_practice] == 'Irrigated'
@@ -541,9 +542,9 @@ class FarmCrop(models.Model):
         values = SubcountyAvail.objects.filter(
             state_id=self.farm_year.state_id, county_code=self.farm_year.county_code,
             crop_id=self.farm_crop_type.ins_crop,
-            croptype_id=self.farm_crop_type.ins_crop_type,
+            croptype_id=self.ins_crop_type,
             practice=self.ins_practice).values_list('subcounty_id')
-        return [(v[0], v[0]) for v in values]
+        return [('', '-'*9)] + [(v[0], v[0]) for v in values]
 
     def add_farm_budget_crop(self, budget_crop_id):
         FarmBudgetCrop.objects.filter(farm_crop=self.pk).delete()
