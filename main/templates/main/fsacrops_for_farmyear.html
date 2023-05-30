@@ -10,7 +10,7 @@
     <p><strong>PLC yield</strong>: {{fsacrop.plc_yield}} </p>
     <p><strong>Planted acres</strong>: {{fsacrop.planted_acres}} </p>
     <a class="text-xl text-indigo-800 hover:text-indigo-600"
-       href="#">Edit</a>
+       href="{% url 'fsacrop_update' pk=fsacrop.pk %}">Edit</a>
   </div>
   {% endfor %}
 </div>

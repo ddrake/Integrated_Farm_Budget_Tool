@@ -6,7 +6,7 @@ from .models import FarmYear, FarmCrop
 
 class AjaxChoiceField(forms.ChoiceField):
     def valid_value(self, value):
-        return True
+        return 1 <= int(value) < 1000
 
 
 class FarmYearCreateForm(ModelForm):
@@ -21,6 +21,7 @@ class FarmCropUpdateForm(ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['subcounty'].choices = self.instance.allowed_subcounties()
+        self.fields['ins_practice'].choices = self.instance.allowed_practices()
 
     class Meta:
         model = FarmCrop

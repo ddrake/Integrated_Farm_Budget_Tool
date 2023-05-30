@@ -4,7 +4,9 @@ from django.contrib.auth.decorators import login_required
 from .views import (GetCountyView, FarmYearCreateView, FarmYearDeleteView,
                     FarmYearUpdateView, FarmYearDetailView, FarmYearFarmCropListView,
                     FarmYearMarketCropListView, FarmYearFsaCropListView,
-                    FarmCropUpdateView, MarketCropUpdateView, FsaCropUpdateView)
+                    FarmCropUpdateView, MarketCropUpdateView, FsaCropUpdateView,
+                    FarmCropAddBudgetView, FarmYearFarmBudgetCropListView,
+                    FarmBudgetCropUpdateView)
 
 from . import views
 
@@ -20,9 +22,15 @@ urlpatterns = [
     path('farmyear/<int:pk>', login_required(FarmYearDetailView.as_view()),
          name='farmyear_detail'),
     path('farmyear/counties_for_state/<int:state_id>',
-         login_required(GetCountyView.as_view()), name="get_counties"),
+         login_required(GetCountyView.as_view())),
     path('farmcrops/<int:farmyear>', login_required(FarmYearFarmCropListView.as_view()),
          name='farmcrop_list'),
+    path('farmbudgetcrops/<int:farmyear>',
+         login_required(FarmYearFarmBudgetCropListView.as_view()),
+         name='farmbudgetcrop_list'),
+    path('farmbudgetcrop/update/<int:pk>',
+         login_required(FarmBudgetCropUpdateView.as_view()),
+         name='farmbudgetcrop_update'),
     path('farmcrop/update/<int:pk>', login_required(FarmCropUpdateView.as_view()),
          name='farmcrop_update'),
     path('marketcrops/<int:farmyear>',
@@ -33,4 +41,6 @@ urlpatterns = [
          name='fsacrop_list'),
     path('fsacrop/update/<int:pk>', login_required(FsaCropUpdateView.as_view()),
          name='fsacrop_update'),
+    path('farmcrops/addbudget/',
+         login_required(FarmCropAddBudgetView.as_view()), name='addbudget'),
 ]

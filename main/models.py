@@ -1,5 +1,5 @@
 from django.contrib.auth.models import User
-from django.core.exceptions import PermissionDenied
+from django.core.exceptions import PermissionDenied, ObjectDoesNotExist
 from django.db import models
 from django.db.models import Q
 from django.contrib.postgres.fields import ArrayField
@@ -380,6 +380,18 @@ class FarmCrop(models.Model):
     COVERAGE_LEVELS_C = [
         (.7, '70%'), (.75, '75%'), (.8, '80%'), (.85, '85%'), (.9, '90%'), ]
     COVERAGE_LEVELS_ECO = [(.9, '90%'), (.95, '95%'), ]
+
+    @classmethod
+    def add_farm_budget_crop(cls, farm_crop_id, budget_crop_id):
+        FarmBudgetCrop.objects.filter(farm_crop=farm_crop_id).delete()
+        bc = BudgetCrop.objects.get(pk=budget_crop_id)
+        d = {k: v for k, v in bc.__dict__.items() if k not in ['_state', 'id']}
+        d['county_yield'] = d['farm_yield']
+        d['farm_crop_id'] = farm_crop_id
+        d['farm_year_id'] = FarmCrop.objects.get(pk=farm_crop_id).farm_year_id
+        d['budget_crop_id'] = budget_crop_id
+        FarmBudgetCrop.objects.create(**d)
+
     planted_acres = models.FloatField(default=0)
     # Need to set the correct default via AJAX -- it depends on irrigated status.
     # based on dict above.
@@ -546,18 +558,20 @@ class FarmCrop(models.Model):
             practice=self.ins_practice).values_list('subcounty_id')
         return [('', '-'*9)] + [(v[0], v[0]) for v in values]
 
-    def add_farm_budget_crop(self, budget_crop_id):
-        FarmBudgetCrop.objects.filter(farm_crop=self.pk).delete()
-        bc = BudgetCrop.objects.get(pk=budget_crop_id)
-        d = {k: v for k, v in bc.__dict__.items() if k not in ['_state', 'id']}
-        d['county_yield'] = d['farm_yield']
-        d['farm_crop_id'] = self.pk
-        FarmBudgetCrop.objects.create(**d)
+    def allowed_practices(self):
+        return [(prac, FarmYear.IRR_PRACTICE[prac]) for prac in self.ins_practices]
 
     def get_budget_crops(self):
         return [(it.id, str(it)) for it in
                 BudgetCrop.objects.filter(farm_crop_type_id=self.farm_crop_type,
-                                          is_irr=self.is_irr)]
+                                          is_irr=self.is_irrigated())]
+
+    def has_budget(self):
+        try:
+            self.farmbudgetcrop
+            return True
+        except ObjectDoesNotExist:
+            return False
 
     class Meta:
         constraints = [
@@ -616,7 +630,10 @@ class FarmBudgetCrop(models.Model):
                                        null=True)
     farm_crop = models.OneToOneField(FarmCrop, on_delete=models.CASCADE,
                                      null=True)
+    farm_year = models.ForeignKey(FarmYear, on_delete=models.CASCADE,
+                                  null=True)
     budget = models.ForeignKey(Budget, on_delete=models.SET_NULL, null=True)
+    budget_crop = models.ForeignKey(BudgetCrop, on_delete=models.SET_NULL, null=True)
     state = models.ForeignKey(State, on_delete=models.CASCADE,
                               null=True, related_name='farm_budget_crops')
     is_rot = models.BooleanField(null=True)

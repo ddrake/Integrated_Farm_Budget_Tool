@@ -12,7 +12,7 @@
     <p><strong>Assumed basis for new crop</strong>: {{marketcrop.assumed_basis_for_new}} </p>
     <p><strong>Planted acres</strong>: {{marketcrop.planted_acres}} </p>
     <a class="text-lg text-indigo-800 hover:text-indigo-600"
-       href="#">Edit</a>
+       href="{% url 'marketcrop_update' pk=marketcrop.pk %}">Edit</a>
   </div>
   {% endfor %}
 </div>

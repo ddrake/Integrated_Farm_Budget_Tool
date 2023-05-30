@@ -1,11 +1,13 @@
+import json
+import datetime
 from django.shortcuts import render, get_object_or_404
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from django.core.exceptions import PermissionDenied
 from django.views.generic.edit import CreateView, DeleteView, UpdateView
 from django.views.generic import DetailView, ListView
 from django.views import View
 from django.urls import reverse, reverse_lazy
-from .models import FarmYear, FarmCrop, MarketCrop, FsaCrop
+from .models import FarmYear, FarmCrop, FarmBudgetCrop, MarketCrop, FsaCrop
 from ext.models import County
 from .forms import FarmYearCreateForm, FarmCropUpdateForm
 
@@ -33,10 +35,22 @@ class FarmYearCreateView(CreateView):
 
 class GetCountyView(View):
     def get(self, request, state_id, *args, **kwargs):
-        print("got ajax request")
         counties = County.code_and_name_for_state_id(state_id)
-        print(type(counties))
         return JsonResponse({'data': counties})
+
+
+class FarmCropAddBudgetView(View):
+    def post(self, request, *args, **kwargs):
+        data = json.loads(request.body)
+        print(type(data))
+        print('data', data)
+        farmcrop = int(data['farmcrop'])
+        budget = int(data['budget'])
+        print('farmcrop', farmcrop)
+        print('budget', budget)
+        FarmCrop.add_farm_budget_crop(farmcrop, budget)
+        json_obj = json.dumps({"time": str(datetime.datetime.now()), "method": "post"})
+        return HttpResponse(json_obj, 'application/json', charset='utf-8')
 
 
 class FarmYearDeleteView(DeleteView):
@@ -70,7 +84,17 @@ class FarmYearFarmCropListView(ListView):
 
     def get_queryset(self):
         self.farmyear = get_object_or_404(FarmYear, pk=self.kwargs['farmyear'])
-        return FarmCrop.objects.filter(farm_year=self.farmyear)
+        return FarmCrop.objects.filter(
+            farm_year=self.farmyear).order_by('farm_crop_type_id')
+
+
+class FarmYearFarmBudgetCropListView(ListView):
+    template_name = 'main/farmbudgetcrops_for_farmyear.html'
+
+    def get_queryset(self):
+        self.farmyear = get_object_or_404(FarmYear, pk=self.kwargs['farmyear'])
+        return FarmBudgetCrop.objects.filter(
+            farm_year=self.farmyear).order_by('farm_crop_type_id')
 
 
 class FarmYearMarketCropListView(ListView):
@@ -78,7 +102,8 @@ class FarmYearMarketCropListView(ListView):
 
     def get_queryset(self):
         self.farmyear = get_object_or_404(FarmYear, pk=self.kwargs['farmyear'])
-        return MarketCrop.objects.filter(farm_year=self.farmyear)
+        return MarketCrop.objects.filter(
+            farm_year=self.farmyear).order_by('market_crop_type_id')
 
 
 class FarmYearFsaCropListView(ListView):
@@ -86,7 +111,8 @@ class FarmYearFsaCropListView(ListView):
 
     def get_queryset(self):
         self.farmyear = get_object_or_404(FarmYear, pk=self.kwargs['farmyear'])
-        return FsaCrop.objects.filter(farm_year=self.farmyear)
+        return FsaCrop.objects.filter(
+            farm_year=self.farmyear).order_by('fsa_crop_type_id')
 
 
 class FarmCropUpdateView(UpdateView):
@@ -97,22 +123,36 @@ class FarmCropUpdateView(UpdateView):
         return reverse_lazy('farmcrop_list', args=[self.get_object().farm_year_id])
 
 
+class FarmBudgetCropUpdateView(UpdateView):
+    model = FarmBudgetCrop
+    template_name_suffix = "_update_form"
+    fields = ['farm_yield', 'county_yield', 'yield_variability',
+              'other_gov_pmts', 'other_revenue', 'fertilizers', 'pesticides',
+              'seed', 'drying', 'storage', 'other_direct_costs', 'machine_hire_lease',
+              'utilities', 'machine_repair', 'fuel_and_oil', 'light_vehicle',
+              'machine_depr', 'labor_and_mgmt', 'building_repair_and_rent',
+              'building_depr', 'insurance', 'misc_overhead_costs', 'interest_nonland',
+              'other_overhead_costs', 'rented_land_costs']
+
+    def get_success_url(self):
+        return reverse_lazy('farmbudgetcrop_list',
+                            args=[self.get_object().farm_year_id])
+
+
 class MarketCropUpdateView(UpdateView):
     model = MarketCrop
-    success_url = reverse_lazy('marketcrop_list')
     template_name_suffix = "_update_form"
     fields = ['contracted_bu', 'avg_contract_price', 'basis_bu_locked',
               'avg_locked_basis', 'assumed_basis_for_new', ]
 
     def get_success_url(self):
-        return reverse_lazy('farmcrop_list', args=[self.get_object().farm_year_id])
+        return reverse_lazy('marketcrop_list', args=[self.get_object().farm_year_id])
 
 
 class FsaCropUpdateView(UpdateView):
     model = FsaCrop
-    success_url = reverse_lazy('fsacrop_list')
     template_name_suffix = "_update_form"
     fields = ['plc_base_acres', 'arcco_base_acres', 'plc_yield', ]
 
     def get_success_url(self):
-        return reverse_lazy('farmcrop_list', args=[self.get_object().farm_year_id])
+        return reverse_lazy('fsacrop_list', args=[self.get_object().farm_year_id])

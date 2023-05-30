@@ -13,9 +13,53 @@
     <p><strong>Use trend adjustment (TA)</strong>: {{farmcrop.ta_use}} </p>
     <p><strong>Risk class</strong>: {{farmcrop.subcounty|default:"None"}} </p>
     <p><strong>Title payment portion</strong>: {{farmcrop.gov_pmt_portion}} </p>
-    <a class="text-lg text-indigo-800 hover:text-indigo-600"
-       href="{% url 'farmcrop_update' pk=farmcrop.pk %}">Edit</a>
+    <div class="my-2">
+      <a class="text-lg text-indigo-800 hover:text-indigo-600"
+         href="{% url 'farmcrop_update' pk=farmcrop.pk %}">Edit</a>
+    </div>
+      <form action=""> 
+        {% csrf_token %}
+        <label for="budgets">Budget</label><br>
+        <select name="budgets-{{farmcrop.pk}}" id="budgets-{{farmcrop.pk}}">
+          {% for bcid, bcname in farmcrop.get_budget_crops %}
+          <option value="{{bcid}}">{{bcname}}</option>
+          {% endfor %}
+        </select><br>
+        <p class="text-slate-500 italic">Set irrigation status before adding</p>
+        <input id="addbudget-{{farmcrop.pk}}" class="btn-primary"  type="button" value="Add Budget"> 
+      </form> 
   </div>
+  <script>
+    (() => {
+      document.addEventListener('DOMContentLoaded', (event) => {
+        let budgetsel = document.querySelector("#budgets-{{farmcrop.pk}}")
+        budgetsel.value = "{{ farmcrop.farmbudgetcrop.budget_crop_id }}"
+      });
+
+      document
+       .getElementById("addbudget-{{farmcrop.pk}}")
+           .addEventListener("click", (event) => {
+               submitFormData()
+           });
+
+      function submitFormData() {
+        let xhr = new XMLHttpRequest();
+        const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        const farmcropid = "{{farmcrop.pk}}";
+        const budgetid = document.querySelector("#budgets-{{farmcrop.pk}}").value;
+        const url = "addbudget/";
+        const data = JSON.stringify({budget: budgetid, farmcrop: farmcropid});
+        xhr.open("POST", url, true);
+        xhr.setRequestHeader('Content-Type', 'application/json'); 
+        xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest'); 
+        xhr.setRequestHeader('X-CSRFToken', csrftoken); 
+        xhr.send(data);
+        xhr.onload = function() {
+          alert("Budget was added");
+        }
+      }
+    })();
+  </script>
   {% endfor %}
 </div>
 {% endblock %}

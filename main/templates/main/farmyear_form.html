@@ -13,7 +13,7 @@
 </div>
 <script>
  (() => {
-    let httpRequest;
+    let xhr;
     document
       .getElementById("state")
          .addEventListener("change", (event) => {
@@ -21,23 +21,23 @@
          });
 
     function makeRequest(state_id) {
-      httpRequest = new XMLHttpRequest();
+      xhr = new XMLHttpRequest();
 
-      if (!httpRequest) {
+      if (!xhr) {
         alert("Giving up :( Cannot create an XMLHTTP instance");
         return false;
       }
-      httpRequest.onreadystatechange = updateCounties;
+      xhr.onreadystatechange = updateCounties;
       const url = `counties_for_state/${state_id}`
-        httpRequest.open("GET", url);
-      httpRequest.send();
+      xhr.open("GET", url);
+      xhr.send();
     }
 
     function updateCounties() {
-      if (httpRequest.readyState === XMLHttpRequest.DONE) {
-        if (httpRequest.status === 200) {
+      if (xhr.readyState === XMLHttpRequest.DONE) {
+        if (xhr.status === 200) {
             let options = '';
-            const resp = JSON.parse(httpRequest.responseText);
+            const resp = JSON.parse(xhr.responseText);
             resp.data.forEach(cty => {
                 options += `<option value=${cty[0]}>${cty[1]}</option>\n`;
             });
