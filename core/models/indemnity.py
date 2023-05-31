@@ -15,7 +15,7 @@ class Indemnity():
     SCO_TOP_LEVEL = 86
 
     def __init__(self, tayield=165, projected_price=5.5, harvest_futures_price=5.25,
-                 cty_expected_yield=190, farm_expected_yield=210, prot_factor=1,
+                 rma_cty_expected_yield=190, farm_expected_yield=210, prot_factor=1,
                  farm_yield_premium_to_county=0.09):
         """
         Initialize the class, setting some useful attributes.
@@ -27,7 +27,7 @@ class Indemnity():
         # The current futures harvest price for the crop
         self.harvest_futures_price = harvest_futures_price
         # The RMA county expected yield (not available for all county/crops)
-        self.cty_expected_yield = cty_expected_yield
+        self.rma_cty_expected_yield = rma_cty_expected_yield
         # The farm's expected yield
         self.farm_expected_yield = farm_expected_yield
         # The protecton factor (scales county premiums and indemnities)
@@ -176,7 +176,7 @@ class Indemnity():
         Government Crop Insurance F42: Minimum dollars of protection.
         scalar
         """
-        return (self.cty_expected_yield *
+        return (self.rma_cty_expected_yield *
                 self.projected_price *
                 self.prot_factor)
 
@@ -186,7 +186,7 @@ class Indemnity():
         AREA RP used above
         Government Crop Insurance F44: Sensitized revised dollars of protection.
         """
-        return (self.cty_expected_yield *
+        return (self.rma_cty_expected_yield *
                 self.prot_factor *
                 self.rev_trigger_condition(pf, yf))  # not ARC-specific
 
@@ -224,7 +224,7 @@ class Indemnity():
         Government Crop Insurance FGH48: Price-sensitized limiting revenue factor.
         """
         limiting_revenue_fact = (
-            ones(3) * self.cty_expected_yield *
+            ones(3) * self.rma_cty_expected_yield *
             Indemnity.LOSS_LIMIT_FACTOR)
 
         limiting_revenue_fact[0] *= max(
@@ -293,7 +293,7 @@ class Indemnity():
         yield.
         array(5)
         """
-        return (self.cty_expected_yield *
+        return (self.rma_cty_expected_yield *
                 self.cover_area / 100)
 
     def projected_yield_crop(self, yf):
@@ -379,7 +379,7 @@ class Indemnity():
         array(3)
         """
         cty_insured_rev = ones(3)
-        cty_insured_rev *= self.cty_expected_yield
+        cty_insured_rev *= self.rma_cty_expected_yield
         cty_insured_rev[1:] *= self.projected_price
         cty_insured_rev[0] *= max(self.ins_harvest_price(pf), self.projected_price)
         return cty_insured_rev

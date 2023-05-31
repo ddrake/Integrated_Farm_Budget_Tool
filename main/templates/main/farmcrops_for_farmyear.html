@@ -19,15 +19,18 @@
     </div>
       <form action=""> 
         {% csrf_token %}
-        <label for="budgets"><strong>Budget</strong></label><br>
-        <select name="budgets-{{farmcrop.pk}}" id="budgets-{{farmcrop.pk}}"
-                data-hasbudget-{{farmcrop.pk}}="{{farmcrop.has_budget}}" >
+        <label class="block text-gray-700 text-sm font-bold mb-2"
+          for="budgets-{{farmcrop.pk}}"><strong>Budget</strong></label>
+        <select 
+          class="bg-white focus:outline-none border border-gray-300 rounded-lg py-2 px-4 block w-full appearance-none leading-normal text-gray-700" 
+          name="budgets-{{farmcrop.pk}}" id="budgets-{{farmcrop.pk}}"
+          data-hasbudget-{{farmcrop.pk}}="{{farmcrop.has_budget}}" >
           {% for bcid, bcname in farmcrop.get_budget_crops %}
           <option value="{{bcid}}">{{bcname}}</option>
           {% endfor %}
-        </select><br>
-        <p id="budget-info-{{farmcrop.pk}}" class="text-slate-500 italic">
-          Set irrigation status before adding</p>
+        </select>
+        <small id="budget-info-{{farmcrop.pk}}" class="text-gray-600">
+          Set irrigation status before adding.</small>
       </form> 
   </div>
   <script>
@@ -47,7 +50,7 @@
 
       function setinfo(hasbudget) {
         let info = document.querySelector("#budget-info-{{farmcrop.pk}}")
-        info.innerHTML = hasbudget ? "Budget set; selecting will set defaults."
+        info.innerHTML = hasbudget ? "Budget set; custom values will be lost if budget is changed."
           : "Set irrigation status before adding a budget.";
       }
 
