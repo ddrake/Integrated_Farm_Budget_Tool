@@ -4,7 +4,7 @@
 <div class="p-6 max-w-med mx-auto bg-white rounded-xl shadow-lg flex items-center space-x-4">
   {% for farmcrop in farmcrop_list %}
   <div class="shrink-0">
-    <h1 class="text-xl">{{farmcrop}}</h1>
+    <h1 id="farmcrop" class="text-xl">{{farmcrop}}</h1>
     <p><strong>Planted acres</strong>: {{farmcrop.planted_acres}} </p>
     <p><strong>Trend adjusted APH yield</strong>: {{farmcrop.ta_aph_yield}} </p>
     <p><strong>Adjusted yield</strong>: {{farmcrop.adj_yield}} </p>
@@ -19,28 +19,37 @@
     </div>
       <form action=""> 
         {% csrf_token %}
-        <label for="budgets">Budget</label><br>
-        <select name="budgets-{{farmcrop.pk}}" id="budgets-{{farmcrop.pk}}">
+        <label for="budgets"><strong>Budget</strong></label><br>
+        <select name="budgets-{{farmcrop.pk}}" id="budgets-{{farmcrop.pk}}"
+                data-hasbudget-{{farmcrop.pk}}="{{farmcrop.has_budget}}" >
           {% for bcid, bcname in farmcrop.get_budget_crops %}
           <option value="{{bcid}}">{{bcname}}</option>
           {% endfor %}
         </select><br>
-        <p class="text-slate-500 italic">Set irrigation status before adding</p>
-        <input id="addbudget-{{farmcrop.pk}}" class="btn-primary"  type="button" value="Add Budget"> 
+        <p id="budget-info-{{farmcrop.pk}}" class="text-slate-500 italic">
+          Set irrigation status before adding</p>
       </form> 
   </div>
   <script>
     (() => {
       document.addEventListener('DOMContentLoaded', (event) => {
         let budgetsel = document.querySelector("#budgets-{{farmcrop.pk}}")
+        const hasbudget = budgetsel.getAttribute("data-hasbudget-{{farmcrop.pk}}")
+        setinfo(hasbudget === 'True');
         budgetsel.value = "{{ farmcrop.farmbudgetcrop.budget_crop_id }}"
       });
 
       document
-       .getElementById("addbudget-{{farmcrop.pk}}")
-           .addEventListener("click", (event) => {
+        .querySelector("#budgets-{{farmcrop.pk}}")
+           .addEventListener("change", (event) => {
                submitFormData()
            });
+
+      function setinfo(hasbudget) {
+        let info = document.querySelector("#budget-info-{{farmcrop.pk}}")
+        info.innerHTML = hasbudget ? "Budget set; selecting will set defaults."
+          : "Set irrigation status before adding a budget.";
+      }
 
       function submitFormData() {
         let xhr = new XMLHttpRequest();
@@ -55,6 +64,7 @@
         xhr.setRequestHeader('X-CSRFToken', csrftoken); 
         xhr.send(data);
         xhr.onload = function() {
+          setinfo(true);
           alert("Budget was added");
         }
       }
