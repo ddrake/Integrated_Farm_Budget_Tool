@@ -57,7 +57,8 @@ def call_postgres_func(*args):
     try:
         # connect to the PostgreSQL database
         conn = psycopg2.connect(
-            host='localhost', database=defaultdb['NAME'],
+            host=defaultdb['HOST'], database=defaultdb['NAME'],
+            port=defaultdb['PORT'],
             user=defaultdb['USER'], password=defaultdb['PASSWORD'])
         # create a cursor object for execution
         cur = conn.cursor()
@@ -85,7 +86,8 @@ def get_postgres_row(*args):
     try:
         # connect to the PostgreSQL database
         conn = psycopg2.connect(
-            host='localhost', database=defaultdb['NAME'],
+            host=defaultdb['HOST'], database=defaultdb['NAME'],
+            port=defaultdb['PORT'],
             user=defaultdb['USER'], password=defaultdb['PASSWORD'])
         # create a cursor object for execution
         cur = conn.cursor()
@@ -115,7 +117,8 @@ def get_postgres_rows(*args):
     try:
         # connect to the PostgreSQL database
         conn = psycopg2.connect(
-            host='localhost', database=defaultdb['NAME'],
+            host=defaultdb['HOST'], database=defaultdb['NAME'],
+            port=defaultdb['PORT'],
             user=defaultdb['USER'], password=defaultdb['PASSWORD'])
         # create a cursor object for execution
         cur = conn.cursor()
