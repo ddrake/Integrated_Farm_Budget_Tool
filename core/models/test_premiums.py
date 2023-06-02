@@ -25,7 +25,7 @@ class PremiumTestCase(TestCase):
     def test_with_default_values(self):
         # Premiums for Default settings; prot_factor 1.2 to match UI (verified)
         # except for ECO YP (UI uses incorrect subsidy)
-        prem = self.premium.compute_prems(prot_factor=1.2)
+        prem = self.premium.compute_prems(prot_factor=1.2, is_post_discovery=True)
 
         expected = (
             np.array(
@@ -63,7 +63,8 @@ class PremiumTestCase(TestCase):
             'crop': 41,
             'croptype': 16,
             'practice': 3,
-            'prot_factor': 1.2
+            'prot_factor': 1.2,
+            'is_post_discovery': True,
         }
         prem = self.premium.compute_prems(**settings)
         expected = (
@@ -102,7 +103,8 @@ class PremiumTestCase(TestCase):
             'crop': 81,
             'croptype': 997,
             'practice': 53,
-            'prot_factor': 1.2
+            'prot_factor': 1.2,
+            'is_post_discovery': True,
         }
         prem = self.premium.compute_prems(**settings)
         expected = (
@@ -142,7 +144,8 @@ class PremiumTestCase(TestCase):
             'crop': 11,
             'croptype': 11,
             'practice': 3,
-            'prot_factor': 1.2
+            'prot_factor': 1.2,
+            'is_post_discovery': True,
         }
         prem = self.premium.compute_prems(**settings)
         expected = (
@@ -181,7 +184,8 @@ class PremiumTestCase(TestCase):
             'crop': 41,
             'croptype': 16,
             'practice': 3,
-            'prot_factor': 1.2
+            'prot_factor': 1.2,
+            'is_post_discovery': True,
         }
         prem = self.premium.compute_prems(**settings)
         expected = (
@@ -220,7 +224,8 @@ class PremiumTestCase(TestCase):
             'crop': 81,
             'croptype': 997,
             'practice': 53,
-            'prot_factor': 1.2
+            'prot_factor': 1.2,
+            'is_post_discovery': True,
         }
         prem = self.premium.compute_prems(**settings)
         expected = (
@@ -259,7 +264,8 @@ class PremiumTestCase(TestCase):
             'crop': 11,
             'croptype': 11,
             'practice': 3,
-            'prot_factor': 1.2
+            'prot_factor': 1.2,
+            'is_post_discovery': True,
         }
         prem = self.premium.compute_prems(**settings)
         expected = (
@@ -298,7 +304,8 @@ class PremiumTestCase(TestCase):
             'crop': 81,
             'croptype': 997,
             'practice': 43,
-            'prot_factor': 1.2
+            'prot_factor': 1.2,
+            'is_post_discovery': True,
         }
         p = Premium()
         prem = p.compute_prems(**settings)
@@ -339,7 +346,8 @@ class PremiumTestCase(TestCase):
             'croptype': 16,
             'practice': 3,
             'prot_factor': 1.2,
-            'subcounty': 'BBB'
+            'subcounty': 'BBB',
+            'is_post_discovery': True,
         }
         prem = self.premium.compute_prems(**settings)
         expected = (
@@ -378,7 +386,8 @@ class PremiumTestCase(TestCase):
             'crop': 41,
             'croptype': 16,
             'practice': 3,
-            'prot_factor': 1.2
+            'prot_factor': 1.2,
+            'is_post_discovery': True,
         }
         prem = self.premium.compute_prems(**settings)
         expected = (
@@ -417,6 +426,7 @@ class PremiumTestCase(TestCase):
             'croptype': 11,
             'practice': 2,
             'prot_factor': 1,
+            'is_post_discovery': True,
         }
         prem = self.premium.compute_prems(**settings)
         expected = (

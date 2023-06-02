@@ -15,8 +15,8 @@ class Indemnity():
     SCO_TOP_LEVEL = 86
 
     def __init__(self, tayield=165, projected_price=5.5, harvest_futures_price=5.25,
-                 rma_cty_expected_yield=190, farm_expected_yield=210, prot_factor=1,
-                 farm_yield_premium_to_county=0.09):
+                 rma_cty_expected_yield=190, prot_factor=1,
+                 farm_expected_yield=210, cty_expected_yield=192):
         """
         Initialize the class, setting some useful attributes.
         """
@@ -28,12 +28,12 @@ class Indemnity():
         self.harvest_futures_price = harvest_futures_price
         # The RMA county expected yield (not available for all county/crops)
         self.rma_cty_expected_yield = rma_cty_expected_yield
-        # The farm's expected yield
+        # The farm's expected yield to be sensitized
         self.farm_expected_yield = farm_expected_yield
+        # estimated county yield to be sensitized
+        self.cty_expected_yield = cty_expected_yield
         # The protecton factor (scales county premiums and indemnities)
         self.prot_factor = prot_factor
-        # Used to estimate the County RMA yields
-        self.farm_yield_premium_to_county = farm_yield_premium_to_county
         # Coverage levels for enterprise, SCO
         self.cover = array(range(50, 86, 5))
         # Coverage levels for county area
@@ -284,8 +284,7 @@ class Indemnity():
         return the same value for full and dc here.
         scalar
         """
-        return (self.projected_yield_crop(yf) /
-                (1 + self.farm_yield_premium_to_county))
+        return self.cty_expected_yield * yf
 
     def yield_trigger_area(self):
         """
@@ -296,7 +295,7 @@ class Indemnity():
         return (self.rma_cty_expected_yield *
                 self.cover_area / 100)
 
-    def projected_yield_crop(self, yf):
+    def projected_yield_crop(self, yf=1):
         """
         Yield sensitized farm expected yield
         """

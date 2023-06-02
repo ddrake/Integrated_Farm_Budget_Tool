@@ -161,11 +161,14 @@ class Premium:
                       hailfire=0, prevplant=0, tause=1, yieldexcl=0,
                       state=17, county=19, crop=41, croptype=16, practice=3,
                       prot_factor=1, projected_price=None,
-                      price_volatility_factor=None, subcounty=None):
+                      price_volatility_factor=None, subcounty=None,
+                      is_post_discovery=False):
         """
         With farm-specific inputs, compute premiums for optional, basic and enterprise,
         units with RP, RP-HPE or YO protection for all coverage levels.
-        Note: If specified, price_volatility_factor must be an integer.
+        Notes: (1) If specified, price_volatility_factor must be an integer.
+          (2) If is_post_discovery is true, any provided values for
+          price_volatility_factor and projected_price will simply be ignored.
         """
         self.store_user_settings(
             rateyield, adjyield, tayield, acres, hailfire, prevplant, tause,
@@ -173,7 +176,7 @@ class Premium:
             projected_price, price_volatility_factor, subcounty)
 
         data = None
-        if self.price_volatility_factor is None or self.projected_price is None:
+        if is_post_discovery:
             # assume these values are present in the RMA data
             data = get_crop_ins_data(
                 self.state, self.county, self.crop, self.croptype,

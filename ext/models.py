@@ -4,6 +4,11 @@ from django.db import models
 from core.models.util import call_postgres_func
 
 
+class SmallFloatField(models.FloatField):
+    def db_type(self, connection):
+        return 'real'
+
+
 class State(models.Model):
     id = models.SmallIntegerField(primary_key=True)
     name = models.CharField(max_length=20)
@@ -427,4 +432,18 @@ class Budget(models.Model):
         return self.fullname
 
     class Meta:
+        managed = False
+
+
+class PricePrevyear(models.Model):
+    id = models.IntegerField(primary_key=True)
+    county_code = models.SmallIntegerField()
+    crop_id = models.SmallIntegerField(db_column='commodity_id')
+    crop_type_id = models.SmallIntegerField(db_column='commodity_type_id')
+    state_id = models.SmallIntegerField()
+    projected_price = SmallFloatField()
+    price_volatility_factor = models.SmallIntegerField()
+
+    class Meta:
+        db_table = 'ext_price_prevyear'
         managed = False

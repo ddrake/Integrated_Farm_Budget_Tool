@@ -9,7 +9,7 @@ from ext.models import (
     State, County, Subcounty, InsurableCropsForCty, SubcountyAvail,
     ReferencePrices, MyaPreEstimate, MyaPostEstimate, FuturesPrice,
     Budget, BudgetCrop, FarmCropType, MarketCropType, FsaCropType,
-    InsCropType)
+    InsCropType, PricePrevyear)
 from core.models.premium import Premium
 from core.models.gov_pmt import GovPmt
 from core.models.indemnity import Indemnity
@@ -20,26 +20,28 @@ def get_current_year():
     return timezone.now().year
 
 
+def any_changed(instance, *fields):
+    """
+    Check an instance to see if the values of any of the listed fields changed.
+    """
+    if not instance.pk:
+        return False
+    dbinst = instance.__class__._default_manager.get(pk=instance.pk)
+    return any((getattr(dbinst, field) != getattr(instance, field)
+                for field in fields))
+
+
 # ---------
 # Farm Year
 # ---------
 class FarmYear(models.Model):
     """
     Holds non-crop-specific values for a crop year for a farm
-    A user can have multiple FarmYears, including multiple farms for the
-    same crop year, but we don't currently try to do any aggregation over
-    a user's farms for a given crop year.
-    A FarmYear has many FarmCrops and many FsaCrops so we should be able
-    to add any needed totalizer methods.
-    I think the farm year should include FarmCrops and FsaCrops if and
-    only if they can be insured.  E.g. a Champaign County user would not
-    see FAC beans.  A Madison County user would see that crop but could
-    set the acres to zero if so desired.
-    We may want to break out a form that lets the user first input a minimal
-    set of data (farm_name, crop_year, state and county) sufficient for
-    determining the set of insurable crops.
-    We probably need a method that creates those insurable farm_crops
-    with default values and associates them with the current instance.
+    A user can have multiple FarmYears, including up to 10 farms for the
+    same crop year, but we don't do any aggregation over a user's farms
+    for a given crop year.
+    A FarmYear has FarmCrops FarmBudgetCrops, MarketCrops and FsaCrops.
+    A farm year includes FarmCrops if and only if they can be insured.
     """
     IRR_PRACTICE = {2: 'Irrigated', 3: 'Non-Irrigated', 53: 'Non-Irrigated',
                     43: 'Non-Irrigated', 94: 'Irrigated', 95: 'Irrigated'}
@@ -49,8 +51,6 @@ class FarmYear(models.Model):
     REPORT_TYPES = [(PRETAX_INCOME, 'Pre-tax income'),
                     (PRETAX_CASH_FLOW, 'Pre-tax cash flow')]
     farm_name = models.CharField(max_length=60)
-    # TODO: We'll want to populate a counties drop-down via AJAX when the
-    # user selects or changes the state.
     county_code = models.SmallIntegerField(
         verbose_name="primary county",
         help_text="The county where most farm acres are located")
@@ -93,6 +93,7 @@ class FarmYear(models.Model):
     # Since we don't have pricing before January 2023 or after the current date, the
     # model run date must be clamped between these values.
     # At some point we may want to trigger an update based on this field changing.
+    # Should it be inactive for old crop years?
     model_run_date = models.DateField(
         default=timezone.now,  # TODO: validate range
         help_text=('The date for which "current" futures prices and other ' +
@@ -106,6 +107,12 @@ class FarmYear(models.Model):
 
     def wasde_first_mya_release_on(self):
         return timezone.datetime(self.crop_year, 5, 10).date()
+
+    def rma_discovery_complete_on(self):
+        return timezone.datetime(self.crop_year, 3, 1).date()
+
+    def is_post_discovery_end(self):
+        return self.model_run_date >= self.rma_discovery_complete_on()
 
     @property
     def full_name(self):
@@ -150,11 +157,17 @@ class FarmYear(models.Model):
                 farm_crop_type=fct, market_crop=mkt, ins_practices=row.practices,
                 ins_practice=row.practices[0])
 
-    def total_gov_pmt(self, pf=1, yf=1):
+    def calc_gov_pmt(self, pf=None, yf=None):
         """
         Government Payments AB60: Sensitized total government payment after
         application of cap
         """
+        if pf is None:
+            pf = self.price_factor
+
+        if yf is None:
+            yf = self.price_factor
+
         if self.model_run_date < self.wasde_first_mya_release_on():
             mya_prices = MyaPreEstimate.get_mya_pre_estimate(
                 self.crop_year, self.model_run_date, pf)
@@ -188,6 +201,14 @@ class FarmYear(models.Model):
             print('saving', fc, fc.gov_pmt_portion)
             fc.save()
 
+    def has_ins_price_period_changed(self):
+        if not self.pk:
+            return False
+        db_mrd = FarmYear.objects.get(pk=self.pk).model_run_date
+        mrd = self.model_run_date.date()
+        rma_end = self.rma_discovery_complete_on()
+        return (db_mrd < rma_end <= mrd or mrd < rma_end <= db_mrd)
+
     def save(self, *args, **kwargs):
         if (self._state.adding and
             FarmYear.objects.filter(crop_year=get_current_year(),
@@ -197,6 +218,9 @@ class FarmYear(models.Model):
         if self.farm_crops.count() == 0:
             self.add_insurable_farm_crops()
             self.save()
+        if self.has_ins_price_period_changed():
+            for fc in self.farm_crops:
+                fc.save(price_period_changed=True)
 
     class Meta:
         constraints = [
@@ -237,7 +261,7 @@ class FsaCrop(models.Model):
     def estimated_county_yield(self):
         """
         Needed for gov_pmt.
-        Get premium_to county from the budget crop Farm yield and county yield
+        Get weighted average of market crop county yields
         """
         mcdata = [(mc.planted_acres(), mc.estimated_county_yield())
                   for mc in self.market_crops.all()]
@@ -347,6 +371,10 @@ class MarketCrop(models.Model):
         return sum((fc.planted_acres for fc in self.farm_crops.all()))
 
     def estimated_county_yield(self):
+        """
+        Needed for gov_pmt.
+        Get weighted average of market crop county yields
+        """
         acre_sum = self.planted_acres()
         if acre_sum == 0:
             return 0
@@ -424,16 +452,6 @@ class FarmCrop(models.Model):
     # TODO: we should give the user sensible defaults for these during the period
     # when they are required (prior year value for price volatility and board price
     # for projected price) and hide the form fields once they are known.
-    price_vol_factor = models.SmallIntegerField(
-        null=True, blank=True,
-        validators=[validate_range(low=5, high=40)],
-        verbose_name="price volatility factor",
-        help_text="Estimated price volatility factor")
-    proj_harv_price = models.FloatField(
-        null=True, blank=True,
-        validators=[validate_range(high=30)],
-        verbose_name="projected harvest price",
-        help_text="Estimate for projected harvest price")
     rma_cty_expected_yield = models.FloatField(
         null=True, blank=True,
         validators=[validate_range(high=400)],
@@ -498,25 +516,37 @@ class FarmCrop(models.Model):
         """
         Computed from budget crops farm yield, county yield and rotating acres
         """
-        # TODO compute this once we have budgets in
-        return self.ta_aph_yield
+        return (self.farmbudgetcrop.farm_yield if self.has_budget()
+                else self.ta_aph_yield)
 
-    def farm_yield_premium_to_cty(self):
-        """
-        Computed from budget crops farm yield, county yield and rotating acres
-        """
-        # TODO compute this once we have budgets in
-        return 0
+    def cty_expected_yield(self):
+        return (self.farmbudgetcrop.county_yield if self.has_budget()
+                else self.ta_aph_yield)
 
-    def estimated_county_yield(self):
-        return self.farm_expected_yield() * (1 + self.farm_yield_premium_to_cty())
+    def prev_year_price_vol(self):
+        """
+        Return the default price volatility factor (the previous year's value)
+        """
+        return PricePrevyear.objects.get(
+            state_id=self.crop_year.state_id, county_code=self.crop_year.county_code,
+            crop_id=self.crop_type.ins_crop_id,
+            crop_type_id=self.ins_crop_type_id).price_volatility_factor
+
+    def proj_harv_price(self):
+        """
+        Return the default projected harvest price and cache its value for indemnity.
+        If we are post_discovery_end, the cached value will be overridden by set_prems.
+        """
+        self.proj_harv_price = self.harvest_price(price_only=True)
+        return self.proj_harv_price
 
     def save(self, *args, **kwargs):
-        # TODO: only set prems if really necessary (i.e. if an input field changed)
-        # TODO: if the model_run_date is before the end of discovery, need to set
-        # price_volatility and projected price also.
+        price_period_changed = (kwargs.get('price_period_changed', False))
         if (self.planted_acres > 0 and self.rate_yield > 0 and self.adj_yield > 0
-                and self.ta_aph_yield > 0):
+            and self.ta_aph_yield > 0 and
+            (any_changed(self, 'ins_practice', 'rate_yield', 'adj_yield',
+                         'ta_aph_yield', 'planted_acres', 'ta_use', 'ye_use',
+                         'prot_factor', 'subcounty') or price_period_changed)):
             self.set_prems()
         super().save(*args, **kwargs)
 
@@ -535,9 +565,10 @@ class FarmCrop(models.Model):
             tause=self.ta_use,
             yieldexcl=self.ye_use,
             prot_factor=self.prot_factor,
-            price_volatility_factor=self.price_vol_factor,
-            projected_price=self.proj_harv_price,
-            subcounty=None if self.subcounty == '' else self.subcounty)
+            price_volatility_factor=self.prev_year_price_vol(),
+            projected_price=self.proj_harv_price(),
+            subcounty=None if self.subcounty == '' else self.subcounty,
+            is_post_discovery=self.is_post_discovery_end(), )
         if prems is not None:
             names = 'Farm County SCO ECO'.split()
             self.crop_ins_prems = {key: None if ar is None else ar.tolist()
@@ -554,8 +585,8 @@ class FarmCrop(models.Model):
             return 0
         indem = Indemnity(
             self.ta_aph_yield, self.proj_harv_price, self.harvest_price(),
-            self.rma_cty_expected_yield, self.farm_expected_yield(), self.prot_factor,
-            self.farm_yield_premium_to_cty())
+            self.rma_cty_expected_yield, self.prot_factor,
+            self.farm_expected_yield(), self.cty_expected_yield())
         indems = indem.compute_indems(pf, yf)
         names = 'Farm County SCO ECO'.split()
         return {key: None if ar is None else ar.tolist()
@@ -677,10 +708,6 @@ class FarmBudgetCrop(models.Model):
         State, on_delete=models.CASCADE, null=True, related_name='farm_budget_crops')
     is_rot = models.BooleanField(null=True)
     is_irr = models.BooleanField(default=False)
-
-    def farm_yield_premium_to_cty(self):
-        return ((self.farm_yield - self.county_yield) / self.county_yield
-                if self.county_yield > 0 else 0)
 
     def __str__(self):
         rotstr = (' Rotating' if self.is_rot

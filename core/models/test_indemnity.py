@@ -10,7 +10,7 @@ class IndemnityTestCase(TestCase):
         self.indemnity = Indemnity(
             tayield=164, projected_price=5.91, harvest_futures_price=5.3475,
             rma_cty_expected_yield=191.9, farm_expected_yield=210, prot_factor=1,
-            farm_yield_premium_to_county=0.0929550)
+            cty_expected_yield=192.139658)
 
     def test_with_default_values(self):
         indem = self.indemnity.compute_indems()
