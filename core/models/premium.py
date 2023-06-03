@@ -644,7 +644,7 @@ def get_crop_ins_data_pre_pvol(state_id, county_code, commodity_id, commodity_ty
 
     cmd = 'SELECT ' + ', '.join(names) + """
               FROM
-              public.prem_data_pre_pvol(%s, %s, %s, %s, %s, %s, %s)
+              prem_data_pre_pvol(%s, %s, %s, %s, %s, %s, %s)
               AS (ayp_base_rate real[], arp_base_rate real[],
                   arphpe_base_rate real[], scoyp_base_rate real[],
                   scorp_base_rate real[], scorphpe_base_rate real[],

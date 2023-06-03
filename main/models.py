@@ -205,7 +205,7 @@ class FarmYear(models.Model):
         if not self.pk:
             return False
         db_mrd = FarmYear.objects.get(pk=self.pk).model_run_date
-        mrd = self.model_run_date.date()
+        mrd = self.model_run_date
         rma_end = self.rma_discovery_complete_on()
         return (db_mrd < rma_end <= mrd or mrd < rma_end <= db_mrd)
 
@@ -351,8 +351,8 @@ class MarketCrop(models.Model):
         SELECT fp.id, fp.croptype, fp.exchange, fp.futures_month, fp.ticker,
                fp.priced_on, fp.price, idt.crop_year, idt.state_id, idt.county_code,
                idt.market_crop_type_id
-            FROM public.main_futuresprice fp
-            INNER JOIN public.main_insurancedates idt
+            FROM ext_futuresprice fp
+            INNER JOIN ext_insurancedates idt
             ON fp.ticker = idt.ticker
             where crop_year=%s and state_id=%s and county_code=%s
             and fp.market_crop_type_id=%s and fp.priced_on <= %s
@@ -528,8 +528,8 @@ class FarmCrop(models.Model):
         Return the default price volatility factor (the previous year's value)
         """
         return PricePrevyear.objects.get(
-            state_id=self.crop_year.state_id, county_code=self.crop_year.county_code,
-            crop_id=self.crop_type.ins_crop_id,
+            state_id=self.farm_year.state_id, county_code=self.farm_year.county_code,
+            crop_id=self.farm_crop_type.ins_crop_id,
             crop_type_id=self.ins_crop_type_id).price_volatility_factor
 
     def proj_harv_price(self):
@@ -537,7 +537,7 @@ class FarmCrop(models.Model):
         Return the default projected harvest price and cache its value for indemnity.
         If we are post_discovery_end, the cached value will be overridden by set_prems.
         """
-        self.proj_harv_price = self.harvest_price(price_only=True)
+        self.proj_harv_price = self.harvest_price()
         return self.proj_harv_price
 
     def save(self, *args, **kwargs):
@@ -568,7 +568,7 @@ class FarmCrop(models.Model):
             price_volatility_factor=self.prev_year_price_vol(),
             projected_price=self.proj_harv_price(),
             subcounty=None if self.subcounty == '' else self.subcounty,
-            is_post_discovery=self.is_post_discovery_end(), )
+            is_post_discovery=self.farm_year.is_post_discovery_end(), )
         if prems is not None:
             names = 'Farm County SCO ECO'.split()
             self.crop_ins_prems = {key: None if ar is None else ar.tolist()
