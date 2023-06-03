@@ -19,9 +19,8 @@ class FarmCropAdmin(admin.ModelAdmin):
             'General Information',
             {
                 'fields': [
-                    'planted_acres', 'ins_practice', 'frac_yield_dep_nonland_cost',
-                    'rate_yield', 'adj_yield', 'ta_aph_yield', 'ta_use', 'ye_use',
-                    'subcounty', 'price_vol_factor', 'proj_harv_price',
+                    'planted_acres', 'ins_practice', 'rate_yield', 'adj_yield',
+                    'ta_aph_yield', 'ta_use', 'ye_use', 'subcounty',
                 ],
             },
         ),

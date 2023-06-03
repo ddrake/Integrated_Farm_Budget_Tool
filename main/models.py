@@ -1,10 +1,11 @@
 from django.contrib.auth.models import User
-from django.core.exceptions import PermissionDenied, ObjectDoesNotExist
+from django.core.exceptions import PermissionDenied, ObjectDoesNotExist, ValidationError
 from django.db import models
 from django.db.models import Q
 from django.contrib.postgres.fields import ArrayField
 from django.utils import timezone
 from django.utils.functional import lazy
+from django.utils.translation import gettext_lazy as _
 from ext.models import (
     State, County, Subcounty, InsurableCropsForCty, SubcountyAvail,
     ReferencePrices, MyaPreEstimate, MyaPostEstimate, FuturesPrice,
@@ -95,7 +96,7 @@ class FarmYear(models.Model):
     # At some point we may want to trigger an update based on this field changing.
     # Should it be inactive for old crop years?
     model_run_date = models.DateField(
-        default=timezone.now,  # TODO: validate range
+        default=timezone.now().date,  # TODO: validate range
         help_text=('The date for which "current" futures prices and other ' +
                    'date-specific values are looked up.'))
     price_factor = models.FloatField(
@@ -299,6 +300,13 @@ class FsaCrop(models.Model):
         prices = [p.harvest_futures_price_info(priced_on, price_only=True)
                   for p in self.market_crops.all()]
         return sum(prices)/len(prices) * pf
+
+    def clean(self):
+        field_crop_sco_use = any((fc.sco_use for mc in self.market_crops.all()
+                                  for fc in mc.farm_crops.all()))
+        if self.arcco_base_acres > 0 and field_crop_sco_use:
+            raise ValidationError({'arcco_base_acres': _(
+                "ARC-CO base acres must be zero if SCO is set for related farm crop")})
 
     def __str__(self):
         return f'{self.fsa_crop_type}'
@@ -614,6 +622,12 @@ class FarmCrop(models.Model):
             return True
         except ObjectDoesNotExist:
             return False
+
+    def clean(self):
+        fsa_crop_has_arcco = (self.market_crop.fsa_crop.arcco_base_acres > 0)
+        if self.sco_use and fsa_crop_has_arcco:
+            raise ValidationError({'sco_use': _(
+                "ARC-CO base acres must be zero if SCO is set for related farm crop")})
 
     class Meta:
         constraints = [
