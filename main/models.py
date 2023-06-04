@@ -1,5 +1,7 @@
 from django.contrib.auth.models import User
 from django.core.exceptions import PermissionDenied, ObjectDoesNotExist, ValidationError
+from django.core.validators import (
+    MinValueValidator as MinVal, MaxValueValidator as MaxVal)
 from django.db import models
 from django.db.models import Q
 from django.contrib.postgres.fields import ArrayField
@@ -14,7 +16,6 @@ from ext.models import (
 from core.models.premium import Premium
 from core.models.gov_pmt import GovPmt
 from core.models.indemnity import Indemnity
-from .validators import validate_range
 
 
 def get_current_year():
@@ -61,35 +62,35 @@ class FarmYear(models.Model):
         help_text=("Pre-Tax cash flow deducts land debt interest and principal " +
                    "payments. Pre-tax Income deducts only interest expense."))
     cropland_acres_owned = models.FloatField(
-        default=0, validators=[validate_range(high=99999)])
+        default=0, validators=[MinVal(0), MaxVal(99999)])
     cropland_acres_rented = models.FloatField(
-        default=0, validators=[validate_range(high=99999)])
+        default=0, validators=[MinVal(0), MaxVal(99999)])
     cash_rented_acres = models.FloatField(
-        default=0, validators=[validate_range(high=99999)])
+        default=0, validators=[MinVal(0), MaxVal(99999)])
     var_rent_cap_floor_frac = models.FloatField(
-        default=0, validators=[validate_range(high=1)],
+        default=0, validators=[MinVal(0), MaxVal(1)],
         verbose_name="variable rent floor/cap",
         help_text=("Floor and cap on variable rent as a percent of starting base rent"))
     annual_land_int_expense = models.FloatField(
-        default=0, validators=[validate_range(high=999999)],
+        default=0, validators=[MinVal(0), MaxVal(999999)],
         verbose_name="land interest expense",
         help_text="Annual owned land interest expense")
     annual_land_principal_pmt = models.FloatField(
-        default=0, validators=[validate_range(high=999999)],
+        default=0, validators=[MinVal(0), MaxVal(999999)],
         verbose_name="land principal payment",
         help_text="Annual owned land principal payment")
     property_taxes = models.FloatField(
-        default=0, validators=[validate_range(high=999999)],)
+        default=0, validators=[MinVal(0), MaxVal(999999)],)
     land_repairs = models.FloatField(
-        default=0, validators=[validate_range(high=999999)],)
+        default=0, validators=[MinVal(0), MaxVal(999999)],)
     eligible_persons_for_cap = models.SmallIntegerField(
-        default=0, validators=[validate_range(high=3)],
+        default=0, validators=[MinVal(0), MaxVal(3)],
         verbose_name="# persons for cap",
         help_text="Number of eligible 'persons' for FSA payment caps.")
     other_nongrain_income = models.FloatField(
-        default=0, validators=[validate_range(high=999999)],)
+        default=0, validators=[MinVal(0), MaxVal(999999)],)
     other_nongrain_expense = models.FloatField(
-        default=0, validators=[validate_range(high=999999)],)
+        default=0, validators=[MinVal(0), MaxVal(999999)],)
     state = models.ForeignKey(State, on_delete=models.CASCADE)
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='farm_years')
 
@@ -108,10 +109,10 @@ class FarmYear(models.Model):
         default=False,
         help_text='Set the model run date manually (advanced).')
     price_factor = models.FloatField(
-        default=1, validators=[validate_range(high=10)],
+        default=1, validators=[MinVal(0), MaxVal(10)],
         verbose_name='price sensititivity factor')
     yield_factor = models.FloatField(
-        default=1, validators=[validate_range(high=2)],
+        default=1, validators=[MinVal(0), MaxVal(2)],
         verbose_name='yield sensititivity factor')
 
     def wasde_first_mya_release_on(self):
@@ -256,13 +257,13 @@ class FsaCrop(models.Model):
     should be able to get totals pretty easily.
     """
     plc_base_acres = models.FloatField(
-        default=0, validators=[validate_range(high=99999)],
+        default=0, validators=[MinVal(0), MaxVal(99999)],
         verbose_name="Base acres in PLC")
     arcco_base_acres = models.FloatField(
-        default=0,  validators=[validate_range(high=99999)],
+        default=0,  validators=[MinVal(0), MaxVal(99999)],
         verbose_name="Base acres in ARC-CO")
     plc_yield = models.FloatField(
-        default=0, validators=[validate_range(high=400)],
+        default=0, validators=[MinVal(0), MaxVal(400)],
         verbose_name="farm avg. PLC yield",
         help_text="Weighted average PLC yield for farm in bushels per acre.")
     farm_year = models.ForeignKey(FarmYear, on_delete=models.CASCADE,
@@ -333,23 +334,23 @@ class MarketCrop(models.Model):
     for a given county.
     """
     contracted_bu = models.FloatField(
-        default=0, validators=[validate_range(high=999999)],
+        default=0, validators=[MinVal(0), MaxVal(999999)],
         verbose_name="contracted bushels",
         help_text="Current contracted bushels on futures.")
     avg_contract_price = models.FloatField(
-        default=0, validators=[validate_range(high=30)],
+        default=0, validators=[MinVal(0), MaxVal(30)],
         verbose_name="avg. contract price",
         help_text="Average price for futures contracts.")
     basis_bu_locked = models.FloatField(
-        default=0, validators=[validate_range(high=999999)],
+        default=0, validators=[MinVal(0), MaxVal(999999)],
         verbose_name="bushels with basis locked",
         help_text="Number of bushels with contracted basis set.")
     avg_locked_basis = models.FloatField(
-        default=0, validators=[validate_range(low=-2, high=2)],
+        default=0, validators=[MinVal(-2), MaxVal(2)],
         verbose_name="avg. locked basis",
         help_text="Average basis on basis contracts in place.")
     assumed_basis_for_new = models.FloatField(
-        default=0, validators=[validate_range(low=-2, high=2)],
+        default=0, validators=[MinVal(-2), MaxVal(2)],
         help_text="Assumed basis for non-contracted bushels.")
     farm_year = models.ForeignKey(FarmYear, on_delete=models.CASCADE,
                                   related_name='market_crops')
@@ -444,15 +445,15 @@ class FarmCrop(models.Model):
         FarmBudgetCrop.objects.create(**d)
 
     planted_acres = models.FloatField(
-        default=0, validators=[validate_range(high=99999)],)
+        default=0, validators=[MinVal(0), MaxVal(99999)],)
     ta_aph_yield = models.FloatField(
-        default=0, validators=[validate_range(high=400)], verbose_name="TA APH yield",
+        default=0, validators=[MinVal(0), MaxVal(400)], verbose_name="TA APH yield",
         help_text="Trend-adjusted average prodution history yield provided by insurer.")
     adj_yield = models.FloatField(
-        default=0, validators=[validate_range(high=400)], verbose_name="Adjusted yield",
+        default=0, validators=[MinVal(0), MaxVal(400)], verbose_name="Adjusted yield",
         help_text="Adjusted yield provided by insurer.")
     rate_yield = models.FloatField(
-        default=0, validators=[validate_range(high=400)],
+        default=0, validators=[MinVal(0), MaxVal(400)],
         help_text="Rate yield provided by insurer.")
     ye_use = models.BooleanField(
         default=False, verbose_name='use YE?',
@@ -469,7 +470,7 @@ class FarmCrop(models.Model):
     # for projected price) and hide the form fields once they are known.
     rma_cty_expected_yield = models.FloatField(
         null=True, blank=True,
-        validators=[validate_range(high=400)],
+        validators=[MinVal(0), MaxVal(400)],
         verbose_name="RMA county expected yield",
         help_text="The RMA expected yield for the county if available")
     coverage_type = models.SmallIntegerField(
@@ -489,7 +490,7 @@ class FarmCrop(models.Model):
         null=True, blank=True, choices=COVERAGE_LEVELS_ECO,
         verbose_name="ECO level", help_text="Enhanced coverage level")
     prot_factor = models.FloatField(
-        default=1, validators=[validate_range(high=1)],
+        default=1, validators=[MinVal(0), MaxVal(1)],
         verbose_name="selected payment factor",
         help_text="Selected payment factor for county premiums/indemnities.")
     farm_crop_type = models.ForeignKey(FarmCropType, on_delete=models.CASCADE)
@@ -685,63 +686,63 @@ class FarmBudgetCrop(models.Model):
     irrigated status of the farm crop to the buddget crop type.
     """
     farm_yield = models.FloatField(
-        default=0, validators=[validate_range(high=400)])
+        default=0, validators=[MinVal(0), MaxVal(400)])
     # the farm yield value is copied to county yield when the budget crop is copied.
     county_yield = models.FloatField(
-        default=0, validators=[validate_range(high=400)])
+        default=0, validators=[MinVal(0), MaxVal(400)])
     description = models.CharField(max_length=50)
     yield_variability = models.FloatField(
-        default=0, validators=[validate_range(high=1)])
+        default=0, validators=[MinVal(0), MaxVal(1)])
     other_gov_pmts = models.FloatField(
-        default=0, validators=[validate_range(high=99999)])
+        default=0, validators=[MinVal(0), MaxVal(99999)])
     other_revenue = models.FloatField(
-        default=0, validators=[validate_range(high=999999)])
+        default=0, validators=[MinVal(0), MaxVal(999999)])
     fertilizers = models.FloatField(
-        default=0, validators=[validate_range(high=999999)])
+        default=0, validators=[MinVal(0), MaxVal(999999)])
     pesticides = models.FloatField(
-        default=0, validators=[validate_range(high=999999)])
+        default=0, validators=[MinVal(0), MaxVal(999999)])
     seed = models.FloatField(
-        default=0, validators=[validate_range(high=999999)])
+        default=0, validators=[MinVal(0), MaxVal(999999)])
     drying = models.FloatField(
-        default=0, validators=[validate_range(high=999999)])
+        default=0, validators=[MinVal(0), MaxVal(999999)])
     storage = models.FloatField(
-        default=0, validators=[validate_range(high=999999)])
+        default=0, validators=[MinVal(0), MaxVal(999999)])
     other_direct_costs = models.FloatField(
-        default=0, validators=[validate_range(high=999999)],
+        default=0, validators=[MinVal(0), MaxVal(999999)],
         help_text="Other (hauling, custom operations)")
     machine_hire_lease = models.FloatField(
-        default=0, validators=[validate_range(high=999999)],
+        default=0, validators=[MinVal(0), MaxVal(999999)],
         verbose_name="machine hire or lease")
     utilities = models.FloatField(
-        default=0, validators=[validate_range(high=999999)])
+        default=0, validators=[MinVal(0), MaxVal(999999)])
     machine_repair = models.FloatField(
-        default=0, validators=[validate_range(high=999999)])
+        default=0, validators=[MinVal(0), MaxVal(999999)])
     fuel_and_oil = models.FloatField(
-        default=0, validators=[validate_range(high=999999)])
+        default=0, validators=[MinVal(0), MaxVal(999999)])
     light_vehicle = models.FloatField(
-        default=0, validators=[validate_range(high=999999)])
+        default=0, validators=[MinVal(0), MaxVal(999999)])
     machine_depr = models.FloatField(
-        default=0, validators=[validate_range(high=999999)],
+        default=0, validators=[MinVal(0), MaxVal(999999)],
         verbose_name="machine depreciation")
     labor_and_mgmt = models.FloatField(
-        default=0, validators=[validate_range(high=999999)],
+        default=0, validators=[MinVal(0), MaxVal(999999)],
         verbose_name="labor and management")
     building_repair_and_rent = models.FloatField(
-        default=0, validators=[validate_range(high=999999)])
+        default=0, validators=[MinVal(0), MaxVal(999999)])
     building_depr = models.FloatField(
-        default=0, validators=[validate_range(high=999999)],
+        default=0, validators=[MinVal(0), MaxVal(999999)],
         verbose_name="building depreciation")
     insurance = models.FloatField(
-        default=0, validators=[validate_range(high=999999)])
+        default=0, validators=[MinVal(0), MaxVal(999999)])
     misc_overhead_costs = models.FloatField(
-        default=0, validators=[validate_range(high=999999)])
+        default=0, validators=[MinVal(0), MaxVal(999999)])
     interest_nonland = models.FloatField(
-        default=0, validators=[validate_range(high=999999)],
+        default=0, validators=[MinVal(0), MaxVal(999999)],
         verbose_name="non-land interest cost")
     other_overhead_costs = models.FloatField(
-        default=0, validators=[validate_range(high=999999)])
+        default=0, validators=[MinVal(0), MaxVal(999999)])
     rented_land_costs = models.FloatField(
-        default=0, validators=[validate_range(high=9999999)])
+        default=0, validators=[MinVal(0), MaxVal(9999999)])
     farm_crop_type = models.ForeignKey(
         FarmCropType, on_delete=models.CASCADE, null=True)
     farm_crop = models.OneToOneField(
