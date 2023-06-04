@@ -11,5 +11,39 @@
         </form>
     </div>
 </div>
+<script>
+ (() => {
+     document.addEventListener('DOMContentLoaded', () => {
+        let covLevel = document.getElementById("base_coverage_level");
+        let origval = "{{ farmcrop.base_coverage_level }}";
+        let covType = document.getElementById("coverage_type")
+        let val = covType.value;
+        console.log(val);
+        updateBaseCoverageLevels(val); 
+        covLevel.value = origval;
+        console.log(covLevel.value);
+    });
+    document
+      .getElementById("coverage_type")
+         .addEventListener("change", (event) => {
+             updateBaseCoverageLevels(event.target.value)
+         });
+
+    function updateBaseCoverageLevels(value) {
+        let options = '<option value="">--------</option>\n';
+        if (value !== '') {
+            let farmlevels = [['0.5','50%'],['0.55','55%'],['0.6','60%'],['0.65','65%'],
+                              ['0.7','70%'],['0.75','75%'],['0.8','80%'],['0.85','85%']];
+            let ctylevels = [['0.7','70%'],['0.75','75%'],['0.8','80%'],['0.85','85%'],
+                             ['0.9','90%']];
+            let levels = value === '0' ? ctylevels : farmlevels;
+            levels.forEach(opt => {
+                options += `<option value=${opt[0]}>${opt[1]}</option>\n` 
+            });
+        }
+        document.getElementById("base_coverage_level").innerHTML = options;
+    }
+  })();
+</script>
 {% endblock content %}
 

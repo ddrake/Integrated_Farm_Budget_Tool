@@ -4,13 +4,13 @@ from django import forms
 from .models import FarmYear, FarmCrop
 
 
-class AjaxChoiceField(forms.ChoiceField):
+class AjaxChoiceIntField(forms.ChoiceField):
     def valid_value(self, value):
         return 1 <= int(value) < 1000
 
 
 class FarmYearCreateForm(ModelForm):
-    county_code = AjaxChoiceField()
+    county_code = AjaxChoiceIntField()
 
     class Meta:
         model = FarmYear
@@ -18,6 +18,7 @@ class FarmYearCreateForm(ModelForm):
 
 
 class FarmCropUpdateForm(ModelForm):
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['subcounty'].choices = self.instance.allowed_subcounties()
@@ -25,5 +26,6 @@ class FarmCropUpdateForm(ModelForm):
 
     class Meta:
         model = FarmCrop
-        fields = ['planted_acres', 'ins_practice', 'ta_aph_yield', 'adj_yield',
-                  'rate_yield', 'ye_use', 'ta_use', 'subcounty', ]
+        fields = '''planted_acres ins_practice rate_yield adj_yield ta_aph_yield
+        ta_use ye_use subcounty coverage_type product_type base_coverage_level
+        sco_use eco_level prot_factor'''.split()
