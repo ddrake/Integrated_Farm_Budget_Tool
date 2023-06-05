@@ -435,6 +435,20 @@ class Budget(models.Model):
         managed = False
 
 
+class Price(models.Model):
+    id = models.IntegerField(primary_key=True)
+    county_code = models.SmallIntegerField()
+    crop_id = models.SmallIntegerField(db_column='commodity_id')
+    crop_type_id = models.SmallIntegerField(db_column='commodity_type_id')
+    state_id = models.SmallIntegerField()
+    projected_price = SmallFloatField()
+    price_volatility_factor = models.SmallIntegerField()
+
+    class Meta:
+        db_table = 'ext_price'
+        managed = False
+
+
 class PricePrevyear(models.Model):
     id = models.IntegerField(primary_key=True)
     county_code = models.SmallIntegerField()
@@ -446,4 +460,17 @@ class PricePrevyear(models.Model):
 
     class Meta:
         db_table = 'ext_price_prevyear'
+        managed = False
+
+
+class ExpectedYield(models.Model):
+    id = models.IntegerField(primary_key=True)
+    county_code = models.SmallIntegerField()
+    crop_id = models.SmallIntegerField(db_column='commodity_id')
+    crop_type_id = models.SmallIntegerField(db_column='commodity_type_id')
+    state_id = models.SmallIntegerField()
+    expected_yield = SmallFloatField()
+
+    class Meta:
+        db_table = 'ext_expectedyield'
         managed = False

@@ -155,7 +155,8 @@ class Indemnity():
         array(5,3)
         Sensitized total indemnity payment for all protections and levels.
         """
-        return self.harvest_indemnity_pmt_per_acre_area(pf, yf)
+        return (zeros((5, 3)) if self.rma_cty_expected_yield is None
+                else self.harvest_indemnity_pmt_per_acre_area(pf, yf))
 
     def harvest_indemnity_pmt_per_acre_area(self, pf=1, yf=1):
         """
