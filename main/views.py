@@ -113,6 +113,13 @@ class FarmYearMarketCropListView(ListView):
         return MarketCrop.objects.filter(
             farm_year=self.farmyear).order_by('market_crop_type_id')
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['mc_priceinfo_list'] = [
+            {'marketcrop': mc, 'priceinfo': mc.harvest_futures_price_info()}
+            for mc in context['marketcrop_list']]
+        return context
+
 
 class FarmYearFsaCropListView(ListView):
     template_name = 'main/fsacrops_for_farmyear.html'

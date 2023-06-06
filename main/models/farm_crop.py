@@ -334,8 +334,7 @@ class FarmCrop(models.Model):
     # -------------
 
     def harvest_price(self):
-        return self.market_crop.harvest_futures_price_info(
-            self.farm_year.model_run_date, price_only=True)
+        return self.market_crop.harvest_futures_price_info(price_only=True)
 
     def sens_harvest_price(self, pf=None):
         if pf is None:

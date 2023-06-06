@@ -75,16 +75,6 @@ class FsaCrop(models.Model):
             rp.effective_ref_price, rp.natl_loan_rate, sens_mya_price)
         return gp.prog_pmt_pre_sequest(pf, yf)
 
-    def harvest_futures_price(self, priced_on, pf=1):
-        """
-        Since a farmer could have both winter and spring wheat, with different
-        prices, we need some kind of average of market prices here.  A simple
-        average should do for now.
-        """
-        prices = [p.harvest_futures_price_info(priced_on, price_only=True)
-                  for p in self.market_crops.all()]
-        return sum(prices)/len(prices) * pf
-
     def clean(self):
         field_crop_sco_use = any((fc.sco_use for mc in self.market_crops.all()
                                   for fc in mc.farm_crops.all()))

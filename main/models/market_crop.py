@@ -39,11 +39,14 @@ class MarketCrop(models.Model):
     def __str__(self):
         return f'{self.market_crop_type}'
 
-    def harvest_futures_price_info(self, priced_on, price_only=False):
+    def harvest_futures_price_info(self, priced_on=None, price_only=False):
         """
         Get the harvest price for the given date from the correct exchange for the
         crop type and county.  Note: insurancedates gives the exchange and ticker.
         """
+        if priced_on is None:
+            priced_on = self.farm_year.get_model_run_date()
+
         rec = FuturesPrice.objects.raw("""
         SELECT fp.id, fp.croptype, fp.exchange, fp.futures_month, fp.ticker,
                fp.priced_on, fp.price, idt.crop_year, idt.state_id, idt.county_code,
