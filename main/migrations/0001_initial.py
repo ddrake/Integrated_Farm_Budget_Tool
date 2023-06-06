@@ -38,7 +38,7 @@ class Migration(migrations.Migration):
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('farm_name', models.CharField(max_length=60)),
                 ('county_code', models.SmallIntegerField(help_text='The county where most farm acres are located', verbose_name='primary county')),
-                ('crop_year', models.SmallIntegerField(default=main.models.get_current_year)),
+                ('crop_year', models.SmallIntegerField(default=main.models.util.get_current_year)),
                 ('report_type', models.SmallIntegerField(choices=[(0, 'Pre-tax income'), (1, 'Pre-tax cash flow')], default=0, help_text='Pre-Tax cash flow deducts land debt interest and principal payments. Pre-tax Income deducts only interest expense.')),
                 ('cropland_acres_owned', models.FloatField(default=0)),
                 ('cropland_acres_rented', models.FloatField(default=0)),

@@ -7,7 +7,11 @@ from django.views.generic.edit import CreateView, DeleteView, UpdateView
 from django.views.generic import DetailView, ListView
 from django.views import View
 from django.urls import reverse, reverse_lazy
-from .models import FarmYear, FarmCrop, FarmBudgetCrop, MarketCrop, FsaCrop
+from .models.farm_year import FarmYear
+from .models.farm_crop import FarmCrop
+from .models.farm_budget_crop import FarmBudgetCrop
+from .models.market_crop import MarketCrop
+from .models.fsa_crop import FsaCrop
 from ext.models import County
 from .forms import FarmYearCreateForm, FarmCropUpdateForm
 

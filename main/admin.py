@@ -1,9 +1,10 @@
 from django.contrib import admin
 
-from .models import (FarmYear, FsaCrop, MarketCrop, FarmCrop, FarmBudgetCrop)
-
-# This FarmCropInline idea didn't work, because the _meta choices didn't get set
-# in time.
+from .models.farm_year import FarmYear
+from .models.fsa_crop import FsaCrop
+from .models.market_crop import MarketCrop
+from .models.farm_crop import FarmCrop
+from .models.farm_budget_crop import FarmBudgetCrop
 
 
 class FarmBudgetCropInline(admin.StackedInline):

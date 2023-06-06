@@ -1,7 +1,8 @@
 from django.forms import ModelForm
 from django import forms
 
-from .models import FarmYear, FarmCrop
+from .models.farm_year import FarmYear
+from .models.farm_crop import FarmCrop
 
 
 class AjaxChoiceIntField(forms.ChoiceField):

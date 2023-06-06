@@ -1,6 +1,6 @@
 from django.test import TestCase
 
-from .models import FarmYear
+from .models.farm_year import FarmYear
 from django.contrib.auth.models import User
 
 
