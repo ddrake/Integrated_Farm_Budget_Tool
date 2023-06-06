@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from django.contrib.auth.models import User
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.core.validators import (
@@ -202,7 +202,7 @@ class FarmYear(models.Model):
 
     def clean(self):
         first_date = datetime(self.crop_year, 1, 11).date()
-        last_date = datetime.now()
+        last_date = (datetime.now() + timedelta(days=1)).date()
         if self.model_run_date < first_date:
             raise ValidationError({'model_run_date': _(
                 "The earliest a model run date can be set " +
