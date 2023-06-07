@@ -5,10 +5,10 @@
   {% for fsacrop in fsacrop_list %}
   <div class="shrink-0">
     <h1 class="text-xl">{{fsacrop}}</h1>
-    <p><strong>PLC base acres</strong>: {{fsacrop.plc_base_acres}} </p>
-    <p><strong>ARC-CO base acres</strong>: {{fsacrop.arcco_base_acres}} </p>
+    <p><strong>PLC base acres</strong>: {{fsacrop.plc_base_acres|floatformat:"1g"}} </p>
+    <p><strong>ARC-CO base acres</strong>: {{fsacrop.arcco_base_acres|floatformat:"1g"}} </p>
     <p><strong>PLC yield</strong>: {{fsacrop.plc_yield}} </p>
-    <p><strong>Planted acres</strong>: {{fsacrop.planted_acres}} </p>
+    <p><strong>Planted acres</strong>: {{fsacrop.planted_acres|floatformat:"1g"}} </p>
     <a class="text-xl text-indigo-800 hover:text-indigo-600"
        href="{% url 'fsacrop_update' pk=fsacrop.pk %}">Edit</a>
   </div>

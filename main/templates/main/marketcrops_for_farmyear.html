@@ -5,12 +5,12 @@
   {% for d in mc_priceinfo_list %}
   <div class="shrink-0">
     <h1 class="text-xl">{{d.marketcrop}}</h1>
-    <p><strong>Contracted bushels</strong>: {{d.marketcrop.contracted_bu}} </p>
+    <p><strong>Contracted bushels</strong>: {{d.marketcrop.contracted_bu|floatformat:"0g"}} </p>
     <p><strong>Avg. contract price</strong>: {{d.marketcrop.avg_contract_price}} </p>
-    <p><strong>Basis bushels locked</strong>: {{d.marketcrop.basis_bu_locked}} </p>
+    <p><strong>Basis bushels locked</strong>: {{d.marketcrop.basis_bu_locked|floatformat:"0g"}} </p>
     <p><strong>Avg. locked basis</strong>: {{d.marketcrop.avg_locked_basis}} </p>
     <p><strong>Assumed basis for new crop</strong>: {{d.marketcrop.assumed_basis_for_new}} </p>
-    <p><strong>Planted acres</strong>: {{d.marketcrop.planted_acres}} </p>
+    <p><strong>Planted acres</strong>: {{d.marketcrop.planted_acres|floatformat:"1g"}} </p>
     <p><strong>Recent Price</strong>: {{d.priceinfo.price}} </p>
     <p><strong>Exchange</strong>: {{d.priceinfo.exchange}} </p>
     <p><strong>Futures month</strong>: {{d.priceinfo.futures_month}} </p>

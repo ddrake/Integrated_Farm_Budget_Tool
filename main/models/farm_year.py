@@ -94,11 +94,15 @@ class FarmYear(models.Model):
         default=1, validators=[MinVal(0), MaxVal(2)],
         verbose_name='yield sensititivity factor')
 
+    def report_type_name(self):
+        return dict(FarmYear.REPORT_TYPES)[self.report_type]
+
     def get_model_run_date(self):
         # TODO: add logic to handle old farm years
         if not self.is_model_run_date_manual:
-            self.model_run_date = datetime.today()
-        return self.model_run_date
+            self.model_run_date = datetime.today().date()
+        return (self.model_run_date.date() if hasattr(self.model_run_date, 'date') else
+                self.model_run_date)
 
     def wasde_first_mya_release_on(self):
         return datetime(self.crop_year, 5, 10).date()
@@ -172,8 +176,8 @@ class FarmYear(models.Model):
         mya_prices = {k: v for k, v in zip([1, 2, 3], mya_prices)}
         total = 0
         for fc in self.fsa_crops.all():
-            mya_price = mya_prices[fc.fsa_crop_type.id]
-            total += fc.gov_payment(mya_price, self.get_model_run_date(),  pf, yf)
+            sens_mya_price = mya_prices[fc.fsa_crop_type.id] * pf
+            total += fc.gov_payment(sens_mya_price, yf)
         total_pmt = round(
             min(FarmYear.FSA_PMT_CAP_PER_PRINCIPAL * self.eligible_persons_for_cap,
                 total * (1 - GovPmt.SEQUEST_FRAC)))
@@ -193,7 +197,6 @@ class FarmYear(models.Model):
             return
         for fc in self.farm_crops.all():
             fc.gov_pmt_portion = fc.planted_acres * total_pmt / total_acres
-            print('saving', fc, fc.gov_pmt_portion)
             fc.save()
 
     # ---------------------

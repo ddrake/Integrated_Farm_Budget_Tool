@@ -1,25 +1,25 @@
 {% extends 'main/base.html' %}
 {% block content %}
-{% load tailwind_tags %}
+{% load tailwind_tags main_extra %}
 <div class="p-6 max-w-med mx-auto bg-white rounded-xl shadow-lg flex items-center space-x-4">
   <div class="shrink-0">
   <h1 class="text-xl">{{farmyear}} in {{farmyear.location}}</h1>
-  <p><strong>Cropland acres owned</strong>: {{farmyear.cropland_acres_owned}} </p>
-  <p><strong>Cropland acres rented</strong>: {{farmyear.cropland_acres_rented}} </p>
-  <p><strong>Cash rented acres</strong>: {{farmyear.cash_rented_acres}} </p>
-  <p><strong>Variable rent cap/floor %</strong>: {{farmyear.var_rent_cap_floor_frac}} </p>
-  <p><strong>Annual land interest expense</strong>: {{farmyear.annual_land_int_expense}} </p>
-  <p><strong>Annual land principal payment</strong>: {{farmyear.annual_land_principal_pmt}} </p>
-  <p><strong>Other non-grain income</strong>: {{farmyear.other_nongrain_income}} </p>
-  <p><strong>Other non-grain expense</strong>: {{farmyear.other_nongrain_expense}} </p>
-  <p><strong>Property taxes</strong>: {{farmyear.property_taxes}} </p>
-  <p><strong>Land repairs</strong>: {{farmyear.land_repairs}} </p>
+  <p><strong>Cropland acres owned</strong>: {{farmyear.cropland_acres_owned|floatformat:"g"}} </p>
+  <p><strong>Cropland acres rented</strong>: {{farmyear.cropland_acres_rented|floatformat:"g"}} </p>
+  <p><strong>Cash rented acres</strong>: {{farmyear.cash_rented_acres|floatformat:"g"}} </p>
+  <p><strong>Variable rent cap/floor</strong>: {{farmyear.var_rent_cap_floor_frac|pct}} </p>
+  <p><strong>Annual land interest expense</strong>: ${{farmyear.annual_land_int_expense|floatformat:"g"}} </p>
+  <p><strong>Annual land principal payment</strong>: ${{farmyear.annual_land_principal_pmt|floatformat:"g"}} </p>
+  <p><strong>Other non-grain income</strong>: ${{farmyear.other_nongrain_income|floatformat:"g"}} </p>
+  <p><strong>Other non-grain expense</strong>: ${{farmyear.other_nongrain_expense|floatformat:"g"}} </p>
+  <p><strong>Property taxes</strong>: ${{farmyear.property_taxes|floatformat:"g"}} </p>
+  <p><strong>Land repairs</strong>: ${{farmyear.land_repairs|floatformat:"g"}} </p>
   <p><strong>Eligible persons for FSA cap</strong>: {{farmyear.eligible_persons_for_cap}} </p>
-  <p><strong>Price sensitivity factor</strong>: {{farmyear.price_factor}} </p>
-  <p><strong>Yield sensitivity factor</strong>: {{farmyear.yield_factor}} </p>
-  <p><strong>Report type</strong>: {{farmyear.report_type}} </p>
+  <p><strong>Price sensitivity factor</strong>: {{farmyear.price_factor|pct}} </p>
+  <p><strong>Yield sensitivity factor</strong>: {{farmyear.yield_factor|pct}} </p>
+  <p><strong>Report type</strong>: {{farmyear.report_type_name}} </p>
   <p><strong>Model run date</strong>: {{farmyear.model_run_date}} </p>
-  <p><strong>Model run date manual</strong>: {{farmyear.is_model_run_date_manual}} </p>
+  <p><strong>Model run date manual</strong>: {{farmyear.is_model_run_date_manual|yesno:"Yes,No"}} </p>
   <div>
   <a class="text-xl text-indigo-800 hover:text-indigo-600"
      href="{% url 'farmyear_update' pk=farmyear.pk %}">Edit</a>

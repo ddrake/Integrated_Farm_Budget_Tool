@@ -1,6 +1,6 @@
 {% extends 'main/base.html' %}
 {% block content %}
-{% load tailwind_tags %}
+{% load tailwind_tags main_extra %}
 <div class="p-6 max-w-med mx-auto bg-white rounded-xl shadow-lg flex items-center space-x-4">
   {% if farmbudgetcrop_list.count == 0 %}
      <p>No budgets yet - Add budgets to farm crops after setting ther irrigated statuses.<p>
@@ -10,29 +10,29 @@
     <h1 class="text-xl">{{farmbudgetcrop.farm_crop}}</h1>
     <p><strong>Farm yield</strong>: {{farmbudgetcrop.farm_yield}} </p>
     <p><strong>County yield</strong>: {{farmbudgetcrop.county_yield}} </p>
-    <p><strong>Yield variability</strong>: {{farmbudgetcrop.yield_variability}} </p>
-    <p><strong>Other gov. payments</strong>: {{farmbudgetcrop.other_gov_pmts}} </p>
-    <p><strong>Other revenue</strong>: {{farmbudgetcrop.other_revenue}} </p>
-    <p><strong>Fertilizers</strong>: {{farmbudgetcrop.fertilizers}} </p>
-    <p><strong>Pesticides</strong>: {{farmbudgetcrop.pesticides}} </p>
-    <p><strong>Seed</strong>: {{farmbudgetcrop.seed}} </p>
-    <p><strong>Drying</strong>: {{farmbudgetcrop.drying}} </p>
-    <p><strong>Storage</strong>: {{farmbudgetcrop.storage}} </p>
-    <p><strong>Other direct costs</strong>: {{farmbudgetcrop.other_direct_costs}} </p>
-    <p><strong>Machine hire/lease</strong>: {{farmbudgetcrop.machine_hire_lease}} </p>
-    <p><strong>Utilities</strong>: {{farmbudgetcrop.utilities}} </p>
-    <p><strong>Machine repair</strong>: {{farmbudgetcrop.machine_repair}} </p>
-    <p><strong>Fuel and oil</strong>: {{farmbudgetcrop.fuel_and_oil}} </p>
-    <p><strong>Light vehicle</strong>: {{farmbudgetcrop.light_vehicle}} </p>
-    <p><strong>Machine depreciation</strong>: {{farmbudgetcrop.machine_depr}} </p>
-    <p><strong>Labor and management</strong>: {{farmbudgetcrop.labor_and_mgmt}} </p>
-    <p><strong>Building repair/rent</strong>: {{farmbudgetcrop.building_repair_and_rent}} </p>
-    <p><strong>Building depreciation</strong>: {{farmbudgetcrop.building_depr}} </p>
-    <p><strong>Insurance</strong>: {{farmbudgetcrop.insurance}} </p>
-    <p><strong>Misc overhead costs</strong>: {{farmbudgetcrop.misc_overhead_costs}} </p>
-    <p><strong>Non-land interest</strong>: {{farmbudgetcrop.interest_nonland}} </p>
-    <p><strong>Other overhead costs</strong>: {{farmbudgetcrop.other_overhead_costs}} </p>
-    <p><strong>Rented land costs</strong>: {{farmbudgetcrop.rented_land_costs}} </p>
+    <p><strong>Yield variability</strong>: {{farmbudgetcrop.yield_variability|pct}} </p>
+    <p><strong>Other gov. payments</strong>: ${{farmbudgetcrop.other_gov_pmts|floatformat:"0"}} </p>
+    <p><strong>Other revenue</strong>: ${{farmbudgetcrop.other_revenue|floatformat:"0"}} </p>
+    <p><strong>Fertilizers</strong>: ${{farmbudgetcrop.fertilizers|floatformat:"0"}} </p>
+    <p><strong>Pesticides</strong>: ${{farmbudgetcrop.pesticides|floatformat:"0"}} </p>
+    <p><strong>Seed</strong>: ${{farmbudgetcrop.seed|floatformat:"0"}} </p>
+    <p><strong>Drying</strong>: ${{farmbudgetcrop.drying|floatformat:"0"}} </p>
+    <p><strong>Storage</strong>: ${{farmbudgetcrop.storage|floatformat:"0"}} </p>
+    <p><strong>Other direct costs</strong>: ${{farmbudgetcrop.other_direct_costs|floatformat:"0"}} </p>
+    <p><strong>Machine hire/lease</strong>: ${{farmbudgetcrop.machine_hire_lease|floatformat:"0"}} </p>
+    <p><strong>Utilities</strong>: ${{farmbudgetcrop.utilities|floatformat:"0"}} </p>
+    <p><strong>Machine repair</strong>: ${{farmbudgetcrop.machine_repair|floatformat:"0"}} </p>
+    <p><strong>Fuel and oil</strong>: ${{farmbudgetcrop.fuel_and_oil|floatformat:"0"}} </p>
+    <p><strong>Light vehicle</strong>: ${{farmbudgetcrop.light_vehicle|floatformat:"0"}} </p>
+    <p><strong>Machine depreciation</strong>: ${{farmbudgetcrop.machine_depr|floatformat:"0"}} </p>
+    <p><strong>Labor and management</strong>: ${{farmbudgetcrop.labor_and_mgmt|floatformat:"0"}} </p>
+    <p><strong>Building repair/rent</strong>: ${{farmbudgetcrop.building_repair_and_rent|floatformat:"0"}} </p>
+    <p><strong>Building depreciation</strong>: ${{farmbudgetcrop.building_depr|floatformat:"0"}} </p>
+    <p><strong>Insurance</strong>: ${{farmbudgetcrop.insurance|floatformat:"0"}} </p>
+    <p><strong>Misc overhead costs</strong>: ${{farmbudgetcrop.misc_overhead_costs|floatformat:"0"}} </p>
+    <p><strong>Non-land interest</strong>: ${{farmbudgetcrop.interest_nonland|floatformat:"0"}} </p>
+    <p><strong>Other overhead costs</strong>: ${{farmbudgetcrop.other_overhead_costs|floatformat:"0"}} </p>
+    <p><strong>Rented land costs</strong>: ${{farmbudgetcrop.rented_land_costs|floatformat:"0"}} </p>
     <div class="my-2">
       <a class="text-lg text-indigo-800 hover:text-indigo-600"
          href="{% url 'farmbudgetcrop_update' pk=farmbudgetcrop.pk %}">Edit</a>

@@ -70,7 +70,7 @@ class MarketCrop(models.Model):
     def planted_acres(self):
         return sum((fc.planted_acres for fc in self.farm_crops.all()))
 
-    def estimated_county_yield(self):
+    def cty_expected_yield(self):
         """
         Needed for gov_pmt.
         Get weighted average of market crop county yields
@@ -79,7 +79,7 @@ class MarketCrop(models.Model):
         if acre_sum == 0:
             return 0
         return (sum((ac*yld for ac, yld in
-                     ((fc.planted_acres, fc.estimated_county_yield())
+                     ((fc.planted_acres, fc.cty_expected_yield())
                       for fc in self.farm_crops.all()))) / acre_sum)
 
 

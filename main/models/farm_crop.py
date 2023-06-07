@@ -136,6 +136,14 @@ class FarmCrop(models.Model):
     # ------------------------------
     # Crop Insurance-related methods
     # ------------------------------
+    def coverage_type_name(self):
+        return (None if self.coverage_type is None else
+                dict(FarmCrop.COVERAGE_TYPES)[self.coverage_type])
+
+    def product_type_name(self):
+        return (None if self.product_type is None else
+                dict(FarmCrop.PRODUCT_TYPES)[self.product_type])
+
     def get_crop_ins_prems(self):
         """
         Compute and cache premiums if not set; return cached value.
@@ -143,8 +151,8 @@ class FarmCrop(models.Model):
         if (self.crop_ins_prems is None and
             self.planted_acres > 0 and self.rate_yield > 0 and self.adj_yield > 0
                 and self.ta_aph_yield > 0):
-            self.set_prems
-            self.prems_computed_for = self.farm_year.model_run_date()
+            self.set_prems()
+            self.prems_computed_for = self.farm_year.get_model_run_date()
             self.save()
         return self.crop_ins_prems
 
@@ -152,7 +160,7 @@ class FarmCrop(models.Model):
         return datetime(self.farm_year.crop_year, 3, 1).date()
 
     def is_post_discovery_end(self):
-        return self.farm_year.model_run_date() >= self.rma_discovery_complete_on()
+        return self.farm_year.get_model_run_date() >= self.rma_discovery_complete_on()
 
     def price_period_changed(self):
         """ used to invalidate cached premiums """
@@ -252,6 +260,16 @@ class FarmCrop(models.Model):
                ecolvl is None or eco is None else
                eco[pt][int((ecolvl - .9)/.05)])
         return {'base': base, 'sco': sco, 'eco': eco}
+
+    def get_total_premiums(self):
+        prems = self.get_selected_premiums()
+        if prems is not None:
+            return sum((v for v in prems.values() if v is not None))
+
+    def get_total_indemnities(self):
+        indems = self.get_selected_indemnities()
+        if indems is not None:
+            return sum((v for v in indems.values() if v is not None))
 
     # ----------------------------
     # Yield and Production methods

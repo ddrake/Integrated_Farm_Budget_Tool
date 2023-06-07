@@ -43,12 +43,12 @@ class FsaCrop(models.Model):
                                   related_name='fsa_crops')
     fsa_crop_type = models.ForeignKey(FsaCropType, on_delete=models.CASCADE)
 
-    def estimated_county_yield(self):
+    def cty_expected_yield(self):
         """
         Needed for gov_pmt.
         Get weighted average of market crop county yields
         """
-        mcdata = [(mc.planted_acres(), mc.estimated_county_yield())
+        mcdata = [(mc.planted_acres(), mc.cty_expected_yield())
                   for mc in self.market_crops.all()]
         acres, _ = zip(*mcdata)
         if sum(acres) == 0:
@@ -63,7 +63,7 @@ class FsaCrop(models.Model):
                          for mc in self.market_crops.all()))
         return irr_acres > self.planted_acres() / 2
 
-    def gov_payment(self, sens_mya_price, priced_on, pf=1, yf=1):
+    def gov_payment(self, sens_mya_price, yf=1):
         rp = ReferencePrices.objects.get(
             fsa_crop_type_id=self.fsa_crop_type_id,
             crop_year=self.farm_year.crop_year)
@@ -71,9 +71,9 @@ class FsaCrop(models.Model):
             self.farm_year.crop_year, self.farm_year.state.id,
             self.farm_year.county_code, self.fsa_crop_type_id,
             self.is_irrigated(), self.plc_base_acres,
-            self.arcco_base_acres, self.plc_yield, self.estimated_county_yield(),
+            self.arcco_base_acres, self.plc_yield, self.cty_expected_yield(),
             rp.effective_ref_price, rp.natl_loan_rate, sens_mya_price)
-        return gp.prog_pmt_pre_sequest(pf, yf)
+        return gp.prog_pmt_pre_sequest(yf)
 
     def clean(self):
         field_crop_sco_use = any((fc.sco_use for mc in self.market_crops.all()
