@@ -135,3 +135,7 @@ data
 scripts
 settings_local.py
 staticfiles
+digitalocean
+dbresults.txt
+ERROR.txt
+ERR_PARSE.txt
