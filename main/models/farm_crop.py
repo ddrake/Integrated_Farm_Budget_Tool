@@ -299,12 +299,12 @@ class FarmCrop(models.Model):
 
     def fut_contracted_bu(self):
         return (self.market_crop.contracted_bu *
-                self.planted_acres / self.market_crop.total_acres())
+                self.planted_acres / self.market_crop.planted_acres())
 
     def sens_fut_uncontracted_bu(self, yf=None):
         if yf is None:
             yf = self.farm_year.yield_factor
-        return self.sens_production_bu(yf) - self.fut_contracted_bu
+        return self.sens_production_bu(yf) - self.fut_contracted_bu()
 
     def basis_bu_locked(self):
         return self.market_crop.basis_bu_locked
@@ -312,7 +312,7 @@ class FarmCrop(models.Model):
     def sens_basis_uncontracted_bu(self, yf=None):
         if yf is None:
             yf = self.farm_year.yield_factor
-        return self.sens_production_bu(yf) - self.basis_bu_locked
+        return self.sens_production_bu(yf) - self.basis_bu_locked()
 
     # ---------------
     # Revenue methods
@@ -338,7 +338,7 @@ class FarmCrop(models.Model):
         return (self.sens_basis_uncontracted_bu(yf) *
                 self.assumed_basis_for_new())
 
-    def grain_revenue(self, pf, yf):
+    def grain_revenue(self, pf=None, yf=None):
         if pf is None:
             pf = self.farm_year.price_factor
         if yf is None:
@@ -346,6 +346,13 @@ class FarmCrop(models.Model):
         return (self.contract_fut_revenue() + self.contract_basis_revenue() +
                 self.noncontract_fut_revenue(pf, yf) +
                 self.noncontract_basis_revenue(yf))
+
+    def avg_realized_price(self, pf=None, yf=None):
+        if pf is None:
+            pf = self.farm_year.price_factor
+        if yf is None:
+            yf = self.farm_year.yield_factor
+        return self.grain_revenue(pf, yf) / self.sens_production_bu(yf)
 
     # -------------
     # Price methods
