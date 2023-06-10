@@ -215,11 +215,14 @@ class FarmYear(models.Model):
     def clean(self):
         first_date = datetime(self.crop_year, 1, 11).date()
         last_date = (datetime.now() + timedelta(days=1)).date()
-        if self.model_run_date < first_date:
+        isdatetime = hasattr(self.model_run_date, 'date')
+        model_run_date = (self.model_run_date.date() if isdatetime else
+                          self.model_run_date)
+        if model_run_date < first_date:
             raise ValidationError({'model_run_date': _(
                 "The earliest a model run date can be set " +
                 "is Jan 11 of the crop year.")})
-        if self.model_run_date > last_date:
+        if model_run_date > last_date:
             raise ValidationError({'model_run_date': _(
                 "The model run date cannot be in the future.")})
 

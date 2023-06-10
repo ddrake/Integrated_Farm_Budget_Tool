@@ -113,6 +113,8 @@ class BudgetTable(object):
         self.farm_crop_types = [fc.farm_crop_type for fc in self.farm_crops]
 
     def get_tables(self):
+        if len(self.farm_crops) == 0:
+            return None
         results = {'kd': self.make_thousands(),
                    'kdbold': [0, 1, 6, 14, 21, 29, 32, 33, 36, 38, 39, 40],
                    'pa': self.make_peracre(),
@@ -263,7 +265,7 @@ class BudgetTable(object):
 
     def get_crop_ins_prems(self, scaling='kd'):
         if self.crop_ins_prems is None:
-            self.crop_ins_prems = [p * ac for p, ac in
+            self.crop_ins_prems = [(0 if p is None else p * ac) for p, ac in
                                    zip((fc.get_total_premiums()
                                         for fc in self.farm_crops), self.acres)]
         return self.getitems(self.crop_ins_prems, None, scaling, False)

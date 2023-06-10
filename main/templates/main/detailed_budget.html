@@ -1,6 +1,14 @@
 {% extends 'main/base.html' %}
 {% block content %}
 <div class="p-6 max-w-med mx-auto bg-white rounded-xl shadow-lg flex items-center space-x-4">
+  {% if tables == None %}
+  <div class="shrink-0">
+    <p class="text-xl">
+      A detailed budget cannot be generated for the specified farm year.<br>
+      Please ensure that at least one crop has non-zero acres and has had a budget added.
+    </p> 
+  </div>
+  {% else %}
   <div class="shrink-0">
     <p class="font-bold text-center">Budget in $(000)</p>
   <table class="text-sm table-auto border border-indigo-800 border-2" id="kdtable">
@@ -75,6 +83,7 @@
     </tbody>
   </table>
   </div>
+  {% endif %}
   {% endif %}
 </div>
 {% endblock %}
