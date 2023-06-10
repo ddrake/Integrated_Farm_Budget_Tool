@@ -226,7 +226,11 @@ class FarmCrop(models.Model):
             self.crop_ins_prems = {key: None if ar is None else ar.tolist()
                                    for key, ar in zip(names, prems[:4])}
 
-    def get_indemnities(self, pf=1, yf=1):
+    def get_indemnities(self, pf=None, yf=None):
+        if pf is None:
+            pf = self.farm_year.price_factor
+        if yf is None:
+            yf = self.farm_year.yield_factor
         indem = Indemnity(
             self.ta_aph_yield, self.rma_proj_harv_price(), self.harvest_price(),
             self.rma_expected_yield(), self.prot_factor,
@@ -241,7 +245,11 @@ class FarmCrop(models.Model):
             return None
         return self.get_selected_ins_items(self.crop_ins_prems)
 
-    def get_selected_indemnities(self, pf=1, yf=1):
+    def get_selected_indemnities(self, pf=None, yf=None):
+        if pf is None:
+            pf = self.farm_year.price_factor
+        if yf is None:
+            yf = self.farm_year.yield_factor
         return self.get_selected_ins_items(self.get_indemnities(pf, yf))
 
     def get_selected_ins_items(self, ins_list):
@@ -266,8 +274,12 @@ class FarmCrop(models.Model):
         if prems is not None:
             return sum((v for v in prems.values() if v is not None))
 
-    def get_total_indemnities(self):
-        indems = self.get_selected_indemnities()
+    def get_total_indemnities(self, pf=None, yf=None):
+        if pf is None:
+            pf = self.farm_year.price_factor
+        if yf is None:
+            yf = self.farm_year.yield_factor
+        indems = self.get_selected_indemnities(pf, yf)
         if indems is not None:
             return sum((v for v in indems.values() if v is not None))
 
@@ -337,6 +349,20 @@ class FarmCrop(models.Model):
             yf = self.farm_year.yield_factor
         return (self.sens_basis_uncontracted_bu(yf) *
                 self.assumed_basis_for_new())
+
+    def noncontract_revenue(self, pf=None, yf=None):
+        if pf is None:
+            pf = self.farm_year.price_factor
+        if yf is None:
+            yf = self.farm_year.yield_factor
+        return (self.noncontract_fut_revenue(yf, pf) +
+                self.noncontract_basis_revenue(yf))
+
+    def frac_rev_excess(self):
+        """ fraction revenue excess or (shortfall) """
+        base_rev = self.noncontract_revenue(pf=1, yf=1)
+        return (0 if base_rev == 0 else
+                (self.noncontract_revenue() - base_rev) / base_rev)
 
     def grain_revenue(self, pf=None, yf=None):
         if pf is None:

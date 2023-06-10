@@ -4,7 +4,7 @@ from django.shortcuts import render, get_object_or_404
 from django.http import JsonResponse, HttpResponse
 from django.core.exceptions import PermissionDenied
 from django.views.generic.edit import CreateView, DeleteView, UpdateView
-from django.views.generic import DetailView, ListView
+from django.views.generic import DetailView, ListView, TemplateView
 from django.views import View
 from django.urls import reverse, reverse_lazy
 from .models.farm_year import FarmYear
@@ -12,6 +12,7 @@ from .models.farm_crop import FarmCrop
 from .models.farm_budget_crop import FarmBudgetCrop
 from .models.market_crop import MarketCrop
 from .models.fsa_crop import FsaCrop
+from .models.budget_table import BudgetTable
 from ext.models import County
 from .forms import FarmYearCreateForm, FarmCropUpdateForm
 
@@ -46,12 +47,8 @@ class GetCountyView(View):
 class FarmCropAddBudgetView(View):
     def post(self, request, *args, **kwargs):
         data = json.loads(request.body)
-        print(type(data))
-        print('data', data)
         farmcrop = int(data['farmcrop'])
         budget = int(data['budget'])
-        print('farmcrop', farmcrop)
-        print('budget', budget)
         FarmCrop.add_farm_budget_crop(farmcrop, budget)
         json_obj = json.dumps({"time": str(datetime.datetime.now()), "method": "post"})
         return HttpResponse(json_obj, 'application/json', charset='utf-8')
@@ -171,3 +168,18 @@ class FsaCropUpdateView(UpdateView):
 
     def get_success_url(self):
         return reverse_lazy('fsacrop_list', args=[self.get_object().farm_year_id])
+
+
+class DetailedBudgetView(TemplateView):
+    template_name = 'main/detailed_budget.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        farmyear = kwargs.get('farmyear', None)
+        bt = BudgetTable(farmyear)
+        context['tables'] = bt.get_tables()
+        return context
+
+
+class TestView(TemplateView):
+    template_name = 'main/test.html'

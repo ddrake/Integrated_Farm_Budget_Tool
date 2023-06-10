@@ -1,12 +1,12 @@
 from django.urls import path
 from django.contrib.auth.decorators import login_required
 
-from .views import (GetCountyView, FarmYearCreateView, FarmYearDeleteView,
-                    FarmYearUpdateView, FarmYearDetailView, FarmYearFarmCropListView,
-                    FarmYearMarketCropListView, FarmYearFsaCropListView,
-                    FarmCropUpdateView, MarketCropUpdateView, FsaCropUpdateView,
-                    FarmCropAddBudgetView, FarmYearFarmBudgetCropListView,
-                    FarmBudgetCropUpdateView)
+from .views import (
+    GetCountyView, FarmYearCreateView, FarmYearDeleteView, FarmYearUpdateView,
+    FarmYearDetailView, FarmYearFarmCropListView, FarmYearMarketCropListView,
+    FarmYearFsaCropListView, FarmCropUpdateView, MarketCropUpdateView,
+    FsaCropUpdateView, FarmCropAddBudgetView, FarmYearFarmBudgetCropListView,
+    FarmBudgetCropUpdateView, DetailedBudgetView, TestView)
 
 from . import views
 
@@ -43,4 +43,7 @@ urlpatterns = [
          name='fsacrop_update'),
     path('farmcrops/addbudget/',
          login_required(FarmCropAddBudgetView.as_view()), name='addbudget'),
+    path('detailedbudget/<int:farmyear>',
+         login_required(DetailedBudgetView.as_view()), name='detailedbudget'),
+    path('test/', login_required(TestView.as_view()), name='test'),
 ]

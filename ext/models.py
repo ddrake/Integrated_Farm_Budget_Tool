@@ -244,10 +244,6 @@ class MyaPostEstimate(models.Model):
         rows = (MyaPostEstimate.objects
                 .filter(wasde_release_date__lte=for_date, crop_year=crop_year)
                 .order_by("-wasde_release_date", "fsa_crop_type")[:3])
-        for row in rows:
-            print('est_price', row.wasde_estimated_price)
-            print('pct_locked', row.assumed_pct_locked)
-
         mya_prices = [row.wasde_estimated_price *
                       (row.assumed_pct_locked + pf * (1 - row.assumed_pct_locked))
                       for row in rows]

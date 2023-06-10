@@ -1,0 +1,80 @@
+{% extends 'main/base.html' %}
+{% block content %}
+<div class="p-6 max-w-med mx-auto bg-white rounded-xl shadow-lg flex items-center space-x-4">
+  <div class="shrink-0">
+    <p class="font-bold text-center">Budget in $(000)</p>
+  <table class="text-sm table-auto border border-indigo-800 border-2" id="kdtable">
+    <tbody>
+    {% for row in tables.kd %}
+      {% if forloop.counter0 in tables.kdbold %}
+        <tr class="font-bold">
+      {% else %}
+        <tr>
+      {% endif %}
+          <td class="px-1 py-0 text-left font-bold">{{row.0}}</td>
+            {% for col in row.1 %}
+            <td class="px-1 py-0 text-right">{{col}}</td>
+            {% endfor %}
+        </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  <div class="shrink-0">
+    <p class="font-bold text-center" >Budget in $/acre</p>
+  <table class="text-sm table-auto border border-indigo-800 border-2" id="patable">
+    <tbody>
+    {% for row in tables.pa %}
+      {% if forloop.counter0 in tables.pabold %}
+        <tr class="font-bold">
+      {% else %}
+        <tr>
+      {% endif %}
+          {% for col in row %}
+          <td class="px-1 py-0 text-right">{{col}}</td>
+          {% endfor %}
+        </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  <div class="shrink-0">
+    <p class="font-bold text-center">Budget in $/bushel</p>
+  <table class="text-sm table-auto border border-indigo-800 border-2" id="pbtable">
+    <tbody>
+    {% for row in tables.pb %}
+      {% if forloop.counter0 in tables.pbbold %}
+        <tr class="font-bold">
+      {% else %}
+        <tr>
+      {% endif %}
+          {% for col in row %}
+          <td class="px-1 py-0 text-right">{{col}}</td>
+          {% endfor %}
+        </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  {% if tables.wheatdc %}
+  <div class="shrink-0">
+    <p class="font-bold text-center">Wheat/DC Beans</p>
+  <table class="text-sm table-auto border border-indigo-800 border-2" id="wheatdctable">
+    <tbody>
+    {% for row in tables.wheatdc %}
+      {% if forloop.counter0 in tables.wheatdcbold %}
+        <tr class="font-bold">
+      {% else %}
+        <tr>
+      {% endif %}
+          {% for col in row %}
+          <td class="px-1 py-0 text-right">{{col}}</td>
+          {% endfor %}
+        </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

@@ -94,8 +94,17 @@ class FarmYear(models.Model):
         default=1, validators=[MinVal(0), MaxVal(2)],
         verbose_name='yield sensititivity factor')
 
+    def total_owned_land_expense(self):
+        return (self.annual_land_int_expense + self.annual_land_principal_pmt +
+                self.property_taxes + self.land_repairs)
+
     def report_type_name(self):
         return dict(FarmYear.REPORT_TYPES)[self.report_type]
+
+    def frac_var_rent(self):
+        return (0 if self.cropland_acres_rented == 0 else
+                (self.cropland_acres_rented - self.cash_rented_acres) /
+                self.cropland_acres_rented)
 
     def get_model_run_date(self):
         # TODO: add logic to handle old farm years

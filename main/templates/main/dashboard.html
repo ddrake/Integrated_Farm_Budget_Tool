@@ -1,6 +1,5 @@
 {% extends 'main/base.html' %}
 {% block content %}
-{% load tailwind_tags %}
 <div class="p-6 max-w-med mx-auto bg-white rounded-xl shadow-lg flex items-center space-x-4">
   <div>
     <h1 class="mb-1 text-2xl font-medium text-black">Farms</h1>
@@ -26,6 +25,9 @@
       <hr class="text-slate-300">
       <a class="pl-4 text-lg text-indigo-800 hover:text-indigo-600"
          href="{% url 'fsacrop_list' farmyear=fy.pk %}">FSA Crops</a>
+      <hr class="text-slate-300">
+      <a class="pl-4 text-lg text-indigo-800 hover:text-indigo-600"
+         href="{% url 'detailedbudget' farmyear=fy.pk %}">Detailed Budget</a>
       {% endfor %}
       </ul>
     {% else %}
