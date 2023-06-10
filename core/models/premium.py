@@ -259,9 +259,18 @@ class Premium:
         """
         Set Multiplicative Factor used to scale rates for hailfire, prevplant (p 16.)
         """
-        hfrate, pfrate = self.option_rate
+        # Hack based on current data to work around no pfrate for some counties/crops
+        # TODO: revisit this if we ever decide to allow users to select these options.
+        if len(self.option_rate) == 2:
+            hfrate, pfrate = self.option_rate
+        elif len(self.option_rate) == 1:
+            pfrate = self.option_rate
+            self.hailfire = 0
+        else:
+            self.hailfire = self.prevplant = 0
+
         self.multfactor = 1
-        if self.hailfire > 0:
+        if self.hailfire == 1:
             self.multfactor *= hfrate
         if self.prevplant == 1:
             self.multfactor *= pfrate

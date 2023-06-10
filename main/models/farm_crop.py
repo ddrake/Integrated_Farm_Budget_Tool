@@ -184,10 +184,14 @@ class FarmCrop(models.Model):
             crop_type_id=self.ins_crop_type_id).projected_price
 
     def rma_expected_yield(self):
-        return ExpectedYield.objects.get(
-            state_id=self.farm_year.state_id, county_code=self.farm_year.county_code,
-            crop_id=self.farm_crop_type.ins_crop_id,
-            crop_type_id=self.ins_crop_type_id).expected_yield
+        try:
+            return ExpectedYield.objects.get(
+                state_id=self.farm_year.state_id,
+                county_code=self.farm_year.county_code,
+                crop_id=self.farm_crop_type.ins_crop_id,
+                crop_type_id=self.ins_crop_type_id).expected_yield
+        except ObjectDoesNotExist:
+            return None
 
     def prev_year_price_vol(self):
         """
@@ -259,14 +263,14 @@ class FarmCrop(models.Model):
         covtype = 'County' if ct == 0 else 'Farm' if ct == 1 else None
         base = (0 if ct is None or bcl is None or pt is None or
                 ct == 0 and county is None or ct == 1 and farm is None else
-                ins_list[covtype][pt][
-                    int((bcl - (.5 if covtype == 'Farm' else .7))/.05)])
+                ins_list[covtype][
+                    int((bcl - (.5 if covtype == 'Farm' else .7))/.05)][pt])
         sco = (0 if ct is None or bcl is None or pt is None or
                ct == 1 and sco is None or not self.sco_use else
-               sco[pt][int((bcl - .5)/.05)])
+               sco[int((bcl - .5)/.05)][pt])
         eco = (0 if ct is None or bcl is None or pt is None or
                ecolvl is None or eco is None else
-               eco[pt][int((ecolvl - .9)/.05)])
+               eco[int((ecolvl - .9)/.05)][pt])
         return {'base': base, 'sco': sco, 'eco': eco}
 
     def get_total_premiums(self):

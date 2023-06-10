@@ -15,7 +15,7 @@ class Indemnity():
     SCO_TOP_LEVEL = 86
 
     def __init__(self, tayield=165, projected_price=5.5, harvest_futures_price=5.25,
-                 rma_cty_expected_yield=190, prot_factor=1,
+                 rma_cty_expected_yield=None, prot_factor=1,
                  farm_expected_yield=210, cty_expected_yield=192):
         """
         Initialize the class, setting some useful attributes.
@@ -317,6 +317,10 @@ class Indemnity():
         Used by all derived classes.
         array(len(cov))
         """
+        # TODO: Investigate this: We can compute option premiums without
+        # rma_cty_expected_yield, but not indemnities?
+        if self.rma_cty_expected_yield is None:
+            return zeros((len(cov), 3))
         is_eco = len(cov) == 2
         sco_top_level = Indemnity.SCO_TOP_LEVEL/100
         lvl = cov/100 if is_eco else ones(len(cov)) * sco_top_level
