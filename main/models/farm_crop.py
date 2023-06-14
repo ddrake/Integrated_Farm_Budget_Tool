@@ -337,6 +337,34 @@ class FarmCrop(models.Model):
     def contract_fut_revenue(self):
         return self.fut_contracted_bu() * self.avg_contract_price()
 
+    def pretax_income(self, pf=None, yf=None):
+        if pf is None:
+            pf = self.farm_year.price_factor
+        if yf is None:
+            yf = self.farm_year.yield_factor
+        pass
+
+    def pretax_cash_flow(self, pf=None, yf=None):
+        if pf is None:
+            pf = self.farm_year.price_factor
+        if yf is None:
+            yf = self.farm_year.yield_factor
+        pass
+
+    def gross_rev_no_title_indem(self, pf=None, yf=None):
+        if pf is None:
+            pf = self.farm_year.price_factor
+        if yf is None:
+            yf = self.farm_year.yield_factor
+        pass
+
+    def total_cost(self, pf=None, yf=None):
+        if pf is None:
+            pf = self.farm_year.price_factor
+        if yf is None:
+            yf = self.farm_year.yield_factor
+        pass
+
     def contract_basis_revenue(self):
         return self.basis_bu_locked() * self.avg_locked_basis()
 
