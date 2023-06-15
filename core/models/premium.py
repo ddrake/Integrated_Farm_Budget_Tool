@@ -37,10 +37,12 @@ class Premium:
         self.cpractice = None
         # Protection factor (aka payment factor) for ARC
         self.prot_factor = None
-        # The user-provided or RMA computed avg harvest price for Feb
+        # The RMA projected harvest price Feb (lookup in ext_price, fallback futprice)
         self.projected_price = None
-        # The user-provided or RMA computed volatility
+        # The RMA price volatility factor (lookup in ext_price, fallback prev year vol)
         self.price_volatility_factor = None
+        # RMA expected_yield (lookup in ext_price)
+        self.expected_yield = None
         # Either None or a 3-letter high risk code like 'AAA'
         self.subcounty = None
         # acres to insure for given county, crop, croptype and practice.
@@ -64,7 +66,7 @@ class Premium:
 
         # External data
         # -------------
-        # values pulled from database via get_crop_ins_data[_pre_pvol]
+        # values pulled from database via get_crop_ins_data
         # attribute values set via setattr in compute_premiums
         self.ayp_base_rate = None
         self.arp_base_rate = None
@@ -80,8 +82,6 @@ class Premium:
         self.subsidy_ey = None
         self.subsidy_er = None
         self.subsidy_s = None
-        # Needed to compute ARC premiums (missing for some counties)
-        self.expected_yield = None
 
         self.draw = None
         self.enterprise_discount_factor = None
@@ -162,7 +162,7 @@ class Premium:
                       state=17, county=19, crop=41, croptype=16, practice=3,
                       prot_factor=1, projected_price=None,
                       price_volatility_factor=None, subcounty=None,
-                      is_post_discovery=False):
+                      expected_yield=None):
         """
         With farm-specific inputs, compute premiums for optional, basic and enterprise,
         units with RP, RP-HPE or YO protection for all coverage levels.
@@ -173,19 +173,12 @@ class Premium:
         self.store_user_settings(
             rateyield, adjyield, tayield, acres, hailfire, prevplant, tause,
             yieldexcl, state, county, crop, croptype, practice, prot_factor,
-            projected_price, price_volatility_factor, subcounty)
+            projected_price, price_volatility_factor, subcounty, expected_yield)
 
-        data = None
-        if is_post_discovery:
-            # assume these values are present in the RMA data
-            data = get_crop_ins_data(
-                self.state, self.county, self.crop, self.croptype,
-                self.practice, self.subcounty)
-        else:
-            # pass user-specified estimate of price_volatility_factor
-            data = get_crop_ins_data_pre_pvol(
-                self.state, self.county, self.crop, self.croptype, self.practice,
-                self.price_volatility_factor, self.subcounty)
+        # pass user-specified estimate of price_volatility_factor
+        data = get_crop_ins_data(
+            self.state, self.county, self.crop, self.croptype, self.practice,
+            self.price_volatility_factor, self.subcounty)
 
         for name, val in data:
             setattr(self, name, val)
@@ -564,7 +557,7 @@ class Premium:
     def store_user_settings(self, rateyield, adjyield, tayield, acres, hailfire,
                             prevplant, tause, yieldexcl, state, county,
                             crop, croptype, practice, prot_factor, projected_price,
-                            price_volatility_factor, subcounty):
+                            price_volatility_factor, subcounty, expected_yield):
         """
         Store settings provide by user when calling calc_premiums, and calculate
         some values derived from them.
@@ -586,6 +579,7 @@ class Premium:
         self.prot_factor = prot_factor
         self.projected_price = projected_price
         self.price_volatility_factor = price_volatility_factor
+        self.expected_yield = expected_yield
 
         self.tayield_adj = max(self.tayield,  self.rateyield)
 
@@ -634,31 +628,31 @@ def get_combo_rev_std_mean(lookupid):
     return record[0], record[1]
 
 
-def get_crop_ins_data_pre_pvol(state_id, county_code, commodity_id, commodity_type_id,
-                               practice, price_volatility_factor, subcounty_id=None):
+def get_crop_ins_data(state_id, county_code, commodity_id, commodity_type_id,
+                      practice, price_volatility_factor, subcounty_id=None):
     """
     Get data needed to compute crop insurance from a postgreSQL user-defined function
     """
     names = ('''ayp_base_rate arp_base_rate arphpe_base_rate scoyp_base_rate
              scorp_base_rate scorphpe_base_rate ecoyp_base_rate ecorp_base_rate
-             ecorphpe_base_rate expected_yield subcounty_rate rate_method_id
+             ecorphpe_base_rate subcounty_rate rate_method_id
              refyield refrate exponent fixedrate enterprise_residual_factor_r
              enterprise_residual_factor_y rate_differential_factor
              enterprise_discount_factor option_rate draw subsidy_ent subsidy_ay
              subsidy_ar subsidy_s subsidy_ey subsidy_er''').split()
 
-    shapes = [(5,), (5,), (5,), (8,), (8,), (8,), (2,), (2,), (2,), (1,),
+    shapes = [(5,), (5,), (5,), (8,), (8,), (8,), (2,), (2,), (2,),
               (1,), (1,), (2,), (2,), (2,), (2,), (8, 2), (8, 2), (8, 2), (8, 6),
               (2,), (500, 2), (8,), (5,), (5,), (1,), (1,), (1,)]
 
     cmd = 'SELECT ' + ', '.join(names) + """
               FROM
-              prem_data_pre_pvol(%s, %s, %s, %s, %s, %s, %s)
+              prem_data(%s, %s, %s, %s, %s, %s, %s)
               AS (ayp_base_rate real[], arp_base_rate real[],
                   arphpe_base_rate real[], scoyp_base_rate real[],
                   scorp_base_rate real[], scorphpe_base_rate real[],
                   ecoyp_base_rate real[], ecorp_base_rate real[],
-                  ecorphpe_base_rate real[], expected_yield real,
+                  ecorphpe_base_rate real[],
                   subcounty_rate real, rate_method_id char(1), refyield real[],
                   refrate real[], exponent real[], fixedrate real[],
                   enterprise_residual_factor_r real[],
@@ -675,57 +669,6 @@ def get_crop_ins_data_pre_pvol(state_id, county_code, commodity_id, commodity_ty
 
     converted = (None if it is None else
                  it if name == 'rate_method_id' else
-                 np.array(it).reshape(shp) if len(shp) == 2 else
-                 np.array(it) if shp[0] > 1 else
-                 float(it)
-                 for it, shp, name in zip(record, shapes, names))
-
-    return zip(names, converted)
-
-
-def get_crop_ins_data(state_id, county_code, commodity_id, commodity_type_id,
-                      practice, subcounty_id=None):
-    """
-    Get data needed to compute crop insurance from a postgreSQL user-defined function
-    """
-    names = ('''ayp_base_rate arp_base_rate arphpe_base_rate scoyp_base_rate
-             scorp_base_rate scorphpe_base_rate ecoyp_base_rate ecorp_base_rate
-             ecorphpe_base_rate expected_yield projected_price
-             price_volatility_factor subcounty_rate rate_method_id refyield refrate
-             exponent fixedrate enterprise_residual_factor_r
-             enterprise_residual_factor_y rate_differential_factor
-             enterprise_discount_factor option_rate draw subsidy_ent subsidy_ay
-             subsidy_ar subsidy_s subsidy_ey subsidy_er''').split()
-
-    shapes = [(5,), (5,), (5,), (8,), (8,), (8,), (2,), (2,), (2,), (1,),
-              (1,), (1,), (1,), (1,), (2,), (2,), (2,), (2,), (8, 2), (8, 2), (8, 2),
-              (8, 6), (2,), (500, 2), (8,), (5,), (5,), (1,), (1,), (1,)]
-
-    cmd = """ SELECT """ + ', '.join(names) + """
-              FROM
-              public.prem_data(%s, %s, %s, %s, %s, %s)
-              AS (ayp_base_rate real[], arp_base_rate real[],
-                  arphpe_base_rate real[], scoyp_base_rate real[],
-                  scorp_base_rate real[], scorphpe_base_rate real[],
-                  ecoyp_base_rate real[], ecorp_base_rate real[],
-                  ecorphpe_base_rate real[], expected_yield real,
-                  projected_price real, price_volatility_factor smallint,
-                  subcounty_rate real, rate_method_id char(1), refyield real[],
-                  refrate real[], exponent real[], fixedrate real[],
-                  enterprise_residual_factor_r real[],
-                  enterprise_residual_factor_y real[],
-                  rate_differential_factor real[],
-                  enterprise_discount_factor real[],
-                  option_rate real[], draw real[], subsidy_ent real[],
-                  subsidy_ay real[], subsidy_ar real[], subsidy_s real,
-                  subsidy_ey real, subsidy_er real);
-          """
-    record = call_postgres_func(cmd, state_id, county_code, commodity_id,
-                                commodity_type_id, practice, subcounty_id)
-
-    converted = (None if it is None else
-                 it if name == 'rate_method_id' else
-                 int(it) if name == 'price_volatility_factor' else
                  np.array(it).reshape(shp) if len(shp) == 2 else
                  np.array(it) if shp[0] > 1 else
                  float(it)

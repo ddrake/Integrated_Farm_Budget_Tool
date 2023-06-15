@@ -24,6 +24,7 @@ class FarmCropUpdateForm(ModelForm):
         super().__init__(*args, **kwargs)
         self.fields['subcounty'].choices = self.instance.allowed_subcounties()
         self.fields['ins_practice'].choices = self.instance.allowed_practices()
+        self.fields['coverage_type'].choices = self.instance.allowed_coverage_types()
 
     class Meta:
         model = FarmCrop

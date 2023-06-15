@@ -1,4 +1,3 @@
-from datetime import datetime
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.core.validators import (
     MinValueValidator as MinVal, MaxValueValidator as MaxVal)
@@ -6,7 +5,7 @@ from django.db import models
 from django.contrib.postgres.fields import ArrayField
 from django.utils.translation import gettext_lazy as _
 from ext.models import (Subcounty, SubcountyAvail, BudgetCrop, FarmCropType,
-                        InsCropType, PricePrevyear, Price, ExpectedYield)
+                        InsCropType, PriceYield, AreaRate)
 from core.models.premium import Premium
 from core.models.indemnity import Indemnity
 from .farm_year import FarmYear, BaselineFarmYear
@@ -114,6 +113,11 @@ class FarmCrop(models.Model):
     gov_pmt_portion = models.FloatField(null=True, blank=True)
     prems_computed_for = models.DateField(null=True)
 
+    # RMA dates computed when the farm crop is created, never changed.
+    proj_price_disc_end = models.DateField(null=True)
+    harv_price_disc_end = models.DateField(null=True)
+    cty_yield_final = models.DateField(null=True)
+
     def __str__(self):
         irr = 'Irrigated' if self.is_irrigated() else 'Non-irrigated'
         return f'{self.farm_crop_type}, {irr}'
@@ -136,6 +140,17 @@ class FarmCrop(models.Model):
     # ------------------------------
     # Crop Insurance-related methods
     # ------------------------------
+    def allowed_coverage_types(self):
+        return ([(1, 'Farm (enterprise)')]
+                if AreaRate.objects.filter(
+                    state_id=self.farm_year.state_id,
+                    county_code=self.farm_year.county_code,
+                    crop_id=self.farm_crop_type.ins_crop_id,
+                    crop_type_id=self.ins_crop_type_id,
+                    practice=self.ins_practice,
+                    insurance_plan_id=4).count() == 0
+                else FarmCrop.COVERAGE_TYPES)
+
     def coverage_type_name(self):
         return (None if self.coverage_type is None else
                 dict(FarmCrop.COVERAGE_TYPES)[self.coverage_type])
@@ -156,57 +171,66 @@ class FarmCrop(models.Model):
             self.save()
         return self.crop_ins_prems
 
-    def rma_discovery_complete_on(self):
-        return datetime(self.farm_year.crop_year, 3, 1).date()
-
     def is_post_discovery_end(self):
-        return self.farm_year.get_model_run_date() >= self.rma_discovery_complete_on()
+        return self.farm_year.get_model_run_date() >= self.proj_price_disc_end
 
     def price_period_changed(self):
         """ used to invalidate cached premiums """
         pcf = self.prems_computed_for
         mrd = self.farm_year.get_model_run_date()
-        rco = self.rma_discovery_complete_on()
+        rco = self.proj_price_disc_end
         return pcf is None or pcf < rco <= mrd or mrd < rco <= pcf
 
     def ins_practice_choices(self):
         return [(p, FarmYear.IRR_PRACTICE[p]) for p in self.ins_practices]
 
-    def rma_proj_harv_price(self):
-        """ Needed for computing indemnity """
-        return (self.get_rma_proj_harv_price() if self.is_post_discovery_end()
-                else self.harvest_price())
-
-    def get_rma_proj_harv_price(self):
-        return Price.objects.get(
-            state_id=self.farm_year.state_id, county_code=self.farm_year.county_code,
-            crop_id=self.farm_crop_type.ins_crop_id,
-            crop_type_id=self.ins_crop_type_id).projected_price
-
-    def rma_expected_yield(self):
-        try:
-            return ExpectedYield.objects.get(
-                state_id=self.farm_year.state_id,
-                county_code=self.farm_year.county_code,
-                crop_id=self.farm_crop_type.ins_crop_id,
-                crop_type_id=self.ins_crop_type_id).expected_yield
-        except ObjectDoesNotExist:
-            return None
-
-    def prev_year_price_vol(self):
+    def prem_price_yield_data(self):
         """
-        Return the default price volatility factor (the previous year's value)
+        If model run is before price_discovery_end, we use the previous year's
+        price volatility factor and the current futures price as projected price
         """
-        return PricePrevyear.objects.get(
-            state_id=self.farm_year.state_id, county_code=self.farm_year.county_code,
-            crop_id=self.farm_crop_type.ins_crop_id,
-            crop_type_id=self.ins_crop_type_id).price_volatility_factor
+        post_discov = self.farm_year.get_model_run_date() > self.proj_price_disc_end
+        py = PriceYield.objects.get(
+            crop_year=self.farm_year.crop_year, state_id=self.farm_year.state_id,
+            county_code=self.farm_year.county_code,
+            crop_id=self.farm_crop_type.ins_crop_id, crop_type_id=self.ins_crop_type_id,
+            practice=self.ins_practice)
+        exp_yield = py.expected_yield
+        proj_price = py.projected_price if post_discov else self.harvest_price()
+        price_vol = (py.price_volatility_factor if post_discov else
+                     py.price_volatility_factor_prevyr)
+        return price_vol, proj_price, exp_yield
+
+    def indem_price_yield_data(self, pf=1, yf=1):
+        """
+        If model run is before price_discovery_end, we use the previous year's
+        price volatility factor and the current futures price as projected price
+        """
+        mrd = self.farm_year.get_model_run_date()
+        pre_discov = mrd <= self.proj_price_disc_end
+        pre_harv = mrd <= self.harv_price_disc_end
+        pre_cty_yield = mrd <= self.cty_yield_final
+        harv_price = self.harvest_price()
+        sens_harv_price = harv_price * pf
+        py = PriceYield.objects.get(
+            crop_year=self.farm_year.crop_year, state_id=self.farm_year.state_id,
+            county_code=self.farm_year.county_code,
+            crop_id=self.farm_crop_type.ins_crop_id, crop_type_id=self.ins_crop_type_id,
+            practice=self.ins_practice)
+        exp_yield = py.expected_yield
+        proj_price = harv_price if pre_discov else py.projected_price
+        harvest_price = sens_harv_price if pre_harv else py.harvest_price
+        cty_yield = (self.sens_cty_expected_yield(yf) if pre_cty_yield else
+                     py.final_yield)
+        return exp_yield, proj_price, harvest_price, cty_yield
 
     def set_prems(self):
         """
         Note: price_volatility factor and projected_price are ignored
         by compute_prems if is_post_discovery=True
         """
+        price_vol, projected_price, expected_yield = self.prem_price_yield_data()
+        print(f'{price_vol=}, {projected_price=}, {expected_yield=}')
         p = Premium()
         prems = p.compute_prems(
             state=self.farm_year.state_id,
@@ -221,10 +245,10 @@ class FarmCrop(models.Model):
             tause=self.ta_use,
             yieldexcl=self.ye_use,
             prot_factor=self.prot_factor,
-            price_volatility_factor=self.prev_year_price_vol(),
-            projected_price=self.harvest_price(),
-            subcounty=None if self.subcounty == '' else self.subcounty,
-            is_post_discovery=self.is_post_discovery_end(), )
+            price_volatility_factor=int(round(price_vol * 100)),
+            projected_price=projected_price,
+            expected_yield=expected_yield,
+            subcounty=None if self.subcounty == '' else self.subcounty, )
         if prems is not None:
             names = 'Farm County SCO ECO'.split()
             self.crop_ins_prems = {key: None if ar is None else ar.tolist()
@@ -235,11 +259,17 @@ class FarmCrop(models.Model):
             pf = self.farm_year.price_factor
         if yf is None:
             yf = self.farm_year.yield_factor
+        data = self.indem_price_yield_data(pf, yf)
+        expected_yield, proj_price, harvest_price, cty_yield = data
         indem = Indemnity(
-            self.ta_aph_yield, self.rma_proj_harv_price(), self.harvest_price(),
-            self.rma_expected_yield(), self.prot_factor,
-            self.farm_expected_yield(), self.cty_expected_yield())
-        indems = indem.compute_indems(pf, yf)
+            tayield=self.ta_aph_yield,
+            projected_price=proj_price,
+            harvest_futures_price=harvest_price,
+            rma_cty_expected_yield=expected_yield,
+            prot_factor=self.prot_factor,
+            farm_expected_yield=self.sens_farm_expected_yield(yf),
+            cty_expected_yield=cty_yield)
+        indems = indem.compute_indems()
         names = 'Farm County SCO ECO'.split()
         return {key: None if ar is None else ar.tolist()
                 for key, ar in zip(names, indems)}

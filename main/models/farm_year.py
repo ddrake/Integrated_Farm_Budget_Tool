@@ -7,7 +7,7 @@ from django.db import models
 from django.utils.translation import gettext_lazy as _
 from ext.models import (
     State, County, InsurableCropsForCty, MyaPreEstimate, MyaPostEstimate,
-    FarmCropType, MarketCropType, FsaCropType)
+    FarmCropType, MarketCropType, FsaCropType, InsuranceDates)
 from core.models.gov_pmt import GovPmt
 from . import util
 
@@ -158,10 +158,20 @@ class FarmYear(models.Model):
                 mkt = marketcrop.MarketCrop.objects.create(
                     farm_year=self, market_crop_type=mktct, fsa_crop=fsa)
                 mkts[mktct.id] = mkt
+
+            insdt = InsuranceDates.objects.get(
+                state_id=self.state_id, county_code=self.county_code,
+                market_crop_type_id=mktct.id)
+            proj_price_disc_end = insdt.proj_price_disc_end
+            harv_price_disc_end = insdt.harv_price_disc_mth_end
+            cty_yield_final = datetime(self.crop_year+1,
+                                       (4 if mktct.id in (3, 4) else 6), 16).date()
             farmcrop.FarmCrop.objects.create(
                 farm_year=self, ins_crop_type_id=row.crop_type_id,
                 farm_crop_type=fct, market_crop=mkt, ins_practices=row.practices,
-                ins_practice=row.practices[0])
+                ins_practice=row.practices[0], proj_price_disc_end=proj_price_disc_end,
+                harv_price_disc_end=harv_price_disc_end,
+                cty_yield_final=cty_yield_final)
 
     def calc_gov_pmt(self, pf=None, yf=None):
         """

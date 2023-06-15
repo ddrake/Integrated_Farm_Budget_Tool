@@ -437,36 +437,48 @@ class Price(models.Model):
     crop_id = models.SmallIntegerField(db_column='commodity_id')
     crop_type_id = models.SmallIntegerField(db_column='commodity_type_id')
     state_id = models.SmallIntegerField()
+    practice = models.SmallIntegerField()
     projected_price = SmallFloatField()
-    price_volatility_factor = models.SmallIntegerField()
+    price_volatility_factor = SmallFloatField()
+    expected_yield = SmallFloatField()
+    final_yield = SmallFloatField()
+    harvest_price = SmallFloatField()
+    crop_year = models.SmallIntegerField()
 
     class Meta:
         db_table = 'ext_price'
         managed = False
 
 
-class PricePrevyear(models.Model):
+class PriceYield(models.Model):
     id = models.IntegerField(primary_key=True)
+    state_id = models.SmallIntegerField()
     county_code = models.SmallIntegerField()
     crop_id = models.SmallIntegerField(db_column='commodity_id')
     crop_type_id = models.SmallIntegerField(db_column='commodity_type_id')
-    state_id = models.SmallIntegerField()
+    practice = models.SmallIntegerField()
+    expected_yield = SmallFloatField()
     projected_price = SmallFloatField()
     price_volatility_factor = models.SmallIntegerField()
+    final_yield = SmallFloatField()
+    harvest_price = SmallFloatField()
+    crop_year = models.SmallIntegerField()
+    price_volatility_factor_prevyr = SmallFloatField()
 
     class Meta:
-        db_table = 'ext_price_prevyear'
+        db_table = 'ext_priceyield'
         managed = False
 
 
-class ExpectedYield(models.Model):
+class AreaRate(models.Model):
     id = models.IntegerField(primary_key=True)
+    state_id = models.SmallIntegerField()
     county_code = models.SmallIntegerField()
     crop_id = models.SmallIntegerField(db_column='commodity_id')
     crop_type_id = models.SmallIntegerField(db_column='commodity_type_id')
-    state_id = models.SmallIntegerField()
-    expected_yield = SmallFloatField()
+    practice = models.SmallIntegerField()
+    insurance_plan_id = models.SmallIntegerField()
 
     class Meta:
-        db_table = 'ext_expectedyield'
+        db_table = 'ext_arearate'
         managed = False
