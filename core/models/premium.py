@@ -190,7 +190,9 @@ class Premium:
             self.prem_ent = self.prem_arc = self.prem_sco = self.prem_eco = None
         else:
             self.compute_prems_ent()
-            if self.expected_yield is None:
+            if (self.arp_base_rate is None
+                    or self.arphpe_base_rate is None
+                    or self.ayp_base_rate is None):
                 # print("Expected Yield is not available for county/crop",
                 #       "Can't compute Area premiums")
                 self.prem_arc = None

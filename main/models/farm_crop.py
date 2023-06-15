@@ -141,15 +141,17 @@ class FarmCrop(models.Model):
     # Crop Insurance-related methods
     # ------------------------------
     def allowed_coverage_types(self):
-        return ([(1, 'Farm (enterprise)')]
-                if AreaRate.objects.filter(
-                    state_id=self.farm_year.state_id,
-                    county_code=self.farm_year.county_code,
-                    crop_id=self.farm_crop_type.ins_crop_id,
-                    crop_type_id=self.ins_crop_type_id,
-                    practice=self.ins_practice,
-                    insurance_plan_id=4).count() == 0
-                else FarmCrop.COVERAGE_TYPES)
+        covtypes = ([(1, 'Farm (enterprise)')]
+                    if AreaRate.objects.filter(
+                        state_id=self.farm_year.state_id,
+                        county_code=self.farm_year.county_code,
+                        crop_id=self.farm_crop_type.ins_crop_id,
+                        crop_type_id=self.ins_crop_type_id,
+                        practice=self.ins_practice,
+                        insurance_plan_id=4).count() == 0
+                    else FarmCrop.COVERAGE_TYPES)
+        covtypes.insert(0, ('', '-'*9))
+        return covtypes
 
     def coverage_type_name(self):
         return (None if self.coverage_type is None else
