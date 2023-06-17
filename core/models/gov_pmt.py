@@ -11,7 +11,6 @@ downloaded for a crop year here:
 https://www.fsa.usda.gov/programs-and-services/arcplc_program/arcplc-program-data/index
 in the form of two spreadsheets, e.g. 2023_erp.xls and arcco_2023_data_2023-02-16.xlsx
 """
-from core.models.util import get_postgres_row
 
 
 class GovPmt():
@@ -25,10 +24,9 @@ class GovPmt():
     CAP_ON_BMK_COUNTY_REV = 0.1
     GUAR_REV_FRAC = 0.86
 
-    def __init__(self, crop_year=2023, state=17, county=119, crop_id=1, is_irr=False,
-                 plc_base_acres=4220, arcco_base_acres=0, plc_yield=160,
+    def __init__(self, plc_base_acres=4220, arcco_base_acres=0, plc_yield=160,
                  estimated_county_yield=190, effective_ref_price=3.70,
-                 natl_loan_rate=2.20, sens_mya_price=4.80):
+                 natl_loan_rate=2.20, sens_mya_price=4.80, benchmark_revenue=801.09):
 
         self.plc_base_acres = plc_base_acres
         self.arcco_base_acres = arcco_base_acres
@@ -37,8 +35,7 @@ class GovPmt():
         self.effective_ref_price = effective_ref_price
         self.natl_loan_rate = natl_loan_rate
         self.sens_mya_price = sens_mya_price
-        self.benchmark_revenue = get_benchmark_revenue(
-            crop_year, state, county, crop_id, is_irr)
+        self.benchmark_revenue = benchmark_revenue
 
     # Government Payment Totals
     # -------------------------
@@ -48,8 +45,9 @@ class GovPmt():
         Government Payments Y56:AA56: Sensitized total pre-sequestration payment
         over both programs.
         """
-        return round(self.arc_pmt_pre_sequest(yf) +
-                     self.plc_pmt_pre_sequest(), 2)
+        result = round(self.arc_pmt_pre_sequest(yf) +
+                       self.plc_pmt_pre_sequest(), 2)
+        return result
 
     # PLC
     # ---
@@ -60,7 +58,7 @@ class GovPmt():
         return (self.plc_payment_rate() * self.net_payment_acres_plc() *
                 self.plc_yield)
 
-    def plc_payment_rate(self, pf=1):
+    def plc_payment_rate(self):
         """
         Government Payments Y21:AA21: The price-sensitized PLC payment rate
         """
@@ -157,30 +155,3 @@ class GovPmt():
         Note: this is NOT the same as the county_rma_yield in the base class
         """
         return self.estimated_county_yield * yf
-
-
-def get_benchmark_revenue(crop_year, state_id, county_code, crop_id, is_irr):
-    """
-    Get the benchmark revenue values from govpmt_benchmark_rev
-    for the given parameters.   This is dumb, but necessary because there are three
-    different 'practices' 0=all, 1=irr, 2=non-irr.
-    """
-    # This may change if we get the county irr/non-irr acre allocations.
-    if is_irr:
-        query = '''SELECT benchmark_revenue
-                   FROM public.ext_govpmt_benchmark_rev
-                   WHERE crop_year=%s AND state_id=%s AND county_code=%s AND
-                   crop=%s AND is_irr=%s
-                   ;'''
-        record = get_postgres_row(query, crop_year, state_id, county_code,
-                                  crop_id, True)
-    else:
-        query = '''SELECT benchmark_revenue
-                   FROM public.ext_govpmt_benchmark_rev
-                   WHERE crop_year=%s AND state_id=%s AND county_code=%s AND
-                   crop=%s AND is_nonirr=%s
-                   ;'''
-        record = get_postgres_row(query, crop_year, state_id, county_code,
-                                  crop_id, True)
-
-    return record[0]

@@ -195,7 +195,7 @@ class BudgetTable(object):
 
     def get_gov_pmt(self, scaling='kd'):
         if self.gov_pmt is None:
-            self.gov_pmt = [fc.gov_pmt_portion for fc in self.farm_crops]
+            self.gov_pmt = [fc.gov_pmt_portion() for fc in self.farm_crops]
         return self.getitems(self.gov_pmt, None, scaling, False)
 
     def get_other_gov_pmts(self, scaling='kd'):
@@ -407,7 +407,7 @@ class BudgetTable(object):
     def get_yield_adj_to_nonland_costs(self, scaling='kd'):
         if self.yield_adj_to_nonland_costs is None:
             self.yield_adj_to_nonland_costs = [
-                var * nlc * (1 - self.farm_year.yield_factor) for var, nlc in
+                var * nlc * (self.farm_year.yield_factor - 1) for var, nlc in
                 zip((fc.farmbudgetcrop.yield_variability for fc in self.farm_crops),
                     self.total_nonland_costs)]
         return self.getitems(self.yield_adj_to_nonland_costs, None, scaling, False)
@@ -455,9 +455,8 @@ class BudgetTable(object):
         return self.getitems(self.adjusted_land_rent, None, scaling, False)
 
     def get_owned_land_cost(self, scaling='kd'):
-        land_cost = (self.farm_year.total_owned_land_expense() -
-                     0 if self.is_cash_flow else
-                     self.farm_year.annual_land_principal_pmt)
+        land_cost = self.farm_year.total_owned_land_expense(
+            include_principal=self.is_cash_flow)
         acres = sum(self.acres)
         if self.owned_land_cost is None:
             self.owned_land_cost = [land_cost*ac/acres for ac in self.acres]

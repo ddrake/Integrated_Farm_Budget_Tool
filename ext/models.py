@@ -82,14 +82,6 @@ class InsPractice(models.Model):
         managed = False
 
 
-class SoybeanInsTypeForState(models.Model):
-    state_id = models.SmallIntegerField(primary_key=True)
-    soybean_ins_type = models.SmallIntegerField()
-
-    class Meta:
-        managed = False
-
-
 class Subcounty(models.Model):
     id = models.CharField(max_length=3, primary_key=True)
     name = models.CharField(max_length=20, null=True)
@@ -223,17 +215,54 @@ class MyaPreEstimate(models.Model):
         indexes = [models.Index('crop_year', name='mya_pre_crop_year'), ]
 
 
-class MyaPostEstimate(models.Model):
+# class MyaPostEstimate(models.Model):
+#     """
+#     Used to get sensitized MYA prices when the model_run_date is after
+#     the May WASDE report
+#     """
+#     crop_year = models.SmallIntegerField()
+#     forecast_month = models.CharField(max_length=8)
+#     wasde_release_date = models.DateField(verbose_name='WASDE release date')
+#     wasde_estimated_price = models.FloatField(null=True)
+#     assumed_pct_locked = models.FloatField()
+#     fsa_crop_type = models.ForeignKey(FsaCropType, on_delete=models.CASCADE)
+
+#     @classmethod
+#     def get_mya_post_estimate(cls, crop_year, for_date, pf=1):
+#         """
+#         Get the sensitized MYA prices for each FSA crop type for the crop year
+#         and the given date.
+#         """
+#         rows = (MyaPostEstimate.objects
+#                 .filter(wasde_release_date__lte=for_date, crop_year=crop_year)
+#                 .order_by("-wasde_release_date", "fsa_crop_type_id")[:3])
+#         mya_prices = [row.wasde_estimated_price *
+#                       (row.assumed_pct_locked + pf * (1 - row.assumed_pct_locked))
+#                       for row in rows]
+#         return mya_prices
+
+#     class Meta:
+#         managed = False
+#         indexes = [models.Index('crop_year', name='mya_post_crop_year'),
+#                    models.Index('wasde_release_date',
+#                                 name='mya_post_wasde_release'), ]
+
+
+class MyaPost(models.Model):
     """
-    Used to get sensitized MYA prices when the model_run_date is after
-    the May WASDE report
+    View to get sensitized MYA prices when the model_run_date is after the
+    May WASDE report
     """
+    id = models.IntegerField(primary_key=True)
     crop_year = models.SmallIntegerField()
     forecast_month = models.CharField(max_length=8)
     wasde_release_date = models.DateField(verbose_name='WASDE release date')
-    wasde_estimated_price = models.FloatField(null=True)
-    assumed_pct_locked = models.FloatField()
-    fsa_crop_type = models.ForeignKey(FsaCropType, on_delete=models.CASCADE)
+    corn_price = models.FloatField(null=True)
+    beans_price = models.FloatField(null=True)
+    wheat_price = models.FloatField(null=True)
+    corn_pct_locked = models.FloatField(null=True)
+    beans_pct_locked = models.FloatField(null=True)
+    wheat_pct_locked = models.FloatField(null=True)
 
     @classmethod
     def get_mya_post_estimate(cls, crop_year, for_date, pf=1):
@@ -241,18 +270,17 @@ class MyaPostEstimate(models.Model):
         Get the sensitized MYA prices for each FSA crop type for the crop year
         and the given date.
         """
-        rows = (MyaPostEstimate.objects
-                .filter(wasde_release_date__lte=for_date, crop_year=crop_year)
-                .order_by("-wasde_release_date", "fsa_crop_type")[:3])
-        mya_prices = [row.wasde_estimated_price *
-                      (row.assumed_pct_locked + pf * (1 - row.assumed_pct_locked))
-                      for row in rows]
+        row = (MyaPost.objects
+               .filter(wasde_release_date__lte=for_date, crop_year=crop_year)
+               .order_by("-wasde_release_date")[0])
+        prices = [row.corn_price, row.beans_price, row.wheat_price]
+        pct_locked = [row.corn_pct_locked, row.beans_pct_locked, row.wheat_pct_locked]
+        mya_prices = [pr * (plk + pf * (1 - plk))
+                      for pr, plk in zip(prices, pct_locked)]
         return mya_prices
 
     class Meta:
         managed = False
-        indexes = [models.Index('crop_year', name='mya_post_crop_year'),
-                   models.Index('wasde_release_date', name='mya_post_wasde_release'), ]
 
 
 class MarketCropType(models.Model):
@@ -481,4 +509,18 @@ class AreaRate(models.Model):
 
     class Meta:
         db_table = 'ext_arearate'
+        managed = False
+
+
+class BenchmarkRevenue(models.Model):
+    id = models.IntegerField(primary_key=True)
+    state_id = models.SmallIntegerField()
+    county_code = models.SmallIntegerField()
+    crop = models.SmallIntegerField()
+    practice = models.SmallIntegerField()
+    crop_year = models.SmallIntegerField()
+    benchmark_revenue = SmallFloatField()
+
+    class Meta:
+        db_table = 'ext_govpmt_benchmark_revenue'
         managed = False

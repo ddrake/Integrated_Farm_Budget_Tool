@@ -43,36 +43,43 @@ class FsaCrop(models.Model):
                                   related_name='fsa_crops')
     fsa_crop_type = models.ForeignKey(FsaCropType, on_delete=models.CASCADE)
 
-    def cty_expected_yield(self):
-        """
-        Needed for gov_pmt.
-        Get weighted average of market crop county yields
-        """
-        mcdata = [(mc.planted_acres(), mc.cty_expected_yield())
-                  for mc in self.market_crops.all()]
-        acres, _ = zip(*mcdata)
-        if sum(acres) == 0:
-            return 0
-        return sum((ac*yld for ac, yld in mcdata)) / sum(acres)
-
     def planted_acres(self):
         return sum((mc.planted_acres() for mc in self.market_crops.all()))
 
-    def is_irrigated(self):
-        irr_acres = sum((mc.planted_acres() * (1 if mc.is_irrigated() else 0)
-                         for mc in self.market_crops.all()))
-        return irr_acres > self.planted_acres() / 2
+    def farm_crops(self):
+        return [fc for mc in self.market_crops.all() for fc in mc.farm_crops.all()]
 
-    def gov_payment(self, sens_mya_price, yf=1):
+    def cty_expected_yield(self, yf=None):
+        """
+        Get weighted average of farm crop county yields
+        TODO: This needs to check model run date and use RMA final yields
+        once they are available (and ignore any yield factor).
+        """
+        if yf is None:
+            yf = self.farm_year.yield_factor
+        result = (sum((fc.cty_expected_yield() * fc.planted_acres
+                       for fc in self.farm_crops())) /
+                  self.farm_year.total_planted_acres() * yf)
+        return result
+
+    def benchmark_revenue(self):
+        result = (sum((fc.benchmark_revenue * fc.planted_acres
+                       for fc in self.farm_crops())) /
+                  self.farm_year.total_planted_acres())
+        return result
+
+    def gov_payment(self, sens_mya_price, yf=None):
+        if yf is None:
+            yf = self.farm_year.yield_factor
         rp = ReferencePrices.objects.get(
             fsa_crop_type_id=self.fsa_crop_type_id,
             crop_year=self.farm_year.crop_year)
-        gp = GovPmt(
-            self.farm_year.crop_year, self.farm_year.state.id,
-            self.farm_year.county_code, self.fsa_crop_type_id,
-            self.is_irrigated(), self.plc_base_acres,
-            self.arcco_base_acres, self.plc_yield, self.cty_expected_yield(),
-            rp.effective_ref_price, rp.natl_loan_rate, sens_mya_price)
+        gp = GovPmt(plc_base_acres=self.plc_base_acres,
+                    arcco_base_acres=self.arcco_base_acres, plc_yield=self.plc_yield,
+                    estimated_county_yield=self.cty_expected_yield(yf=yf),
+                    effective_ref_price=rp.effective_ref_price,
+                    natl_loan_rate=rp.natl_loan_rate, sens_mya_price=sens_mya_price,
+                    benchmark_revenue=self.benchmark_revenue())
         return gp.prog_pmt_pre_sequest(yf)
 
     def clean(self):
@@ -84,6 +91,9 @@ class FsaCrop(models.Model):
 
     def __str__(self):
         return f'{self.fsa_crop_type}'
+
+    class Meta:
+        ordering = ['fsa_crop_type_id']
 
 
 class BaselineFsaCrop(models.Model):

@@ -6,7 +6,7 @@ from django.core.validators import (
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 from ext.models import (
-    State, County, InsurableCropsForCty, MyaPreEstimate, MyaPostEstimate,
+    State, County, InsurableCropsForCty, MyaPreEstimate, MyaPost,
     FarmCropType, MarketCropType, FsaCropType, InsuranceDates)
 from core.models.gov_pmt import GovPmt
 from . import util
@@ -63,7 +63,7 @@ class FarmYear(models.Model):
     land_repairs = models.FloatField(
         default=0, validators=[MinVal(0), MaxVal(999999)],)
     eligible_persons_for_cap = models.SmallIntegerField(
-        default=0, validators=[MinVal(0), MaxVal(3)],
+        default=1, validators=[MinVal(0), MaxVal(3)],
         verbose_name="# persons for cap",
         help_text="Number of eligible 'persons' for FSA payment caps.")
     other_nongrain_income = models.FloatField(
@@ -94,17 +94,12 @@ class FarmYear(models.Model):
         default=1, validators=[MinVal(0), MaxVal(2)],
         verbose_name='yield sensititivity factor')
 
-    def total_owned_land_expense(self):
-        return (self.annual_land_int_expense + self.annual_land_principal_pmt +
-                self.property_taxes + self.land_repairs)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.totalplantedacres = None
 
     def report_type_name(self):
         return dict(FarmYear.REPORT_TYPES)[self.report_type]
-
-    def frac_var_rent(self):
-        return (0 if self.cropland_acres_rented == 0 else
-                (self.cropland_acres_rented - self.cash_rented_acres) /
-                self.cropland_acres_rented)
 
     def get_model_run_date(self):
         # TODO: add logic to handle old farm years
@@ -127,6 +122,12 @@ class FarmYear(models.Model):
         county_name = County.objects.get(
             state_id=self.state, code=self.county_code).name
         return f'{county_name} County {self.state}'
+
+    def total_planted_acres(self):
+        if self.totalplantedacres is None:
+            self.totalplantedacres = sum((fc.planted_acres
+                                          for fc in self.farm_crops.all()))
+        return self.totalplantedacres
 
     def add_insurable_farm_crops(self):
         """
@@ -173,7 +174,7 @@ class FarmYear(models.Model):
                 harv_price_disc_end=harv_price_disc_end,
                 cty_yield_final=cty_yield_final)
 
-    def calc_gov_pmt(self, pf=None, yf=None):
+    def calc_gov_pmt(self, pf=None, yf=None, is_per_acre=False):
         """
         Compute the total, capped government payment and cache apportioned values
         in the corresponding FSA crops.
@@ -182,41 +183,33 @@ class FarmYear(models.Model):
         """
         if pf is None:
             pf = self.price_factor
-
         if yf is None:
             yf = self.price_factor
-
         if self.get_model_run_date() < self.wasde_first_mya_release_on():
             mya_prices = MyaPreEstimate.get_mya_pre_estimate(
-                self.crop_year, self.get_model_run_date(), pf)
+                self.crop_year, self.get_model_run_date(), pf=pf)
         else:
-            mya_prices = MyaPostEstimate.get_mya_post_estimate(
-                self.crop_year, self.get_model_run_date(), pf)
-        mya_prices = {k: v for k, v in zip([1, 2, 3], mya_prices)}
-        total = 0
-        for fc in self.fsa_crops.all():
-            sens_mya_price = mya_prices[fc.fsa_crop_type.id] * pf
-            total += fc.gov_payment(sens_mya_price, yf)
+            mya_prices = MyaPost.get_mya_post_estimate(
+                self.crop_year, self.get_model_run_date(), pf=pf)
+        total = sum((fc.gov_payment(mya_prices[i], yf=yf)
+                     for i, fc in enumerate(self.fsa_crops.all())))
         total_pmt = round(
             min(FarmYear.FSA_PMT_CAP_PER_PRINCIPAL * self.eligible_persons_for_cap,
                 total * (1 - GovPmt.SEQUEST_FRAC)))
-        self.apportion_gov_pmt(total_pmt)
-        return total_pmt
+        result = total_pmt / self.total_planted_acres() if is_per_acre else total_pmt
+        return result
 
-    def total_planted_acres(self):
-        return sum((fc.planted_acres for fc in self.farm_crops.all()))
+    # -----------------------
+    # Expense-related methods
+    # -----------------------
+    def total_owned_land_expense(self, include_principal=False):
+        return (self.annual_land_int_expense + self.property_taxes + self.land_repairs +
+                self.annual_land_principal_pmt if include_principal else 0)
 
-    def apportion_gov_pmt(self, total_pmt):
-        """
-        Apportion the government payment among farm crops based on acres, caching
-        these values in farm crops.
-        """
-        total_acres = self.total_planted_acres()
-        if total_acres == 0:
-            return
-        for fc in self.farm_crops.all():
-            fc.gov_pmt_portion = fc.planted_acres * total_pmt / total_acres
-            fc.save()
+    def frac_var_rent(self):
+        return (0 if self.cropland_acres_rented == 0 else
+                (self.cropland_acres_rented - self.cash_rented_acres) /
+                self.cropland_acres_rented)
 
     # ---------------------
     # Validation and saving
@@ -249,8 +242,8 @@ class FarmYear(models.Model):
     class Meta:
         constraints = [
             models.UniqueConstraint('farm_name', 'user', 'crop_year',
-                                    name='farm_name_unique_for_user_crop_year'),
-        ]
+                                    name='farm_name_unique_for_user_crop_year'), ]
+        ordering = ['-crop_year', 'farm_name']
 
 
 class BaselineFarmYear(models.Model):

@@ -89,8 +89,7 @@ class FarmYearFarmCropListView(ListView):
 
     def get_queryset(self):
         self.farmyear = get_object_or_404(FarmYear, pk=self.kwargs['farmyear'])
-        return FarmCrop.objects.filter(
-            farm_year=self.farmyear).order_by('farm_crop_type_id')
+        return FarmCrop.objects.filter(farm_year=self.farmyear)
 
 
 class FarmYearFarmBudgetCropListView(ListView):
@@ -98,8 +97,7 @@ class FarmYearFarmBudgetCropListView(ListView):
 
     def get_queryset(self):
         self.farmyear = get_object_or_404(FarmYear, pk=self.kwargs['farmyear'])
-        return FarmBudgetCrop.objects.filter(
-            farm_year=self.farmyear).order_by('farm_crop_type_id')
+        return FarmBudgetCrop.objects.filter(farm_year=self.farmyear)
 
 
 class FarmYearMarketCropListView(ListView):
@@ -107,8 +105,7 @@ class FarmYearMarketCropListView(ListView):
 
     def get_queryset(self):
         self.farmyear = get_object_or_404(FarmYear, pk=self.kwargs['farmyear'])
-        return MarketCrop.objects.filter(
-            farm_year=self.farmyear).order_by('market_crop_type_id')
+        return MarketCrop.objects.filter(farm_year=self.farmyear)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -123,8 +120,7 @@ class FarmYearFsaCropListView(ListView):
 
     def get_queryset(self):
         self.farmyear = get_object_or_404(FarmYear, pk=self.kwargs['farmyear'])
-        return FsaCrop.objects.filter(
-            farm_year=self.farmyear).order_by('fsa_crop_type_id')
+        return FsaCrop.objects.filter(farm_year=self.farmyear)
 
 
 class FarmCropUpdateView(UpdateView):

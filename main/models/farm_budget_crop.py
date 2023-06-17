@@ -106,6 +106,9 @@ class FarmBudgetCrop(models.Model):
         descr = '' if self.description == '' else f' {self.description},'
         return (f'{self.state.abbr},{descr}{rotstr}')
 
+    class Meta:
+        ordering = ['farm_crop_type_id']
+
 
 class BaselineFarmBudgetCrop(models.Model):
     farm_crop_type = models.ForeignKey(FarmCropType, on_delete=models.CASCADE)

@@ -48,14 +48,15 @@ class MarketCrop(models.Model):
             priced_on = self.farm_year.get_model_run_date()
 
         rec = FuturesPrice.objects.raw("""
-        SELECT fp.id, fp.croptype, fp.exchange, fp.futures_month, fp.ticker,
-               fp.priced_on, fp.price, idt.crop_year, idt.state_id, idt.county_code,
-               idt.market_crop_type_id
+        SELECT fp.id, fp.exchange, fp.futures_month, fp.ticker, fp.priced_on, fp.price
             FROM ext_futuresprice fp
-            INNER JOIN ext_insurancedates idt
+            INNER JOIN (
+            SELECT crop_year, state_id, county_code, market_crop_type_id, ticker
+            FROM ext_insurancedates idt
+            WHERE crop_year=%s and state_id=%s and county_code=%s
+              and market_crop_type_id=%s) idt
             ON fp.ticker = idt.ticker
-            where crop_year=%s and state_id=%s and county_code=%s
-            and fp.market_crop_type_id=%s and fp.priced_on <= %s
+            WHERE fp.priced_on <= %s
             order by priced_on desc limit 1;
         """, params=[self.farm_year.crop_year, self.farm_year.state_id,
                      self.farm_year.county_code, self.market_crop_type_id,
@@ -81,6 +82,9 @@ class MarketCrop(models.Model):
         return (sum((ac*yld for ac, yld in
                      ((fc.planted_acres, fc.cty_expected_yield())
                       for fc in self.farm_crops.all()))) / acre_sum)
+
+    class Meta:
+        ordering = ['market_crop_type_id']
 
 
 class BaselineMarketCrop(models.Model):
