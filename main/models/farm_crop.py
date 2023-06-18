@@ -360,8 +360,9 @@ class FarmCrop(models.Model):
         return self.planted_acres * self.sens_farm_expected_yield(yf)
 
     def fut_contracted_bu(self):
-        return (self.market_crop.contracted_bu *
-                self.planted_acres / self.market_crop.planted_acres())
+        mcacres = self.market_crop.planted_acres()
+        return (0 if mcacres == 0 else (self.market_crop.contracted_bu *
+                self.planted_acres / mcacres))
 
     def sens_fut_uncontracted_bu(self, yf=None):
         if yf is None:
@@ -389,10 +390,12 @@ class FarmCrop(models.Model):
             pf = self.farm_year.price_factor
         if yf is None:
             yf = self.farm_year.yield_factor
-        return (self.gross_rev(pf, yf, sprice) /
-                (self.planted_acres if is_per_acre else 1) -
+        acres = self.planted_acres
+        return (0 if acres == 0 else
+                self.gross_rev(pf, yf, sprice) /
+                (acres if is_per_acre else 1) -
                 self.total_cost(pf, yf, is_cash_flow, sprice, bprice) *
-                (1 if is_per_acre else self.planted_acres))
+                (1 if is_per_acre else acres))
 
     def gross_rev(self, pf=None, yf=None, sprice=None):
         if sprice is None and pf is None:
@@ -409,11 +412,13 @@ class FarmCrop(models.Model):
             pf = self.farm_year.price_factor
         if yf is None:
             yf = self.farm_year.yield_factor
-        return (self.grain_revenue(pf, yf, sprice) /
-                (self.planted_acres if is_per_acre else 1) +
+        acres = self.planted_acres
+        return (0 if acres == 0 else
+                self.grain_revenue(pf, yf, sprice) /
+                (acres if is_per_acre else 1) +
                 (self.farmbudgetcrop.other_gov_pmts +
                  self.farmbudgetcrop.other_revenue) *
-                (1 if is_per_acre else self.planted_acres))
+                (1 if is_per_acre else acres))
 
     def noncontract_fut_revenue(self, pf=None, yf=None, sprice=None):
         if sprice is None and pf is None:
@@ -509,11 +514,13 @@ class FarmCrop(models.Model):
             pf = self.farm_year.price_factor
         if yf is None:
             yf = self.farm_year.yield_factor
+        acres = self.farm_year.total_planted_acres()
         result = (
             self.farmbudgetcrop.rented_land_costs +
             self.revenue_based_adj_to_land_rent(pf, yf, sprice, bprice) +
-            (self.farm_year.total_owned_land_expense(include_principal=is_cash_flow) /
-             self.farm_year.total_planted_acres()))
+            (0 if acres == 0 else
+             self.farm_year.total_owned_land_expense(include_principal=is_cash_flow) /
+             acres))
         return result
 
     def total_cost(self, pf=None, yf=None, is_cash_flow=False,
@@ -551,7 +558,8 @@ class FarmCrop(models.Model):
             pf = self.farm_year.price_factor
         if yf is None:
             yf = self.farm_year.yield_factor
-        return self.grain_revenue(pf, yf) / self.sens_production_bu(yf)
+        bu = self.sens_production_bu(yf)
+        return 0 if bu == 0 else self.grain_revenue(pf, yf) / bu
 
     # --------------
     # Budget methods

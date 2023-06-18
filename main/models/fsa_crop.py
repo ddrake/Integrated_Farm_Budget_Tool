@@ -57,15 +57,17 @@ class FsaCrop(models.Model):
         """
         if yf is None:
             yf = self.farm_year.yield_factor
-        result = (sum((fc.cty_expected_yield() * fc.planted_acres
-                       for fc in self.farm_crops())) /
-                  self.farm_year.total_planted_acres() * yf)
+        acres = self.farm_year.total_planted_acres()
+        result = (0 if acres == 0 else
+                  sum((fc.cty_expected_yield() * fc.planted_acres
+                       for fc in self.farm_crops())) / acres * yf)
         return result
 
     def benchmark_revenue(self):
-        result = (sum((fc.benchmark_revenue * fc.planted_acres
-                       for fc in self.farm_crops())) /
-                  self.farm_year.total_planted_acres())
+        acres = self.farm_year.total_planted_acres()
+        result = (0 if acres == 0 else
+                  sum((fc.benchmark_revenue * fc.planted_acres
+                       for fc in self.farm_crops())) / acres)
         return result
 
     def gov_payment(self, sens_mya_price, yf=None):

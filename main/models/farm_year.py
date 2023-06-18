@@ -196,7 +196,9 @@ class FarmYear(models.Model):
         total_pmt = round(
             min(FarmYear.FSA_PMT_CAP_PER_PRINCIPAL * self.eligible_persons_for_cap,
                 total * (1 - GovPmt.SEQUEST_FRAC)))
-        result = total_pmt / self.total_planted_acres() if is_per_acre else total_pmt
+        acres = self.total_planted_acres()
+        result = ((total_pmt / acres) if is_per_acre and acres > 0 else 0 if is_per_acre
+                  else total_pmt)
         return result
 
     # -----------------------
