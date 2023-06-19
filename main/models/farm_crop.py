@@ -160,7 +160,7 @@ class FarmCrop(models.Model):
                         crop_type_id=self.ins_crop_type_id,
                         practice=self.ins_practice,
                         insurance_plan_id=4).count() == 0
-                    else FarmCrop.COVERAGE_TYPES)
+                    else FarmCrop.COVERAGE_TYPES[:])
         covtypes.insert(0, ('', '-'*9))
         return covtypes
 

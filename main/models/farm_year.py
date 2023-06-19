@@ -80,13 +80,13 @@ class FarmYear(models.Model):
     # model run date must be clamped between these values.
     # At some point we may want to trigger an update based on this field changing.
     # Should it be inactive for old crop years?
-    model_run_date = models.DateField(
+    manual_model_run_date = models.DateField(
         default=datetime.today,  # TODO: validate range
-        help_text=('The date for which "current" futures prices and other ' +
+        help_text=('Manually-set date for which "current" futures prices and other ' +
                    'date-specific values are looked up.'))
     is_model_run_date_manual = models.BooleanField(
         default=False,
-        help_text='Set the model run date manually (advanced).')
+        help_text='Use the manually-set model run date (advanced).')
     price_factor = models.FloatField(
         default=1, validators=[MinVal(0), MaxVal(10)],
         verbose_name='price sensititivity factor')
@@ -103,10 +103,10 @@ class FarmYear(models.Model):
 
     def get_model_run_date(self):
         # TODO: add logic to handle old farm years
+        mmrd = self.manual_model_run_date
         if not self.is_model_run_date_manual:
-            self.model_run_date = datetime.today().date()
-        return (self.model_run_date.date() if hasattr(self.model_run_date, 'date') else
-                self.model_run_date)
+            mmrd = datetime.today().date()
+        return mmrd.date() if hasattr(mmrd, 'date') else mmrd
 
     def wasde_first_mya_release_on(self):
         return datetime(self.crop_year, 5, 10).date()
@@ -218,11 +218,11 @@ class FarmYear(models.Model):
     # ---------------------
 
     def clean(self):
+        mmrd = self.manual_model_run_date
         first_date = datetime(self.crop_year, 1, 11).date()
         last_date = (datetime.now() + timedelta(days=1)).date()
-        isdatetime = hasattr(self.model_run_date, 'date')
-        model_run_date = (self.model_run_date.date() if isdatetime else
-                          self.model_run_date)
+        isdatetime = hasattr(mmrd, 'date')
+        model_run_date = mmrd.date() if isdatetime else mmrd
         if model_run_date < first_date:
             raise ValidationError({'model_run_date': _(
                 "The earliest a model run date can be set " +
