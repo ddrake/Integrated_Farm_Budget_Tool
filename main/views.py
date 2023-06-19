@@ -13,6 +13,7 @@ from .models.farm_budget_crop import FarmBudgetCrop
 from .models.market_crop import MarketCrop
 from .models.fsa_crop import FsaCrop
 from .models.budget_table import BudgetTable
+from .models.sens_table import SensTable
 from ext.models import County
 from .forms import FarmYearCreateForm, FarmCropUpdateForm
 
@@ -69,8 +70,8 @@ class FarmYearDeleteView(DeleteView):
 class FarmYearUpdateView(UpdateView):
     model = FarmYear
     template_name_suffix = "_update_form"
-    fields = ['cropland_acres_owned', 'cropland_acres_rented', 'cash_rented_acres',
-              'var_rent_cap_floor_frac', 'annual_land_int_expense',
+    fields = ['farm_name', 'cropland_acres_owned', 'cropland_acres_rented',
+              'cash_rented_acres', 'var_rent_cap_floor_frac', 'annual_land_int_expense',
               'annual_land_principal_pmt', 'property_taxes', 'land_repairs',
               'eligible_persons_for_cap', 'other_nongrain_income',
               'other_nongrain_expense', 'price_factor', 'yield_factor',
@@ -177,5 +178,13 @@ class DetailedBudgetView(TemplateView):
         return context
 
 
-class TestView(TemplateView):
-    template_name = 'main/test.html'
+class SensitivityTableView(TemplateView):
+    template_name = 'main/sensitivity_table.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        farmyear = kwargs.get('farmyear', None)
+        st = SensTable(farmyear)
+        context['tables'] = st.get_all_tables()
+        context['info'] = st.get_info()
+        return context

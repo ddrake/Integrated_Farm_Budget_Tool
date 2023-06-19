@@ -39,6 +39,9 @@ class MarketCrop(models.Model):
     def __str__(self):
         return f'{self.market_crop_type}'
 
+    def harvest_price(self):
+        return self.harvest_futures_price_info(price_only=True)
+
     def harvest_futures_price_info(self, priced_on=None, price_only=False):
         """
         Get the harvest price for the given date from the correct exchange for the
@@ -63,25 +66,8 @@ class MarketCrop(models.Model):
                      priced_on])[0]
         return rec.price if price_only else rec
 
-    def is_irrigated(self):
-        irr_acres = sum((fc.planted_acres * (1 if fc.is_irrigated() else 0)
-                         for fc in self.farm_crops.all()))
-        return irr_acres > self.planted_acres() / 2
-
     def planted_acres(self):
         return sum((fc.planted_acres for fc in self.farm_crops.all()))
-
-    def cty_expected_yield(self):
-        """
-        Needed for gov_pmt.
-        Get weighted average of market crop county yields
-        """
-        acre_sum = self.planted_acres()
-        if acre_sum == 0:
-            return 0
-        return (sum((ac*yld for ac, yld in
-                     ((fc.planted_acres, fc.cty_expected_yield())
-                      for fc in self.farm_crops.all()))) / acre_sum)
 
     class Meta:
         ordering = ['market_crop_type_id']

@@ -1,0 +1,93 @@
+{% extends 'main/base.html' %}
+{% block content %}
+<div class="p-6 max-w-med mx-auto bg-white rounded-xl shadow-lg flex items-center space-x-4">
+  <div class="shrink-0">
+    {% if tables == None %}
+      <p class="text-xl">
+        Sensitivity tables cannot be generated for the specified farm year.<br>
+        Please ensure that at least one crop has non-zero acres and has had a budget added.
+      </p> 
+    {% else %}
+    <form action="">
+        <label class="block text-gray-700 text-sm font-bold mb-2"
+          for="type-sel"><strong>Type</strong></label>
+        <select 
+          class="bg-white focus:outline-none border border-gray-300 rounded-lg py-2 px-4 block w-full appearance-none leading-normal text-gray-700" 
+          name="type-sel" id="type-sel"
+          >
+          <option value="pretaxamt">Pre-tax amount</option>
+          <option value="revenue">Revenue</option>
+          <option value="title">Title</option>
+          <option value="indem">Indemnity</option>
+          <option value="cost">Cost</option>
+        </select>
+        <label class="block text-gray-700 text-sm font-bold mb-2"
+          for="crop-sel"><strong>Crop</strong></label>
+        <select 
+          class="mb-4 bg-white focus:outline-none border border-gray-300 rounded-lg py-2 px-4 block w-full appearance-none leading-normal text-gray-700" 
+          name="crop-sel" id="crop-sel"
+          >
+          {% for tag, name in info.crops %}
+          <option value="{{tag}}">{{name}}</option>
+          {% endfor %}
+        </select>
+      </form> 
+    {% for sensitem in tables.items %}
+      <table class="text-sm table-auto border border-indigo-800 border-2" id="{{sensitem.0}}">
+      <tbody>
+      {% for row in sensitem.1 %}
+        <tr>
+          {% for col in row %}
+            {% if forloop.parentloop.counter0 in info.spanrows and forloop.counter0 == 0 %}
+              <td colspan="{{info.nmcs}}" class="px-1 py-0 text-left">{{col}}</td>
+            {% else %}
+              <td class="px-1 py-0 text-right">{{col}}</td>
+            {% endif %}
+          {% endfor %}
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    {% endfor %}
+    {% endif %}
+  </div>
+</div>
+<script>
+  (() => {
+
+    function managevisibility() {
+      let type = document.querySelector("#type-sel").value
+      let crop = document.querySelector("#crop-sel").value
+      let tblid = type + "_" + crop;
+      const matches = document.querySelectorAll("table");
+      matches.forEach((tbl) => {
+        if (tbl.id !== tblid) {
+          tbl.style.display = 'none';
+        }
+        else {
+          tbl.style.display = 'block';
+        }
+      })
+    }
+
+    document
+      .addEventListener('DOMContentLoaded', (event) => {
+          managevisibility()
+      });
+
+    document
+      .querySelector("#type-sel}}")
+         .addEventListener("change", (event) => {
+             managevisibility()
+         });
+    document
+      .querySelector("#crop-sel}}")
+         .addEventListener("change", (event) => {
+             managevisibility()
+         });
+ 
+  })();
+</script>
+{% endblock %}
+
+

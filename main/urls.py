@@ -6,7 +6,7 @@ from .views import (
     FarmYearDetailView, FarmYearFarmCropListView, FarmYearMarketCropListView,
     FarmYearFsaCropListView, FarmCropUpdateView, MarketCropUpdateView,
     FsaCropUpdateView, FarmCropAddBudgetView, FarmYearFarmBudgetCropListView,
-    FarmBudgetCropUpdateView, DetailedBudgetView, TestView)
+    FarmBudgetCropUpdateView, DetailedBudgetView, SensitivityTableView)
 
 from . import views
 
@@ -45,5 +45,6 @@ urlpatterns = [
          login_required(FarmCropAddBudgetView.as_view()), name='addbudget'),
     path('detailedbudget/<int:farmyear>',
          login_required(DetailedBudgetView.as_view()), name='detailedbudget'),
-    path('test/', login_required(TestView.as_view()), name='test'),
+    path('sensitivity/<int:farmyear>',
+         login_required(SensitivityTableView.as_view()), name='sensitivity'),
 ]

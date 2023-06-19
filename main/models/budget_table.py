@@ -132,7 +132,8 @@ class BudgetTable(object):
         Make the ($000) budget table rows
         """
         results = [(f'PRE-TAX {"CASH FLOW" if self.is_cash_flow else "INCOME"} BUDGET',
-                   [str(fct).replace('Winter', 'W') for fct in self.farm_crop_types] +
+                   [str(fct).replace('Winter', 'W').replace('Spring', 'S')
+                    for fct in self.farm_crop_types] +
                    'Other Total'.split())]
         return results + [(n, getattr(self, m)(scaling='kd')) for n, m in
                           zip(self.row_labels, self.__class__.METHODS)]
