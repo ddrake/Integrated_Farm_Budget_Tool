@@ -49,12 +49,26 @@ class FsaCrop(models.Model):
     def farm_crops(self):
         return [fc for mc in self.market_crops.all() for fc in mc.farm_crops.all()]
 
+    def price_factor(self):
+        pa = self.planted_acres()
+        return (1 if pa == 0 else
+                sum((mc.price_factor * mc.planted_acres()
+                    for mc in self.market_crops.all())) / pa)
+
+    def yield_factor(self):
+        pa = self.planted_acres()
+        return (1 if pa == 0 else
+                sum((fc.yield_factor * fc.planted_acres
+                    for fc in self.farm_crops())) / pa)
+
     def cty_expected_yield(self, yf=None):
         """
         Get weighted average of farm crop county yields
         TODO: This needs to check model run date and use RMA final yields
         once they are available (and ignore any yield factor).
         """
+        if yf is None:
+            yf = self.yield_factor()
         pairs = ((fc.planted_acres, fc.sens_cty_expected_yield(yf) *
                   fc.planted_acres) for fc in self.farm_crops())
         acres, weighted = zip(*pairs)
@@ -69,6 +83,8 @@ class FsaCrop(models.Model):
         return 0 if totacres == 0 else sum(weighted) / totacres
 
     def gov_payment(self, sens_mya_price, yf=None):
+        if yf is None:
+            yf = self.yield_factor()
         rp = ReferencePrices.objects.get(
             fsa_crop_type_id=self.fsa_crop_type_id,
             crop_year=self.farm_year.crop_year)

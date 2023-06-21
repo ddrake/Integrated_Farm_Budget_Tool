@@ -1,5 +1,6 @@
 {% extends 'main/base.html' %}
 {% block content %}
+{% load main_extra %}
 <div class="p-6 max-w-med mx-auto bg-white rounded-xl shadow-lg flex items-center space-x-4">
   {% for d in mc_priceinfo_list %}
   <div class="shrink-0">
@@ -9,6 +10,7 @@
     <p><strong>Basis bushels locked</strong>: {{d.marketcrop.basis_bu_locked|floatformat:"0g"}} </p>
     <p><strong>Avg. locked basis</strong>: {{d.marketcrop.avg_locked_basis}} </p>
     <p><strong>Assumed basis for new crop</strong>: {{d.marketcrop.assumed_basis_for_new}} </p>
+    <p><strong>Price sensitivity factor</strong>: {{d.marketcrop.price_factor|pct}} </p>
     <p><strong>Planted acres</strong>: {{d.marketcrop.planted_acres|floatformat:"1g"}} </p>
     <p><strong>Recent Price</strong>: {{d.priceinfo.price}} </p>
     <p><strong>Exchange</strong>: {{d.priceinfo.exchange}} </p>

@@ -255,7 +255,7 @@ class SensTable(object):
         for j, pf in enumerate(self.pfrange):
             for k, yf in enumerate(self.yfrange):
                 if methodname == 'gov_pmt_portion':
-                    self.set_gov_pmts(pf, yf)
+                    self.set_gov_pmts([pf]*3, [yf]*3)
                 for i, (crop, acres) in enumerate(zip(self.farm_crops, self.acres)):
                     if methodname == 'gov_pmt_portion':
                         value = self.gov_pmts[i] / 1000

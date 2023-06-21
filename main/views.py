@@ -152,7 +152,7 @@ class MarketCropUpdateView(UpdateView):
     model = MarketCrop
     template_name_suffix = "_update_form"
     fields = ['contracted_bu', 'avg_contract_price', 'basis_bu_locked',
-              'avg_locked_basis', 'assumed_basis_for_new', ]
+              'avg_locked_basis', 'assumed_basis_for_new', 'price_factor', ]
 
     def get_success_url(self):
         return reverse_lazy('marketcrop_list', args=[self.get_object().farm_year_id])

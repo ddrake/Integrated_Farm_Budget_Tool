@@ -35,12 +35,19 @@ class MarketCrop(models.Model):
     market_crop_type = models.ForeignKey(MarketCropType, on_delete=models.CASCADE)
     fsa_crop = models.ForeignKey(FsaCrop, on_delete=models.CASCADE,
                                  related_name='market_crops')
+    price_factor = models.FloatField(default=1, validators=[MinVal(0), MaxVal(10)],
+                                     verbose_name='price sensititivity factor')
 
     def __str__(self):
         return f'{self.market_crop_type}'
 
     def harvest_price(self):
         return self.harvest_futures_price_info(price_only=True)
+
+    def sens_harvest_price(self, pf=None):
+        if pf is None:
+            pf = self.price_factor
+        return self.harvest_futures_price_info(price_only=True) * pf
 
     def harvest_futures_price_info(self, priced_on=None, price_only=False):
         """
@@ -68,6 +75,10 @@ class MarketCrop(models.Model):
 
     def planted_acres(self):
         return sum((fc.planted_acres for fc in self.farm_crops.all()))
+
+    def yield_factor(self):
+        return sum((fc.yield_factor * fc.planted_acres
+                    for fc in self.farm_crops.all())) / self.planted_acres()
 
     class Meta:
         ordering = ['market_crop_type_id']
