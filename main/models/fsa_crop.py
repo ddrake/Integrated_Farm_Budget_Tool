@@ -55,10 +55,8 @@ class FsaCrop(models.Model):
         TODO: This needs to check model run date and use RMA final yields
         once they are available (and ignore any yield factor).
         """
-        if yf is None:
-            yf = self.farm_year.yield_factor
-        pairs = ((fc.planted_acres, fc.cty_expected_yield() * fc.planted_acres)
-                 for fc in self.farm_crops())
+        pairs = ((fc.planted_acres, fc.sens_cty_expected_yield(yf) *
+                  fc.planted_acres) for fc in self.farm_crops())
         acres, weighted = zip(*pairs)
         totacres = sum(acres)
         return 0 if totacres == 0 else sum(weighted) / totacres
@@ -71,8 +69,6 @@ class FsaCrop(models.Model):
         return 0 if totacres == 0 else sum(weighted) / totacres
 
     def gov_payment(self, sens_mya_price, yf=None):
-        if yf is None:
-            yf = self.farm_year.yield_factor
         rp = ReferencePrices.objects.get(
             fsa_crop_type_id=self.fsa_crop_type_id,
             crop_year=self.farm_year.crop_year)

@@ -87,12 +87,6 @@ class FarmYear(models.Model):
     is_model_run_date_manual = models.BooleanField(
         default=False,
         help_text='Use the manually-set model run date (advanced).')
-    price_factor = models.FloatField(
-        default=1, validators=[MinVal(0), MaxVal(10)],
-        verbose_name='price sensititivity factor')
-    yield_factor = models.FloatField(
-        default=1, validators=[MinVal(0), MaxVal(2)],
-        verbose_name='yield sensititivity factor')
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

@@ -19,6 +19,8 @@
     <p><strong>Use SCO</strong>: {{farmcrop.sco_use|yesno:"Yes,No"}} </p>
     <p><strong>ECO level</strong>: {{farmcrop.eco_level|default:"None"}} </p>
     <p><strong>Protection factor</strong>: {{farmcrop.prot_factor|pct|default:"None"}} </p>
+    <p><strong>Price sensitivity factor</strong>: {{farmcrop.price_factor|pct}} </p>
+    <p><strong>Yield sensitivity factor</strong>: {{farmcrop.yield_factor|pct}} </p>
     <div class="my-2">
       <a class="text-lg text-indigo-800 hover:text-indigo-600"
          href="{% url 'farmcrop_update' pk=farmcrop.pk %}">Edit</a>

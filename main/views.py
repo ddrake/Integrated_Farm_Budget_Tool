@@ -70,12 +70,12 @@ class FarmYearDeleteView(DeleteView):
 class FarmYearUpdateView(UpdateView):
     model = FarmYear
     template_name_suffix = "_update_form"
-    fields = ['farm_name', 'cropland_acres_owned', 'cropland_acres_rented',
-              'cash_rented_acres', 'var_rent_cap_floor_frac', 'annual_land_int_expense',
-              'annual_land_principal_pmt', 'property_taxes', 'land_repairs',
-              'eligible_persons_for_cap', 'other_nongrain_income',
-              'other_nongrain_expense', 'price_factor', 'yield_factor',
-              'report_type', 'manual_model_run_date', 'is_model_run_date_manual']
+    fields = '''farm_name cropland_acres_owned cropland_acres_rented
+                cash_rented_acres var_rent_cap_floor_frac annual_land_int_expense
+                annual_land_principal_pmt property_taxes land_repairs
+                eligible_persons_for_cap other_nongrain_income
+                other_nongrain_expense report_type manual_model_run_date
+                is_model_run_date_manual'''.split()
 
     def get_success_url(self):
         return reverse_lazy('farmyear_detail', args=[self.get_object().pk])
