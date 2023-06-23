@@ -4,21 +4,41 @@
 <div class="p-6 max-w-med mx-auto bg-white rounded-xl shadow-lg flex items-center space-x-4">
   <div class="shrink-0">
   <h1 class="text-xl">{{farmyear}} in {{farmyear.location}}</h1>
-  <p><strong>Cropland acres owned</strong>: {{farmyear.cropland_acres_owned|floatformat:"g"}} </p>
-  <p><strong>Cropland acres rented</strong>: {{farmyear.cropland_acres_rented|floatformat:"g"}} </p>
-  <p><strong>Cash rented acres</strong>: {{farmyear.cash_rented_acres|floatformat:"g"}} </p>
-  <p><strong>Variable rent cap/floor</strong>: {{farmyear.var_rent_cap_floor_frac|pct}} </p>
-  <p><strong>Annual land interest expense</strong>: ${{farmyear.annual_land_int_expense|floatformat:"g"}} </p>
-  <p><strong>Annual land principal payment</strong>: ${{farmyear.annual_land_principal_pmt|floatformat:"g"}} </p>
-  <p><strong>Other non-grain income</strong>: ${{farmyear.other_nongrain_income|floatformat:"g"}} </p>
-  <p><strong>Other non-grain expense</strong>: ${{farmyear.other_nongrain_expense|floatformat:"g"}} </p>
-  <p><strong>Property taxes</strong>: ${{farmyear.property_taxes|floatformat:"g"}} </p>
-  <p><strong>Land repairs</strong>: ${{farmyear.land_repairs|floatformat:"g"}} </p>
-  <p><strong>Eligible persons for FSA cap</strong>: {{farmyear.eligible_persons_for_cap}} </p>
-  <p><strong>Report type</strong>: {{farmyear.report_type_name}} </p>
-  <p><strong>Manual model run date</strong>: {{farmyear.manual_model_run_date}} </p>
-  <p><strong>Model run date manual</strong>: {{farmyear.is_model_run_date_manual|yesno:"Yes,No"}} </p>
-  <p><strong>Actual Model run date</strong>: {{farmyear.get_model_run_date}} </p>
+  <dl class="grid grid-cols-[repeat(2,auto)] gap-x-4 w-max">
+    <dt class="font-semibold">Owned Land Information</dt><dd></dd>
+    <dt>Cropland acres owned</dt>
+    <dd class="text-right">{{farmyear.cropland_acres_owned|floatformat:"g"}}</dd>
+    <dt>Annual land interest expense</dt>
+    <dd class="text-right">${{farmyear.annual_land_int_expense|floatformat:"g"}}</dd>
+    <dt>Annual land principal payment</dt>
+    <dd class="text-right">${{farmyear.annual_land_principal_pmt|floatformat:"g"}}</dd>
+    <dt>Property taxes</dt>
+    <dd class="text-right">${{farmyear.property_taxes|floatformat:"g"}}</dd>
+    <dt>Land repairs</dt>
+    <dd class="text-right">${{farmyear.land_repairs|floatformat:"g"}}</dd>
+    <dt class="font-semibold">Rented Land Information</dt><dd></dd>
+    <dt>Cropland acres rented</dt>
+    <dd class="text-right">{{farmyear.cropland_acres_rented|floatformat:"g"}}</dd>
+    <dt>Cash rented acres</dt>
+    <dd class="text-right">{{farmyear.cash_rented_acres|floatformat:"g"}}</dd>
+    <dt>Variable rent cap/floor</dt>
+    <dd class="text-right">{{farmyear.var_rent_cap_floor_frac|pct}}</dd>
+    <dt class="font-semibold">Non-grain income and expense</dt><dd></dd>
+    <dt>Other non-grain income</dt>
+    <dd class="text-right">${{farmyear.other_nongrain_income|floatformat:"g"}}</dd>
+    <dt>Other non-grain expense</dt>
+    <dd class="text-right">${{farmyear.other_nongrain_expense|floatformat:"g"}}</dd>
+    <dt>Eligible persons for FSA cap</dt>
+    <dd class="text-right">{{farmyear.eligible_persons_for_cap}}</dd>
+    <dt class="font-semibold">Report Controls</dt><dd></dd>
+    <dt>Report type</dt>
+    <dd class="text-right">{{farmyear.report_type_name}}</dd>
+    <dt>Model run date manual</dt>
+    <dd class="text-right">{{farmyear.is_model_run_date_manual|yesno:"Yes,No"}}</dd>
+    <dt>Manual model run date</dt>
+    <dd class="text-right">{{farmyear.manual_model_run_date}}</dd>
+    <dt>Actual Model run date</dt>
+    <dd class="text-right">{{farmyear.get_model_run_date}}</dd>
   <div>
   <a class="text-xl text-indigo-800 hover:text-indigo-600"
      href="{% url 'farmyear_update' pk=farmyear.pk %}">Edit</a>
