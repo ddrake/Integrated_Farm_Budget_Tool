@@ -63,14 +63,16 @@ class FarmCropUpdateForm(ModelForm):
         self.fields['coverage_type'].choices = self.instance.allowed_coverage_types()
         self.helper = FormHelper()
         self.helper.add_input(Submit('submit', 'Update'))
+        self.helper.form_id = 'id-farmcropform'
         self.helper.layout = Layout(
-            Field('planted_acres'),
-            Field('yield_factor'),
+            Fieldset('Key Values',
+                     'planted_acres', 'ins_practice', 'yield_factor'),
             Fieldset('Crop Insurance Information',
-                     'rate_yield', 'adj_yield', 'ta_aph_yield', 'subcounty'),
+                     'rate_yield', 'adj_yield', 'ta_aph_yield', 'subcounty', 'ta_use',
+                     'ye_use'),
             Fieldset('Crop Insurance Choices',
-                     'ta_use', 'ye_use', 'coverage_type', 'product_type',
-                     'base_coverage_level', 'sco_use', 'eco_level', 'prot_factor'),
+                     'coverage_type', 'product_type', 'base_coverage_level', 'sco_use',
+                     'eco_level', 'prot_factor'),
         )
 
     class Meta:

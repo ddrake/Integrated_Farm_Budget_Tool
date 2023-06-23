@@ -90,7 +90,7 @@ class FarmCrop(models.Model):
         null=True, blank=True, choices=COVERAGE_LEVELS_ECO,
         verbose_name="ECO level", help_text="Enhanced coverage level")
     prot_factor = models.FloatField(
-        default=1, validators=[MinVal(0), MaxVal(1)],
+        default=1, validators=[MinVal(0.8), MaxVal(1.2)],
         verbose_name="selected payment factor",
         help_text="Selected payment factor for county premiums/indemnities.")
     farm_crop_type = models.ForeignKey(FarmCropType, on_delete=models.CASCADE)

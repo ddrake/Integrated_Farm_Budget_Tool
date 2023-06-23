@@ -14,16 +14,22 @@
         let origval = "{{ farmcrop.base_coverage_level }}";
         let covType = document.getElementById("coverage_type")
         let val = covType.value;
-        console.log(val);
         updateBaseCoverageLevels(val); 
         covLevel.value = origval;
-        console.log(covLevel.value);
+        manageScoAndProtFactor(val);
     });
     document
       .getElementById("coverage_type")
          .addEventListener("change", (event) => {
-             updateBaseCoverageLevels(event.target.value)
+             updateBaseCoverageLevels(event.target.value);
+             manageScoAndProtFactor(event.target.value)
          });
+    document
+      .getElementById("id-farmcropform")
+         .addEventListener("submit", (event) => {
+            document.getElementById("id_sco_use").removeAttribute('disabled', '')
+            document.getElementById("id_prot_factor").removeAttribute('disabled', '')
+        });
 
     function updateBaseCoverageLevels(value) {
         let options = '<option value="">--------</option>\n';
@@ -39,6 +45,24 @@
         }
         document.getElementById("base_coverage_level").innerHTML = options;
     }
+
+    function manageScoAndProtFactor(value) {
+        if (value !== '') {
+            let scouse = document.getElementById("id_sco_use")
+            let prot = document.getElementById("id_prot_factor")
+            if (value === '0') {
+                scouse.checked = false;
+                scouse.setAttribute('disabled', '')
+                prot.removeAttribute('disabled', '')
+            } else {
+                scouse.removeAttribute('disabled', '')
+                prot.value = '1.0';
+                prot.setAttribute('disabled', '')
+            }
+        }
+    }
+
+
   })();
 </script>
 {% endblock content %}

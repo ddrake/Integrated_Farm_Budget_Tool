@@ -63,7 +63,7 @@ class FarmYear(models.Model):
     land_repairs = models.FloatField(
         default=0, validators=[MinVal(0), MaxVal(999999)],)
     eligible_persons_for_cap = models.SmallIntegerField(
-        default=1, validators=[MinVal(0), MaxVal(3)],
+        default=1, validators=[MinVal(0), MaxVal(10)],
         verbose_name="# persons for cap",
         help_text="Number of eligible 'persons' for FSA payment caps.")
     other_nongrain_income = models.FloatField(
