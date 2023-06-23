@@ -200,7 +200,7 @@ class FarmYear(models.Model):
     # -----------------------
     def total_owned_land_expense(self, include_principal=False):
         return (self.annual_land_int_expense + self.property_taxes + self.land_repairs +
-                self.annual_land_principal_pmt if include_principal else 0)
+                (self.annual_land_principal_pmt if include_principal else 0))
 
     def frac_var_rent(self):
         return (0 if self.cropland_acres_rented == 0 else

@@ -109,6 +109,22 @@ class FarmBudgetCrop(models.Model):
     class Meta:
         ordering = ['farm_crop_type_id']
 
+    def total_direct_costs(self):
+        """ for farm budget crop detail view """
+        return (self.fertilizers + self.pesticides + self.seed + self.drying +
+                self.storage + self.other_direct_costs)
+
+    def total_power_costs(self):
+        """ for farm budget crop detail view """
+        return (self.machine_hire_lease + self.utilities + self.machine_repair +
+                self.fuel_and_oil + self.light_vehicle + self.machine_depr)
+
+    def total_overhead_costs(self):
+        """ for farm budget crop detail view """
+        return (self.labor_and_mgmt + self.building_repair_and_rent +
+                self.building_depr + self.insurance + self.misc_overhead_costs +
+                self.interest_nonland + self.other_overhead_costs)
+
 
 class BaselineFarmBudgetCrop(models.Model):
     farm_crop_type = models.ForeignKey(FarmCropType, on_delete=models.CASCADE)

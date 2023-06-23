@@ -5,17 +5,33 @@
   {% for d in mc_priceinfo_list %}
   <div class="shrink-0">
     <h1 class="text-xl">{{d.marketcrop}}</h1>
-    <p><strong>Contracted bushels</strong>: {{d.marketcrop.contracted_bu|floatformat:"0g"}} </p>
-    <p><strong>Avg. contract price</strong>: {{d.marketcrop.avg_contract_price}} </p>
-    <p><strong>Basis bushels locked</strong>: {{d.marketcrop.basis_bu_locked|floatformat:"0g"}} </p>
-    <p><strong>Avg. locked basis</strong>: {{d.marketcrop.avg_locked_basis}} </p>
-    <p><strong>Assumed basis for new crop</strong>: {{d.marketcrop.assumed_basis_for_new}} </p>
-    <p><strong>Price sensitivity factor</strong>: {{d.marketcrop.price_factor|pct}} </p>
-    <p><strong>Planted acres</strong>: {{d.marketcrop.planted_acres|floatformat:"1g"}} </p>
-    <p><strong>Recent Price</strong>: {{d.priceinfo.price}} </p>
-    <p><strong>Exchange</strong>: {{d.priceinfo.exchange}} </p>
-    <p><strong>Futures month</strong>: {{d.priceinfo.futures_month}} </p>
-    <p><strong>Priced on</strong>: {{d.priceinfo.priced_on}} </p>
+    <dl class="grid grid-cols-[repeat(2,auto)] gap-x-4 w-max">
+      <dt class="font-semibold">Model Controls (to be moved)</dt><dd></dd>
+      <dt>Price sensitivity factor</dt>
+      <dd class="text-right">{{d.marketcrop.price_factor|pct}}</dd>
+      <dt class="font-semibold">Grain Marketing</dt><dd></dd>
+      <dt>Contracted bushels</dt>
+      <dd class="text-right">{{d.marketcrop.contracted_bu|floatformat:"0g"}}</dd>
+      <dt>Avg. contract price</dt>
+      <dd class="text-right">${{d.marketcrop.avg_contract_price}}</dd>
+      <dt>Basis bushels locked</dt>
+      <dd class="text-right">{{d.marketcrop.basis_bu_locked|floatformat:"0g"}}</dd>
+      <dt>Avg. locked basis</dt>
+      <dd class="text-right">${{d.marketcrop.avg_locked_basis}}</dd>
+      <dt>Assumed basis for new crop</dt>
+      <dd class="text-right">${{d.marketcrop.assumed_basis_for_new}}</dd>
+      <dt class="font-semibold">Market Crop Information</dt><dd></dd>
+      <dt>Planted acres</dt>
+      <dd class="text-right">{{d.marketcrop.planted_acres|floatformat:"1g"}}</dd>
+      <dt>Recent Price</dt>
+      <dd class="text-right">${{d.priceinfo.price}}</dd>
+      <dt>Exchange</dt>
+      <dd class="text-right">{{d.priceinfo.exchange}}</dd>
+      <dt>Futures month</dt>
+      <dd class="text-right">{{d.priceinfo.futures_month}}</dd>
+      <dt>Priced on</dt>
+      <dd class="text-right">{{d.priceinfo.priced_on}}</dd>
+    </dl>
     <a class="text-lg text-indigo-800 hover:text-indigo-600"
        href="{% url 'marketcrop_update' pk=d.marketcrop.pk %}">Edit</a>
   </div>

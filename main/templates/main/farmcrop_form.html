@@ -1,14 +1,10 @@
 {% extends 'main/base.html' %}
-{% load tailwind_filters %}
+{% load tailwind_filters crispy_forms_tags %}
 {% block content %}
 <div class="p-6 max-w-med mx-auto bg-white rounded-xl shadow-lg flex items-center space-x-4">
     <div>
         <h1 class="block text-xl mb-2">Edit Farm Crop {{ farmcrop }}</h1>
-        <form action="" method="post">
-            {% csrf_token %}
-            {{ form|crispy }}
-            <button type="submit" class="btn-primary">Update</button>
-        </form>
+        {% crispy form %}
     </div>
 </div>
 <script>

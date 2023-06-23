@@ -12,9 +12,9 @@
 		{% tailwind_css %}
 	</head>
 
-	<body class="bg-gray-50 font-serif leading-normal tracking-normal">
+	<body class="bg-gray-50 font-sans leading-normal tracking-normal">
 		 <!-- NAVBAR COMPONENT -->
-    <nav class="flex items-center justify-between flex-wrap bg-gray-800 p-4">
+    <nav class="flex items-center justify-between flex-wrap bg-gray-800 p-4 font-serif">
       <div class="flex items-center flex-shrink-0 text-white mr-6">
         <span class="font-bold text-xl">Integrated Farm Budget Tool</span>
       </div>
@@ -24,21 +24,9 @@
           {% if user.is_authenticated %}
           <a
 						href="{% url 'dashboard' %}"
-            class="block mt-4 sm:inline-block sm:mt-0 text-teal-200 hover:text-white mr-4"
+            class="block mt-4 sm:inline-block sm:mt-0 text-teal-200 hover:text-white text-lg mr-4"
           >
             Dashboard
-          </a>
-          <a
-            href="#"
-            class="block mt-4 sm:inline-block sm:mt-0 text-teal-200 hover:text-white mr-4"
-          >
-            Budget
-          </a>
-          <a
-            href="#"
-            class="block mt-4 sm:inline-block sm:mt-0 text-teal-200 hover:text-white"
-          >
-            Sensitivity
           </a>
           {% endif %}
         </div>

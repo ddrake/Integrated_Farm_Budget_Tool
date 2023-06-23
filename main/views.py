@@ -15,7 +15,8 @@ from .models.fsa_crop import FsaCrop
 from .models.budget_table import BudgetTable
 from .models.sens_table import SensTable
 from ext.models import County
-from .forms import FarmYearCreateForm, FarmCropUpdateForm
+from .forms import (FarmYearCreateForm, FarmYearUpdateForm, FarmCropUpdateForm,
+                    FarmBudgetCropUpdateForm)
 
 
 def index(request):
@@ -68,14 +69,8 @@ class FarmYearDeleteView(DeleteView):
 
 
 class FarmYearUpdateView(UpdateView):
+    form_class = FarmYearUpdateForm
     model = FarmYear
-    template_name_suffix = "_update_form"
-    fields = '''farm_name cropland_acres_owned cropland_acres_rented
-                cash_rented_acres var_rent_cap_floor_frac annual_land_int_expense
-                annual_land_principal_pmt property_taxes land_repairs
-                eligible_persons_for_cap other_nongrain_income
-                other_nongrain_expense report_type manual_model_run_date
-                is_model_run_date_manual'''.split()
 
     def get_success_url(self):
         return reverse_lazy('farmyear_detail', args=[self.get_object().pk])
@@ -134,14 +129,7 @@ class FarmCropUpdateView(UpdateView):
 
 class FarmBudgetCropUpdateView(UpdateView):
     model = FarmBudgetCrop
-    template_name_suffix = "_update_form"
-    fields = ['farm_yield', 'county_yield', 'yield_variability',
-              'other_gov_pmts', 'other_revenue', 'fertilizers', 'pesticides',
-              'seed', 'drying', 'storage', 'other_direct_costs', 'machine_hire_lease',
-              'utilities', 'machine_repair', 'fuel_and_oil', 'light_vehicle',
-              'machine_depr', 'labor_and_mgmt', 'building_repair_and_rent',
-              'building_depr', 'insurance', 'misc_overhead_costs', 'interest_nonland',
-              'other_overhead_costs', 'rented_land_costs']
+    form_class = FarmBudgetCropUpdateForm
 
     def get_success_url(self):
         return reverse_lazy('farmbudgetcrop_list',

@@ -111,6 +111,10 @@ class BudgetTable(object):
         self.bushels = [fc.sens_production_bu() for fc in self.farm_crops]
         self.acres = [fc.planted_acres for fc in self.farm_crops]
         self.farm_crop_types = [fc.farm_crop_type for fc in self.farm_crops]
+        self.phys_acres = [0 if fc.farm_crop_type.is_fac else fc.planted_acres
+                           for fc in self.farm_crops]
+        self.total_acres = sum(self.acres)
+        self.total_phys_acres = sum(self.phys_acres)
 
     def get_tables(self):
         if len(self.farm_crops) == 0:
@@ -433,9 +437,11 @@ class BudgetTable(object):
 
     def get_land_costs(self, scaling='kd'):
         if self.land_costs is None:
-            self.land_costs = [lc * ac for lc, ac in
+            rented_acres = self.farm_year.cropland_acres_rented
+            phys_acres = self.total_phys_acres
+            self.land_costs = [rented_acres * lc * ac / phys_acres for lc, ac in
                                zip((fc.farmbudgetcrop.rented_land_costs
-                                    for fc in self.farm_crops), self.acres)]
+                                    for fc in self.farm_crops), self.phys_acres)]
         return self.getitems(self.land_costs, None, scaling, False)
 
     def get_revenue_based_adjustment_to_land_rent(self, scaling='kd'):
@@ -459,7 +465,7 @@ class BudgetTable(object):
     def get_owned_land_cost(self, scaling='kd'):
         land_cost = self.farm_year.total_owned_land_expense(
             include_principal=self.is_cash_flow)
-        acres = sum(self.acres)
+        acres = self.total_acres
         if self.owned_land_cost is None:
             self.owned_land_cost = [land_cost*ac/acres for ac in self.acres]
         return self.getitems(self.owned_land_cost, None, scaling, False)

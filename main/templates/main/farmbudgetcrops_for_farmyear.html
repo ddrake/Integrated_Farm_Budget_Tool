@@ -8,31 +8,71 @@
   {% for farmbudgetcrop in farmbudgetcrop_list %}
   <div class="shrink-0">
     <h1 class="text-xl">{{farmbudgetcrop.farm_crop}}</h1>
-    <p><strong>Farm yield</strong>: {{farmbudgetcrop.farm_yield}} </p>
-    <p><strong>County yield</strong>: {{farmbudgetcrop.county_yield}} </p>
-    <p><strong>Yield variability</strong>: {{farmbudgetcrop.yield_variability|pct}} </p>
-    <p><strong>Other gov. payments</strong>: ${{farmbudgetcrop.other_gov_pmts|floatformat:"0"}} </p>
-    <p><strong>Other revenue</strong>: ${{farmbudgetcrop.other_revenue|floatformat:"0"}} </p>
-    <p><strong>Fertilizers</strong>: ${{farmbudgetcrop.fertilizers|floatformat:"0"}} </p>
-    <p><strong>Pesticides</strong>: ${{farmbudgetcrop.pesticides|floatformat:"0"}} </p>
-    <p><strong>Seed</strong>: ${{farmbudgetcrop.seed|floatformat:"0"}} </p>
-    <p><strong>Drying</strong>: ${{farmbudgetcrop.drying|floatformat:"0"}} </p>
-    <p><strong>Storage</strong>: ${{farmbudgetcrop.storage|floatformat:"0"}} </p>
-    <p><strong>Other direct costs</strong>: ${{farmbudgetcrop.other_direct_costs|floatformat:"0"}} </p>
-    <p><strong>Machine hire/lease</strong>: ${{farmbudgetcrop.machine_hire_lease|floatformat:"0"}} </p>
-    <p><strong>Utilities</strong>: ${{farmbudgetcrop.utilities|floatformat:"0"}} </p>
-    <p><strong>Machine repair</strong>: ${{farmbudgetcrop.machine_repair|floatformat:"0"}} </p>
-    <p><strong>Fuel and oil</strong>: ${{farmbudgetcrop.fuel_and_oil|floatformat:"0"}} </p>
-    <p><strong>Light vehicle</strong>: ${{farmbudgetcrop.light_vehicle|floatformat:"0"}} </p>
-    <p><strong>Machine depreciation</strong>: ${{farmbudgetcrop.machine_depr|floatformat:"0"}} </p>
-    <p><strong>Labor and management</strong>: ${{farmbudgetcrop.labor_and_mgmt|floatformat:"0"}} </p>
-    <p><strong>Building repair/rent</strong>: ${{farmbudgetcrop.building_repair_and_rent|floatformat:"0"}} </p>
-    <p><strong>Building depreciation</strong>: ${{farmbudgetcrop.building_depr|floatformat:"0"}} </p>
-    <p><strong>Insurance</strong>: ${{farmbudgetcrop.insurance|floatformat:"0"}} </p>
-    <p><strong>Misc overhead costs</strong>: ${{farmbudgetcrop.misc_overhead_costs|floatformat:"0"}} </p>
-    <p><strong>Non-land interest</strong>: ${{farmbudgetcrop.interest_nonland|floatformat:"0"}} </p>
-    <p><strong>Other overhead costs</strong>: ${{farmbudgetcrop.other_overhead_costs|floatformat:"0"}} </p>
-    <p><strong>Rented land costs</strong>: ${{farmbudgetcrop.rented_land_costs|floatformat:"0"}} </p>
+    <dl class="grid grid-cols-[repeat(2,auto)] gap-x-4 w-max">
+      <dt class="font-semibold">Expected Yields (bpa)</dt><dd></dd>
+      <dt>Farm yield</dt>
+      <dd class="text-right">{{farmbudgetcrop.farm_yield}}</dd>
+      <dt>County yield</dt>
+      <dd class="text-right">{{farmbudgetcrop.county_yield}}</dd>
+      <dt class="font-semibold">Revenue Items ($/acre)</dt><dd></dd>
+      <dt>Other gov. payments</dt>
+      <dd class="text-right">${{farmbudgetcrop.other_gov_pmts|floatformat:"0"}}</dd>
+      <dt>Other revenue</dt>
+      <dd class="text-right">${{farmbudgetcrop.other_revenue|floatformat:"0"}}</dd>
+      <dt class="font-semibold">Direct Costs ($/acre)</dt><dd></dd>
+      <dt>Fertilizers</dt>
+      <dd class="text-right">${{farmbudgetcrop.fertilizers|floatformat:"0"}}</dd>
+      <dt>Pesticides</dt>
+      <dd class="text-right">${{farmbudgetcrop.pesticides|floatformat:"0"}}</dd>
+      <dt>Seed</dt>
+      <dd class="text-right">${{farmbudgetcrop.seed|floatformat:"0"}}</dd>
+      <dt>Drying</dt>
+      <dd class="text-right">${{farmbudgetcrop.drying|floatformat:"0"}}</dd>
+      <dt>Storage</dt>
+      <dd class="text-right">${{farmbudgetcrop.storage|floatformat:"0"}}</dd>
+      <dt>Other direct costs</dt>
+      <dd class="text-right">${{farmbudgetcrop.other_direct_costs|floatformat:"0"}}</dd>
+      <dt class="italic">&nbsp;&nbsp;Total direct costs</dt>
+      <dd class="text-right border-t border-black">
+        ${{farmbudgetcrop.total_direct_costs|floatformat:"0"}}</dd>
+      <dt class="font-semibold">Power Costs ($/acre)</dt><dd></dd>
+      <dt>Machine hire/lease</dt>
+      <dd class="text-right">${{farmbudgetcrop.machine_hire_lease|floatformat:"0"}}</dd>
+      <dt>Utilities</dt>
+      <dd class="text-right">${{farmbudgetcrop.utilities|floatformat:"0"}}</dd>
+      <dt>Machine repair</dt>
+      <dd class="text-right">${{farmbudgetcrop.machine_repair|floatformat:"0"}}</dd>
+      <dt>Fuel and oil</dt>
+      <dd class="text-right">${{farmbudgetcrop.fuel_and_oil|floatformat:"0"}}</dd>
+      <dt>Light vehicle</dt>
+      <dd class="text-right">${{farmbudgetcrop.light_vehicle|floatformat:"0"}}</dd>
+      <dt>Machine depreciation</dt>
+      <dd class="text-right">${{farmbudgetcrop.machine_depr|floatformat:"0"}}</dd>
+      <dt class="italic">&nbsp;&nbsp;Total power costs</dt>
+      <dd class="text-right border-t border-black">
+        ${{farmbudgetcrop.total_power_costs|floatformat:"0"}}</dd>
+      <dt class="font-semibold">Overhead Costs ($/acre)</dt><dd></dd>
+      <dt>Labor and management</dt>
+      <dd class="text-right">${{farmbudgetcrop.labor_and_mgmt|floatformat:"0"}}</dd>
+      <dt>Building repair/rent</dt>
+      <dd class="text-right">${{farmbudgetcrop.building_repair_and_rent|floatformat:"0"}}</dd>
+      <dt>Building depreciation</dt>
+      <dd class="text-right">${{farmbudgetcrop.building_depr|floatformat:"0"}}</dd>
+      <dt>Insurance</dt>
+      <dd class="text-right">${{farmbudgetcrop.insurance|floatformat:"0"}}</dd>
+      <dt>Misc overhead costs</dt>
+      <dd class="text-right">${{farmbudgetcrop.misc_overhead_costs|floatformat:"0"}}</dd>
+      <dt>Non-land interest</dt>
+      <dd class="text-right">${{farmbudgetcrop.interest_nonland|floatformat:"0"}}</dd>
+      <dt>Other overhead costs</dt>
+      <dd class="text-right">${{farmbudgetcrop.other_overhead_costs|floatformat:"0"}}</dd>
+      <dt class="italic">&nbsp;&nbsp;Total overhead costs</dt>
+      <dd class="text-right border-t border-black">
+        ${{farmbudgetcrop.total_overhead_costs|floatformat:"0"}}</dd>
+      <dt class="font-semibold">Land Costs ($/acre)</dt><dd></dd>
+      <dt>Rented land costs</dt>
+      <dd class="text-right">${{farmbudgetcrop.rented_land_costs|floatformat:"0"}}</dd>
+    </dl>
     <div class="my-2">
       <a class="text-lg text-indigo-800 hover:text-indigo-600"
          href="{% url 'farmbudgetcrop_update' pk=farmbudgetcrop.pk %}">Edit</a>

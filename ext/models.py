@@ -400,7 +400,7 @@ class BudgetCrop(models.Model):
                   else '' if self.is_rot is None else ' Continuous,')
         descr = '' if self.description == '' else f' {self.description},'
         yldstr = f' {int(self.farm_yield)} bpa,'
-        rentstr = f' ${int(self.rented_land_costs)}/ac'
+        rentstr = f' land rent: ${int(self.rented_land_costs)}/ac'
         return (f'{self.state.abbr},{descr}{rotstr}{yldstr}{rentstr}')
 
     class Meta:
