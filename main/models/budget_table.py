@@ -465,9 +465,9 @@ class BudgetTable(object):
     def get_owned_land_cost(self, scaling='kd'):
         land_cost = self.farm_year.total_owned_land_expense(
             include_principal=self.is_cash_flow)
-        acres = self.total_acres
+        phys_acres = self.total_phys_acres
         if self.owned_land_cost is None:
-            self.owned_land_cost = [land_cost*ac/acres for ac in self.acres]
+            self.owned_land_cost = [land_cost*ac/phys_acres for ac in self.phys_acres]
         return self.getitems(self.owned_land_cost, None, scaling, False)
 
     def get_total_land_cost(self, scaling='kd'):
