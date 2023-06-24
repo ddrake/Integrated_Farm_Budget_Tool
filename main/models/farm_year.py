@@ -38,8 +38,8 @@ class FarmYear(models.Model):
     crop_year = models.SmallIntegerField(default=util.get_current_year)
     report_type = models.SmallIntegerField(
         default=0, choices=REPORT_TYPES,
-        help_text=("Pre-Tax cash flow deducts land debt interest and principal " +
-                   "payments. Pre-tax Income deducts only interest expense."))
+        help_text=(_("Pre-Tax cash flow deducts land debt interest and principal " +
+                   "payments.<br>Pre-tax Income deducts only interest expense.")))
     cropland_acres_owned = models.FloatField(
         default=0, validators=[MinVal(0), MaxVal(99999)])
     cropland_acres_rented = models.FloatField(
@@ -86,8 +86,8 @@ class FarmYear(models.Model):
     # Should it be inactive for old crop years?
     manual_model_run_date = models.DateField(
         default=datetime.today,  # TODO: validate range
-        help_text=('Manually-set date for which "current" futures prices and other ' +
-                   'date-specific values are looked up.'))
+        help_text=(_('Manually-set date for which "current" futures prices<br>' +
+                     'and other date-specific values are looked up.')))
     is_model_run_date_manual = models.BooleanField(
         default=False,
         help_text='Use the manually-set model run date (advanced).')
