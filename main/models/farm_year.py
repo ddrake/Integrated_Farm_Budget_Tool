@@ -53,23 +53,27 @@ class FarmYear(models.Model):
     annual_land_int_expense = models.FloatField(
         default=0, validators=[MinVal(0), MaxVal(999999)],
         verbose_name="land interest expense",
-        help_text="Annual owned land interest expense")
+        help_text="Annual owned land interest expense in dollars")
     annual_land_principal_pmt = models.FloatField(
         default=0, validators=[MinVal(0), MaxVal(999999)],
         verbose_name="land principal payment",
-        help_text="Annual owned land principal payment")
+        help_text="Annual owned land principal payment in dollars")
     property_taxes = models.FloatField(
-        default=0, validators=[MinVal(0), MaxVal(999999)],)
+        default=0, validators=[MinVal(0), MaxVal(999999)],
+        help_text="Annual property taxes in dollars")
     land_repairs = models.FloatField(
-        default=0, validators=[MinVal(0), MaxVal(999999)],)
+        default=0, validators=[MinVal(0), MaxVal(999999)],
+        help_text="Annual land repair costs in dollars")
     eligible_persons_for_cap = models.SmallIntegerField(
         default=1, validators=[MinVal(0), MaxVal(10)],
         verbose_name="# persons for cap",
         help_text="Number of eligible 'persons' for FSA payment caps.")
     other_nongrain_income = models.FloatField(
-        default=0, validators=[MinVal(0), MaxVal(999999)],)
+        default=0, validators=[MinVal(0), MaxVal(999999)],
+        help_text="Other non-grain income in dollars")
     other_nongrain_expense = models.FloatField(
-        default=0, validators=[MinVal(0), MaxVal(999999)],)
+        default=0, validators=[MinVal(0), MaxVal(999999)],
+        help_text="Other non-grain expense in dollars")
     state = models.ForeignKey(State, on_delete=models.CASCADE)
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='farm_years')
 
