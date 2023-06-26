@@ -217,8 +217,7 @@ class SensTable(object):
 
     def get_title_values(self):
         if self.title_values is None:
-            self.title_values = self.get_values_array(
-                'gov_pmt_portion', kwargs={'is_per_acre': True})
+            self.title_values = self.get_values_array('gov_pmt_portion')
         return self.title_values
 
     def get_indem_values(self):
@@ -258,14 +257,14 @@ class SensTable(object):
                     self.set_gov_pmts([pf]*3, [yf]*3)
                 for i, (crop, acres) in enumerate(zip(self.farm_crops, self.acres)):
                     if methodname == 'gov_pmt_portion':
-                        value = self.gov_pmts[i] / 1000
+                        result[i, j, k] = self.gov_pmts[i] / 1000
                     else:
                         if 'sprice' in kwargs:
                             kwargs['sprice'] = self.prices[j, i]
                         if 'bprice' in kwargs:
                             kwargs['bprice'] = self.harvest_prices[i]
                         value = (getattr(crop, methodname)(pf=pf, yf=yf, **kwargs))
-                    result[i, j, k] = value * acres / 1000
+                        result[i, j, k] = value * acres / 1000
         result[cropct, ...] = result[:cropct, ...].sum(axis=0) + noncrop / 1000
         if self.wheatdc:
             result[-1, ...] = result[self.wheatdcixs, ...].sum(axis=0)
