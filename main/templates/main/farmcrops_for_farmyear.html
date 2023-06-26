@@ -54,9 +54,8 @@
           <option value="{{bcid}}">{{bcname}}</option>
           {% endfor %}
         </select>
-        <!--
         <small id="budget-info-{{farmcrop.pk}}" class="text-gray-600">
-        Set irrigation status before adding.</small> -->
+        Set irrigation status before adding.</small>
       </form> 
   </div>
   <script>
@@ -74,13 +73,11 @@
                submitFormData()
            });
 
-      /*
       function setinfo(hasbudget) {
         let info = document.querySelector("#budget-info-{{farmcrop.pk}}")
-        info.innerHTML = hasbudget ? "Budget set; custom values will be lost if budget is changed."
+        info.innerHTML = hasbudget ? "Budget set; custom values will be lost if selection is changed."
           : "Set irrigation status before adding a budget.";
       }
-      */
 
       function submitFormData() {
         let xhr = new XMLHttpRequest();

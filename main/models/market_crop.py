@@ -57,6 +57,8 @@ class MarketCrop(models.Model):
         if priced_on is None:
             priced_on = self.farm_year.get_model_run_date()
 
+        # TODO: If priced_on > datetime(crop_year, futures_month, 15)
+        # select the July futures price
         rec = FuturesPrice.objects.raw("""
         SELECT fp.id, fp.exchange, fp.futures_month, fp.ticker, fp.priced_on, fp.price
             FROM ext_futuresprice fp
