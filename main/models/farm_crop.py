@@ -197,6 +197,27 @@ class FarmCrop(models.Model):
                eco[int((ecolvl - .9)/.05)][pt])
         return {'base': base, 'sco': sco, 'eco': eco}
 
+    def update_related_crop_ins_settings(self):
+        """
+        Ensure that fs beans and dc beans have the same settings
+        """
+        print('in update related')
+        if self.farm_crop_type_id in (2, 5):
+            print('beans!')
+            other_bean_crop = (self.farm_year.farm_crops
+                               .filter(farm_crop_type_id__in=[2, 5])
+                               .exclude(pk=self.pk))
+            if other_bean_crop.count() > 0:
+                other_crop = other_bean_crop[0]
+                print('updating', other_crop)
+                other_crop.coverage_type = self.coverage_type
+                other_crop.product_type = self.product_type
+                other_crop.base_coverage_level = self.base_coverage_level
+                other_crop.sco_use = self.sco_use
+                other_crop.eco_level = self.eco_level
+                other_crop.prot_factor = self.prot_factor
+                other_crop.save(change_related=True)
+
     # -------------------------------------------------
     # Crop Ins Premium-related methods values in $/acre
     # -------------------------------------------------
@@ -614,7 +635,14 @@ class FarmCrop(models.Model):
         if util.any_changed(self, 'planted_acres'):
             # invalidate memory cached variable
             self.farm_year.totalplantedacres = None
-
+        print('change_related in kwargs?', 'change_related' in kwargs)
+        if ('change_related' not in kwargs and
+            util.any_changed(self, 'coverage_type', 'product_type',
+                             'base_coverage_level', 'sco_use', 'eco_level',
+                             'prot_factor')):
+            self.update_related_crop_ins_settings()
+        elif 'change_related' in kwargs:
+            del kwargs['change_related']
         super().save(*args, **kwargs)
 
     class Meta:
