@@ -479,6 +479,16 @@ class FarmCrop(models.Model):
     # ----------------------
     # Cost methods in $/acre
     # ----------------------
+    def rented_acres(self):
+        return (0 if self.farm_crop_type.is_fac else
+                self.planted_acres / self.farm_year.total_farm_acres() *
+                self.farm_year.cropland_acres_rented)
+
+    def owned_acres(self):
+        return (0 if self.farm_crop_type.is_fac else
+                self.planted_acres / self.farm_year.total_farm_acres() *
+                self.farm_year.cropland_acres_owned)
+
     def total_nonland_costs(self):
         fbc = self.farmbudgetcrop
         result = (
@@ -504,10 +514,24 @@ class FarmCrop(models.Model):
             yf = self.yield_factor
         cf = self.farm_year.var_rent_cap_floor_frac
         fv = self.farm_year.frac_var_rent()
-        lc = self.farmbudgetcrop.rented_land_costs
+        lc = self.farmbudgetcrop.rented_land_costs * self.rented_acres()
         fre = self.frac_rev_excess(pf, yf, sprice, bprice)
         result = fv * lc * math.copysign(cf, fre) if abs(fre) > cf else fre
         return result
+
+    def rented_land_costs(self, pf=None, yf=None, sprice=None, bprice=None):
+        if sprice is None and pf is None:
+            pf = self.price_factor()
+        if yf is None:
+            yf = self.yield_factor
+        return (self.farmbudgetcrop.rented_land_costs * self.rented_acres() +
+                self.revenue_based_adj_to_land_rent(pf, yf, sprice, bprice) /
+                self.planted_acres)
+
+    def owned_land_costs(self):
+        return (0 if self.farm_crop_type.is_fac else
+                (self.farm_year.total_owned_land_expense() /
+                 self.farm_year.total_farm_acres()))
 
     def land_costs(self, pf=None, yf=None, is_cash_flow=False,
                    sprice=None, bprice=None):
@@ -515,14 +539,8 @@ class FarmCrop(models.Model):
             pf = self.price_factor()
         if yf is None:
             yf = self.yield_factor
-        acres = self.farm_year.total_planted_acres()
-        result = (
-            self.farmbudgetcrop.rented_land_costs +
-            self.revenue_based_adj_to_land_rent(pf, yf, sprice, bprice) +
-            (0 if acres == 0 else
-             self.farm_year.total_owned_land_expense(include_principal=is_cash_flow) /
-             acres))
-        return result
+        return (self.rented_land_costs(pf, yf, sprice, bprice) +
+                self.owned_land_costs())
 
     def total_cost(self, pf=None, yf=None, is_cash_flow=False,
                    sprice=None, bprice=None):

@@ -36,10 +36,6 @@ class FarmYear(models.Model):
         verbose_name="primary county",
         help_text="The county where most farm acres are located")
     crop_year = models.SmallIntegerField(default=util.get_current_year)
-    report_type = models.SmallIntegerField(
-        default=0, choices=REPORT_TYPES,
-        help_text=(_("Pre-Tax cash flow deducts land debt interest and principal " +
-                   "payments.<br>Pre-tax Income deducts only interest expense.")))
     cropland_acres_owned = models.FloatField(
         default=0, validators=[MinVal(0), MaxVal(99999)])
     cropland_acres_rented = models.FloatField(
@@ -95,9 +91,7 @@ class FarmYear(models.Model):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.totalplantedacres = None
-
-    def report_type_name(self):
-        return dict(FarmYear.REPORT_TYPES)[self.report_type]
+        self.totalnondcplantedacres = None
 
     def get_model_run_date(self):
         # TODO: add logic to handle old farm years
@@ -121,11 +115,21 @@ class FarmYear(models.Model):
             state_id=self.state, code=self.county_code).name
         return f'{county_name} County {self.state}'
 
+    def total_farm_acres(self):
+        return self.cropland_acres_rented + self.cropland_acres_owned
+
     def total_planted_acres(self):
         if self.totalplantedacres is None:
             self.totalplantedacres = sum((fc.planted_acres
                                           for fc in self.farm_crops.all()))
         return self.totalplantedacres
+
+    def total_nondc_planted_acres(self):
+        if self.totalnondcplantedacres is None:
+            self.totalnondcplantedacres = sum((fc.planted_acres
+                                               for fc in self.farm_crops.all()
+                                               if not fc.farm_crop_type.is_fac))
+        return self.totalnondcplantedacres
 
     def add_insurable_farm_crops(self):
         """
@@ -199,9 +203,9 @@ class FarmYear(models.Model):
     # -----------------------
     # Expense-related methods
     # -----------------------
-    def total_owned_land_expense(self, include_principal=False):
+    def total_owned_land_expense(self):
         return (self.annual_land_int_expense + self.property_taxes + self.land_repairs +
-                (self.annual_land_principal_pmt if include_principal else 0))
+                self.annual_land_principal_pmt)
 
     def frac_var_rent(self):
         return (0 if self.cropland_acres_rented == 0 else

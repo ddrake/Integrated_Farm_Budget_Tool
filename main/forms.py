@@ -40,8 +40,7 @@ class FarmYearUpdateForm(ModelForm):
                      'other_nongrain_income', 'other_nongrain_expense',
                      'eligible_persons_for_cap'),
             Fieldset('Report Controls',
-                     'report_type', 'is_model_run_date_manual',
-                     'manual_model_run_date'),
+                     'is_model_run_date_manual', 'manual_model_run_date'),
         )
 
     class Meta:
@@ -50,7 +49,7 @@ class FarmYearUpdateForm(ModelForm):
                 cash_rented_acres var_rent_cap_floor_frac annual_land_int_expense
                 annual_land_principal_pmt property_taxes land_repairs
                 eligible_persons_for_cap other_nongrain_income
-                other_nongrain_expense report_type manual_model_run_date
+                other_nongrain_expense manual_model_run_date
                 is_model_run_date_manual'''.split()
 
 

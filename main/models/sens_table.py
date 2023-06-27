@@ -41,7 +41,6 @@ class SensTable(object):
                              for mc in self.market_crops]
         self.acres = [fc.planted_acres for fc in self.farm_crops]
         self.total_acres = sum(self.acres)
-        self.is_cash_flow = (self.farm_year.report_type == 1)
 
         # lengths for layout
         self.nfcs = len(self.farm_crops)
@@ -121,7 +120,7 @@ class SensTable(object):
                 'cost', self.get_cost_values(), 'COST SENSITIVITY ($000)', ''))
             rslt.update(self.get_formatted(
                 'pretaxamt', self.get_pretaxamt_values(), 'PROFIT SENSITIVITY ($000)',
-                'Pre-Tax Cash Flow' if self.is_cash_flow else 'Pre-Tax Income'))
+                'Pre-Tax Cash Flow'))
             self.alltables = rslt
         return self.alltables
 
@@ -230,8 +229,7 @@ class SensTable(object):
             other_cost = self.farm_year.other_nongrain_expense
             self.cost_values = self.get_values_array(
                 'total_cost', noncrop=other_cost,
-                kwargs={'is_cash_flow': self.is_cash_flow,
-                        'sprice': None, 'bprice': None})
+                kwargs={'sprice': None, 'bprice': None})
         return self.cost_values
 
     def get_pretaxamt_values(self):

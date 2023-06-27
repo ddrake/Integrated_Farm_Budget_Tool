@@ -52,7 +52,7 @@ class FarmYearAdmin(admin.ModelAdmin):
         'cropland_acres_owned', 'cropland_acres_rented', 'cash_rented_acres',
         'var_rent_cap_floor_frac', 'annual_land_int_expense',
         'annual_land_principal_pmt', 'property_taxes', 'land_repairs',
-        'eligible_persons_for_cap', 'report_type', 'model_run_date',
+        'eligible_persons_for_cap', 'model_run_date',
         'price_factor', 'yield_factor']
     inlines = [MarketCropInline, FsaCropInline]
 

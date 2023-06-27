@@ -44,9 +44,6 @@ class BudgetTable(object):
         for fc in self.farm_crops:
             fc.get_crop_ins_prems()
 
-        self.is_cash_flow = (self.farm_year.report_type == 1)
-
-        inclexcl = "incl." if self.is_cash_flow else "excl."
         self.row_labels = [
             'Crop Revenue', 'ARC/PLC',
             "Other Gov't Payments", 'Crop Insurance Proceeds', 'Other Revenue',
@@ -59,9 +56,8 @@ class BudgetTable(object):
             'Total Non-Land Costs', 'Yield Based Adjustment to Non-Land Costs',
             'Total Adjusted Non-Land Costs', 'Operator and Land Return', 'Land costs',
             'Revenue Based Adjustment to Land Rent', 'Adjusted Land Rent',
-            f'Owned Land Cost ({inclexcl} principal payments)',
-            'Total Land Costs', 'Total Costs',
-            f'PRE-TAX {"CASH FLOW" if self.is_cash_flow else "INCOME"}', ]
+            'Owned Land Cost (incl. principal payments)',
+            'Total Land Costs', 'Total Costs', 'PRE-TAX CASH FLOW', ]
 
         for fc in self.farm_crops:
             fc.get_crop_ins_prems()
@@ -109,12 +105,21 @@ class BudgetTable(object):
         self.total_cost = None
         self.pretax_amount = None
         self.bushels = [fc.sens_production_bu() for fc in self.farm_crops]
-        self.acres = [fc.planted_acres for fc in self.farm_crops]
         self.farm_crop_types = [fc.farm_crop_type for fc in self.farm_crops]
-        self.phys_acres = [0 if fc.farm_crop_type.is_fac else fc.planted_acres
-                           for fc in self.farm_crops]
-        self.total_acres = sum(self.acres)
-        self.total_phys_acres = sum(self.phys_acres)
+
+        self.acres = [fc.planted_acres for fc in self.farm_crops]
+        self.fsacres = [0 if fc.farm_crop_type.is_fac else fc.planted_acres
+                        for fc in self.farm_crops]
+        self.total_planted_acres = sum(self.acres)
+        self.total_rented_acres = self.farm_year.cropland_acres_rented
+        self.total_owned_acres = self.farm_year.cropland_acres_owned
+        self.total_farm_acres = self.total_rented_acres + self.total_owned_acres
+        self.rented_acres = [(0 if fc.farm_crop_type.is_fac else fc.planted_acres) *
+                             self.total_rented_acres / self.total_farm_acres
+                             for fc in self.farm_crops]
+        self.owned_acres = [(0 if fc.farm_crop_type.is_fac else fc.planted_acres) *
+                            self.total_owned_acres / self.total_farm_acres
+                            for fc in self.farm_crops]
 
     def get_tables(self):
         if len(self.farm_crops) == 0:
@@ -135,7 +140,7 @@ class BudgetTable(object):
         """
         Make the ($000) budget table rows
         """
-        results = [(f'PRE-TAX {"CASH FLOW" if self.is_cash_flow else "INCOME"} BUDGET',
+        results = [('PRE-TAX CASH FLOW BUDGET',
                    [str(fct).replace('Winter', 'W').replace('Spring', 'S')
                     for fct in self.farm_crop_types] +
                    'Other Total'.split())]
@@ -437,11 +442,10 @@ class BudgetTable(object):
 
     def get_land_costs(self, scaling='kd'):
         if self.land_costs is None:
-            rented_acres = self.farm_year.cropland_acres_rented
-            phys_acres = self.total_phys_acres
-            self.land_costs = [rented_acres * lc * ac / phys_acres for lc, ac in
-                               zip((fc.farmbudgetcrop.rented_land_costs
-                                    for fc in self.farm_crops), self.phys_acres)]
+            self.land_costs = [ra * lc for ra, lc in
+                               zip(self.rented_acres,
+                                   (fc.farmbudgetcrop.rented_land_costs
+                                    for fc in self.farm_crops))]
         return self.getitems(self.land_costs, None, scaling, False)
 
     def get_revenue_based_adjustment_to_land_rent(self, scaling='kd'):
@@ -463,11 +467,12 @@ class BudgetTable(object):
         return self.getitems(self.adjusted_land_rent, None, scaling, False)
 
     def get_owned_land_cost(self, scaling='kd'):
-        land_cost = self.farm_year.total_owned_land_expense(
-            include_principal=self.is_cash_flow)
-        phys_acres = self.total_phys_acres
+        land_cost = self.farm_year.total_owned_land_expense()
+        farm_acres = self.total_farm_acres
         if self.owned_land_cost is None:
-            self.owned_land_cost = [land_cost*ac/phys_acres for ac in self.phys_acres]
+            self.owned_land_cost = [land_cost / farm_acres * ac
+                                    for ac in self.fsacres]
+
         return self.getitems(self.owned_land_cost, None, scaling, False)
 
     def get_total_land_cost(self, scaling='kd'):
