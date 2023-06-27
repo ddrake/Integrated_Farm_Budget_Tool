@@ -200,7 +200,7 @@ class SensTable(object):
         block[1, 1:] = list(map('{:.0%}'.format, self.yfrange))
         block[2:, 0] = list(map('{:.0%}'.format, self.pfrange))
         lst = values.tolist()
-        block[2:, 1:] = [list(map('${:,.0f}'.format, ll)) for ll in lst]
+        block[2:, 1:] = [list(map('{:,.0f}'.format, ll)) for ll in lst]
         return block
 
     # -----------------------------------------------------------------------
