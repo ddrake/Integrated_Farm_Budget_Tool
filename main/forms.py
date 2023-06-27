@@ -17,6 +17,11 @@ class AjaxChoiceIntField(forms.ChoiceField):
 class FarmYearCreateForm(ModelForm):
     county_code = AjaxChoiceIntField()
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.helper = FormHelper()
+        self.helper.add_input(Submit('submit', 'Update'))
+
     class Meta:
         model = FarmYear
         fields = ['farm_name', 'state', 'county_code']
