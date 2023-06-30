@@ -17,16 +17,8 @@ from . import util
 class FarmCrop(models.Model):
     """
     Farm crop-specific data.  A column in the operator input sheet.
-    It holds references to the associated fsa_crop and farm_year models
+    It holds references to the associated market_crop and farm_year models
     for convenience.
-    Its name is just the name of its farm_crop_type (TODO: add method)
-    We can get its crop insurance type from the farm_crop_type.
-    We can infer its crop insurance practice from its is_irrigated
-    and its farm_crop_type is_fac properties.
-    We (re)compute and store all premiums only if the crop, practice, type or subcounty
-    changes (or if the state or county is changed).  A change in user selections,
-    e.g. coverage_type or level is just a quick lookup.
-    Todo: Change premiums.py so it returns nested lists instead of numpy arrays.
     """
     COUNTY = 0
     FARM = 1
@@ -48,6 +40,7 @@ class FarmCrop(models.Model):
         d['farm_crop_id'] = farm_crop_id
         d['farm_year_id'] = FarmCrop.objects.get(pk=farm_crop_id).farm_year_id
         d['budget_crop_id'] = budget_crop_id
+        d['budget_date'] = bc.Budget.created_on
         fbc.FarmBudgetCrop.objects.create(**d)
 
     planted_acres = models.FloatField(
@@ -71,9 +64,6 @@ class FarmCrop(models.Model):
         max_length=8, blank=True, verbose_name="risk class", default='',
         choices=[(v[0], v[0]) for v in Subcounty.objects.all().values_list('id')],
         help_text="Primary risk class (subcounty ID) provided by crop insurer")
-    # TODO: we should give the user sensible defaults for these during the period
-    # when they are required (prior year value for price volatility and board price
-    # for projected price) and hide the form fields once they are known.
     coverage_type = models.SmallIntegerField(
         choices=COVERAGE_TYPES, null=True, blank=True,
         help_text="Crop insurance coverage type.")
@@ -103,8 +93,6 @@ class FarmCrop(models.Model):
                                       related_name='farm_crop_types')
     # holds currently selected practice
     # TODO: May need to replace the choices for subcounty if this changes.
-    # If so, the currently selected subcounty might need to be cleared (if it's
-    # not in the updated choices list.
     ins_practice = models.SmallIntegerField(
         verbose_name='Irrigated?',
         choices=list(FarmYear.IRR_PRACTICE.items()), blank=False)
@@ -299,14 +287,13 @@ class FarmCrop(models.Model):
     # ----------------------------------
     def indem_price_yield_data(self, pf=1, yf=1):
         """
-        If model run is before price_discovery_end, we use the previous year's
-        price volatility factor and the current futures price as projected price
+        Helper for get_indemnities
         """
         mrd = self.farm_year.get_model_run_date()
         pre_discov = mrd <= self.proj_price_disc_end
         pre_harv = mrd <= self.harv_price_disc_end
         pre_cty_yield = mrd <= self.cty_yield_final
-        harv_price = self.harvest_price()
+        harv_price = self.sens_harvest_price(pf)
         sens_harv_price = harv_price * pf
         py = PriceYield.objects.get(
             crop_year=self.farm_year.crop_year, state_id=self.farm_year.state_id,
@@ -314,10 +301,12 @@ class FarmCrop(models.Model):
             crop_id=self.farm_crop_type.ins_crop_id, crop_type_id=self.ins_crop_type_id,
             practice=self.ins_practice)
         exp_yield = py.expected_yield
+        sens_cty_exp_yield = (self.market_crop.county_bean_yield(yf)
+                              if self.farm_crop_type_id in (2, 5) else
+                              self.sens_cty_expected_yield(yf))
         proj_price = harv_price if pre_discov else py.projected_price
         harvest_price = sens_harv_price if pre_harv else py.harvest_price
-        cty_yield = (self.sens_cty_expected_yield(yf) if pre_cty_yield else
-                     py.final_yield)
+        cty_yield = sens_cty_exp_yield if pre_cty_yield else py.final_yield
         return exp_yield, proj_price, harvest_price, cty_yield
 
     def get_indemnities(self, pf=None, yf=None):
@@ -473,8 +462,11 @@ class FarmCrop(models.Model):
             pf = self.price_factor()
         if yf is None:
             yf = self.yield_factor
-        base_rev = (self.noncontract_revenue(pf=1, yf=1) if bprice is None else bprice)
-        sens_rev = (self.noncontract_revenue(pf, yf) if sprice is None else sprice)
+
+        _, proj_price, harvest_price, _ = self.indem_price_yield_data(pf=pf)
+        base_rev = self.planted_acres * self.ta_aph_yield * proj_price
+        sens_rev = (self.planted_acres * self.sens_farm_expected_yield(yf=yf) *
+                    harvest_price)
         result = (0 if base_rev == 0 else (sens_rev - base_rev) / base_rev)
         return result
 
@@ -494,19 +486,9 @@ class FarmCrop(models.Model):
         return (self.farm_year.calc_gov_pmt(pf, yf, is_per_acre=True) *
                 (1 if is_per_acre else self.planted_acres))
 
-    # ----------------------
-    # Cost methods in $/acre
-    # ----------------------
-    def rented_acres(self):
-        return (0 if self.farm_crop_type.is_fac else
-                self.planted_acres / self.farm_year.total_farm_acres() *
-                self.farm_year.cropland_acres_rented)
-
-    def owned_acres(self):
-        return (0 if self.farm_crop_type.is_fac else
-                self.planted_acres / self.farm_year.total_farm_acres() *
-                self.farm_year.cropland_acres_owned)
-
+    # -----------------------------------------
+    # Cost methods in $/acre except where noted
+    # -----------------------------------------
     def total_nonland_costs(self):
         fbc = self.farmbudgetcrop
         result = (
@@ -520,31 +502,36 @@ class FarmCrop(models.Model):
         return result
 
     def yield_adj_to_nonland_costs(self, yf=None):
+        """ a fraction """
         if yf is None:
             yf = self.yield_factor
         return self.farmbudgetcrop.yield_variability * (yf - 1)
 
     def revenue_based_adj_to_land_rent(self, pf=None, yf=None,
                                        sprice=None, bprice=None):
+        """ a fraction """
         if sprice is None and pf is None:
             pf = self.price_factor()
         if yf is None:
             yf = self.yield_factor
         cf = self.farm_year.var_rent_cap_floor_frac
         fv = self.farm_year.frac_var_rent()
-        lc = self.farmbudgetcrop.rented_land_costs * self.rented_acres()
         fre = self.frac_rev_excess(pf, yf, sprice, bprice)
-        result = fv * lc * math.copysign(cf, fre) if abs(fre) > cf else fre
+        result = fv * math.copysign(cf, fre) if abs(fre) > cf else fre
         return result
 
     def rented_land_costs(self, pf=None, yf=None, sprice=None, bprice=None):
+        """ in dollars per planted acre (landcost=0 for dc soybeans in std. budgets) """
         if sprice is None and pf is None:
             pf = self.price_factor()
         if yf is None:
             yf = self.yield_factor
-        return (self.farmbudgetcrop.rented_land_costs * self.rented_acres() +
-                self.revenue_based_adj_to_land_rent(pf, yf, sprice, bprice) /
-                self.planted_acres)
+        # rent cost per planted acre
+        rented_costperacre = (self.farmbudgetcrop.rented_land_costs *
+                              self.farm_year.cropland_acres_rented /
+                              self.farm_year.total_farm_acres())
+        return (rented_costperacre *
+                (1 + self.revenue_based_adj_to_land_rent(pf, yf, sprice, bprice)))
 
     def owned_land_costs(self):
         return (0 if self.farm_crop_type.is_fac else
@@ -573,6 +560,7 @@ class FarmCrop(models.Model):
     # -------------
     # Price methods
     # -------------
+
     def harvest_price(self):
         return self.market_crop.harvest_futures_price_info(price_only=True)
 

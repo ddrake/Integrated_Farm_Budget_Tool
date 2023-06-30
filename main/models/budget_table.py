@@ -1,5 +1,3 @@
-import math
-
 from .farm_year import FarmYear
 
 
@@ -450,12 +448,9 @@ class BudgetTable(object):
 
     def get_revenue_based_adjustment_to_land_rent(self, scaling='kd'):
         if self.revenue_based_adjustment_to_land_rent is None:
-            cf = self.farm_year.var_rent_cap_floor_frac
-            fv = self.farm_year.frac_var_rent()
+            adjs = [fc.revenue_based_adj_to_land_rent() for fc in self.farm_crops]
             self.revenue_based_adjustment_to_land_rent = [
-                fv * lc * (math.copysign(cf, fre) if abs(fre) > cf else fre) for lc, fre
-                in zip(self.land_costs,
-                       (fc.frac_rev_excess() for fc in self.farm_crops))]
+                adj * lc for adj, lc in zip(adjs, self.land_costs)]
         return self.getitems(self.revenue_based_adjustment_to_land_rent,
                              None, scaling, False)
 

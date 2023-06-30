@@ -205,7 +205,7 @@ class MyaPreEstimate(models.Model):
         names = ('''corn_mya_price beans_mya_price wheat_mya_price''').split()
         cmd = 'SELECT ' + ', '.join(names) + """
                   FROM
-                  public.main_mya_pre_estimate(%s, %s)
+                  public.ext_mya_pre_estimate(%s, %s)
                   AS (corn_mya_price double precision, beans_mya_price double precision,
                       wheat_mya_price double precision);
               """
@@ -271,19 +271,33 @@ class MarketCropType(models.Model):
         managed = False
 
 
+class FuturesContract(models.Model):
+    id = models.IntegerField(primary_key=True)
+    ticker = models.CharField(max_length=8)
+    croptype = models.CharField(max_length=10)
+    exchange = models.CharField(max_length=6)
+    futures_month = models.CharField(max_length=8)
+    contract_end_date = models.DateField()
+    market_crop_type_id = models.IntegerField()
+
+    class Meta:
+        managed = False
+
+
 class FuturesPrice(models.Model):
     """
     Futures prices for marketed crop types.  Used for computing MYA prices
     and for estimating insurance indemnity and FSA payments.
     Data: e.g. ('Wheat SRW', 'CBOT', 'Jul 23', 'ZWN23', 6.3325, '2023-03-15', 3)
     """
+    id = models.IntegerField(primary_key=True)
     croptype = models.CharField(max_length=10)
     exchange = models.CharField(max_length=6)
     futures_month = models.CharField(max_length=8)
     ticker = models.CharField(max_length=8)
     price = models.FloatField()
     priced_on = models.DateField()
-    market_crop_type = models.ForeignKey(MarketCropType, on_delete=models.CASCADE)
+    market_crop_type_id = models.IntegerField()
 
     def __str__(self):
         return (f'{self.croptype} {self.exchange} {self.futures_month} ' +
@@ -291,16 +305,6 @@ class FuturesPrice(models.Model):
 
     class Meta:
         managed = False
-        indexes = [models.Index('croptype', 'futures_month', 'priced_on',
-                                name='fut_price_croptype_mth_pron'),
-                   models.Index('market_crop_type', 'futures_month', 'priced_on',
-                                name='fut_price_mktcroptype_mth_pron')]
-        constraints = [
-            models.UniqueConstraint(
-                'futures_month', 'croptype', 'priced_on',
-                name='unique_fut_mth_croptype_priced_on'),
-            models.UniqueConstraint(
-                'ticker', 'priced_on', name='unique_ticker_priced_on')]
 
 
 class InsuranceDates(models.Model):
@@ -321,6 +325,8 @@ class InsuranceDates(models.Model):
     state = models.ForeignKey(State, on_delete=models.CASCADE)
     county_code = models.SmallIntegerField()
     market_crop_type = models.ForeignKey('MarketCropType', on_delete=models.CASCADE)
+    post_futures_month = models.CharField(max_length=8)
+    post_ticker = models.CharField(max_length=8)
 
     class Meta:
         managed = False

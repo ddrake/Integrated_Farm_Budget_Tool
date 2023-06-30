@@ -99,6 +99,10 @@ class FarmBudgetCrop(models.Model):
         State, on_delete=models.CASCADE, null=True, related_name='farm_budget_crops')
     is_rot = models.BooleanField(null=True)
     is_irr = models.BooleanField(default=False)
+    # This is set to the ext_budget.created_on date when a farm budget crop is added.
+    # If a budget for a crop year is updated, we can compare its created_on date with
+    # corresponding user budget_date and notify users
+    budget_date = models.DateField(null=True)
 
     def __str__(self):
         rotstr = (' Rotating' if self.is_rot

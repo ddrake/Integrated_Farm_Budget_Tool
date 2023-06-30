@@ -1,7 +1,7 @@
 from django.core.validators import (
     MinValueValidator as MinVal, MaxValueValidator as MaxVal)
 from django.db import models
-from ext.models import FuturesPrice, MarketCropType
+from ext.models import FuturesContract, FuturesPrice, MarketCropType
 from .farm_year import FarmYear, BaselineFarmYear
 from .fsa_crop import FsaCrop, BaselineFsaCrop
 
@@ -53,26 +53,46 @@ class MarketCrop(models.Model):
         """
         Get the harvest price for the given date from the correct exchange for the
         crop type and county.  Note: insurancedates gives the exchange and ticker.
+        TODO: We need to add a check of the model_run_date vs contract_end_date,
+           and use a similar query, but with different join to get the July price if
+           the model run is after contract end.  Finally if the model run date is after
+           the July contract end, we need the last July price, but no special logic
+           is needed.
         """
         if priced_on is None:
             priced_on = self.farm_year.get_model_run_date()
 
-        # TODO: If priced_on > datetime(crop_year, futures_month, 15)
-        # select the July futures price
-        rec = FuturesPrice.objects.raw("""
-        SELECT fp.id, fp.exchange, fp.futures_month, fp.ticker, fp.priced_on, fp.price
+        rec = FuturesContract.objects.raw("""
+        SELECT id, ticker, croptype, exchange, futures_month, contract_end_date
+        FROM public.ext_futurescontract
+        WHERE ticker = (SELECT ticker
+            FROM ext_insurancedates
+            WHERE crop_year=%s and state_id=%s and county_code=%s
+            and market_crop_type_id=%s)
+        """, params=[self.farm_year.crop_year, self.farm_year.state_id,
+                     self.farm_year.county_code, self.market_crop_type_id])[0]
+
+        ticker = ('ticker' if priced_on <= rec.contract_end_date else
+                  'post_ticker')
+
+        sql = """
+        SELECT fp.id, fp.exchange, fp.futures_month, fp.ticker, fp.priced_on,
+               fp.price
             FROM ext_futuresprice fp
             INNER JOIN (
-            SELECT crop_year, state_id, county_code, market_crop_type_id, ticker
+            SELECT crop_year, state_id, county_code, market_crop_type_id,
+            """ + ticker + """
             FROM ext_insurancedates idt
             WHERE crop_year=%s and state_id=%s and county_code=%s
               and market_crop_type_id=%s) idt
-            ON fp.ticker = idt.ticker
+            ON fp.ticker = idt.""" + ticker + """
             WHERE fp.priced_on <= %s
             order by priced_on desc limit 1;
-        """, params=[self.farm_year.crop_year, self.farm_year.state_id,
-                     self.farm_year.county_code, self.market_crop_type_id,
-                     priced_on])[0]
+        """
+        rec = FuturesPrice.objects.raw(
+            sql, params=[self.farm_year.crop_year, self.farm_year.state_id,
+                         self.farm_year.county_code, self.market_crop_type_id,
+                         priced_on])[0]
         return rec.price if price_only else rec
 
     def planted_acres(self):
@@ -81,6 +101,12 @@ class MarketCrop(models.Model):
     def yield_factor(self):
         return sum((fc.yield_factor * fc.planted_acres
                     for fc in self.farm_crops.all())) / self.planted_acres()
+
+    def county_bean_yield(self, yf=1):
+        """ for indemnity calculations """
+        return (None if self.market_crop_type_id != 2 else
+                sum((fc.farmbudgetcrop.county_yield * fc.planted_acres
+                     for fc in self.farm_crops.all())) * yf)
 
     class Meta:
         ordering = ['market_crop_type_id']
