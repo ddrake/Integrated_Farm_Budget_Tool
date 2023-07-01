@@ -107,6 +107,8 @@ class FarmBudgetCropUpdateForm(ModelForm):
                      'building_depr', 'insurance', 'misc_overhead_costs',
                      'interest_nonland', 'other_overhead_costs', 'rented_land_costs'),
             Fieldset('Land Costs', 'rented_land_costs'),
+            Fieldset('Variability of total cost with yield',
+                     'yield_variability')
         )
 
     class Meta:
@@ -117,4 +119,4 @@ class FarmBudgetCropUpdateForm(ModelForm):
               utilities machine_repair fuel_and_oil light_vehicle
               machine_depr labor_and_mgmt building_repair_and_rent
               building_depr insurance misc_overhead_costs interest_nonland
-              other_overhead_costs rented_land_costs'''.split()
+              other_overhead_costs rented_land_costs yield_variability'''.split()
