@@ -39,7 +39,7 @@ class FarmYearUpdateForm(ModelForm):
                      'annual_land_principal_pmt', 'property_taxes',
                      'land_repairs'),
             Fieldset('Rented Land Information',
-                     'cropland_acres_rented', 'cash_rented_acres',
+                     'cash_rented_acres', 'variable_rented_acres',
                      'var_rent_cap_floor_frac'),
             Fieldset('Non-grain income and expense',
                      'other_nongrain_income', 'other_nongrain_expense',
@@ -50,7 +50,7 @@ class FarmYearUpdateForm(ModelForm):
 
     class Meta:
         model = FarmYear
-        fields = '''farm_name cropland_acres_owned cropland_acres_rented
+        fields = '''farm_name cropland_acres_owned variable_rented_acres
                 cash_rented_acres var_rent_cap_floor_frac annual_land_int_expense
                 annual_land_principal_pmt property_taxes land_repairs
                 eligible_persons_for_cap other_nongrain_income
@@ -94,7 +94,7 @@ class FarmBudgetCropUpdateForm(ModelForm):
         self.helper.add_input(Submit('submit', 'Update'))
         self.helper.layout = Layout(
             Fieldset('Expected Yields',
-                     'farm_yield', 'county_yield'),
+                     'farm_yield', 'baseline_yield_for_var_rent', 'county_yield'),
             Fieldset('Revenue Items',
                      'other_gov_pmts', 'other_revenue'),
             Fieldset('Direct Costs',
@@ -113,7 +113,7 @@ class FarmBudgetCropUpdateForm(ModelForm):
 
     class Meta:
         model = FarmBudgetCrop
-        fields = '''farm_yield county_yield
+        fields = '''farm_yield baseline_yield_for_var_rent county_yield
               other_gov_pmts other_revenue fertilizers pesticides
               seed drying storage other_direct_costs machine_hire_lease
               utilities machine_repair fuel_and_oil light_vehicle

@@ -77,7 +77,8 @@ class FsaCrop(models.Model):
                 crop_id=farm_crop.farm_crop_type.ins_crop_id,
                 crop_type_id=farm_crop.ins_crop_type_id,
                 practice=farm_crop.ins_practice)
-            return py.final_yield
+            if py.final_yield is not None:
+                return py.final_yield
         pairs = ((fc.planted_acres, fc.sens_cty_expected_yield(yf) *
                   fc.planted_acres) for fc in self.farm_crops())
         acres, weighted = zip(*pairs)

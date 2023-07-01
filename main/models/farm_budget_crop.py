@@ -103,6 +103,9 @@ class FarmBudgetCrop(models.Model):
     # If a budget for a crop year is updated, we can compare its created_on date with
     # corresponding user budget_date and notify users
     budget_date = models.DateField(null=True)
+    baseline_yield_for_var_rent = models.FloatField(
+        default=0, validators=[MinVal(0), MaxVal(400)],
+        verbose_name="baseline yield for variable rent")
 
     def __str__(self):
         rotstr = (' Rotating' if self.is_rot
@@ -112,11 +115,6 @@ class FarmBudgetCrop(models.Model):
 
     class Meta:
         ordering = ['farm_crop_type_id']
-
-    def total_direct_costs(self):
-        """ for farm budget crop detail view """
-        return (self.fertilizers + self.pesticides + self.seed + self.drying +
-                self.storage + self.other_direct_costs)
 
     def total_power_costs(self):
         """ for farm budget crop detail view """

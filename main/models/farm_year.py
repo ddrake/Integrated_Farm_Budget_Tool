@@ -38,10 +38,12 @@ class FarmYear(models.Model):
     crop_year = models.SmallIntegerField(default=util.get_current_year)
     cropland_acres_owned = models.FloatField(
         default=0, validators=[MinVal(0), MaxVal(99999)])
-    cropland_acres_rented = models.FloatField(
-        default=0, validators=[MinVal(0), MaxVal(99999)])
+    variable_rented_acres = models.FloatField(
+        default=0, validators=[MinVal(0), MaxVal(99999)],
+        verbose_name="variable rent acres")
     cash_rented_acres = models.FloatField(
-        default=0, validators=[MinVal(0), MaxVal(99999)])
+        default=0, validators=[MinVal(0), MaxVal(99999)],
+        verbose_name="straight cash rent acres")
     var_rent_cap_floor_frac = models.FloatField(
         default=0, validators=[MinVal(0), MaxVal(1)],
         verbose_name="variable rent floor/cap",
@@ -62,8 +64,8 @@ class FarmYear(models.Model):
         help_text="Annual land repair costs in dollars")
     eligible_persons_for_cap = models.SmallIntegerField(
         default=1, validators=[MinVal(0), MaxVal(10)],
-        verbose_name="# persons for cap",
-        help_text="Number of eligible 'persons' for FSA payment caps.")
+        verbose_name="# entities for FSA cap",
+        help_text="Number of eligible entities for FSA payment cap")
     other_nongrain_income = models.FloatField(
         default=0, validators=[MinVal(0), MaxVal(999999)],
         help_text="Other non-grain income in dollars")
@@ -115,8 +117,11 @@ class FarmYear(models.Model):
             state_id=self.state, code=self.county_code).name
         return f'{county_name} County {self.state}'
 
+    def total_rented_acres(self):
+        return self.cash_rented_acres + self.variable_rented_acres
+
     def total_farm_acres(self):
-        return self.cropland_acres_rented + self.cropland_acres_owned
+        return self.total_rented_acres() + self.cropland_acres_owned
 
     def total_planted_acres(self):
         if self.totalplantedacres is None:
@@ -124,7 +129,7 @@ class FarmYear(models.Model):
                                           for fc in self.farm_crops.all()))
         return self.totalplantedacres
 
-    def total_nondc_planted_acres(self):
+    def total_fs_planted_acres(self):
         if self.totalnondcplantedacres is None:
             self.totalnondcplantedacres = sum((fc.planted_acres
                                                for fc in self.farm_crops.all()
@@ -208,9 +213,8 @@ class FarmYear(models.Model):
                 self.annual_land_principal_pmt)
 
     def frac_var_rent(self):
-        return (0 if self.cropland_acres_rented == 0 else
-                (self.cropland_acres_rented - self.cash_rented_acres) /
-                self.cropland_acres_rented)
+        rented = self.total_rented_acres()
+        return 0 if rented == 0 else ((rented - self.cash_rented_acres) / rented)
 
     # ---------------------
     # Validation and saving

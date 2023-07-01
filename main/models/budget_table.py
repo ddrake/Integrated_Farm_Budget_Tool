@@ -51,10 +51,10 @@ class BudgetTable(object):
             'Light vehicle', 'Mach. Depreciation', 'Total Power Costs', 'Hired Labor',
             'Building repair and rent', 'Building depreciation', 'Insurance', 'Misc.',
             'Interest (non-land)', 'Other Costs', 'Total Overhead Costs',
-            'Total Non-Land Costs', 'Yield Based Adjustment to Non-Land Costs',
-            'Total Adjusted Non-Land Costs', 'Operator and Land Return', 'Land Rent',
-            'Revenue Based Adjustment to Land Rent', 'Adjusted Land Rent',
-            'Owned Land Cost (incl. principal payments)',
+            'Total Non-Land Costs', 'Yield Based Adj. to Non-Land Costs',
+            'Total Adjusted Non-Land Costs', 'Operator and Land Return',
+            'Rented Land Costs', 'Revenue Based Adjustment to Land Rent',
+            'Adjusted Land Rent', 'Owned Land Cost (incl. principal payments)',
             'Total Land Costs', 'Total Costs', 'PRE-TAX CASH FLOW', ]
 
         for fc in self.farm_crops:
@@ -109,7 +109,7 @@ class BudgetTable(object):
         self.fsacres = [0 if fc.farm_crop_type.is_fac else fc.planted_acres
                         for fc in self.farm_crops]
         self.total_planted_acres = sum(self.acres)
-        self.total_rented_acres = self.farm_year.cropland_acres_rented
+        self.total_rented_acres = self.farm_year.total_rented_acres()
         self.total_owned_acres = self.farm_year.cropland_acres_owned
         self.total_farm_acres = self.total_rented_acres + self.total_owned_acres
         self.rented_acres = [(0 if fc.farm_crop_type.is_fac else fc.planted_acres) *

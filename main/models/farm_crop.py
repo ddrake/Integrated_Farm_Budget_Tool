@@ -237,8 +237,11 @@ class FarmCrop(models.Model):
             crop_id=self.farm_crop_type.ins_crop_id, crop_type_id=self.ins_crop_type_id,
             practice=self.ins_practice)
         exp_yield = py.expected_yield
-        proj_price = py.projected_price if post_discov else self.harvest_price()
-        price_vol = (py.price_volatility_factor if post_discov else
+        proj_price = (py.projected_price if post_discov
+                      and py.projected_price is not None else
+                      self.harvest_price())
+        price_vol = (py.price_volatility_factor if post_discov
+                     and py.price_volatility_factor is not None else
                      py.price_volatility_factor_prevyr)
         return price_vol, proj_price, exp_yield
 
@@ -304,9 +307,12 @@ class FarmCrop(models.Model):
         sens_cty_exp_yield = (self.market_crop.county_bean_yield(yf)
                               if self.farm_crop_type_id in (2, 5) else
                               self.sens_cty_expected_yield(yf))
-        proj_price = harv_price if pre_discov else py.projected_price
-        harvest_price = sens_harv_price if pre_harv else py.harvest_price
-        cty_yield = sens_cty_exp_yield if pre_cty_yield else py.final_yield
+        proj_price = (harv_price if pre_discov or py.projected_price is None else
+                      py.projected_price)
+        harvest_price = (sens_harv_price if pre_harv or py.harvest_price is None else
+                         py.harvest_price)
+        cty_yield = (sens_cty_exp_yield if pre_cty_yield or py.final_yield is None else
+                     py.final_yield)
         return exp_yield, proj_price, harvest_price, cty_yield
 
     def get_indemnities(self, pf=None, yf=None):
@@ -464,7 +470,8 @@ class FarmCrop(models.Model):
             yf = self.yield_factor
 
         _, proj_price, harvest_price, _ = self.indem_price_yield_data(pf=pf)
-        base_rev = self.planted_acres * self.ta_aph_yield * proj_price
+        base_rev = (self.planted_acres *
+                    self.farmbudgetcrop.baseline_yield_for_var_rent * proj_price)
         sens_rev = (self.planted_acres * self.sens_farm_expected_yield(yf=yf) *
                     harvest_price)
         result = (0 if base_rev == 0 else (sens_rev - base_rev) / base_rev)
@@ -489,11 +496,15 @@ class FarmCrop(models.Model):
     # -----------------------------------------
     # Cost methods in $/acre except where noted
     # -----------------------------------------
+    def total_direct_costs(self):
+        fbc = self.farmbudgetcrop
+        return (fbc.fertilizers + fbc.pesticides + fbc.seed + fbc.drying +
+                fbc.storage + self.get_total_premiums() + fbc.other_direct_costs)
+
     def total_nonland_costs(self):
         fbc = self.farmbudgetcrop
         result = (
-            fbc.fertilizers + fbc.pesticides + fbc.seed + fbc.drying + fbc.storage +
-            self.get_total_premiums() + fbc.other_direct_costs +
+            self.total_direct_costs() +
             fbc.machine_hire_lease + fbc.utilities + fbc.machine_repair +
             fbc.fuel_and_oil + fbc.light_vehicle + fbc.machine_depr +
             fbc.labor_and_mgmt + fbc.building_repair_and_rent + fbc.building_depr +
@@ -528,7 +539,7 @@ class FarmCrop(models.Model):
             yf = self.yield_factor
         # rent cost per planted acre
         rented_costperacre = (self.farmbudgetcrop.rented_land_costs *
-                              self.farm_year.cropland_acres_rented /
+                              self.farm_year.total_rented_acres() /
                               self.farm_year.total_farm_acres())
         return (rented_costperacre *
                 (1 + self.revenue_based_adj_to_land_rent(pf, yf, sprice, bprice)))
