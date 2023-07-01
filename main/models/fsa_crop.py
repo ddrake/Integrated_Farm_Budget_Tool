@@ -4,7 +4,7 @@ from django.core.validators import (MinValueValidator as MinVal,
                                     MaxValueValidator as MaxVal)
 from django.db import models
 from django.utils.translation import gettext_lazy as _
-from ext.models import ReferencePrices, FsaCropType
+from ext.models import ReferencePrices, FsaCropType, PriceYield
 from core.models.gov_pmt import GovPmt
 from .farm_year import FarmYear, BaselineFarmYear
 
@@ -69,6 +69,15 @@ class FsaCrop(models.Model):
         """
         if yf is None:
             yf = self.yield_factor()
+        farm_crop = self.farm_crops()[0]
+        if self.farm_year.get_model_run_date() > farm_crop.cty_yield_final:
+            py = PriceYield.objects.get(
+                crop_year=self.farm_year.crop_year, state_id=self.farm_year.state_id,
+                county_code=self.farm_year.county_code,
+                crop_id=farm_crop.farm_crop_type.ins_crop_id,
+                crop_type_id=farm_crop.ins_crop_type_id,
+                practice=farm_crop.ins_practice)
+            return py.final_yield
         pairs = ((fc.planted_acres, fc.sens_cty_expected_yield(yf) *
                   fc.planted_acres) for fc in self.farm_crops())
         acres, weighted = zip(*pairs)
