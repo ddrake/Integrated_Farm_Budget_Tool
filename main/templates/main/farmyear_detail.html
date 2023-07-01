@@ -16,20 +16,34 @@
     <dd class="text-right">${{farmyear.property_taxes|floatformat:"g"}}</dd>
     <dt>Land repairs</dt>
     <dd class="text-right">${{farmyear.land_repairs|floatformat:"g"}}</dd>
+    <dt class="italic">&nbsp;&nbsp;Total Owned Land Costs</dt>
+    <dd class="text-right border-t border-black">
+    ${{farmyear.total_owned_land_expense|floatformat:"g"}}</dd>
+    <dt>&nbsp;</dt><dd></dd>
     <dt class="font-semibold">Rented Land Information</dt><dd></dd>
-    <dt>Cropland acres rented</dt>
-    <dd class="text-right">{{farmyear.cropland_acres_rented|floatformat:"g"}}</dd>
-    <dt>Cash rented acres</dt>
+    <dt>Straight cash rent acres</dt>
     <dd class="text-right">{{farmyear.cash_rented_acres|floatformat:"g"}}</dd>
+    <dt>Variable rent acres</dt>
+    <dd class="text-right">{{farmyear.variable_rented_acres|floatformat:"g"}}</dd>
+    <dt class="italic">&nbsp;&nbsp;Total Rented Acres</dt>
+    <dd class="text-right border-t border-black">{{farmyear.total_rented_acres|floatformat:"g"}}</dd>
     <dt>Variable rent cap/floor</dt>
     <dd class="text-right">{{farmyear.var_rent_cap_floor_frac|pct}}</dd>
+    <dt>&nbsp;</dt><dd></dd>
+    <dt class="italic">Total Farmed Acres</dt>
+    <dd class="text-right">{{farmyear.total_farm_acres|floatformat:"g"}}</dd>
+    <dt class="italic">Total Full Season Planted Acres</dt>
+    <dd class="text-right">{{farmyear.total_fs_planted_acres|floatformat:"g"}}</dd>
+    <dt>&nbsp;</dt><dd></dd>
     <dt class="font-semibold">Non-grain income and expense</dt><dd></dd>
     <dt>Other non-grain income</dt>
     <dd class="text-right">${{farmyear.other_nongrain_income|floatformat:"g"}}</dd>
     <dt>Other non-grain expense</dt>
     <dd class="text-right">${{farmyear.other_nongrain_expense|floatformat:"g"}}</dd>
-    <dt>Eligible persons for FSA cap</dt>
+    <dt>&nbsp;</dt><dd></dd>
+    <dt>Eligible entities for FSA cap</dt>
     <dd class="text-right">{{farmyear.eligible_persons_for_cap}}</dd>
+    <dt>&nbsp;</dt><dd></dd>
     <dt class="font-semibold">Report Controls</dt><dd></dd>
     <dt>Model run date manual</dt>
     <dd class="text-right">{{farmyear.is_model_run_date_manual|yesno:"Yes,No"}}</dd>

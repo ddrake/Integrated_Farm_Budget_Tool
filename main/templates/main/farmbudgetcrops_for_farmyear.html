@@ -12,13 +12,18 @@
       <dt class="font-semibold">Expected Yields (bpa)</dt><dd></dd>
       <dt>Farm yield</dt>
       <dd class="text-right">{{farmbudgetcrop.farm_yield}}</dd>
+      <dt>Variable rent baseline yield</dt>
+      <dd class="text-right">{{farmbudgetcrop.baseline_yield_for_var_rent}}</dd>
       <dt>County yield</dt>
       <dd class="text-right">{{farmbudgetcrop.county_yield}}</dd>
-      <dt class="font-semibold">Revenue Items ($/acre)</dt><dd></dd>
+      <dt>&nbsp;</dt><dd></dd>
+      <dt class="font-semibold">Other Revenue Items ($/acre)</dt><dd></dd>
       <dt>Other gov. payments</dt>
       <dd class="text-right">${{farmbudgetcrop.other_gov_pmts|floatformat:"0"}}</dd>
-      <dt>Other revenue</dt>
+      <dt>Other crop-related revenue</dt>
       <dd class="text-right">${{farmbudgetcrop.other_revenue|floatformat:"0"}}</dd>
+      <dt>&nbsp;</dt><dd></dd>
+      <dt class="font-semibold">Total Costs of Production</dt><dd></dd>
       <dt class="font-semibold">Direct Costs ($/acre)</dt><dd></dd>
       <dt>Fertilizers</dt>
       <dd class="text-right">${{farmbudgetcrop.fertilizers|floatformat:"0"}}</dd>
@@ -30,11 +35,13 @@
       <dd class="text-right">${{farmbudgetcrop.drying|floatformat:"0"}}</dd>
       <dt>Storage</dt>
       <dd class="text-right">${{farmbudgetcrop.storage|floatformat:"0"}}</dd>
+      <dt>Crop Insurance</dt>
+      <dd class="text-right">${{farmbudgetcrop.farm_crop.get_total_premiums|floatformat:"0"}}</dd>
       <dt>Other direct costs</dt>
       <dd class="text-right">${{farmbudgetcrop.other_direct_costs|floatformat:"0"}}</dd>
       <dt class="italic">&nbsp;&nbsp;Total direct costs</dt>
       <dd class="text-right border-t border-black">
-        ${{farmbudgetcrop.total_direct_costs|floatformat:"0"}}</dd>
+        ${{farmbudgetcrop.farm_crop.total_direct_costs|floatformat:"0"}}</dd>
       <dt class="font-semibold">Power Costs ($/acre)</dt><dd></dd>
       <dt>Machine hire/lease</dt>
       <dd class="text-right">${{farmbudgetcrop.machine_hire_lease|floatformat:"0"}}</dd>
@@ -58,7 +65,7 @@
       <dd class="text-right">${{farmbudgetcrop.building_repair_and_rent|floatformat:"0"}}</dd>
       <dt>Building depreciation</dt>
       <dd class="text-right">${{farmbudgetcrop.building_depr|floatformat:"0"}}</dd>
-      <dt>Insurance</dt>
+      <dt>Insurance (non-crop)</dt>
       <dd class="text-right">${{farmbudgetcrop.insurance|floatformat:"0"}}</dd>
       <dt>Misc overhead costs</dt>
       <dd class="text-right">${{farmbudgetcrop.misc_overhead_costs|floatformat:"0"}}</dd>
@@ -69,12 +76,15 @@
       <dt class="italic">&nbsp;&nbsp;Total overhead costs</dt>
       <dd class="text-right border-t border-black">
         ${{farmbudgetcrop.total_overhead_costs|floatformat:"0"}}</dd>
+      <dt class="italic">&nbsp;&nbsp;Total non-land costs</dt>
+      <dd class="text-right border-t border-black">
+        ${{farmbudgetcrop.farm_crop.total_nonland_costs|floatformat:"0"}}</dd>
       <dt class="font-semibold">Land Rent ($/acre)</dt><dd></dd>
       <dt>Rented land costs</dt>
       <dd class="text-right">${{farmbudgetcrop.rented_land_costs|floatformat:"0"}}</dd>
       <dt class="font-semibold">Variability of cost with yield</dt><dd></dd>
       <dt>Yield variability</dt>
-      <dd class="text-right">${{farmbudgetcrop.yield_variability|pct}}</dd>
+      <dd class="text-right">{{farmbudgetcrop.yield_variability|pct}}</dd>
     </dl>
     <div class="my-2">
       <a class="text-lg text-indigo-800 hover:text-indigo-600"
