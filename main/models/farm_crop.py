@@ -22,7 +22,7 @@ class FarmCrop(models.Model):
     """
     COUNTY = 0
     FARM = 1
-    COVERAGE_TYPES = [(0, 'County (area)'), (1, 'Farm (enterprise)'), ]
+    COVERAGE_TYPES = [(0, 'County'), (1, 'Farm'), ]
     PRODUCT_TYPES = [(0, 'RP'), (1, 'RP-HPE'), (2, 'YP'), ]
     COVERAGE_LEVELS = [
         (.5, '50%'), (.55, '55%'), (.6, '60%'), (.65, '65%'),

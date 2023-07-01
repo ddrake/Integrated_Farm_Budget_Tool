@@ -402,11 +402,11 @@ class BudgetCrop(models.Model):
     is_irr = models.BooleanField(default=False)
 
     def __str__(self):
-        rotstr = (' Rotating,' if self.is_rot
-                  else '' if self.is_rot is None else ' Continuous,')
+        rotstr = (' Rot,' if self.is_rot
+                  else '' if self.is_rot is None else ' Cont,')
         descr = '' if self.description == '' else f' {self.description},'
         yldstr = f' {int(self.farm_yield)} bpa,'
-        rentstr = f' land rent: ${int(self.rented_land_costs)}/ac'
+        rentstr = f' Rent: ${int(self.rented_land_costs)}/ac'
         return (f'{self.state.abbr},{descr}{rotstr}{yldstr}{rentstr}')
 
     class Meta:
