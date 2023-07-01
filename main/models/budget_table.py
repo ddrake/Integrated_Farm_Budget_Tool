@@ -52,7 +52,7 @@ class BudgetTable(object):
             'Building repair and rent', 'Building depreciation', 'Insurance', 'Misc.',
             'Interest (non-land)', 'Other Costs', 'Total Overhead Costs',
             'Total Non-Land Costs', 'Yield Based Adjustment to Non-Land Costs',
-            'Total Adjusted Non-Land Costs', 'Operator and Land Return', 'Land costs',
+            'Total Adjusted Non-Land Costs', 'Operator and Land Return', 'Land Rent',
             'Revenue Based Adjustment to Land Rent', 'Adjusted Land Rent',
             'Owned Land Cost (incl. principal payments)',
             'Total Land Costs', 'Total Costs', 'PRE-TAX CASH FLOW', ]
