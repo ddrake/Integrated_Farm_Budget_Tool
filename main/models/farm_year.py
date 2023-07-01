@@ -94,6 +94,7 @@ class FarmYear(models.Model):
         super().__init__(*args, **kwargs)
         self.totalplantedacres = None
         self.totalnondcplantedacres = None
+        self.facplantedacres = None
 
     def get_model_run_date(self):
         # TODO: add logic to handle old farm years
@@ -128,6 +129,12 @@ class FarmYear(models.Model):
             self.totalplantedacres = sum((fc.planted_acres
                                           for fc in self.farm_crops.all()))
         return self.totalplantedacres
+
+    def fac_planted_acres(self):
+        if self.facplantedacres is None:
+            self.facplantedacres = sum((fc.planted_acres for fc in self.farm_crops.all()
+                                        if fc.farm_crop_type.is_fac))
+        return self.facplantedacres
 
     def total_fs_planted_acres(self):
         if self.totalnondcplantedacres is None:

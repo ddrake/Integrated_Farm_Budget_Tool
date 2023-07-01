@@ -57,6 +57,9 @@ class BudgetTable(object):
             'Adjusted Land Rent', 'Owned Land Cost (incl. principal payments)',
             'Total Land Costs', 'Total Costs', 'PRE-TAX CASH FLOW', ]
 
+        self.kd_boldrows = [0, 1, 6, 14, 21, 29, 32, 33, 36, 38, 39, 40]
+        self.pb_boldrows = [0, 1, 6, 14, 21, 29, 32, 33, 36, 38, 39, 40]
+        self.pa_boldrows = [0, 1, 6, 14, 21, 29, 32, 33, 36, 38, 39, 40]
         for fc in self.farm_crops:
             fc.get_crop_ins_prems()
 
@@ -123,15 +126,15 @@ class BudgetTable(object):
         if len(self.farm_crops) == 0:
             return None
         results = {'kd': self.make_thousands(),
-                   'kdbold': [0, 1, 6, 14, 21, 29, 32, 33, 36, 38, 39, 40],
+                   'kdbold': [0, 1, 6, 14, 21, 29, 30, 32, 33, 36, 38, 39, 40],
                    'pa': self.make_peracre(),
-                   'pabold': [0, 1, 6, 14, 21, 29, 32, 33, 36, 38, 39, 40],
+                   'pabold': [0, 1, 6, 14, 21, 29, 30, 32, 33, 36, 38, 39, 40],
                    'pb': self.make_perbushel(),
-                   'pbbold': [0, 1, 6, 14, 21, 29, 32, 33, 36, 38, 39, 40], }
+                   'pbbold': [0, 1, 6, 14, 21, 29, 30, 32, 33, 36, 38, 39, 40], }
         wheatdc = self.make_wheatdc()
         if wheatdc is not None:
             results['wheatdc'] = wheatdc
-            results['wheatdcbold'] = [0, 1, 6, 14, 21, 29, 32, 33, 36, 38, 39, 40]
+            results['wheatdcbold'] = [0, 1, 6, 14, 21, 29, 30, 32, 33, 36, 38, 39, 40]
         return results
 
     def make_thousands(self):
@@ -177,20 +180,22 @@ class BudgetTable(object):
                 [[f'${sum(pair)/1000:,.0f}',
                   f'${sum((v/a for v, a in zip(pair, acres))):,.0f}'] for pair in vals])
 
-    def getitems(self, items, other, scaling, no_totcol):
+    def getitems(self, items, other, scaling, no_totcol, dollarsign):
         """
         Get 'items', a cached list of numbers, peform totaling and scaling
         as specified
         """
+        ds = '$' if dollarsign else ''
         if scaling == 'kd':
-            cols = [f'${val/1000:,.0f}' for val in items]
-            cols.append('' if other is None else f'${other/1000:,.0f}')
-            cols.append('' if no_totcol else
-                        f'${(sum(items) + (0 if other is None else other))/1000:,.0f}')
+            cols = [ds + f'{val/1000:,.0f}' for val in items]
+            cols.append('' if other is None else ds + f'{other/1000:,.0f}')
+            cols.append(
+                '' if no_totcol else
+                ds + f'{(sum(items) + (0 if other is None else other))/1000:,.0f}')
         elif scaling == 'pa':
-            cols = [f'${val/ac:,.0f}' for val, ac in zip(items, self.acres)]
+            cols = [ds + f'{val/ac:,.0f}' for val, ac in zip(items, self.acres)]
         elif scaling == 'pb':
-            cols = [f'${val/bu:,.2f}'
+            cols = [ds + f'{val/bu:,.2f}'
                     for val, bu in zip(items, self.bushels)]
         else:  # get raw numbers
             cols = items[:]
@@ -199,26 +204,26 @@ class BudgetTable(object):
     def get_crop_revenue(self, scaling='kd'):
         if self.crop_revenue is None:
             self.crop_revenue = [fc.grain_revenue() for fc in self.farm_crops]
-        return self.getitems(self.crop_revenue, None, scaling, False)
+        return self.getitems(self.crop_revenue, None, scaling, False, True)
 
     def get_gov_pmt(self, scaling='kd'):
         if self.gov_pmt is None:
             self.gov_pmt = [fc.gov_pmt_portion() for fc in self.farm_crops]
-        return self.getitems(self.gov_pmt, None, scaling, False)
+        return self.getitems(self.gov_pmt, None, scaling, False, False)
 
     def get_other_gov_pmts(self, scaling='kd'):
         if self.other_gov_pmts is None:
             self.other_gov_pmts = [gp * ac for gp, ac in
                                    zip((fc.farmbudgetcrop.other_gov_pmts
                                         for fc in self.farm_crops), self.acres)]
-        return self.getitems(self.other_gov_pmts, None, scaling, False)
+        return self.getitems(self.other_gov_pmts, None, scaling, False, False)
 
     def get_crop_ins_indems(self, scaling='kd'):
         if self.crop_ins_indems is None:
             self.crop_ins_indems = [ind * ac for ind, ac in
                                     zip((fc.get_total_indemnities()
                                          for fc in self.farm_crops), self.acres)]
-        return self.getitems(self.crop_ins_indems, None, scaling, False)
+        return self.getitems(self.crop_ins_indems, None, scaling, False, False)
 
     def get_other_revenue(self, scaling='kd'):
         if self.other_revenue is None:
@@ -226,7 +231,8 @@ class BudgetTable(object):
                                   zip((fc.farmbudgetcrop.other_revenue
                                        for fc in self.farm_crops), self.acres)]
         return self.getitems(self.other_revenue,
-                             self.farm_year.other_nongrain_income, scaling, False)
+                             self.farm_year.other_nongrain_income, scaling,
+                             False, False)
 
     def get_gross_revenue(self, scaling='kd'):
         if self.gross_revenue is None:
@@ -234,56 +240,56 @@ class BudgetTable(object):
                 sum(items) for items in zip(self.crop_revenue, self.gov_pmt,
                                             self.crop_ins_indems, self.other_revenue)]
         return self.getitems(self.gross_revenue, self.farm_year.other_nongrain_income,
-                             scaling, False)
+                             scaling, False, True)
 
     def get_fertilizers(self, scaling='kd'):
         if self.fertilizers is None:
             self.fertilizers = [f * ac for f, ac in
                                 zip((fc.farmbudgetcrop.fertilizers
                                      for fc in self.farm_crops), self.acres)]
-        return self.getitems(self.fertilizers, None, scaling, False)
+        return self.getitems(self.fertilizers, None, scaling, False, False)
 
     def get_pesticides(self, scaling='kd'):
         if self.pesticides is None:
             self.pesticides = [p * ac for p, ac in
                                zip((fc.farmbudgetcrop.pesticides
                                     for fc in self.farm_crops), self.acres)]
-        return self.getitems(self.pesticides, None, scaling, False)
+        return self.getitems(self.pesticides, None, scaling, False, False)
 
     def get_seed(self, scaling='kd'):
         if self.seed is None:
             self.seed = [s * ac for s, ac in
                          zip((fc.farmbudgetcrop.seed
                               for fc in self.farm_crops), self.acres)]
-        return self.getitems(self.seed, None, scaling, False)
+        return self.getitems(self.seed, None, scaling, False, False)
 
     def get_drying(self, scaling='kd'):
         if self.drying is None:
             self.drying = [d * ac for d, ac in
                            zip((fc.farmbudgetcrop.drying
                                 for fc in self.farm_crops), self.acres)]
-        return self.getitems(self.drying, None, scaling, False)
+        return self.getitems(self.drying, None, scaling, False, False)
 
     def get_storage(self, scaling='kd'):
         if self.storage is None:
             self.storage = [s * ac for s, ac in
                             zip((fc.farmbudgetcrop.storage
                                  for fc in self.farm_crops), self.acres)]
-        return self.getitems(self.storage, None, scaling, False)
+        return self.getitems(self.storage, None, scaling, False, False)
 
     def get_crop_ins_prems(self, scaling='kd'):
         if self.crop_ins_prems is None:
             self.crop_ins_prems = [(0 if p is None else p * ac) for p, ac in
                                    zip((fc.get_total_premiums()
                                         for fc in self.farm_crops), self.acres)]
-        return self.getitems(self.crop_ins_prems, None, scaling, False)
+        return self.getitems(self.crop_ins_prems, None, scaling, False, False)
 
     def get_other_direct_costs(self, scaling='kd'):
         if self.other_direct_costs is None:
             self.other_direct_costs = [odc * ac for odc, ac in
                                        zip((fc.farmbudgetcrop.other_direct_costs
                                             for fc in self.farm_crops), self.acres)]
-        return self.getitems(self.other_direct_costs, None, scaling, False)
+        return self.getitems(self.other_direct_costs, None, scaling, False, False)
 
     def get_total_direct_costs(self, scaling='kd'):
         if self.total_direct_costs is None:
@@ -291,49 +297,49 @@ class BudgetTable(object):
                 sum(items) for items in zip(
                     self.fertilizers, self.pesticides, self.seed, self.drying,
                     self.storage, self.crop_ins_prems, self.other_direct_costs)]
-        return self.getitems(self.total_direct_costs, None, scaling, False)
+        return self.getitems(self.total_direct_costs, None, scaling, False, True)
 
     def get_machine_hire_lease(self, scaling='kd'):
         if self.machine_hire_lease is None:
             self.machine_hire_lease = [mhl * ac for mhl, ac in
                                        zip((fc.farmbudgetcrop.machine_hire_lease
                                             for fc in self.farm_crops), self.acres)]
-        return self.getitems(self.machine_hire_lease, None, scaling, False)
+        return self.getitems(self.machine_hire_lease, None, scaling, False, False)
 
     def get_utilities(self, scaling='kd'):
         if self.utilities is None:
             self.utilities = [u * ac for u, ac in
                               zip((fc.farmbudgetcrop.utilities
                                    for fc in self.farm_crops), self.acres)]
-        return self.getitems(self.utilities, None, scaling, False)
+        return self.getitems(self.utilities, None, scaling, False, False)
 
     def get_machine_repair(self, scaling='kd'):
         if self.machine_repair is None:
             self.machine_repair = [mr * ac for mr, ac in
                                    zip((fc.farmbudgetcrop.machine_repair
                                         for fc in self.farm_crops), self.acres)]
-        return self.getitems(self.machine_repair, None, scaling, False)
+        return self.getitems(self.machine_repair, None, scaling, False, False)
 
     def get_fuel_and_oil(self, scaling='kd'):
         if self.fuel_and_oil is None:
             self.fuel_and_oil = [fo * ac for fo, ac in
                                  zip((fc.farmbudgetcrop.fuel_and_oil
                                       for fc in self.farm_crops), self.acres)]
-        return self.getitems(self.fuel_and_oil, None, scaling, False)
+        return self.getitems(self.fuel_and_oil, None, scaling, False, False)
 
     def get_light_vehicle(self, scaling='kd'):
         if self.light_vehicle is None:
             self.light_vehicle = [lv * ac for lv, ac in
                                   zip((fc.farmbudgetcrop.light_vehicle
                                        for fc in self.farm_crops), self.acres)]
-        return self.getitems(self.light_vehicle, None, scaling, False)
+        return self.getitems(self.light_vehicle, None, scaling, False, False)
 
     def get_machine_depreciation(self, scaling='kd'):
         if self.machine_depreciation is None:
             self.machine_depreciation = [md * ac for md, ac in
                                          zip((fc.farmbudgetcrop.machine_depr
                                               for fc in self.farm_crops), self.acres)]
-        return self.getitems(self.machine_depreciation, None, scaling, False)
+        return self.getitems(self.machine_depreciation, None, scaling, False, False)
 
     def get_total_power_costs(self, scaling='kd'):
         if self.total_power_costs is None:
@@ -341,49 +347,49 @@ class BudgetTable(object):
                 sum(items) for items in zip(
                     self.machine_hire_lease, self.utilities, self.machine_repair,
                     self.fuel_and_oil, self.light_vehicle, self.machine_depreciation)]
-        return self.getitems(self.total_power_costs, None, scaling, False)
+        return self.getitems(self.total_power_costs, None, scaling, False, True)
 
     def get_hired_labor(self, scaling='kd'):
         if self.hired_labor is None:
             self.hired_labor = [lm * ac for lm, ac in
                                 zip((fc.farmbudgetcrop.labor_and_mgmt
                                      for fc in self.farm_crops), self.acres)]
-        return self.getitems(self.hired_labor, None, scaling, False)
+        return self.getitems(self.hired_labor, None, scaling, False, False)
 
     def get_building_repair_rent(self, scaling='kd'):
         if self.building_repair_rent is None:
             self.building_repair_rent = [br * ac for br, ac in
                                          zip((fc.farmbudgetcrop.building_repair_and_rent
                                               for fc in self.farm_crops), self.acres)]
-        return self.getitems(self.building_repair_rent, None, scaling, False)
+        return self.getitems(self.building_repair_rent, None, scaling, False, False)
 
     def get_building_depreciation(self, scaling='kd'):
         if self.building_depreciation is None:
             self.building_depreciation = [bd * ac for bd, ac in
                                           zip((fc.farmbudgetcrop.building_depr
                                                for fc in self.farm_crops), self.acres)]
-        return self.getitems(self.building_depreciation, None, scaling, False)
+        return self.getitems(self.building_depreciation, None, scaling, False, False)
 
     def get_insurance(self, scaling='kd'):
         if self.insurance is None:
             self.insurance = [ins * ac for ins, ac in
                               zip((fc.farmbudgetcrop.insurance
                                    for fc in self.farm_crops), self.acres)]
-        return self.getitems(self.insurance, None, scaling, False)
+        return self.getitems(self.insurance, None, scaling, False, False)
 
     def get_misc(self, scaling='kd'):
         if self.misc is None:
             self.misc = [mc * ac for mc, ac in
                          zip((fc.farmbudgetcrop.misc_overhead_costs
                               for fc in self.farm_crops), self.acres)]
-        return self.getitems(self.misc, None, scaling, False)
+        return self.getitems(self.misc, None, scaling, False, False)
 
     def get_interest_nonland(self, scaling='kd'):
         if self.interest_nonland is None:
             self.interest_nonland = [inl * ac for inl, ac in
                                      zip((fc.farmbudgetcrop.interest_nonland
                                           for fc in self.farm_crops), self.acres)]
-        return self.getitems(self.interest_nonland, None, scaling, False)
+        return self.getitems(self.interest_nonland, None, scaling, False, False)
 
     def get_other_costs(self, scaling='kd'):
         if self.other_costs is None:
@@ -391,7 +397,7 @@ class BudgetTable(object):
                                 zip((fc.farmbudgetcrop.other_overhead_costs
                                      for fc in self.farm_crops), self.acres)]
         return self.getitems(self.other_costs, self.farm_year.other_nongrain_expense,
-                             scaling, False)
+                             scaling, False, False)
 
     def get_total_overhead_costs(self, scaling='kd'):
         if self.total_overhead_costs is None:
@@ -401,7 +407,8 @@ class BudgetTable(object):
                     self.building_depreciation, self.insurance, self.misc,
                     self.interest_nonland, self.other_costs)]
         return self.getitems(self.total_overhead_costs,
-                             self.farm_year.other_nongrain_expense, scaling, False)
+                             self.farm_year.other_nongrain_expense, scaling,
+                             False, True)
 
     def get_total_nonland_costs(self, scaling='kd'):
         if self.total_nonland_costs is None:
@@ -410,7 +417,8 @@ class BudgetTable(object):
                     self.total_direct_costs, self.total_power_costs,
                     self.total_overhead_costs)]
         return self.getitems(self.total_nonland_costs,
-                             self.farm_year.other_nongrain_expense, scaling, False)
+                             self.farm_year.other_nongrain_expense, scaling,
+                             False, True)
 
     def get_yield_adj_to_nonland_costs(self, scaling='kd'):
         if self.yield_adj_to_nonland_costs is None:
@@ -419,7 +427,8 @@ class BudgetTable(object):
                 zip((fc.farmbudgetcrop.yield_variability * (fc.yield_factor - 1)
                      for fc in self.farm_crops),
                     self.total_nonland_costs)]
-        return self.getitems(self.yield_adj_to_nonland_costs, None, scaling, False)
+        return self.getitems(self.yield_adj_to_nonland_costs, None, scaling,
+                             False, False)
 
     def get_total_adj_nonland_costs(self, scaling='kd'):
         if self.total_adj_nonland_costs is None:
@@ -427,7 +436,8 @@ class BudgetTable(object):
                 tnc + ya for tnc, ya in
                 zip(self.total_nonland_costs, self.yield_adj_to_nonland_costs)]
         return self.getitems(self.total_adj_nonland_costs,
-                             self.farm_year.other_nongrain_expense, scaling, False)
+                             self.farm_year.other_nongrain_expense, scaling,
+                             False, True)
 
     def get_operator_and_land_return(self, scaling='kd'):
         if self.operator_and_land_return is None:
@@ -436,7 +446,8 @@ class BudgetTable(object):
                 zip(self.gross_revenue, self.total_adj_nonland_costs)]
         return self.getitems(self.operator_and_land_return,
                              (self.farm_year.other_nongrain_income -
-                              self.farm_year.other_nongrain_expense), scaling, False)
+                              self.farm_year.other_nongrain_expense), scaling,
+                             False, True)
 
     def get_land_costs(self, scaling='kd'):
         if self.land_costs is None:
@@ -444,7 +455,7 @@ class BudgetTable(object):
                                zip(self.rented_acres,
                                    (fc.farmbudgetcrop.rented_land_costs
                                     for fc in self.farm_crops))]
-        return self.getitems(self.land_costs, None, scaling, False)
+        return self.getitems(self.land_costs, None, scaling, False, False)
 
     def get_revenue_based_adjustment_to_land_rent(self, scaling='kd'):
         if self.revenue_based_adjustment_to_land_rent is None:
@@ -452,14 +463,14 @@ class BudgetTable(object):
             self.revenue_based_adjustment_to_land_rent = [
                 adj * lc for adj, lc in zip(adjs, self.land_costs)]
         return self.getitems(self.revenue_based_adjustment_to_land_rent,
-                             None, scaling, False)
+                             None, scaling, False, False)
 
     def get_adjusted_land_rent(self, scaling='kd'):
         if self.adjusted_land_rent is None:
             self.adjusted_land_rent = [
                 lc + ra for lc, ra in
                 zip(self.land_costs, self.revenue_based_adjustment_to_land_rent)]
-        return self.getitems(self.adjusted_land_rent, None, scaling, False)
+        return self.getitems(self.adjusted_land_rent, None, scaling, False, True)
 
     def get_owned_land_cost(self, scaling='kd'):
         land_cost = self.farm_year.total_owned_land_expense()
@@ -467,21 +478,21 @@ class BudgetTable(object):
         if self.owned_land_cost is None:
             self.owned_land_cost = [land_cost / farm_acres * ac
                                     for ac in self.fsacres]
-
-        return self.getitems(self.owned_land_cost, None, scaling, False)
+        return self.getitems(self.owned_land_cost, None, scaling, False, False)
 
     def get_total_land_cost(self, scaling='kd'):
         if self.total_land_cost is None:
             self.total_land_cost = [rent + lc for rent, lc in
                                     zip(self.adjusted_land_rent, self.owned_land_cost)]
-        return self.getitems(self.total_land_cost, None, scaling, False)
+        return self.getitems(self.total_land_cost, None, scaling, False, True)
 
     def get_total_cost(self, scaling='kd'):
         if self.total_cost is None:
             self.total_cost = [nlc + lc for nlc, lc in
                                zip(self.total_adj_nonland_costs, self.total_land_cost)]
         return self.getitems(self.total_cost,
-                             self.farm_year.other_nongrain_expense, scaling, False)
+                             self.farm_year.other_nongrain_expense, scaling,
+                             False, True)
 
     def get_pretax_amount(self, scaling='kd'):
         if self.pretax_amount is None:
@@ -489,4 +500,5 @@ class BudgetTable(object):
                                   zip(self.gross_revenue, self.total_cost)]
         return self.getitems(self.pretax_amount,
                              (self.farm_year.other_nongrain_income -
-                              self.farm_year.other_nongrain_expense), scaling, False)
+                              self.farm_year.other_nongrain_expense), scaling,
+                             False, True)

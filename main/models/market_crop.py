@@ -108,6 +108,18 @@ class MarketCrop(models.Model):
                 sum((fc.farmbudgetcrop.county_yield * fc.planted_acres
                      for fc in self.farm_crops.all())) * yf)
 
+    def expected_total_bushels(self):
+        return sum((fc.sens_farm_expected_yield() * fc.planted_acres
+                    for fc in self.farm_crops.all()))
+
+    def futures_pct_of_expected(self):
+        tot = self.expected_total_bushels()
+        return (0 if tot == 0 else self.contracted_bu / tot)
+
+    def basis_pct_of_expected(self):
+        tot = self.expected_total_bushels()
+        return (0 if tot == 0 else self.basis_bu_locked / tot)
+
     class Meta:
         ordering = ['market_crop_type_id']
 
