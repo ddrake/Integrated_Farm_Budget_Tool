@@ -100,7 +100,9 @@ class SensTable(object):
                      (['Wheat/DC Beans'] if self.wheatdc else []))
             tags = [n.lower().replace(' ', '_').replace('/', '_') for n in names]
             self.info = {'nfcs': self.nfcs, 'nmcs': self.nmcs,
-                         'spanrows': [0, 1, self.nfcs+1], 'crops': zip(tags, names), }
+                         'spanrows': [0, 1, self.nfcs+1], 'crops': zip(tags, names),
+                         'hasdiff': self.farm_year.sensitivity_data is not None}
+            print(f'{self.info=}')
         return self.info
 
     def save_sens_data(self):

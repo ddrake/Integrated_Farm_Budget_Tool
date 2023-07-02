@@ -9,10 +9,12 @@
       </p> 
     {% else %}
     <form action="">
+      {% if info.hasdiff %}
         <label class="block text-gray-700 text-sm font-bold mb-px"
           for="diff">Differences</label>
         <input type="checkbox" id="diff">
         <small class="block text-gray-600 mb-2">Show differences between the current and previous sets of sensitized values</small>
+      {% endif %}
         <label class="block text-gray-700 text-sm font-bold mb-2"
           for="type-sel">Type</label>
         <select 
@@ -60,7 +62,8 @@
   (() => {
 
     function managevisibility() {
-      let diff = document.querySelector("#diff").checked
+      diffcb = document.querySelector("#diff")
+      let diff = (diffcb ? document.querySelector("#diff").checked : false)
       let type = document.querySelector("#type-sel").value
       let crop = document.querySelector("#crop-sel").value
       let tblid = type + (diff ? '_diff' : '') + "_" + crop;

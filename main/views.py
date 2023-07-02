@@ -173,6 +173,6 @@ class SensitivityTableView(TemplateView):
         context = super().get_context_data(**kwargs)
         farmyear = kwargs.get('farmyear', None)
         st = SensTable(farmyear)
-        context['tables'] = st.get_all_tables()
         context['info'] = st.get_info()
+        context['tables'] = st.get_all_tables()
         return context
