@@ -40,7 +40,7 @@ class FarmCrop(models.Model):
         d['farm_crop_id'] = farm_crop_id
         d['farm_year_id'] = FarmCrop.objects.get(pk=farm_crop_id).farm_year_id
         d['budget_crop_id'] = budget_crop_id
-        d['budget_date'] = bc.Budget.created_on
+        d['budget_date'] = bc.budget.created_on
         fbc.FarmBudgetCrop.objects.create(**d)
 
     planted_acres = models.FloatField(
