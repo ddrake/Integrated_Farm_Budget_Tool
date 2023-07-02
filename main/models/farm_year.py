@@ -89,6 +89,7 @@ class FarmYear(models.Model):
     is_model_run_date_manual = models.BooleanField(
         default=False,
         help_text='Use the manually-set model run date (advanced).')
+    sensitivity_data = models.JSONField(null=True, blank=True)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

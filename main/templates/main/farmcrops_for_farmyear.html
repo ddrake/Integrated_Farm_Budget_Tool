@@ -75,7 +75,7 @@
 
       function setinfo(hasbudget) {
         let info = document.querySelector("#budget-info-{{farmcrop.pk}}")
-        info.innerHTML = hasbudget ? "Budget set; custom values will be lost<br>if selection is changed."
+        info.innerHTML = hasbudget ? "Budget set; any custom budget item values<br>will be lost if this selection is later changed."
           : "Set irrigation status before adding a budget.";
       }
 

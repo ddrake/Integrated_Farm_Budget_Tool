@@ -9,8 +9,12 @@
       </p> 
     {% else %}
     <form action="">
+        <label class="block text-gray-700 text-sm font-bold mb-px"
+          for="diff">Differences</label>
+        <input type="checkbox" id="diff">
+        <small class="block text-gray-600 mb-2">Show differences between the current and previous sets of sensitized values</small>
         <label class="block text-gray-700 text-sm font-bold mb-2"
-          for="type-sel"><strong>Type</strong></label>
+          for="type-sel">Type</label>
         <select 
           class="bg-white focus:outline-none border border-gray-300 rounded-lg py-2 px-4 block w-full appearance-none leading-normal text-gray-700" 
           name="type-sel" id="type-sel"
@@ -22,7 +26,7 @@
           <option value="cost">Cost</option>
         </select>
         <label class="block text-gray-700 text-sm font-bold mb-2"
-          for="crop-sel"><strong>Crop</strong></label>
+          for="crop-sel">Crop</label>
         <select 
           class="mb-4 bg-white focus:outline-none border border-gray-300 rounded-lg py-2 px-4 block w-full appearance-none leading-normal text-gray-700" 
           name="crop-sel" id="crop-sel"
@@ -56,9 +60,10 @@
   (() => {
 
     function managevisibility() {
+      let diff = document.querySelector("#diff").checked
       let type = document.querySelector("#type-sel").value
       let crop = document.querySelector("#crop-sel").value
-      let tblid = type + "_" + crop;
+      let tblid = type + (diff ? '_diff' : '') + "_" + crop;
       const matches = document.querySelectorAll("table");
       matches.forEach((tbl) => {
         if (tbl.id !== tblid) {
@@ -82,6 +87,11 @@
          });
     document
       .querySelector("#crop-sel")
+         .addEventListener("change", (event) => {
+             managevisibility()
+         });
+    document
+      .querySelector("#diff")
          .addEventListener("change", (event) => {
              managevisibility()
          });

@@ -62,12 +62,17 @@ class SensTable(object):
         # non-sensitized prices, yields
         self.harvest_prices = [fc.harvest_price() for fc in self.farm_crops]
         self.mkt_harvest_prices = [mc.harvest_price() for mc in self.market_crops]
-        self.expected_yields = [fc.farm_expected_yield() for fc in self.farm_crops]
 
         # sensitized price, yield arrays
+        # TODO: once prices are finalized (post next July contract end) we should
+        # no longer sensitize them, but without this optimization, senstable will
+        # be much slower!  Really need to vectorize the whole application.
         self.prices = np.outer(self.pfrange, self.harvest_prices)
         self.mprices = np.outer(self.pfrange, self.mkt_harvest_prices)
-        self.yields = np.outer(self.yfrange, self.expected_yields)
+        # once yields are finalized, we no longer sensitize them
+        self.yields = np.array(
+            [fc.sens_farm_expected_yield(yf) for yf in self.yfrange
+             for fc in self.farm_crops]).reshape(self.nyfs, self.nfcs)
 
         # apportioned gov pmt in dollars
         self.gov_pmts = None
@@ -82,7 +87,6 @@ class SensTable(object):
         # computed string arrays (same for all sens. tables)
         self.yieldblock = None
         self.priceblock = None
-        self.alltables = None
         self.info = None
 
     def set_gov_pmts(self, pf, yf):
@@ -99,30 +103,51 @@ class SensTable(object):
                          'spanrows': [0, 1, self.nfcs+1], 'crops': zip(tags, names), }
         return self.info
 
+    def save_sens_data(self):
+        alldata = [ar.tolist() for ar in
+                   [self.revenue_values, self.title_values, self.indem_values,
+                    self.cost_values, self.pretaxamt_values]]
+        self.farm_year.sensitivity_data = alldata
+        self.farm_year.save()
+
     def get_all_tables(self):
         """
         Main method
         return a dict with keys like pretax_corn, revenue_farm, title_wheatdc
         and with values nested lists of strings to be rendered as html tables.
         """
-        if self.alltables is None:
-            rslt = {}
-            rslt.update(self.get_formatted(
-                'revenue', self.get_revenue_values(), 'REVENUE SENSITIVITY ($000)',
-                'Revenue before Indemnity and Title payments'))
-            rslt.update(self.get_formatted(
-                'title', self.get_title_values(),
-                'TITLE PAYMENT SENSITIVITY ($000)', ''))
-            rslt.update(self.get_formatted(
-                'indem', self.get_indem_values(),
-                'INSURANCE PAYMENT SENSITIVITY ($000)', ''))
-            rslt.update(self.get_formatted(
-                'cost', self.get_cost_values(), 'COST SENSITIVITY ($000)', ''))
-            rslt.update(self.get_formatted(
-                'pretaxamt', self.get_pretaxamt_values(), 'PROFIT SENSITIVITY ($000)',
-                'Pre-Tax Cash Flow'))
-            self.alltables = rslt
-        return self.alltables
+        rslt = {}
+        self.get_tables(rslt)
+        if self.farm_year.sensitivity_data is not None:
+            self.get_tables(rslt, diff=True)
+        self.save_sens_data()
+        return rslt
+
+    def get_tables(self, rslt, diff=False):
+        if diff:
+            revenue_p, title_p, indem_p, cost_p, pretaxamt_p = (
+                np.array(v) for v in self.farm_year.sensitivity_data)
+
+        items = [
+            ['revenue' + ('_diff' if diff else ''),
+             (self.revenue_values - revenue_p) if diff else self.get_revenue_values(),
+             'REVENUE SENSITIVITY ($000)',
+             'Revenue before Indemnity and Title payments'],
+            ['title' + ('_diff' if diff else ''),
+             (self.title_values - title_p) if diff else self.get_title_values(),
+             'TITLE PAYMENT SENSITIVITY ($000)', ''],
+            ['indem' + ('_diff' if diff else ''),
+             (self.indem_values - indem_p) if diff else self.get_indem_values(),
+             'INSURANCE PAYMENT SENSITIVITY ($000)', ''],
+            ['cost' + ('_diff' if diff else ''),
+             (self.cost_values - cost_p) if diff else self.get_cost_values(),
+             'COST SENSITIVITY ($000)', ''],
+            ['pretaxamt' + ('_diff' if diff else ''),
+             (self.pretaxamt_values - pretaxamt_p) if diff else
+             self.get_pretaxamt_values(),
+             'PROFIT SENSITIVITY ($000)', 'Pre-Tax Cash Flow']]
+        for args in items:
+            rslt.update(self.get_formatted(*args))
 
     def get_formatted(self, tag, values, title, subtitle):
         """

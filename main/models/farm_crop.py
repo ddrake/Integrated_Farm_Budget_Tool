@@ -354,14 +354,15 @@ class FarmCrop(models.Model):
     # ----------------------------
     # Yield and Production methods
     # ----------------------------
-    def farm_expected_yield(self):
-        return (self.farmbudgetcrop.farm_yield if self.has_budget()
-                else self.ta_aph_yield)
-
     def sens_farm_expected_yield(self, yf=None):
         if yf is None:
             yf = self.yield_factor
-        return self.farm_expected_yield() * yf
+        if not self.has_budget():
+            return self.ta_aph_yield * yf
+        mrd = self.farm_year.get_model_run_date()
+        yieldfinal = self.farmbudgetcrop.farm_yield_final_on
+        sens = (yieldfinal is None or yieldfinal > mrd)
+        return self.farmbudgetcrop.farm_yield * (yf if sens else 1)
 
     def cty_expected_yield(self):
         return (self.farmbudgetcrop.county_yield if self.has_budget()
@@ -468,7 +469,6 @@ class FarmCrop(models.Model):
             pf = self.price_factor()
         if yf is None:
             yf = self.yield_factor
-
         _, proj_price, harvest_price, _ = self.indem_price_yield_data(pf=pf)
         base_rev = (self.planted_acres *
                     self.farmbudgetcrop.baseline_yield_for_var_rent * proj_price)
@@ -516,7 +516,12 @@ class FarmCrop(models.Model):
         """ a fraction """
         if yf is None:
             yf = self.yield_factor
-        return self.farmbudgetcrop.yield_variability * (yf - 1)
+        fbc = self.farmbudgetcrop
+        mrd = self.farm_year.get_model_run_date()
+        yfo = fbc.farm_yield_final_on
+        sens = yfo is None or yfo > mrd
+        return (fbc.yield_variability *
+                ((yf - 1) if sens else fbc.farm_yield/fbc.baseline_yield_for_var_rent))
 
     def revenue_based_adj_to_land_rent(self, pf=None, yf=None,
                                        sprice=None, bprice=None):

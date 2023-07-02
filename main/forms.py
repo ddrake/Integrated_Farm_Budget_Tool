@@ -94,7 +94,8 @@ class FarmBudgetCropUpdateForm(ModelForm):
         self.helper.add_input(Submit('submit', 'Update'))
         self.helper.layout = Layout(
             Fieldset('Expected Yields',
-                     'farm_yield', 'baseline_yield_for_var_rent', 'county_yield'),
+                     'farm_yield', 'is_farm_yield_final',
+                     'baseline_yield_for_var_rent', 'county_yield'),
             Fieldset('Revenue Items',
                      'other_gov_pmts', 'other_revenue'),
             Fieldset('Direct Costs',
@@ -119,4 +120,5 @@ class FarmBudgetCropUpdateForm(ModelForm):
               utilities machine_repair fuel_and_oil light_vehicle
               machine_depr labor_and_mgmt building_repair_and_rent
               building_depr insurance misc_overhead_costs interest_nonland
-              other_overhead_costs rented_land_costs yield_variability'''.split()
+              other_overhead_costs rented_land_costs yield_variability
+              is_farm_yield_final'''.split()
