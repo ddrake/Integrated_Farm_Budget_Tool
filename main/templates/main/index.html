@@ -21,19 +21,19 @@
       <ul class="text-base">
         <li>See the <a class="text-indigo-700 hover:text-indigo-500"
                href="https://github.com/ddrake/Integrated_Farm_Budget_Tool/wiki">
-            Wiki</a> for help getting started and other information.
+            Wiki</a> for help getting started and detailed documentation.
         </li>
         <li>Visit the <a class="text-indigo-700 hover:text-indigo-500"
                href="https://github.com/ddrake/Integrated_Farm_Budget_Tool/discussions">
             Discussions forum
-          </a> to get answers and contribute to the IFBT community.
+          </a> to get questions answered and contribute to the IFBT community.
         </li>
         <li>Visit the <a class="text-indigo-700 hover:text-indigo-500"
                href="https://github.com/ddrake/Integrated_Farm_Budget_Tool">
             Repository</a> to view the source code.
         </li>
     </div>
-    <div id="app" class="max-w-screen-lg mx-auto px-4 md:px-8 py-12 transition-all duration-500 ease-linear">
+    <div id="app" class="max-w-screen-lg mx-auto px-4 md:px-8 py-6 transition-all duration-500 ease-linear">
       <div class="w-[800px] mx-auto">
         <div class="slides-container h-[400px] flex snap-x snap-mandatory overflow-hidden overflow-x-auto rounded scroll-smooth before:w-[45vw] before:shrink-0 after:w-[45vw] after:shrink-0 md:before:w-0 md:after:w-0">
           <div class="slide aspect-square h-full flex-shrink-0 snap-center rounded overflow-hidden">
@@ -51,20 +51,18 @@
   </div>
 </div>
 <script>
-(() => {
-  const slidesContainer = document.querySelector(".slides-container");
-  const slideWidth = slidesContainer.querySelector(".slide").clientWidth;
-  let index = 1;
-  function nextSlide() {
-    index += 1;
-    if (index > 3) {
-      index = 1;
-      slidesContainer.scrollLeft = 0;
-    } else {
-      slidesContainer.scrollLeft += slideWidth;
-    }
+var slidesContainer = document.querySelector(".slides-container");
+var slideWidth = slidesContainer.querySelector(".slide").clientWidth;
+var index = 1;
+function nextSlide() {
+  index += 1;
+  if (index > 3) {
+    index = 1;
+    slidesContainer.scrollLeft = 0;
+  } else {
+    slidesContainer.scrollLeft += slideWidth;
   }
-  setInterval(nextSlide, 3000);
-})();
+}
+setInterval(nextSlide, 3000);
 </script>
 {% endblock %}
