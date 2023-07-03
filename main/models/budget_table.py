@@ -424,7 +424,7 @@ class BudgetTable(object):
         if self.yield_adj_to_nonland_costs is None:
             self.yield_adj_to_nonland_costs = [
                 var * nlc for var, nlc in
-                zip((fc.farmbudgetcrop.yield_variability * (fc.yield_factor - 1)
+                zip((fc.yield_adj_to_nonland_costs()
                      for fc in self.farm_crops),
                     self.total_nonland_costs)]
         return self.getitems(self.yield_adj_to_nonland_costs, None, scaling,

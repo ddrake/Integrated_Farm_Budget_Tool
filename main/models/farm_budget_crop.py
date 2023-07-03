@@ -31,7 +31,8 @@ class FarmBudgetCrop(models.Model):
     irrigated status of the farm crop to the buddget crop type.
     """
     farm_yield = models.FloatField(
-        default=0, validators=[MinVal(0), MaxVal(400)])
+        default=0, validators=[MinVal(0), MaxVal(400)],
+        help_text='Set this to the final yield after harvest')
     # the farm yield value is copied to county yield when the budget crop is copied.
     county_yield = models.FloatField(
         default=0, validators=[MinVal(0), MaxVal(400)])
@@ -106,11 +107,16 @@ class FarmBudgetCrop(models.Model):
     budget_date = models.DateField(null=True)
     baseline_yield_for_var_rent = models.FloatField(
         default=0, validators=[MinVal(0), MaxVal(400)],
-        verbose_name="baseline yield for variable rent")
+        verbose_name="baseline yield",
+        help_text='Fixed yield used for variable rent and yield-based cost adjustment')
     is_farm_yield_final = models.BooleanField(
         default=False, verbose_name="farm yield final?",
         help_text='Adjust the farm yield and check this box once farm yield is known')
     farm_yield_final_on = models.DateField(null=True)
+    yield_factor = models.FloatField(
+        default=1, validators=[MinVal(0), MaxVal(2)],
+        verbose_name='yield sensititivity factor',
+        help_text='Modify expected yields prior to harvest, affecting detailed budget')
 
     def __str__(self):
         rotstr = (' Rotating' if self.is_rot

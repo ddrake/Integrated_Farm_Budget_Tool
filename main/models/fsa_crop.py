@@ -58,7 +58,7 @@ class FsaCrop(models.Model):
     def yield_factor(self):
         pa = self.planted_acres()
         return (1 if pa == 0 else
-                sum((fc.yield_factor * fc.planted_acres
+                sum((fc.sens_farm_expected_yield() * fc.planted_acres
                     for fc in self.farm_crops())) / pa)
 
     def cty_expected_yield(self, yf=None):
