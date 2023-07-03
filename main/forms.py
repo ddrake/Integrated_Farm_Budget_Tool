@@ -20,7 +20,7 @@ class FarmYearCreateForm(ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.helper = FormHelper()
-        self.helper.add_input(Submit('submit', 'Update'))
+        self.helper.add_input(Submit('submit', 'Create'))
 
     class Meta:
         model = FarmYear

@@ -1,9 +1,12 @@
 {% extends 'main/base.html' %}
+{% block title %}
+<title>Update farm year</title>
+{% endblock title %}
 {% load tailwind_filters %}
 {% block content %}
 <div class="p-6 max-w-med mt-24 mx-auto bg-white rounded-xl shadow-lg flex items-center space-x-4 overflow-y-scroll">
     <div>
-        <h1 class="text-xl mb-2">Update farm</h1>
+        <h1 class="text-xl mb-2">Update Farm Year</h1>
         <p>{{ object }}, {{ object.location }}</p>
         <form action="" method="post">
             {% csrf_token %}

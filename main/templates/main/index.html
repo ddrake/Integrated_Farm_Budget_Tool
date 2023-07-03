@@ -2,15 +2,12 @@
 {% load static %}
 {% block content %}
 <div class="p-6 max-w-med mx-auto bg-white rounded-xl shadow-lg flex items-center space-x-4 font-serif">
-  <div class="shrink-0">
-   <img class="h-96 w-96" src="{% static 'main/images/smoketreesucker.png' %}" alt="ChitChat Logo">
-  </div>
   <div>
-    <div>
+    <div class="text-center">
       <div class="text-4xl font-medium text-black mb-2">Integrated Farm Budget Tool</div>
       <p class="text-xl text-slate-600 mb-5">Helping farmers across the U.S. evaluate and manage their financial risk</p>
     </div>
-    <div class="mt-2">
+    <div class="mt-2 px-8">
       {% if not user.is_authenticated %}
       <a class="text-xl text-indigo-700 hover:text-indigo-500"
          href="{% url 'register' %}">Register</a> for free or
@@ -20,7 +17,7 @@
       <hr class="slate-500 mt-3 mb-2">
       {% endif %}
       
-      <p class="text-base mb-2">This open source project is based at Github</p>
+      <p class="text-lg mb-2">This open source project is based at <em>Github</em></p>
       <ul class="text-base">
         <li>See the <a class="text-indigo-700 hover:text-indigo-500"
                href="https://github.com/ddrake/Integrated_Farm_Budget_Tool/wiki">
@@ -35,7 +32,39 @@
                href="https://github.com/ddrake/Integrated_Farm_Budget_Tool">
             Repository</a> to view the source code.
         </li>
-    <div>
-  <div>
+    </div>
+    <div id="app" class="max-w-screen-lg mx-auto px-4 md:px-8 py-12 transition-all duration-500 ease-linear">
+      <div class="w-[800px] mx-auto">
+        <div class="slides-container h-[400px] flex snap-x snap-mandatory overflow-hidden overflow-x-auto rounded scroll-smooth before:w-[45vw] before:shrink-0 after:w-[45vw] after:shrink-0 md:before:w-0 md:after:w-0">
+          <div class="slide aspect-square h-full flex-shrink-0 snap-center rounded overflow-hidden">
+            <img class="w-full h-full object-cover" src="{% static 'main/images/corn.png' %}">
+          </div>
+          <div class="slide aspect-square h-full flex-shrink-0 snap-center rounded overflow-hidden">
+            <img class="w-full h-full object-cover" src="{% static 'main/images/soy.png' %}">
+          </div>
+          <div class="slide aspect-square h-full flex-shrink-0 snap-center rounded overflow-hidden">
+            <img class="w-full h-full object-cover" src="{% static 'main/images/wheat.png' %}">
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
+<script>
+(() => {
+  const slidesContainer = document.querySelector(".slides-container");
+  const slideWidth = slidesContainer.querySelector(".slide").clientWidth;
+  let index = 1;
+  function nextSlide() {
+    index += 1;
+    if (index > 3) {
+      index = 1;
+      slidesContainer.scrollLeft = 0;
+    } else {
+      slidesContainer.scrollLeft += slideWidth;
+    }
+  }
+  setInterval(nextSlide, 3000);
+})();
+</script>
 {% endblock %}
