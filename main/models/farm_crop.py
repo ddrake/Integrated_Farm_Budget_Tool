@@ -37,6 +37,7 @@ class FarmCrop(models.Model):
         bc = BudgetCrop.objects.get(pk=budget_crop_id)
         d = {k: v for k, v in bc.__dict__.items() if k not in ['_state', 'id']}
         d['county_yield'] = d['farm_yield']
+        d['baseline_yield_for_var_rent'] = d['farm_yield']
         d['farm_crop_id'] = farm_crop_id
         d['farm_year_id'] = FarmCrop.objects.get(pk=farm_crop_id).farm_year_id
         d['budget_crop_id'] = budget_crop_id
