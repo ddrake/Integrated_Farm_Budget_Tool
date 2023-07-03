@@ -5,7 +5,6 @@ from django.db import models
 from ext.models import State, Budget, BudgetCrop, FarmCropType
 from .farm_year import FarmYear
 from .farm_crop import FarmCrop, BaselineFarmCrop
-from . import util
 
 
 def get_current_year():
@@ -112,11 +111,13 @@ class FarmBudgetCrop(models.Model):
     is_farm_yield_final = models.BooleanField(
         default=False, verbose_name="farm yield final?",
         help_text='Adjust the farm yield and check this box once farm yield is known')
-    farm_yield_final_on = models.DateField(null=True)
     yield_factor = models.FloatField(
         default=1, validators=[MinVal(0), MaxVal(2)],
         verbose_name='yield sensititivity factor',
         help_text='Modify expected yields prior to harvest, affecting detailed budget')
+    are_costs_final = models.BooleanField(
+        default=False, verbose_name="Costs final?",
+        help_text='Adjust costs and check this box (if desired) once costs are known')
 
     def __str__(self):
         rotstr = (' Rotating' if self.is_rot
@@ -137,12 +138,6 @@ class FarmBudgetCrop(models.Model):
         return (self.labor_and_mgmt + self.building_repair_and_rent +
                 self.building_depr + self.insurance + self.misc_overhead_costs +
                 self.interest_nonland + self.other_overhead_costs)
-
-    def save(self, *args, **kwargs):
-        if util.any_changed(self, 'is_farm_yield_final'):
-            self.farm_yield_final_on = (
-                datetime.today() if self.is_farm_yield_final else None)
-        super().save(*args, **kwargs)
 
 
 class BaselineFarmBudgetCrop(models.Model):

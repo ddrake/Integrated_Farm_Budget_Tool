@@ -356,12 +356,8 @@ class FarmCrop(models.Model):
     def sens_farm_expected_yield(self, yf=None):
         if yf is None:
             yf = self.farmbudgetcrop.yield_factor
-        if not self.has_budget():
-            return self.ta_aph_yield * yf
-        mrd = self.farm_year.get_model_run_date()
-        yieldfinal = self.farmbudgetcrop.farm_yield_final_on
-        sens = (yieldfinal is None or yieldfinal > mrd)
-        return self.farmbudgetcrop.farm_yield * (yf if sens else 1)
+        yieldfinal = self.farmbudgetcrop.is_farm_yield_final
+        return self.farmbudgetcrop.farm_yield * (1 if yieldfinal else yf)
 
     def cty_expected_yield(self):
         return (self.farmbudgetcrop.county_yield if self.has_budget()
@@ -370,7 +366,8 @@ class FarmCrop(models.Model):
     def sens_cty_expected_yield(self, yf=None):
         if yf is None:
             yf = self.farmbudgetcrop.yield_factor
-        return self.cty_expected_yield() * yf
+        yieldfinal = self.farmbudgetcrop.is_farm_yield_final
+        return self.cty_expected_yield() * (1 if yieldfinal else yf)
 
     def sens_production_bu(self, yf=None):
         if yf is None:
@@ -516,11 +513,11 @@ class FarmCrop(models.Model):
         if yf is None:
             yf = self.farmbudgetcrop.yield_factor
         fbc = self.farmbudgetcrop
-        mrd = self.farm_year.get_model_run_date()
-        yfo = fbc.farm_yield_final_on
-        sens = yfo is None or yfo > mrd
-        return (fbc.yield_variability *
-                ((yf - 1) if sens else fbc.farm_yield/fbc.baseline_yield_for_var_rent))
+        yldfinal = fbc.is_farm_yield_final
+        costfinal = fbc.are_costs_final
+        return (0 if costfinal else fbc.yield_variability *
+                ((fbc.farm_yield/fbc.baseline_yield_for_var_rent if yldfinal
+                 else yf) - 1))
 
     def revenue_based_adj_to_land_rent(self, pf=None, yf=None,
                                        sprice=None, bprice=None):
