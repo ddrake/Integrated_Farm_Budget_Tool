@@ -175,13 +175,13 @@ class FarmCrop(models.Model):
         base = (0 if ct is None or bcl is None or pt is None or
                 ct == 0 and county is None or ct == 1 and farm is None else
                 ins_list[covtype][
-                    int((bcl - (.5 if covtype == 'Farm' else .7))/.05)][pt])
+                    int(round((bcl - (.5 if covtype == 'Farm' else .7)/.05)))][pt])
         sco = (0 if ct is None or bcl is None or pt is None or
                ct == 1 and sco is None or not self.sco_use else
-               sco[int((bcl - .5)/.05)][pt])
+               sco[int(round((bcl - .5)/.05))][pt])
         eco = (0 if ct is None or bcl is None or pt is None or
                ecolvl is None or eco is None else
-               eco[int((ecolvl - .9)/.05)][pt])
+               eco[int(round((ecolvl - .9)/.05))][pt])
         return {'base': base, 'sco': sco, 'eco': eco}
 
     def update_related_crop_ins_settings(self):
