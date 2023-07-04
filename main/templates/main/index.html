@@ -1,5 +1,18 @@
 {% extends 'main/base.html' %}
 {% load static %}
+
+{% block style %}
+<style>
+.slides-container {
+	-ms-overflow-style: none; /* Internet Explorer 10+ */
+	scrollbar-width: none; /* Firefox */
+}
+.slides-container::-webkit-scrollbar {
+	display: none; /* Safari and Chrome */
+}
+</style>
+{% endblock style %}
+
 {% block content %}
 <div class="p-6 max-w-med mx-auto bg-white rounded-xl shadow-lg flex items-center space-x-4 font-serif">
   <div>
