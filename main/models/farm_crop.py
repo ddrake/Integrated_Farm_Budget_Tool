@@ -174,8 +174,8 @@ class FarmCrop(models.Model):
         covtype = 'County' if ct == 0 else 'Farm' if ct == 1 else None
         base = (0 if ct is None or bcl is None or pt is None or
                 ct == 0 and county is None or ct == 1 and farm is None else
-                ins_list[covtype][
-                    int(round((bcl - (.5 if covtype == 'Farm' else .7)/.05)))][pt])
+                ins_list[covtype]
+                [int(round((bcl - (.5 if covtype == 'Farm' else .7))/.05))][pt])
         sco = (0 if ct is None or bcl is None or pt is None or
                ct == 1 and sco is None or not self.sco_use else
                sco[int(round((bcl - .5)/.05))][pt])
