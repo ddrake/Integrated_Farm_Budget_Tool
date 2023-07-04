@@ -243,14 +243,22 @@ class FarmYear(models.Model):
                 "The model run date cannot be in the future.")})
 
     def save(self, *args, **kwargs):
+        savefcs = False
         if (self._state.adding and
             FarmYear.objects.filter(crop_year=util.get_current_year(),
                                     user=self.user).count() >= 10):
             raise PermissionDenied('A user can have at most 10 farms for a crop year')
+        if util.any_changed(self, 'is_model_run_date_manual', 'manual_model_run_date'):
+            savefcs = True
         super().save(*args, **kwargs)
         if self.farm_crops.count() == 0:
             self.add_insurable_farm_crops()
             self.save()
+        if savefcs:
+            print('saving farm crops')
+            for fc in self.farm_crops.all():
+                if fc.price_period_changed():
+                    fc.save()
 
     class Meta:
         constraints = [

@@ -222,7 +222,7 @@ class FarmCrop(models.Model):
         pcf = self.prems_computed_for
         mrd = self.farm_year.get_model_run_date()
         rco = self.proj_price_disc_end
-        return pcf is None or pcf < rco <= mrd or mrd < rco <= pcf
+        return pcf is not None and (pcf < rco <= mrd or mrd < rco <= pcf)
 
     def prem_price_yield_data(self):
         """
@@ -274,9 +274,7 @@ class FarmCrop(models.Model):
                                    for key, ar in zip(names, prems[:4])}
 
     def get_selected_premiums(self):
-        if self.crop_ins_prems is None:
-            return None
-        return self.get_selected_ins_items(self.crop_ins_prems)
+        return self.get_selected_ins_items(self.get_crop_ins_prems())
 
     def get_total_premiums(self):
         prems = self.get_selected_premiums()
