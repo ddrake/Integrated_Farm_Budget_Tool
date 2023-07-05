@@ -42,6 +42,8 @@ class FsaCrop(models.Model):
     farm_year = models.ForeignKey(FarmYear, on_delete=models.CASCADE,
                                   related_name='fsa_crops')
     fsa_crop_type = models.ForeignKey(FsaCropType, on_delete=models.CASCADE)
+    effective_ref_price = models.FloatField(null=True)
+    natl_loan_rate = models.FloatField(null=True)
 
     def planted_acres(self):
         return sum((mc.planted_acres() for mc in self.market_crops.all()))

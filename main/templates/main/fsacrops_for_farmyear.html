@@ -3,22 +3,34 @@
 <title>FSA crops</title>
 {% endblock title %}
 {% block content %}
-<div class="p-6 max-w-med mx-auto bg-white rounded-xl shadow-lg flex items-center space-x-4">
-  {% for fsacrop in fsacrop_list %}
-  <div class="shrink-0">
-    <h1 class="text-xl">{{fsacrop}}</h1>
-    <dl class="grid grid-cols-[repeat(2,auto)] gap-x-4 w-max">
-      <dt class="font-semibold">Title Information</dt><dd></dd>
-      <dt>PLC base acres:</dt>
-      <dd class="text-right">{{fsacrop.plc_base_acres|floatformat:"1g"}}</dd>
-      <dt>ARC-CO base acres:</dt>
-      <dd class="text-right">{{fsacrop.arcco_base_acres|floatformat:"1g"}}</dd>
-      <dt>PLC yield:</dt>
-      <dd class="text-right">{{fsacrop.plc_yield}}</dd>
-    </dl>
-    <a class="text-xl text-indigo-800 hover:text-indigo-600"
-       href="{% url 'fsacrop_update' pk=fsacrop.pk %}">Edit</a>
+<div class="flex flex-col">
+  <div class="width-full text-center text-xl mb-2">Farm Specific Title Information</div>
+  <div class="p-6 max-w-med mx-auto bg-white rounded-xl shadow-lg flex items-center space-x-4">
+    {% for fsacrop in fsacrop_list %}
+    <div class="shrink-0">
+      <h1 class="text-xl">{{fsacrop}}</h1>
+      <dl class="grid grid-cols-[repeat(2,auto)] gap-x-4 w-max">
+        <dt>PLC base acres:</dt>
+        <dd class="text-right">{{fsacrop.plc_base_acres|floatformat:"1g"}}</dd>
+        <dt>ARC-CO base acres:</dt>
+        <dd class="text-right">{{fsacrop.arcco_base_acres|floatformat:"1g"}}</dd>
+        <dt>PLC yield:</dt>
+        <dd class="text-right">{{fsacrop.plc_yield}}</dd>
+      </dl>
+      <a class="text-xl text-indigo-800 hover:text-indigo-600"
+         href="{% url 'fsacrop_update' pk=fsacrop.pk %}">Edit</a>
+    </div>
+    {% endfor %}
   </div>
-  {% endfor %}
+  <div class="width-full text-center text-xl my-2">Program Specific Title Information</div>
+  <div class="p-6 max-w-med mt-2 mx-auto bg-white rounded-xl shadow-lg flex items-center space-x-4">
+    <div class="shrink-0">
+      <dl class="grid grid-cols-[repeat(2,auto)] gap-x-4 w-max">
+        <dt>Eligible entities for title cap:</dt>
+        <dd class="text-right">{{fsacrop_list.0.farm_year.eligible_persons_for_cap}}</dd>
+      </dl>
+    </div>
+  </div>
 </div>
 {% endblock %}
+

@@ -7,7 +7,7 @@ from django.db import models
 from django.utils.translation import gettext_lazy as _
 from ext.models import (
     State, County, InsurableCropsForCty, MyaPreEstimate, MyaPost,
-    FarmCropType, MarketCropType, FsaCropType, InsuranceDates)
+    FarmCropType, MarketCropType, FsaCropType, InsuranceDates, ReferencePrices)
 from core.models.gov_pmt import GovPmt
 from . import util
 
@@ -74,22 +74,15 @@ class FarmYear(models.Model):
         help_text="Other non-grain expense in dollars")
     state = models.ForeignKey(State, on_delete=models.CASCADE)
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='farm_years')
-
-    # Note: we don't reproduce state of the model as of this date.  User choices do
-    # not change.  We set futures prices, possibly price volatility
-    # and projected price and some other fields (e.g. MYA price) according to this date.
-    # Since we don't have pricing before January 2023 or after the current date, the
-    # model run date must be clamped between these values.
-    # At some point we may want to trigger an update based on this field changing.
-    # Should it be inactive for old crop years?
     manual_model_run_date = models.DateField(
-        default=datetime.today,  # TODO: validate range
+        default=datetime.today,
         help_text=(_('Manually-set date for which "current" futures prices<br>' +
                      'and other date-specific values are looked up.')))
     is_model_run_date_manual = models.BooleanField(
         default=False,
         help_text='Use the manually-set model run date (advanced).')
     sensitivity_data = models.JSONField(null=True, blank=True)
+    est_sequest_frac = models.FloatField(default=0.062)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -98,7 +91,6 @@ class FarmYear(models.Model):
         self.facplantedacres = None
 
     def get_model_run_date(self):
-        # TODO: add logic to handle old farm years
         mmrd = self.manual_model_run_date
         if not self.is_model_run_date_manual:
             mmrd = datetime.today().date()
@@ -149,9 +141,9 @@ class FarmYear(models.Model):
         Add farm crops, market crops and fsa crops to the farm year based on the
         insurable crops, types and practices for the county
         """
-        from . import fsa_crop as fsacrop
-        from . import market_crop as marketcrop
-        from . import farm_crop as farmcrop
+        from .fsa_crop import FsaCrop
+        from .market_crop import MarketCrop
+        from .farm_crop import FarmCrop
         fsas = {}
         mkts = {}
         for row in (InsurableCropsForCty.objects
@@ -168,10 +160,15 @@ class FarmYear(models.Model):
                 if fsact.id in fsas:
                     fsa = fsas[fsact.id]
                 else:
-                    fsa = fsacrop.FsaCrop.objects.create(
-                        farm_year=self, fsa_crop_type=fsact)
+                    rp = ReferencePrices.objects.filter(crop_year=self.crop_year,
+                                                        fsa_crop_type=fsact)[0]
+                    fsa = FsaCrop.objects.create(
+                        farm_year=self, fsa_crop_type=fsact,
+                        effective_ref_price=rp.effective_ref_price,
+                        natl_loan_rate=rp.natl_loan_rate
+                    )
                     fsas[fsact.id] = fsa
-                mkt = marketcrop.MarketCrop.objects.create(
+                mkt = MarketCrop.objects.create(
                     farm_year=self, market_crop_type=mktct, fsa_crop=fsa)
                 mkts[mktct.id] = mkt
 
@@ -182,7 +179,7 @@ class FarmYear(models.Model):
             harv_price_disc_end = insdt.harv_price_disc_mth_end
             cty_yield_final = datetime(self.crop_year+1,
                                        (4 if mktct.id in (3, 4) else 6), 16).date()
-            farmcrop.FarmCrop.objects.create(
+            FarmCrop.objects.create(
                 farm_year=self, ins_crop_type_id=row.crop_type_id,
                 farm_crop_type=fct, market_crop=mkt, ins_practices=row.practices,
                 ins_practice=row.practices[0], proj_price_disc_end=proj_price_disc_end,
