@@ -88,6 +88,7 @@ class SensTable(object):
         self.yieldblock = None
         self.priceblock = None
         self.info = None
+        self.tot_nonland_cost = [fc.total_nonland_costs() for fc in self.farm_crops]
 
     def set_gov_pmts(self, pf, yf):
         # set apportioned gov pmt in dollars (optimization)
@@ -283,6 +284,12 @@ class SensTable(object):
                 for i, (crop, acres) in enumerate(zip(self.farm_crops, self.acres)):
                     if methodname == 'gov_pmt_portion':
                         result[i, j, k] = self.gov_pmts[i] / 1000
+                    elif methodname == 'total_cost':
+                        result[i, j, k] = (
+                            crop.total_cost(
+                                pf=pf, yf=yf,
+                                tot_nonland_cost=self.tot_nonland_cost[i], **kwargs)
+                            * acres / 1000)
                     else:
                         if 'sprice' in kwargs:
                             kwargs['sprice'] = self.prices[j, i]

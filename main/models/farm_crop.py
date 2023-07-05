@@ -209,20 +209,10 @@ class FarmCrop(models.Model):
         """
         Compute and cache premiums if not set; return cached value.
         """
-        if (self.crop_ins_prems is None and
-            self.planted_acres > 0 and self.rate_yield > 0 and self.adj_yield > 0
-                and self.ta_aph_yield > 0):
-            self.set_prems()
-            self.prems_computed_for = self.farm_year.get_model_run_date()
-            self.save()
+        self.set_prems()
+        self.prems_computed_for = self.farm_year.get_model_run_date()
+        self.save()
         return self.crop_ins_prems
-
-    def price_period_changed(self):
-        """ used to invalidate cached premiums """
-        pcf = self.prems_computed_for
-        mrd = self.farm_year.get_model_run_date()
-        rco = self.proj_price_disc_end
-        return pcf is not None and (pcf < rco <= mrd or mrd < rco <= pcf)
 
     def prem_price_yield_data(self):
         """
@@ -548,8 +538,7 @@ class FarmCrop(models.Model):
                 (self.farm_year.total_owned_land_expense() /
                  self.farm_year.total_farm_acres()))
 
-    def land_costs(self, pf=None, yf=None, is_cash_flow=False,
-                   sprice=None, bprice=None):
+    def land_costs(self, pf=None, yf=None, sprice=None, bprice=None):
         if sprice is None and pf is None:
             pf = self.price_factor()
         if yf is None:
@@ -557,15 +546,17 @@ class FarmCrop(models.Model):
         return (self.rented_land_costs(pf, yf, sprice, bprice) +
                 self.owned_land_costs())
 
-    def total_cost(self, pf=None, yf=None, is_cash_flow=False,
-                   sprice=None, bprice=None):
+    def total_cost(self, pf=None, yf=None, sprice=None, bprice=None,
+                   tot_nonland_cost=None):
         """ used in sensitivity table """
         if sprice is None and pf is None:
             pf = self.price_factor()
         if yf is None:
             yf = self.farmbudgetcrop.yield_factor
-        return (self.total_nonland_costs() * (1 + self.yield_adj_to_nonland_costs(yf)) +
-                self.land_costs(pf, yf, is_cash_flow, sprice, bprice))
+        if tot_nonland_cost is None:
+            tot_nonland_cost = self.total_nonland_costs()
+        return (tot_nonland_cost * (1 + self.yield_adj_to_nonland_costs(yf)) +
+                self.land_costs(pf, yf, sprice, bprice))
 
     # -------------
     # Price methods
@@ -619,12 +610,6 @@ class FarmCrop(models.Model):
                 "ARC-CO base acres must be zero if SCO is set for related farm crop")})
 
     def save(self, *args, **kwargs):
-        # invalidate cached premiums upon changes to key fields
-        if util.any_changed(self, 'ins_practice', 'rate_yield', 'adj_yield',
-                            'ta_aph_yield', 'planted_acres', 'ta_use', 'ye_use',
-                            'prot_factor', 'subcounty') or self.price_period_changed():
-            self.crop_ins_prems = None
-            self.prems_computed_for = None
         if self.benchmark_revenue is None or util.any_changed(self, 'ins_practice'):
             self.benchmark_revenue = self.get_benchmark_revenue()
         if util.any_changed(self, 'planted_acres'):
