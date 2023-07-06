@@ -4,6 +4,7 @@
 {% endblock title %}
 {% block content %}
 {% load main_extra %}
+<div class="flex flex-col">
 <div class="p-4 mx-auto bg-white rounded-xl shadow-lg flex items-center space-x-2">
   {% for farmcrop in farmcrop_list %}
   <div class="shrink-0">
@@ -59,6 +60,13 @@
         Set irrigation status before adding.</small>
       </form> 
   </div>
+  {% endfor %}
+</div>
+<div class="mt-2">
+  <a class="text-lg text-indigo-800 hover:text-indigo-600"
+     href="{% url 'dashboard' pk=farmcrop_list.0.farm_year.pk %}">Back to Dashboard</a>
+</div>
+</div>
   <script>
     (() => {
       document.addEventListener('DOMContentLoaded', (event) => {
@@ -99,6 +107,4 @@
       }
     })();
   </script>
-  {% endfor %}
-</div>
 {% endblock %}

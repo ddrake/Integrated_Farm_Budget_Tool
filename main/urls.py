@@ -6,21 +6,24 @@ from .views import (
     FarmYearDetailView, FarmYearFarmCropListView, FarmYearMarketCropListView,
     FarmYearFsaCropListView, FarmCropUpdateView, MarketCropUpdateView,
     FsaCropUpdateView, FarmCropAddBudgetView, FarmYearFarmBudgetCropListView,
-    FarmBudgetCropUpdateView, DetailedBudgetView, SensitivityTableView)
+    FarmBudgetCropUpdateView, DetailedBudgetView, SensitivityTableView,
+    FarmYearDashboard)
 
 from . import views
 
 urlpatterns = [
     path('', views.index, name='index'),
-    path('dashboard/', login_required(views.dashboard), name='dashboard'),
+    path('farmyears/', login_required(views.farmyears), name='farmyears'),
+    path('dashboard/<int:pk>', login_required(FarmYearDashboard.as_view()),
+         name='dashboard'),
+    path('farmyear/<int:pk>', login_required(FarmYearDetailView.as_view()),
+         name='farmyear_detail'),
     path('farmyear/create', login_required(FarmYearCreateView.as_view()),
          name='farmyear_create'),
     path('farmyear/update/<int:pk>', login_required(FarmYearUpdateView.as_view()),
          name='farmyear_update'),
     path('farmyear/delete/<int:pk>', login_required(FarmYearDeleteView.as_view()),
          name='farmyear_delete'),
-    path('farmyear/<int:pk>', login_required(FarmYearDetailView.as_view()),
-         name='farmyear_detail'),
     path('farmyear/counties_for_state/<int:state_id>',
          login_required(GetCountyView.as_view())),
     path('farmcrops/<int:farmyear>', login_required(FarmYearFarmCropListView.as_view()),

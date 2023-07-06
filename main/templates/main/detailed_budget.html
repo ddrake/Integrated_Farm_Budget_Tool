@@ -3,6 +3,7 @@
 <title>Budget</title>
 {% endblock title %}
 {% block content %}
+<div class="flex flex-col">
 <div class="p-6 max-w-med mx-auto bg-white rounded-xl shadow-lg flex items-center space-x-4">
   {% if tables == None %}
   <div class="shrink-0">
@@ -88,5 +89,10 @@
   </div>
   {% endif %}
   {% endif %}
+</div>
+<div class="mt-2">
+  <a class="text-lg text-indigo-800 hover:text-indigo-600"
+     href="#">Back to Dashboard</a>
+</div>
 </div>
 {% endblock %}

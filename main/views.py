@@ -23,9 +23,14 @@ def index(request):
     return render(request, 'main/index.html')
 
 
-def dashboard(request):
+def farmyears(request):
     farm_years = FarmYear.objects.filter(user=request.user).all()
-    return render(request, 'main/dashboard.html', {'farm_years': farm_years})
+    return render(request, 'main/farmyears.html', {'farm_years': farm_years})
+
+
+class FarmYearDashboard(DetailView):
+    model = FarmYear
+    template_name = 'main/dashboard.html'
 
 
 class FarmYearCreateView(CreateView):
@@ -33,7 +38,7 @@ class FarmYearCreateView(CreateView):
     form_class = FarmYearCreateForm
 
     def get_success_url(self):
-        return reverse('dashboard')
+        return reverse('farmyears')
 
     def form_valid(self, form):
         form.instance.user = self.request.user
@@ -58,7 +63,7 @@ class FarmCropAddBudgetView(View):
 
 class FarmYearDeleteView(DeleteView):
     model = FarmYear
-    success_url = reverse_lazy('dashboard')
+    success_url = reverse_lazy('farmyears')
 
     def delete(request, *args, **kwargs):
         farm_year_id = int(request.POST['id'])

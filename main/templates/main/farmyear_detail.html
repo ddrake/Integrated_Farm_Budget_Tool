@@ -59,7 +59,9 @@
     <dd class="text-right">{{farmyear.get_model_run_date}}</dd>
   <div>
   <a class="text-xl text-indigo-800 hover:text-indigo-600"
-     href="{% url 'farmyear_update' pk=farmyear.pk %}">Edit</a>
+     href="{% url 'farmyear_update' pk=farmyear.pk %}">Edit</a>&nbsp; | &nbsp;
+  <a class="text-xl text-indigo-800 hover:text-indigo-600"
+     href="{% url 'dashboard' pk=farmyear.pk %}">Back to Dashboard</a>
   </div>
 </div>
 {% endblock %}

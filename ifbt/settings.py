@@ -83,7 +83,7 @@ TEMPLATES = [
 ]
 
 LOGIN_URL = '/login/'
-LOGIN_REDIRECT_URL = '/dashboard/'
+LOGIN_REDIRECT_URL = '/farmyears/'
 LOGOUT_REDIRECT_URL = '/login/'
 
 WSGI_APPLICATION = 'ifbt.wsgi.application'

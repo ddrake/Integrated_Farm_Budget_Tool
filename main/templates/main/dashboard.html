@@ -5,42 +5,21 @@
 {% block content %}
 <div class="p-6 max-w-med mx-auto bg-white rounded-xl shadow-lg flex items-center space-x-4">
   <div>
-    <h1 class="mb-1 text-2xl font-medium text-black">Farms</h1>
-    <hr class="text-slate-300">
-    {% if farm_years %}
-      <ul>
-      {% for fy in farm_years %}
-      <li class="text-xl">
-        <a class="text-xl text-indigo-800 hover:text-indigo-600"
-           href="{% url 'farmyear_detail' pk=fy.pk %}">{{ fy }}</a> |
-        <a class="text-xl text-red-800 hover:text-red-600"
-           href="{% url 'farmyear_delete' pk=fy.pk %}">Delete</a>
-      </li>
-      <hr class="text-slate-300">
-      <a class="pl-4 text-lg text-indigo-800 hover:text-indigo-600"
-         href="{% url 'farmcrop_list' farmyear=fy.pk %}">Farm Crops</a> |
-      <a class="pl-1 text-lg text-indigo-800 hover:text-indigo-600"
-         href="{% url 'farmbudgetcrop_list' farmyear=fy.pk %}">Farm Crop Budgets</a>
-      <hr class="text-slate-300">
-      <a class="pl-4 text-lg text-indigo-800 hover:text-indigo-600"
-         href="{% url 'marketcrop_list' farmyear=fy.pk %}">Market Crops</a>
-      <hr class="text-slate-300">
-      <a class="pl-4 text-lg text-indigo-800 hover:text-indigo-600"
-         href="{% url 'fsacrop_list' farmyear=fy.pk %}">FSA Crops</a>
-      <hr class="text-slate-300">
-      <a class="pl-4 text-lg text-indigo-800 hover:text-indigo-600"
-         href="{% url 'detailedbudget' farmyear=fy.pk %}">Detailed Budget</a> |
-      <a class="pl-1 text-lg text-indigo-800 hover:text-indigo-600"
-         href="{% url 'sensitivity' farmyear=fy.pk %}">Sensitivity Tables</a>
-      {% endfor %}
-      </ul>
-    {% else %}
-    <p class="mb-1 text-base font-medium text-black">
-      You don't have any farms yet.  The first step is to add one.</p>
-    {% endif %}
-    <hr class="text-slate-300">
-    <a class="text-xl text-indigo-800 hover:text-indigo-600"
-      href="{% url 'farmyear_create' %}">Add a farm</a> 
+    <h1 class="mb-1 text-2xl font-medium text-black">{{farmyear}}</h1>
+    <a class="pl-4 text-lg text-indigo-800 hover:text-indigo-600"
+       href="{% url 'farmyear_detail' pk=farmyear.pk %}">Farm Year</a><br> 
+    <a class="pl-4 text-lg text-indigo-800 hover:text-indigo-600"
+       href="{% url 'farmcrop_list' farmyear=farmyear.pk %}">Farm Crops</a><br> 
+    <a class="pl-4 text-lg text-indigo-800 hover:text-indigo-600"
+       href="{% url 'farmbudgetcrop_list' farmyear=farmyear.pk %}">Farm Crop Budgets</a><br>
+    <a class="pl-4 text-lg text-indigo-800 hover:text-indigo-600"
+       href="{% url 'marketcrop_list' farmyear=farmyear.pk %}">Market Crops</a><br>
+    <a class="pl-4 text-lg text-indigo-800 hover:text-indigo-600"
+       href="{% url 'fsacrop_list' farmyear=farmyear.pk %}">FSA Crops</a><br>
+    <a class="pl-4 text-lg text-indigo-800 hover:text-indigo-600"
+       href="{% url 'detailedbudget' farmyear=farmyear.pk %}">Detailed Budget</a><br>
+    <a class="pl-4 text-lg text-indigo-800 hover:text-indigo-600"
+       href="{% url 'sensitivity' farmyear=farmyear.pk %}">Sensitivity Tables</a>
   </div>
 </div>
 {% endblock %}
