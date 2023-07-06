@@ -41,16 +41,16 @@
       <dd class="text-right">{{farmcrop.prot_factor|pct|default:"None"}}</dd>
       <dt class="font-semibold">County Specific Insurance Info</dt><dd></dd>
       <dt>County benchmark yield</dt>
-      <dd class="text-right">{{farmcrop.indem_price_yield_data.ey.0|default:"None"}}</dd>
+      <dd class="text-right">{{farmcrop.indem_price_yield_data.ey.0|floatformat:"1g"}}</dd>
       <dt>Discovered projected price
         {% if not farmcrop.indem_price_yield_data.pp.1 %}(est){% endif %}</dt>
-      <dd class="text-right">{{farmcrop.indem_price_yield_data.pp.0|default:"None"}}</dd>
+      <dd class="text-right">${{farmcrop.indem_price_yield_data.pp.0|floatformat:"2g"}}</dd>
       <dt>Volatility factor
         {% if not farmcrop.indem_price_yield_data.pv.1 %}(est){% endif %}</dt>
       <dd class="text-right">{{farmcrop.indem_price_yield_data.pv.0|default:"None"}}</dd>
       <dt>Discovered harvest price
         {% if not farmcrop.indem_price_yield_data.hp.1 %}(est){% endif %}</dt>
-      <dd class="text-right">{{farmcrop.indem_price_yield_data.hp.0|default:"None"}}</dd>
+      <dd class="text-right">${{farmcrop.indem_price_yield_data.hp.0|floatformat:"2g"}}</dd>
     </dl>
     <div class="my-2">
       <a class="text-lg text-indigo-800 hover:text-indigo-600"
