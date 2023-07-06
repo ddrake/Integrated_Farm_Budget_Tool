@@ -13,7 +13,7 @@
     <dl class="grid grid-cols-[repeat(2,auto)] gap-x-4 w-max">
       <dt>Planted acres</dt>
       <dd class="text-right">{{farmcrop.planted_acres|floatformat:"1g"}}</dd>
-      <dt class="font-semibold">Crop Insurance Info</dt><dd></dd>
+      <dt class="font-semibold">Farm Crop Insurance Info</dt><dd></dd>
       <dt>Rate yield</dt>
       <dd class="text-right">{{farmcrop.rate_yield}}</dd>
       <dt>Adjusted yield</dt>
@@ -26,7 +26,7 @@
       <dd class="text-right">{{farmcrop.ye_use|yesno:"Yes,No"}}</dd>
       <dt>Approved yield</dt>
       <dd class="text-right">{{farmcrop.ta_aph_yield}}</dd>
-      <dt class="font-semibold">Crop Insurance Choices</dt><dd></dd>
+      <dt class="font-semibold">Farm Crop Insurance Choices</dt><dd></dd>
       <dt>Coverage type</dt>
       <dd class="text-right">{{farmcrop.coverage_type_name|default:"None"}}</dd>
       <dt>Product type</dt>
@@ -39,6 +39,18 @@
       <dd class="text-right">{{farmcrop.eco_level|default:"None"}}</dd>
       <dt>Selected payment factor</dt>
       <dd class="text-right">{{farmcrop.prot_factor|pct|default:"None"}}</dd>
+      <dt class="font-semibold">County Specific Insurance Info</dt><dd></dd>
+      <dt>County benchmark yield</dt>
+      <dd class="text-right">{{farmcrop.indem_price_yield_data.ey.0|default:"None"}}</dd>
+      <dt>Discovered projected price
+        {% if not farmcrop.indem_price_yield_data.pp.1 %}(est){% endif %}</dt>
+      <dd class="text-right">{{farmcrop.indem_price_yield_data.pp.0|default:"None"}}</dd>
+      <dt>Volatility factor
+        {% if not farmcrop.indem_price_yield_data.pv.1 %}(est){% endif %}</dt>
+      <dd class="text-right">{{farmcrop.indem_price_yield_data.pv.0|default:"None"}}</dd>
+      <dt>Discovered harvest price
+        {% if not farmcrop.indem_price_yield_data.hp.1 %}(est){% endif %}</dt>
+      <dd class="text-right">{{farmcrop.indem_price_yield_data.hp.0|default:"None"}}</dd>
     </dl>
     <div class="my-2">
       <a class="text-lg text-indigo-800 hover:text-indigo-600"

@@ -294,13 +294,21 @@ class FarmCrop(models.Model):
         sens_cty_exp_yield = (self.market_crop.county_bean_yield(yf)
                               if self.farm_crop_type_id in (2, 5) else
                               self.sens_cty_expected_yield(yf))
-        proj_price = (harv_price if pre_discov or py.projected_price is None else
-                      py.projected_price)
-        harvest_price = (sens_harv_price if pre_harv or py.harvest_price is None else
-                         py.harvest_price)
-        cty_yield = (sens_cty_exp_yield if pre_cty_yield or py.final_yield is None else
-                     py.final_yield)
-        return exp_yield, proj_price, harvest_price, cty_yield
+        proj_price_final = not pre_discov and py.projected_price is not None
+        proj_price = (py.projected_price if proj_price_final else harv_price)
+        # price_vol not needed for indemnity, but shown on farm_crop detail view
+        price_vol_final = not pre_discov and py.price_volatility_factor is not None
+        price_vol = (py.price_volatility_factor if price_vol_final else
+                     py.price_volatility_factor_prevyr)
+        harvest_price_final = not pre_harv and py.harvest_price is not None
+        harvest_price = (py.harvest_price if harvest_price_final else
+                         sens_harv_price)
+        cty_yield_final = not pre_cty_yield and py.final_yield is not None
+        cty_yield = (py.final_yield if cty_yield_final else sens_cty_exp_yield)
+        return {'ey': [exp_yield, True], 'pp': [proj_price, proj_price_final],
+                'pv': [price_vol, price_vol_final],
+                'hp': [harvest_price, harvest_price_final],
+                'cy': [cty_yield, cty_yield_final]}
 
     def get_indemnities(self, pf=None, yf=None):
         if pf is None:
@@ -308,15 +316,15 @@ class FarmCrop(models.Model):
         if yf is None:
             yf = self.farmbudgetcrop.yield_factor
         data = self.indem_price_yield_data(pf, yf)
-        expected_yield, proj_price, harvest_price, cty_yield = data
         indem = Indemnity(
             tayield=self.ta_aph_yield,
-            projected_price=proj_price,
-            harvest_futures_price=harvest_price,
-            rma_cty_expected_yield=expected_yield,
+            projected_price=data['pp'][0],
+            harvest_futures_price=data['hp'][0],
+            rma_cty_expected_yield=data['ey'][0],
             prot_factor=self.prot_factor,
+            # sensitized yields
             farm_expected_yield=self.sens_farm_expected_yield(yf),
-            cty_expected_yield=cty_yield)
+            cty_expected_yield=data['cy'][0])
         indems = indem.compute_indems()
         names = 'Farm County SCO ECO'.split()
         return {key: None if ar is None else ar.tolist()

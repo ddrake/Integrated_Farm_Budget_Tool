@@ -14,5 +14,3 @@ def any_changed(instance, *fields):
     dbinst = instance.__class__._default_manager.get(pk=instance.pk)
     return any((getattr(dbinst, field) != getattr(instance, field)
                 for field in fields))
-
-
