@@ -122,6 +122,9 @@ class BudgetTable(object):
                             self.total_owned_acres / self.total_farm_acres
                             for fc in self.farm_crops]
 
+    def get_info(self):
+        return {'farmyear': self.farm_year.pk}
+
     def get_tables(self):
         if len(self.farm_crops) == 0:
             return None

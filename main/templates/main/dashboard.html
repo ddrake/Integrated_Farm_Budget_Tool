@@ -6,16 +6,18 @@
 <div class="p-6 max-w-med mx-auto bg-white rounded-xl shadow-lg flex items-center space-x-4">
   <div>
     <h1 class="mb-1 text-2xl font-medium text-black">{{farmyear}}</h1>
+    <p>Inputs:</p>
     <a class="pl-4 text-lg text-indigo-800 hover:text-indigo-600"
-       href="{% url 'farmyear_detail' pk=farmyear.pk %}">Farm Year</a><br> 
+       href="{% url 'farmyear_detail' pk=farmyear.pk %}">Farm Specific Data</a><br> 
     <a class="pl-4 text-lg text-indigo-800 hover:text-indigo-600"
-       href="{% url 'farmcrop_list' farmyear=farmyear.pk %}">Farm Crops</a><br> 
+       href="{% url 'farmcrop_list' farmyear=farmyear.pk %}">Crop Acreage/Crop Insurance</a><br> 
     <a class="pl-4 text-lg text-indigo-800 hover:text-indigo-600"
-       href="{% url 'farmbudgetcrop_list' farmyear=farmyear.pk %}">Farm Crop Budgets</a><br>
+       href="{% url 'farmbudgetcrop_list' farmyear=farmyear.pk %}">Yield and Expense Budgets</a><br>
     <a class="pl-4 text-lg text-indigo-800 hover:text-indigo-600"
-       href="{% url 'marketcrop_list' farmyear=farmyear.pk %}">Market Crops</a><br>
+       href="{% url 'marketcrop_list' farmyear=farmyear.pk %}">Grain Marketing</a><br>
     <a class="pl-4 text-lg text-indigo-800 hover:text-indigo-600"
-       href="{% url 'fsacrop_list' farmyear=farmyear.pk %}">FSA Crops</a><br>
+       href="{% url 'fsacrop_list' farmyear=farmyear.pk %}">Title Elections</a><br>
+    <p>Outputs:</p>
     <a class="pl-4 text-lg text-indigo-800 hover:text-indigo-600"
        href="{% url 'detailedbudget' farmyear=farmyear.pk %}">Detailed Budget</a><br>
     <a class="pl-4 text-lg text-indigo-800 hover:text-indigo-600"

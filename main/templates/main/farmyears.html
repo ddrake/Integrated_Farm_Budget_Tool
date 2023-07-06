@@ -11,7 +11,7 @@
       {% for fy in farm_years %}
       <li class="text-xl">
         <a class="text-xl text-indigo-800 hover:text-indigo-600"
-         href="{% url 'dashboard' pk=fy.pk %}">Dashboard for {{ fy }}</a> |
+         href="{% url 'dashboard' pk=fy.pk %}">{{ fy }} Dashboard</a> |
         <a class="text-xl text-red-800 hover:text-red-600"
            href="{% url 'farmyear_delete' pk=fy.pk %}">Delete</a>
       </li>

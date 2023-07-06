@@ -109,7 +109,7 @@ class FarmYear(models.Model):
     def location(self):
         county_name = County.objects.get(
             state_id=self.state, code=self.county_code).name
-        return f'{county_name} County {self.state}'
+        return f'{county_name} County, {self.state}'
 
     def total_rented_acres(self):
         return self.cash_rented_acres + self.variable_rented_acres

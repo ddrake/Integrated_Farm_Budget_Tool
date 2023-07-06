@@ -6,8 +6,7 @@ Definitions used by many classes
 from enum import IntEnum
 from functools import wraps
 
-import psycopg2
-
+from django.db import connection
 from django.conf import settings
 
 DATABASES = settings.DATABASES
@@ -49,28 +48,13 @@ def call_postgres_func(*args):
     """
     Get data needed to compute crop insurance
     """
-    defaultdb = DATABASES['default']
     arglist = list(args)
     cmd = arglist.pop(0)
-    conn = None
     row = None
-    try:
-        # connect to the PostgreSQL database
-        conn = psycopg2.connect(
-            host=defaultdb['HOST'], database=defaultdb['NAME'],
-            port=defaultdb['PORT'],
-            user=defaultdb['USER'], password=defaultdb['PASSWORD'])
-        # create a cursor object for execution
-        cur = conn.cursor()
-        cur.execute(cmd, tuple((None if arg is None else str(arg) for arg in arglist)))
-        # process the result set
+    with connection.cursor() as cur:
+        cur.execute(cmd, tuple((None if arg is None else str(arg)
+                                for arg in arglist)))
         row = cur.fetchone()
-        cur.close()
-    except (Exception, psycopg2.DatabaseError) as error:
-        print(error)
-    finally:
-        if conn is not None:
-            conn.close()
     return row
 
 
@@ -78,30 +62,13 @@ def get_postgres_row(*args):
     """
     Get a specified row from a postgreSQL table
     """
-    defaultdb = DATABASES['default']
     arglist = list(args)
     query = arglist.pop(0)
-    conn = None
     row = None
-    try:
-        # connect to the PostgreSQL database
-        conn = psycopg2.connect(
-            host=defaultdb['HOST'], database=defaultdb['NAME'],
-            port=defaultdb['PORT'],
-            user=defaultdb['USER'], password=defaultdb['PASSWORD'])
-        # create a cursor object for execution
-        cur = conn.cursor()
+    with connection.cursor() as cur:
         cur.execute(query, tuple((None if arg is None else str(arg)
                                   for arg in arglist)))
-        # fetch the record
         row = cur.fetchone()
-        # close the communication with the PostgreSQL database server
-        cur.close()
-    except (Exception, psycopg2.DatabaseError) as error:
-        print(error)
-    finally:
-        if conn is not None:
-            conn.close()
     return row
 
 
@@ -109,28 +76,11 @@ def get_postgres_rows(*args):
     """
     Get specified rows from a postgreSQL table
     """
-    defaultdb = DATABASES['default']
     arglist = list(args)
     query = arglist.pop(0)
-    conn = None
     rows = None
-    try:
-        # connect to the PostgreSQL database
-        conn = psycopg2.connect(
-            host=defaultdb['HOST'], database=defaultdb['NAME'],
-            port=defaultdb['PORT'],
-            user=defaultdb['USER'], password=defaultdb['PASSWORD'])
-        # create a cursor object for execution
-        cur = conn.cursor()
+    with connection.cursor() as cur:
         cur.execute(query, tuple((None if arg is None else str(arg)
                                   for arg in arglist)))
-        # fetch the record
         rows = cur.fetchall()
-        # close the communication with the PostgreSQL database server
-        cur.close()
-    except (Exception, psycopg2.DatabaseError) as error:
-        print(error)
-    finally:
-        if conn is not None:
-            conn.close()
     return rows

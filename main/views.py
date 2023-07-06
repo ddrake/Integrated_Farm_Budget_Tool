@@ -167,6 +167,7 @@ class DetailedBudgetView(TemplateView):
         context = super().get_context_data(**kwargs)
         farmyear = kwargs.get('farmyear', None)
         bt = BudgetTable(farmyear)
+        context['info'] = bt.get_info()
         context['tables'] = bt.get_tables()
         return context
 
