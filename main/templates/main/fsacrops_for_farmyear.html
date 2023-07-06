@@ -1,7 +1,10 @@
 {% extends 'main/base.html' %}
+{% load main_extra %}
+
 {% block title %}
 <title>FSA crops</title>
 {% endblock title %}
+
 {% block content %}
 <div class="flex flex-col">
   <div class="width-full text-center text-xl mb-2">Farm Specific Title Information</div>
@@ -22,15 +25,36 @@
     </div>
     {% endfor %}
   </div>
-  <div class="width-full text-center text-xl my-2">Program Specific Title Information</div>
+  <div class="width-full text-center text-xl mt-4 mb-2">Program Specific Title Information</div>
+  <div class="p-6 max-w-med mx-auto bg-white rounded-xl shadow-lg flex items-center space-x-4">
+    {% for fsacrop in fsacrop_list %}
+    <div class="shrink-0">
+      <h1 class="text-xl">{{fsacrop}}</h1>
+      <dl class="grid grid-cols-[repeat(2,auto)] gap-x-4 w-max">
+        <dt>PLC Effective Reference Rate:</dt>
+        <dd class="text-right">${{fsacrop.effective_ref_price|floatformat:"2g"}}</dd>
+        <dt>National Loan Rate:</dt>
+        <dd class="text-right">${{fsacrop.natl_loan_rate|floatformat:"2g"}}</dd>
+        <dt>ARC-CO Benchmark County Revenue:</dt>
+        <dd class="text-right">${{fsacrop.benchmark_revenue|floatformat:"2g"}}</dd>
+        <dt>Estimated Sensitized MYA Price:</dt>
+        <dd class="text-right">${{fsacrop.sens_mya_price|floatformat:"2g"}}</dd>
+      </dl>
+    </div>
+    {% endfor %}
+  </div>
   <div class="p-6 max-w-med mt-2 mx-auto bg-white rounded-xl shadow-lg flex items-center space-x-4">
     <div class="shrink-0">
       <dl class="grid grid-cols-[repeat(2,auto)] gap-x-4 w-max">
         <dt>Eligible entities for title cap:</dt>
         <dd class="text-right">{{fsacrop_list.0.farm_year.eligible_persons_for_cap}}</dd>
+        <dt>Estimated Sequestration Percent:</dt>
+        <dd class="text-right">{{fsacrop_list.0.farm_year.est_sequest_frac|pct:"2"}}</dd>
       </dl>
     </div>
   </div>
 </div>
 {% endblock %}
 
+    effective_ref_price = models.FloatField(null=True)
+    natl_loan_rate = models.FloatField(null=True)

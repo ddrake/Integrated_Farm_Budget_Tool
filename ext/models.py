@@ -195,7 +195,7 @@ class MyaPreEstimate(models.Model):
     fsa_crop_type = models.ForeignKey(FsaCropType, on_delete=models.CASCADE)
 
     @classmethod
-    def get_mya_pre_estimate(cls, crop_year, for_date, pf=None):
+    def get_mya_pre_estimates(cls, crop_year, for_date, pf=None):
         """
         Get the sensitized MYA prices for each FSA crop type for the crop year
         and the given date.
@@ -212,6 +212,23 @@ class MyaPreEstimate(models.Model):
         record = call_postgres_func(cmd, crop_year, for_date)
         return tuple(None if it is None else float(it) * ppf
                      for ppf, it in zip(pf, record))
+
+    @classmethod
+    def get_mya_pre_estimate(cls, crop_year, for_date, fsa_crop_type_id, pf=1):
+        """
+        Get the sensitized MYA price for the specified FSA crop type for the crop year
+        and the given date.
+        """
+        names = ('''corn_mya_price beans_mya_price wheat_mya_price''').split()
+        name = names[fsa_crop_type_id-1]
+        cmd = f'SELECT {name}' + """
+                  FROM
+                  public.ext_mya_pre_estimate(%s, %s)
+                  AS (corn_mya_price double precision, beans_mya_price double precision,
+                      wheat_mya_price double precision);
+              """
+        record = call_postgres_func(cmd, crop_year, for_date)
+        return list(record)[0] * pf
 
     class Meta:
         managed = False
@@ -235,7 +252,7 @@ class MyaPost(models.Model):
     wheat_pct_locked = models.FloatField(null=True)
 
     @classmethod
-    def get_mya_post_estimate(cls, crop_year, for_date, pf=None):
+    def get_mya_post_estimates(cls, crop_year, for_date, pf=None):
         """
         Get the sensitized MYA prices for each FSA crop type for the crop year
         and the given date.
@@ -250,6 +267,23 @@ class MyaPost(models.Model):
         mya_prices = [pr * (plk + pff * (1 - plk))
                       for pff, pr, plk in zip(pf, prices, pct_locked)]
         return mya_prices
+
+    @classmethod
+    def get_mya_post_estimate(cls, crop_year, for_date, fsa_crop_type_id, pf=1):
+        """
+        Get the sensitized MYA prices for each FSA crop type for the crop year
+        and the given date.
+        """
+        row = (MyaPost.objects
+               .filter(wasde_release_date__lte=for_date, crop_year=crop_year)
+               .order_by("-wasde_release_date")[0])
+        price = (row.corn_price if fsa_crop_type_id == 1 else
+                 row.beans_price if fsa_crop_type_id == 2 else
+                 row.wheat_price)
+        pct_locked = (row.corn_price if fsa_crop_type_id == 1 else
+                      row.beans_price if fsa_crop_type_id == 2 else
+                      row.wheat_price)
+        return price * pct_locked + pf * (1 - pct_locked)
 
     class Meta:
         managed = False

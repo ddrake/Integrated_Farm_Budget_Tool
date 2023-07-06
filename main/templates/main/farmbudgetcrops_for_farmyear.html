@@ -1,9 +1,11 @@
 {% extends 'main/base.html' %}
+{% load main_extra %}
+
 {% block title %}
 <title>Farm budget crops</title>
 {% endblock title %}
+
 {% block content %}
-{% load main_extra %}
 <div class="p-6 max-w-med mx-auto bg-white rounded-xl shadow-lg flex items-center space-x-4">
   {% if farmbudgetcrop_list.count == 0 %}
      <p>No budgets yet - Add budgets to farm crops after setting their 'irrigated'/'non-irrigated' statuses.<p>

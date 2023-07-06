@@ -4,7 +4,7 @@ from django.core.validators import (MinValueValidator as MinVal,
                                     MaxValueValidator as MaxVal)
 from django.db import models
 from django.utils.translation import gettext_lazy as _
-from ext.models import ReferencePrices, FsaCropType, PriceYield
+from ext.models import FsaCropType, PriceYield, MyaPreEstimate, MyaPost
 from core.models.gov_pmt import GovPmt
 from .farm_year import FarmYear, BaselineFarmYear
 
@@ -94,17 +94,24 @@ class FsaCrop(models.Model):
         totacres = sum(acres)
         return 0 if totacres == 0 else sum(weighted) / totacres
 
+    def sens_mya_price(self):
+        """ currently used only for the FSA crop detail view """
+        mrd = self.farm_year.get_model_run_date()
+        pf = self.price_factor()
+        return (MyaPreEstimate.get_mya_pre_estimate(
+            self.farm_year.crop_year, mrd, self.fsa_crop_type_id, pf=pf)
+            if mrd < self.farm_year.wasde_first_mya_release_on()
+            else MyaPost.get_mya_post_estimate(
+                self.farm_year.crop_year, mrd, self.fsa_crop_type_id, pf=pf))
+
     def gov_payment(self, sens_mya_price, yf=None):
         if yf is None:
             yf = self.yield_factor()
-        rp = ReferencePrices.objects.get(
-            fsa_crop_type_id=self.fsa_crop_type_id,
-            crop_year=self.farm_year.crop_year)
         gp = GovPmt(plc_base_acres=self.plc_base_acres,
                     arcco_base_acres=self.arcco_base_acres, plc_yield=self.plc_yield,
                     estimated_county_yield=self.cty_expected_yield(yf=yf),
-                    effective_ref_price=rp.effective_ref_price,
-                    natl_loan_rate=rp.natl_loan_rate, sens_mya_price=sens_mya_price,
+                    effective_ref_price=self.effective_ref_price,
+                    natl_loan_rate=self.natl_loan_rate, sens_mya_price=sens_mya_price,
                     benchmark_revenue=self.benchmark_revenue())
         return gp.prog_pmt_pre_sequest(yf)
 

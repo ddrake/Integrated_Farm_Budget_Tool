@@ -197,12 +197,13 @@ class FarmYear(models.Model):
             pf = [fc.price_factor() for fc in self.fsa_crops.all()]
         if yf is None:
             yf = [fc.yield_factor() for fc in self.fsa_crops.all()]
-        if self.get_model_run_date() < self.wasde_first_mya_release_on():
-            mya_prices = MyaPreEstimate.get_mya_pre_estimate(
-                self.crop_year, self.get_model_run_date(), pf=pf)
+        mrd = self.get_model_run_date()
+        if mrd < self.wasde_first_mya_release_on():
+            mya_prices = MyaPreEstimate.get_mya_pre_estimates(
+                self.crop_year, mrd, pf=pf)
         else:
-            mya_prices = MyaPost.get_mya_post_estimate(
-                self.crop_year, self.get_model_run_date(), pf=pf)
+            mya_prices = MyaPost.get_mya_post_estimates(
+                self.crop_year, mrd, pf=pf)
         total = sum((fc.gov_payment(mya_prices[i], yf=yf[i]) * fc.planted_acres()
                      for i, fc in enumerate(self.fsa_crops.all())))
         total_pmt = round(

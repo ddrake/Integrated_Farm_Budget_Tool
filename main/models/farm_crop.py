@@ -47,8 +47,8 @@ class FarmCrop(models.Model):
     planted_acres = models.FloatField(
         default=0, validators=[MinVal(0), MaxVal(99999)],)
     ta_aph_yield = models.FloatField(
-        default=0, validators=[MinVal(0), MaxVal(400)], verbose_name="TA APH yield",
-        help_text="Trend-adjusted average prodution history yield provided by insurer.")
+        default=0, validators=[MinVal(0), MaxVal(400)], verbose_name="Approved yield",
+        help_text="Approved yield provided by insurer, based on selections of YE/TA.")
     adj_yield = models.FloatField(
         default=0, validators=[MinVal(0), MaxVal(400)], verbose_name="Adjusted yield",
         help_text="Adjusted yield provided by insurer.")
@@ -134,8 +134,8 @@ class FarmCrop(models.Model):
     def get_benchmark_revenue(self):
         result = BenchmarkRevenue.objects.filter(
             state_id=self.farm_year.state_id, county_code=self.farm_year.county_code,
-            crop=(1 if self.farm_crop_type == 1 else
-                  2 if self.farm_crop_type in (2, 5) else 3),
+            crop=(1 if self.farm_crop_type_id == 1 else
+                  2 if self.farm_crop_type_id in (2, 5) else 3),
             crop_year=self.farm_year.crop_year,
             practice__in=([0, 1] if self.is_irrigated() else [0, 2]))[0]
         return result.benchmark_revenue
