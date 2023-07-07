@@ -122,14 +122,20 @@ class SensTable(object):
         rslt = {}
         self.get_tables(rslt)
         if self.farm_year.sensitivity_data is not None:
-            self.get_tables(rslt, diff=True)
+            revenue_p, title_p, indem_p, cost_p, pretaxamt_p = (
+                np.array(v) for v in self.farm_year.sensitivity_data)
+            # if the array shapes have changed, e.g. by setting a crop's acres to zero
+            # we can't provide a diff.
+            if revenue_p.shape == self.revenue_values.shape:
+                self.get_tables(rslt, arrays=(revenue_p, title_p, indem_p,
+                                              cost_p, pretaxamt_p))
         self.save_sens_data()
         return rslt
 
-    def get_tables(self, rslt, diff=False):
+    def get_tables(self, rslt, arrays=None):
+        diff = (arrays is not None)
         if diff:
-            revenue_p, title_p, indem_p, cost_p, pretaxamt_p = (
-                np.array(v) for v in self.farm_year.sensitivity_data)
+            revenue_p, title_p, indem_p, cost_p, pretaxamt_p = arrays
 
         items = [
             ['revenue' + ('_diff' if diff else ''),

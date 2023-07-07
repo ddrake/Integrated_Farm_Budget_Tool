@@ -239,6 +239,9 @@ class FarmCrop(models.Model):
         Note: price_volatility factor and projected_price are ignored
         by compute_prems if is_post_discovery=True
         """
+        if (self.planted_acres == 0 or self.rate_yield == 0 or self.adj_yield == 0 or
+                self.ta_yield == 0):
+            self.crop_ins_prems = None
         price_vol, projected_price, expected_yield = self.prem_price_yield_data()
         p = Premium()
         prems = p.compute_prems(
@@ -264,12 +267,13 @@ class FarmCrop(models.Model):
                                    for key, ar in zip(names, prems[:4])}
 
     def get_selected_premiums(self):
-        return self.get_selected_ins_items(self.get_crop_ins_prems())
+        prems = self.get_crop_ins_prems()
+        return None if prems is None else self.get_selected_ins_items(prems)
 
     def get_total_premiums(self):
         prems = self.get_selected_premiums()
-        if prems is not None:
-            return sum((v for v in prems.values() if v is not None))
+        return (0 if prems is None else
+                sum((v for v in prems.values() if v is not None)))
 
     # ----------------------------------
     # Crop Ins Indemnity-related methods

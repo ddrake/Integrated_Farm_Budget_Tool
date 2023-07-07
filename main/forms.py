@@ -42,8 +42,9 @@ class FarmYearUpdateForm(ModelForm):
                      'cash_rented_acres', 'variable_rented_acres',
                      'var_rent_cap_floor_frac'),
             Fieldset('Non-grain income and expense',
-                     'other_nongrain_income', 'other_nongrain_expense',
-                     'eligible_persons_for_cap'),
+                     'other_nongrain_income', 'other_nongrain_expense'),
+            Fieldset('Farm Level Title Settings', 'eligible_persons_for_cap',
+                     'est_sequest_frac'),
             Fieldset('Report Controls',
                      'is_model_run_date_manual', 'manual_model_run_date'),
         )
@@ -55,7 +56,7 @@ class FarmYearUpdateForm(ModelForm):
                 annual_land_principal_pmt property_taxes land_repairs
                 eligible_persons_for_cap other_nongrain_income
                 other_nongrain_expense manual_model_run_date
-                is_model_run_date_manual'''.split()
+                is_model_run_date_manual est_sequest_frac'''.split()
 
 
 class FarmCropUpdateForm(ModelForm):

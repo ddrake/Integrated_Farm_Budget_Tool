@@ -82,7 +82,9 @@ class FarmYear(models.Model):
         default=False,
         help_text='Use the manually-set model run date (advanced).')
     sensitivity_data = models.JSONField(null=True, blank=True)
-    est_sequest_frac = models.FloatField(default=0.062)
+    est_sequest_frac = models.FloatField(
+        default=0.062, verbose_name='estimated sequestration percent',
+        help_text='Estimated reduction to computed total pre-cap title payment')
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
