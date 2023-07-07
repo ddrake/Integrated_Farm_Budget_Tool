@@ -461,11 +461,11 @@ class FarmCrop(models.Model):
             pf = self.price_factor()
         if yf is None:
             yf = self.farmbudgetcrop.yield_factor
-        _, proj_price, harvest_price, _ = self.indem_price_yield_data(pf=pf)
+        data = self.indem_price_yield_data(pf=pf)
         base_rev = (self.planted_acres *
-                    self.farmbudgetcrop.baseline_yield_for_var_rent * proj_price)
+                    self.farmbudgetcrop.baseline_yield_for_var_rent * data['pp'][0])
         sens_rev = (self.planted_acres * self.sens_farm_expected_yield(yf=yf) *
-                    harvest_price)
+                    data['hp'][0])
         result = (0 if base_rev == 0 else (sens_rev - base_rev) / base_rev)
         return result
 
