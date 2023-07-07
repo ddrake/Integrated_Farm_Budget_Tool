@@ -240,7 +240,7 @@ class FarmCrop(models.Model):
         by compute_prems if is_post_discovery=True
         """
         if (self.planted_acres == 0 or self.rate_yield == 0 or self.adj_yield == 0 or
-                self.ta_yield == 0):
+                self.ta_aph_yield == 0):
             self.crop_ins_prems = None
         price_vol, projected_price, expected_yield = self.prem_price_yield_data()
         p = Premium()
