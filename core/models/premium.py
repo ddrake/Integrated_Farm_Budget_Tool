@@ -276,25 +276,29 @@ class Premium:
         (Section 13, p. 44)
         """
         self.effcov = (0.0001 + self.cover * self.tayield_adj / self.adjyield).round(2)
+        print(f'{self.tayield_adj=}')
 
     def set_factors(self):
         """
         Interpolate current and previous rate differential, enterprise residual, and
         enterprise discount factors based on effective coverage. (section 15, p. 65-75)
         """
+        print(f'{self.rate_differential_factor=}')
         varpairs = [
-            (self.rate_differential_factor[:, 0], 9),
-            (self.rate_differential_factor[:, 1], 9),
-            (self.enterprise_residual_factor_y[:, 0], 3),
-            (self.enterprise_residual_factor_y[:, 1], 3),
-            (self.enterprise_residual_factor_r[:, 0], 3),
-            (self.enterprise_residual_factor_r[:, 1], 3),
-            (self.enterprise_discount_factor[:, self.sizeidx], 4), ]
+            (self.rate_differential_factor[:, 0], 9, 'rdf'),
+            (self.rate_differential_factor[:, 1], 9, 'rdfp'),
+            (self.enterprise_residual_factor_y[:, 0], 3, 'erfy'),
+            (self.enterprise_residual_factor_y[:, 1], 3, 'erfyp'),
+            (self.enterprise_residual_factor_r[:, 0], 3, 'erfr'),
+            (self.enterprise_residual_factor_r[:, 1], 3, 'erfrp'),
+            (self.enterprise_discount_factor[:, self.sizeidx], 4, 'edf'), ]
         rslts = self.interp(varpairs)
         self.ratediff_fac[:] = array(rslts[:2]).T
         self.efactor_y[:] = array(rslts[2:4]).T
         self.efactor_r[:] = array(rslts[4:6]).T
         self.disenter[:] = rslts[6]
+        print(f'{self.ratediff_fac}')
+        # ratediff_fac, efactor_r matching steps 3.04, 3.05 (answer 1)
 
     def interp(self, varpairs):
         """
@@ -305,7 +309,7 @@ class Premium:
         gap = cov[1] - cov[0]
         js, jps, jms = self.get_indices()
         rslts = []
-        for var, ro in varpairs:
+        for var, ro, name in varpairs:
             # handle general case with possible extrapolation
             vdiff = np.where(js < 7,
                              var[jps] - var[js], var[js] - var[jms])
@@ -344,9 +348,10 @@ class Premium:
                          (self.effcov - 0.85) / 0.15, np.zeros_like(self.effcov))
         yeadj = np.where(self.effcov > 0.85,
                          1 + (np.minimum(1, yeadj) ** 3).round(7) * 0.05, yeadj)
-        self.ratediff_fac[:, 0] = np.where(self.effcov > 0.85,
-                                           self.ratediff_fac[:, 0] * yeadj,
-                                           self.ratediff_fac[:, 0])
+        # Doing this gave an incorrect value. p. 74 indicates this is not for EU.
+        # self.ratediff_fac[:, 0] = np.where(self.effcov > 0.85,
+        #                                    self.ratediff_fac[:, 0] * yeadj,
+        #                                    self.ratediff_fac[:, 0])
         self.efactor_y = np.where(self.effcov.reshape(8, 1) > 0.85,
                                   np.minimum(
                                     self.efactor_y,
@@ -362,6 +367,7 @@ class Premium:
         self.revyield = self.tayield_adj if self.tause else self.adjyield
         self.liab = ((self.revyield * self.cover + 0.001).round(1) *
                      self.projected_price * self.acres).round(0)
+        # liab matches step 1.04
 
     def set_base_rates(self):
         """
@@ -380,27 +386,37 @@ class Premium:
                 self.baserate[:] = (self.subcounty_rate * term).round(8)
         else:
             self.baserate[:] = term.round(8)
+        # self.baserate here matches step 3.03 in worksheet
 
     def set_base_prem_rates(self):
         """
         Set vector adjusted base premium rates (p. 13)
         """
+        print('in set_base_rates')
+        print(f'{self.baserate=}')
+        print(f'{self.ratediff_fac=}')
+        print(f'{self.efactor_r=}')
         prod = self.baserate * self.ratediff_fac
-        self.basepremrate = array((prod * self.efactor_y,
-                                   prod * self.efactor_r)).round(8)
+        # The minimum below was missing (step 3.05), resulting in about 4% higher prem
+        # TODO: check if we need to do the minimum thing for efactor_y as well
+        self.basepremrate = array(
+            (prod * np.minimum(self.efactor_y,
+                               self.enterprise_residual_factor_y),
+             prod * np.minimum(self.efactor_r,
+                               self.enterprise_residual_factor_r))).round(8)
 
     def limit_base_prem_rates(self):
         """
         Limit base premium rates min of cur and 1.2*prior (unpacking vectors)
-        (bottom p. 15)
+        (bottom p. 15. 3.1 of worksheet)
         """
         bpr = self.basepremrate
         bpr[:, :, 0] = np.where(bpr[:, :, 0] > bpr[:, :, 1] * 1.2,
                                 (bpr[:, :, 1] * 1.2).round(8), bpr[:, :, 0])
 
-        # Note: I cannot find this step in the handbook.  It always felt wrong.
-        bpr[:, :, 0] = np.where(bpr[:, :, 0] > 0.99,
-                                zeros(2).reshape(2, 1), bpr[:, :, 0])
+        bpr[:, :, 0] = np.where(bpr[:, :, 0] > 0.999,
+                                np.ones(2).reshape(2, 1)*0.999, bpr[:, :, 0])
+        print(f'{self.basepremrate[1, :, 0]=}')
 
     def limit_baserate(self):
         """
@@ -447,12 +463,9 @@ class Premium:
         self.simloss = simloss.mean(0)
         self.simloss[:, 0] = (self.simloss[:, 0] /
                               (self.revyield * revcov)).round(8)
-        self.simloss[:, 1] = (self.simloss[:, 1] /
-                              (self.revyield * revcov *
-                               self.projected_price)).round(8)
-        self.simloss[:, 2] = (self.simloss[:, 2] /
-                              (self.revyield * revcov *
-                               self.projected_price)).round(8)
+        self.simloss[:, 1:] = (self.simloss[:, 1:] /
+                               (self.revyield * revcov *
+                                self.projected_price).reshape(8, 1)).round(8)
 
     def set_rates(self):
         """
@@ -480,11 +493,13 @@ class Premium:
             (self.premrate[:, 1] + self.rphpe_rateuse).round(8)).round(0)  # RP-HPE
         self.prem_ent[:, 2] = (self.prem_ent[:, 2] *
                                self.premrate[:, 0].round(8)).round(0)      # YP
+        print(f'{self.prem_ent[:, 0]=}')
 
     def apply_subsidy(self):
         """
         Apply the subsidy (section 17, p. 73)
         """
+        print(f'{self.subsidy_ent=}')
         self.prem_ent[:] -= (self.prem_ent[:] *
                              self.subsidy_ent[:].reshape(8, 1)).round(0)
         self.prem_ent[:] = (self.prem_ent[:] / self.acres).round(2)
