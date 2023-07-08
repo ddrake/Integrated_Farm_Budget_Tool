@@ -206,7 +206,7 @@ class FarmYear(models.Model):
         else:
             mya_prices = MyaPost.get_mya_post_estimates(
                 self.crop_year, mrd, pf=pf)
-        total = sum((fc.gov_payment(mya_prices[i], yf=yf[i]) * fc.planted_acres()
+        total = sum((fc.gov_payment(mya_prices[i], yf=yf[i])
                      for i, fc in enumerate(self.fsa_crops.all())))
         total_pmt = round(
             min(FarmYear.FSA_PMT_CAP_PER_PRINCIPAL * self.eligible_persons_for_cap,
