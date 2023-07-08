@@ -276,14 +276,12 @@ class Premium:
         (Section 13, p. 44)
         """
         self.effcov = (0.0001 + self.cover * self.tayield_adj / self.adjyield).round(2)
-        print(f'{self.tayield_adj=}')
 
     def set_factors(self):
         """
         Interpolate current and previous rate differential, enterprise residual, and
         enterprise discount factors based on effective coverage. (section 15, p. 65-75)
         """
-        print(f'{self.rate_differential_factor=}')
         varpairs = [
             (self.rate_differential_factor[:, 0], 9, 'rdf'),
             (self.rate_differential_factor[:, 1], 9, 'rdfp'),
@@ -297,7 +295,6 @@ class Premium:
         self.efactor_y[:] = array(rslts[2:4]).T
         self.efactor_r[:] = array(rslts[4:6]).T
         self.disenter[:] = rslts[6]
-        print(f'{self.ratediff_fac}')
         # ratediff_fac, efactor_r matching steps 3.04, 3.05 (answer 1)
 
     def interp(self, varpairs):
@@ -392,10 +389,6 @@ class Premium:
         """
         Set vector adjusted base premium rates (p. 13)
         """
-        print('in set_base_rates')
-        print(f'{self.baserate=}')
-        print(f'{self.ratediff_fac=}')
-        print(f'{self.efactor_r=}')
         prod = self.baserate * self.ratediff_fac
         # The minimum below was missing (step 3.05), resulting in about 4% higher prem
         # TODO: check if we need to do the minimum thing for efactor_y as well
@@ -416,7 +409,6 @@ class Premium:
 
         bpr[:, :, 0] = np.where(bpr[:, :, 0] > 0.999,
                                 np.ones(2).reshape(2, 1)*0.999, bpr[:, :, 0])
-        print(f'{self.basepremrate[1, :, 0]=}')
 
     def limit_baserate(self):
         """
@@ -493,13 +485,11 @@ class Premium:
             (self.premrate[:, 1] + self.rphpe_rateuse).round(8)).round(0)  # RP-HPE
         self.prem_ent[:, 2] = (self.prem_ent[:, 2] *
                                self.premrate[:, 0].round(8)).round(0)      # YP
-        print(f'{self.prem_ent[:, 0]=}')
 
     def apply_subsidy(self):
         """
         Apply the subsidy (section 17, p. 73)
         """
-        print(f'{self.subsidy_ent=}')
         self.prem_ent[:] -= (self.prem_ent[:] *
                              self.subsidy_ent[:].reshape(8, 1)).round(0)
         self.prem_ent[:] = (self.prem_ent[:] / self.acres).round(2)
