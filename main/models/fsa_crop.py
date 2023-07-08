@@ -4,7 +4,8 @@ from django.core.validators import (MinValueValidator as MinVal,
                                     MaxValueValidator as MaxVal)
 from django.db import models
 from django.utils.translation import gettext_lazy as _
-from ext.models import FsaCropType, PriceYield, MyaPreEstimate, MyaPost
+from ext.models import (FsaCropType, PriceYield, MyaPreEstimate, MyaPost,
+                        BenchmarkRevenue)
 from core.models.gov_pmt import GovPmt
 from .farm_year import FarmYear, BaselineFarmYear
 
@@ -87,12 +88,18 @@ class FsaCrop(models.Model):
         totacres = sum(acres)
         return 0 if totacres == 0 else sum(weighted) / totacres
 
+    def is_irrigated(self):
+        pairs = [(fc.is_irrigated(), fc.planted_acres) for fc in self.farm_crops()]
+        return (pairs[0][0] if len(pairs) == 1 else
+                sorted(pairs, key=lambda p: p[1], reverse=True)[0][0])
+
     def benchmark_revenue(self):
-        pairs = ((fc.planted_acres, fc.benchmark_revenue * fc.planted_acres)
-                 for fc in self.farm_crops())
-        acres, weighted = zip(*pairs)
-        totacres = sum(acres)
-        return 0 if totacres == 0 else sum(weighted) / totacres
+        result = BenchmarkRevenue.objects.filter(
+            state_id=self.farm_year.state_id, county_code=self.farm_year.county_code,
+            crop=self.fsa_crop_type_id,
+            crop_year=self.farm_year.crop_year,
+            practice__in=([0, 1] if self.is_irrigated() else [0, 2]))[0]
+        return result.benchmark_revenue
 
     def sens_mya_price(self):
         """ currently used only for the FSA crop detail view """

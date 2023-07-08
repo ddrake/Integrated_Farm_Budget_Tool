@@ -6,7 +6,7 @@ from django.db import models
 from django.contrib.postgres.fields import ArrayField
 from django.utils.translation import gettext_lazy as _
 from ext.models import (Subcounty, SubcountyAvail, BudgetCrop, FarmCropType,
-                        InsCropType, PriceYield, AreaRate, BenchmarkRevenue)
+                        InsCropType, PriceYield, AreaRate)
 from core.models.premium import Premium
 from core.models.indemnity import Indemnity
 from .farm_year import FarmYear, BaselineFarmYear
@@ -106,8 +106,6 @@ class FarmCrop(models.Model):
     proj_price_disc_end = models.DateField(null=True)
     harv_price_disc_end = models.DateField(null=True)
     cty_yield_final = models.DateField(null=True)
-    # Cached computed value changed if irr status changes
-    benchmark_revenue = models.FloatField(null=True)
 
     def __str__(self):
         irr = 'Irrigated' if self.is_irrigated() else 'Non-irrigated'
@@ -130,15 +128,6 @@ class FarmCrop(models.Model):
     def allowed_practices(self):
         return [(prac, FarmYear.IRR_PRACTICE[prac])
                 for prac in self.ins_practices]
-
-    def get_benchmark_revenue(self):
-        result = BenchmarkRevenue.objects.filter(
-            state_id=self.farm_year.state_id, county_code=self.farm_year.county_code,
-            crop=(1 if self.farm_crop_type_id == 1 else
-                  2 if self.farm_crop_type_id in (2, 5) else 3),
-            crop_year=self.farm_year.crop_year,
-            practice__in=([0, 1] if self.is_irrigated() else [0, 2]))[0]
-        return result.benchmark_revenue
 
     # ------------------------
     # Crop Ins-related methods
@@ -624,8 +613,6 @@ class FarmCrop(models.Model):
                 "ARC-CO base acres must be zero if SCO is set for related farm crop")})
 
     def save(self, *args, **kwargs):
-        if self.benchmark_revenue is None or util.any_changed(self, 'ins_practice'):
-            self.benchmark_revenue = self.get_benchmark_revenue()
         if util.any_changed(self, 'planted_acres'):
             # invalidate memory cached variable
             self.farm_year.totalplantedacres = None
