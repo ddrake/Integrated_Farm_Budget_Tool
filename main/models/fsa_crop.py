@@ -90,7 +90,7 @@ class FsaCrop(models.Model):
 
     def is_irrigated(self):
         pairs = [(fc.is_irrigated(), fc.planted_acres) for fc in self.farm_crops()]
-        return (pairs[0][0] if len(pairs) == 1 else
+        return (False if max((pr[1] for pr in pairs)) == 0 else
                 sorted(pairs, key=lambda p: p[1], reverse=True)[0][0])
 
     def benchmark_revenue(self):
