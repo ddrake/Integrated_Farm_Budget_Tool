@@ -109,9 +109,10 @@ class MarketCrop(models.Model):
 
     def county_bean_yield(self, yf=1):
         """ for indemnity calculations """
-        return (0 if self.market_crop_type_id != 2 else
+        ac = self.planted_acres()
+        return (0 if self.market_crop_type_id != 2 or ac == 0 else
                 sum((fc.sens_cty_expected_yield(yf) * fc.planted_acres
-                     for fc in self.farm_crops.all())) / self.planted_acres())
+                     for fc in self.farm_crops.all())) / ac)
 
     def expected_total_bushels(self):
         return sum((fc.sens_farm_expected_yield() * fc.planted_acres
