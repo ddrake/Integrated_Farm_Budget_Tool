@@ -94,9 +94,11 @@ class FarmBudgetCropUpdateForm(ModelForm):
         self.helper = FormHelper()
         self.helper.add_input(Submit('submit', 'Update'))
         self.helper.layout = Layout(
+            Fieldset('Baseline Yield',
+                     'baseline_yield_for_var_rent'),
             Fieldset('Expected Yields',
-                     'farm_yield', 'is_farm_yield_final',
-                     'baseline_yield_for_var_rent', 'county_yield', 'yield_factor'),
+                     'farm_yield', 'county_yield', 'is_farm_yield_final',
+                     'yield_factor'),
             Fieldset('Revenue Items',
                      'other_gov_pmts', 'other_revenue'),
             Fieldset('Direct Costs',
@@ -122,3 +124,19 @@ class FarmBudgetCropUpdateForm(ModelForm):
               building_depr insurance misc_overhead_costs interest_nonland
               other_overhead_costs rented_land_costs yield_variability
               is_farm_yield_final are_costs_final yield_factor'''.split()
+
+
+class ZeroAcreFarmBudgetCropUpdateForm(ModelForm):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.helper = FormHelper()
+        self.helper.add_input(Submit('submit', 'Update'))
+        self.helper.layout = Layout(
+            Fieldset('Expected Yields',
+                     'county_yield', 'is_farm_yield_final', 'yield_factor'),
+        )
+
+    class Meta:
+        model = FarmBudgetCrop
+        fields = '''county_yield is_farm_yield_final yield_factor'''.split()

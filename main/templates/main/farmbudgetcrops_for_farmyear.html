@@ -7,7 +7,7 @@
 
 {% block content %}
 <div class="flex flex-col">
-<div class="p-6 max-w-med mx-auto bg-white rounded-xl shadow-lg flex items-center space-x-4">
+<div class="p-6 max-w-med mx-auto bg-white rounded-xl shadow-lg flex content-start items-start space-x-4">
   {% if farmbudgetcrop_list.count == 0 %}
      <p>No budgets yet - Add budgets to farm crops after setting their 'irrigated'/'non-irrigated' statuses.<p>
   {% else %}
@@ -15,15 +15,23 @@
   <div class="shrink-0">
     <h1 class="text-xl">{{farmbudgetcrop.farm_crop}}</h1>
     <dl class="grid grid-cols-[repeat(2,auto)] gap-x-4 w-max">
+      {% if farmbudgetcrop.farm_crop.planted_acres > 0 %}
       <dt class="font-semibold">Expected Yields (bpa)</dt><dd></dd>
-      <dt>Farm yield</dt>
-      <dd class="text-right">{{farmbudgetcrop.farm_yield}}</dd>
       <dt>Variable rent baseline yield</dt>
       <dd class="text-right">{{farmbudgetcrop.baseline_yield_for_var_rent}}</dd>
+      {% endif %}
+      <dt class="font-semibold">Expected Yields (bpa)</dt><dd></dd>
+      {% if farmbudgetcrop.farm_crop.planted_acres > 0 %}
+      <dt>Farm yield</dt>
+      <dd class="text-right">{{farmbudgetcrop.farm_yield}}</dd>
+      {% endif %}
       <dt>County yield</dt>
       <dd class="text-right">{{farmbudgetcrop.county_yield}}</dd>
       <dt>Yield sensitivity factor</dt>
       <dd class="text-right">{{farmbudgetcrop.yield_factor|pct}}</dd>
+      <dt>Yields Final?</dt>
+      <dd class="text-right">{{farmbudgetcrop.are_yields_final|yesno:"Yes,No"}}</dd>
+      {% if farmbudgetcrop.farm_crop.planted_acres > 0 %}
       <dt>&nbsp;</dt><dd></dd>
       <dt class="font-semibold">Other Revenue Items ($/acre)</dt><dd></dd>
       <dt>Other gov. payments</dt>
@@ -95,6 +103,7 @@
       <dd class="text-right">{{farmbudgetcrop.yield_variability|pct}}</dd>
       <dt>Costs Final?</dt>
       <dd class="text-right">{{farmbudgetcrop.are_costs_final|yesno:"Yes,No"}}</dd>
+      {% endif %}
     </dl>
     <div class="my-2">
       <a class="text-lg text-indigo-800 hover:text-indigo-600"

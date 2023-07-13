@@ -31,10 +31,11 @@ class FarmBudgetCrop(models.Model):
     """
     farm_yield = models.FloatField(
         default=0, validators=[MinVal(0), MaxVal(400)],
-        help_text='Set this to the final yield after harvest')
+        help_text='Set this to the final farm yield after harvest')
     # the farm yield value is copied to county yield when the budget crop is copied.
     county_yield = models.FloatField(
-        default=0, validators=[MinVal(0), MaxVal(400)])
+        default=0, validators=[MinVal(0), MaxVal(400)],
+        help_text='Set this to the estimated final county yield after harvest')
     description = models.CharField(max_length=50)
     yield_variability = models.FloatField(
         default=0, validators=[MinVal(0), MaxVal(1)])
@@ -107,14 +108,16 @@ class FarmBudgetCrop(models.Model):
     baseline_yield_for_var_rent = models.FloatField(
         default=0, validators=[MinVal(0), MaxVal(400)],
         verbose_name="baseline yield",
-        help_text='Fixed yield used for variable rent and yield-based cost adjustment')
+        help_text=('Fixed farm yield used for variable rent ' +
+                   'and yield-based cost adjustment'))
     is_farm_yield_final = models.BooleanField(
-        default=False, verbose_name="farm yield final?",
-        help_text='Adjust the farm yield and check this box once farm yield is known')
+        default=False, verbose_name="yields final?",
+        help_text='Adjust expected yield(s) and check this box after harvest')
     yield_factor = models.FloatField(
         default=1, validators=[MinVal(0), MaxVal(2)],
         verbose_name='yield sensititivity factor',
-        help_text='Modify expected yields prior to harvest, affecting detailed budget')
+        help_text=('Modify expected yield(s) prior to harvest, ' +
+                   'affecting detailed budget'))
     are_costs_final = models.BooleanField(
         default=False, verbose_name="Costs final?",
         help_text='Adjust costs and check this box (if desired) once costs are known')

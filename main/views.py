@@ -16,7 +16,7 @@ from .models.budget_table import BudgetTable
 from .models.sens_table import SensTable
 from ext.models import County
 from .forms import (FarmYearCreateForm, FarmYearUpdateForm, FarmCropUpdateForm,
-                    FarmBudgetCropUpdateForm)
+                    FarmBudgetCropUpdateForm, ZeroAcreFarmBudgetCropUpdateForm)
 
 
 def index(request):
@@ -143,7 +143,11 @@ class FarmCropUpdateView(UpdateView):
 
 class FarmBudgetCropUpdateView(UpdateView):
     model = FarmBudgetCrop
-    form_class = FarmBudgetCropUpdateForm
+
+    def get_form_class(self):
+        fbc = self.get_form_kwargs()['instance']
+        return (ZeroAcreFarmBudgetCropUpdateForm if fbc.farm_crop.planted_acres == 0
+                else FarmBudgetCropUpdateForm)
 
     def get_success_url(self):
         return reverse_lazy('farmbudgetcrop_list',

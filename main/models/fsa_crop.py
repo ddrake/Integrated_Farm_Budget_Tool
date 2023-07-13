@@ -84,11 +84,16 @@ class FsaCrop(models.Model):
                 practice=farm_crop.ins_practice)
             if py.final_yield is not None:
                 return py.final_yield
-        pairs = ((fc.planted_acres, fc.sens_cty_expected_yield(yf) *
-                  fc.planted_acres) for fc in self.farm_crops())
-        acres, weighted = zip(*pairs)
+        pairs = [(fc.planted_acres, fc.sens_cty_expected_yield(yf))
+                 for fc in self.farm_crops()]
+        pairs = [p for p in pairs if p != (0, 0)]
+        if len(pairs) == 0:
+            return 0
+        if len(pairs) == 1:
+            return pairs[0][1]
+        acres, weight = zip(*((ac, ac*yld) for ac, yld in pairs))
         totacres = sum(acres)
-        return 0 if totacres == 0 else sum(weighted) / totacres
+        return 0 if totacres == 0 else sum(weight) / totacres
 
     def is_irrigated(self):
         pairs = [(fc.is_irrigated(), fc.planted_acres) for fc in self.farm_crops()]
@@ -130,6 +135,10 @@ class FsaCrop(models.Model):
         if self.arcco_base_acres > 0 and field_crop_sco_use:
             raise ValidationError({'arcco_base_acres': _(
                 "ARC-CO base acres must be zero if SCO is set for related farm crop")})
+        if self.arcco_base_acres > 0 and self.cty_expected_yield() == 0:
+            raise ValidationError({'arcco_base_acres': _(
+                "County yield is required for ARC-CO. ARC-CO Base acres" +
+                "must be zero unless a budget is set")})
 
     def __str__(self):
         return f'{self.fsa_crop_type}'

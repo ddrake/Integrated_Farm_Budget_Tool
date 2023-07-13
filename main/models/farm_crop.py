@@ -371,7 +371,7 @@ class FarmCrop(models.Model):
         elif yf is None:
             yf = 1
         yieldfinal = self.farmbudgetcrop.is_farm_yield_final if hasbud else False
-        farmyield = self.farmbudgetcrop.farm_yield if hasbud else self.ta_aph_yield
+        farmyield = self.farmbudgetcrop.farm_yield if hasbud else 0
         return farmyield * (1 if yieldfinal else yf)
 
     def sens_cty_expected_yield(self, yf=None):
@@ -381,7 +381,7 @@ class FarmCrop(models.Model):
         elif yf is None:
             yf = 1
         yieldfinal = self.farmbudgetcrop.is_farm_yield_final if hasbud else False
-        ctyyield = self.farmbudgetcrop.county_yield if hasbud else self.ta_aph_yield
+        ctyyield = self.farmbudgetcrop.county_yield if hasbud else 0
         return ctyyield * (1 if yieldfinal else yf)
 
     def sens_production_bu(self, yf=None):
