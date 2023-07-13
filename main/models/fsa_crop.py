@@ -59,10 +59,12 @@ class FsaCrop(models.Model):
                     for mc in self.market_crops.all())) / pa)
 
     def yield_factor(self):
+        """ a default yield_factor """
         pa = self.planted_acres()
         return (1 if pa == 0 else
-                sum((fc.sens_farm_expected_yield() * fc.planted_acres
-                    for fc in self.farm_crops() if fc.has_budget())) / pa)
+                sum(((fc.farmbudgetcrop.yield_factor if fc.has_budget() else 1) *
+                     fc.planted_acres
+                    for fc in self.farm_crops()) / pa))
 
     def cty_expected_yield(self, yf=None):
         """
