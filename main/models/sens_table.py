@@ -96,6 +96,8 @@ class SensTable(object):
         self.gov_pmts = [totgovpmt * ac / self.total_acres for ac in self.acres]
 
     def get_info(self):
+        if len(self.farm_crops) == 0:
+            return {'farmyear': self.farm_year.pk}
         if self.info is None:
             names = (['Farm'] + self.croptypenames[:] +
                      (['Wheat/DC Beans'] if self.wheatdc else []))
@@ -120,6 +122,9 @@ class SensTable(object):
         and with values nested lists of strings to be rendered as html tables.
         """
         rslt = {}
+        if len(self.farm_crops) == 0:
+            return None
+
         self.get_tables(rslt)
         if self.farm_year.sensitivity_data is not None:
             revenue_p, title_p, indem_p, cost_p, pretaxamt_p = (
