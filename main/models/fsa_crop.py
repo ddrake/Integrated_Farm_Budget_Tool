@@ -64,7 +64,7 @@ class FsaCrop(models.Model):
         return (1 if pa == 0 else
                 sum(((fc.farmbudgetcrop.yield_factor if fc.has_budget() else 1) *
                      fc.planted_acres
-                    for fc in self.farm_crops()) / pa))
+                    for fc in self.farm_crops())) / pa)
 
     def cty_expected_yield(self, yf=None):
         """
