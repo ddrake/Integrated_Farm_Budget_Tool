@@ -280,9 +280,9 @@ class MyaPost(models.Model):
         price = (row.corn_price if fsa_crop_type_id == 1 else
                  row.beans_price if fsa_crop_type_id == 2 else
                  row.wheat_price)
-        pct_locked = (row.corn_price if fsa_crop_type_id == 1 else
-                      row.beans_price if fsa_crop_type_id == 2 else
-                      row.wheat_price)
+        pct_locked = (row.corn_pct_locked if fsa_crop_type_id == 1 else
+                      row.beans_pct_locked if fsa_crop_type_id == 2 else
+                      row.wheat_pct_locked)
         return price * (pct_locked + pf * (1 - pct_locked))
 
     class Meta:
