@@ -109,6 +109,11 @@ class FarmYearFarmBudgetCropListView(ListView):
         self.farmyear = get_object_or_404(FarmYear, pk=self.kwargs['farmyear'])
         return FarmBudgetCrop.objects.filter(farm_year=self.farmyear)
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['farmyear'] = self.kwargs['farmyear']
+        return context
+
 
 class FarmYearMarketCropListView(ListView):
     template_name = 'main/marketcrops_for_farmyear.html'
