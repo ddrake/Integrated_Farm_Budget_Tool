@@ -9,7 +9,8 @@
 <div class="flex flex-col">
 <div class="p-6 max-w-med mx-auto bg-white rounded-xl shadow-lg flex content-start items-start space-x-4">
   {% if farmbudgetcrop_list.count == 0 %}
-     <p>No budgets yet - Add budgets to farm crops after setting their 'irrigated'/'non-irrigated' statuses.<p>
+    <p class="text-lg">No budget data exists.<br>
+      Add budgets using the 'Crop Acreage/Crop Insurance' form.<p>
   {% else %}
   {% for farmbudgetcrop in farmbudgetcrop_list %}
   <div class="shrink-0">
