@@ -62,7 +62,7 @@ class FsaCrop(models.Model):
         pa = self.planted_acres()
         return (1 if pa == 0 else
                 sum((fc.sens_farm_expected_yield() * fc.planted_acres
-                    for fc in self.farm_crops())) / pa)
+                    for fc in self.farm_crops() if fc.has_budget())) / pa)
 
     def cty_expected_yield(self, yf=None):
         """
@@ -91,7 +91,8 @@ class FsaCrop(models.Model):
     def is_irrigated(self):
         pairs = [(fc.is_irrigated(), fc.planted_acres) for fc in self.farm_crops()]
         return (False if max((pr[1] for pr in pairs)) == 0 else
-                sorted(pairs, key=lambda p: p[1], reverse=True)[0][0])
+                sorted(pairs, key=lambda p: p[1]*10+(0 if p[0] else 1),
+                       reverse=True)[0][0])
 
     def benchmark_revenue(self):
         result = BenchmarkRevenue.objects.filter(
@@ -123,8 +124,7 @@ class FsaCrop(models.Model):
         return gp.prog_pmt_pre_sequest(yf)
 
     def clean(self):
-        field_crop_sco_use = any((fc.sco_use for mc in self.market_crops.all()
-                                  for fc in mc.farm_crops.all()))
+        field_crop_sco_use = any((fc.sco_use for fc in self.farm_crops()))
         if self.arcco_base_acres > 0 and field_crop_sco_use:
             raise ValidationError({'arcco_base_acres': _(
                 "ARC-CO base acres must be zero if SCO is set for related farm crop")})

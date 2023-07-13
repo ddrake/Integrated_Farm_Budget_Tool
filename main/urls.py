@@ -7,7 +7,7 @@ from .views import (
     FarmYearFsaCropListView, FarmCropUpdateView, MarketCropUpdateView,
     FsaCropUpdateView, FarmCropAddBudgetView, FarmYearFarmBudgetCropListView,
     FarmBudgetCropUpdateView, DetailedBudgetView, SensitivityTableView,
-    FarmYearDashboard)
+    FarmYearDashboard, FarmCropDeleteBudgetView)
 
 from . import views
 
@@ -46,6 +46,8 @@ urlpatterns = [
          name='fsacrop_update'),
     path('farmcrops/addbudget/',
          login_required(FarmCropAddBudgetView.as_view()), name='addbudget'),
+    path('farmcrops/deletebudget/',
+         login_required(FarmCropDeleteBudgetView.as_view()), name='deletebudget'),
     path('detailedbudget/<int:farmyear>',
          login_required(DetailedBudgetView.as_view()), name='detailedbudget'),
     path('sensitivity/<int:farmyear>',

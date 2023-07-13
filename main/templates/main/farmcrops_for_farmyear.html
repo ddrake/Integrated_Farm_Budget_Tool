@@ -64,6 +64,7 @@
           class="bg-white focus:outline-none border border-gray-300 rounded-lg py-2 px-4 block w-full appearance-none text-xs leading-normal text-gray-700" 
           name="budgets-{{farmcrop.pk}}" id="budgets-{{farmcrop.pk}}"
           data-hasbudget-{{farmcrop.pk}}="{{farmcrop.has_budget}}" >
+          <option value="">-------</option>
           {% for bcid, bcname in farmcrop.get_budget_crops %}
           <option value="{{bcid}}">{{bcname}}</option>
           {% endfor %}
@@ -91,7 +92,7 @@
       function setinfo(hasbudget) {
         let info = document.querySelector("#budget-info-{{farmcrop.pk}}")
         info.innerHTML = hasbudget ? "Budget set; any custom budget item values<br>will be lost if this selection is later changed."
-          : "Set irrigation status before adding a budget.";
+          : "Before adding a budget, please ensure that the<br>irrigation status is set correctly.";
       }
 
       function submitFormData() {
@@ -99,7 +100,7 @@
         const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
         const farmcropid = "{{farmcrop.pk}}";
         const budgetid = document.querySelector("#budgets-{{farmcrop.pk}}").value;
-        const url = "addbudget/";
+        const url = budgetid ==="" ? "deletebudget/" : "addbudget/";
         const data = JSON.stringify({budget: budgetid, farmcrop: farmcropid});
         xhr.open("POST", url, true);
         xhr.setRequestHeader('Content-Type', 'application/json'); 
@@ -107,8 +108,8 @@
         xhr.setRequestHeader('X-CSRFToken', csrftoken); 
         xhr.send(data);
         xhr.onload = function() {
-          setinfo(true);
-          alert("Budget was added");
+          setinfo(budgetid !== "");
+          /* alert("Budget was added"); */
         }
       }
     })();

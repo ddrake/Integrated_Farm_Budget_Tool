@@ -505,3 +505,171 @@ class BudgetTable(object):
                              (self.farm_year.other_nongrain_income -
                               self.farm_year.other_nongrain_expense), scaling,
                              False, True)
+
+
+class RevenueDetails:
+    """
+    Generates data and a nested list structure (table rows) for a Grain Revenue
+    buildup table to be placed above the Detailed Budget
+    """
+    def __init__(self, farm_year_id):
+        self.farm_year = FarmYear.objects.get(pk=farm_year_id)
+        self.market_crops = [mc for mc in
+                             self.farm_year.market_crops.all()
+                             if mc.planted_acres() > 0]
+
+        self.farm_yields = None                     # bpa
+        self.harvest_futures_prices = None          # $
+        self.planted_acres = None                   # ac
+        self.production_bushels = None              # (000s)
+        self.contracted_futures = None              # (000s bu)
+        self.uncontracted_futures = None            # (000s bu)
+        self.contracted_basis_qty = None            # (000s bu)
+        self.uncontracted_basis_qty = None          # (000s bu)
+        self.avg_fut_contract_prices = None         # $
+        self.avg_basis_contract_prices = None       # $
+        self.assumed_basis_on_remaining = None      # $
+        self.contracted_futures_revenue = None      # $(000)
+        self.contracted_basis_revenue = None        # $(000)
+        self.total_contracted_revenue = None        # $(000)
+        self.uncontracted_futures_revenue = None    # $(000)
+        self.uncontracted_basis_revenue = None      # $(000)
+        self.total_uncontracted_revenue = None      # $(000)
+        self.total_crop_revenue = None              # $(000)
+        self.realized_price_per_bushel = None       # $
+
+        self.METHODS = """get_farm_yields get_harvest_futures_prices
+        get_planted_acres get_production_bushels get_contracted_futures
+        get_uncontracted_futures get_contracted_basis_qty get_uncontracted_basis_qty
+        get_avg_fut_contract_prices get_avg_basis_contract_prices
+        get_assumed_basis_on_remaining get_contracted_futures_revenue
+        get_contracted_basis_revenue get_total_contracted_revenue
+        get_uncontracted_futures_revenue get_uncontracted_basis_revenue
+        get_total_uncontracted_revenue get_total_crop_revenue
+        get_realized_price_per_bushel""".split()
+
+    def get_data(self):
+        self.data = [getattr(self, m)() for m in self.METHODS]
+
+    def get_farm_yields(self):
+        if self.farm_yields is None:
+            self.farm_yields = [fc.sens_farm_expected_yield()
+                                for fc in self.farm_crops]
+        return self.farm_yields
+
+    def get_harvest_futures_prices(self):
+        if self.harvest_futures_prices is None:
+            self.harvest_futures_prices = [fc.sens_harvest_price()
+                                           for fc in self.farm_crops]
+        return self.harvest_futures_prices
+
+    def get_planted_acres(self):
+        if self.planted_acres is None:
+            self.planted_acres = [fc.planted_acres for fc in self.farm_crops]
+        return self.planted_acres
+
+    def get_production_bushels(self):
+        if self.production_bushels is None:
+            self.production_bushels = [ac * yld / 1000 for (ac, yld) in
+                                       zip(self.planted_acres, self.farm_yields)]
+        return self.production_bushels
+
+    def get_contracted_futures(self):
+        if self.contracted_futures is None:
+            self.contracted_futures = [fc.contracted_bu / 1000
+                                       for fc in self.farm_crops]
+        return self.contracted_futures
+
+    def get_uncontracted_futures(self):
+        if self.uncontracted_futures is None:
+            self.uncontracted_futures = [pb - cf for pb, cf in
+                                         zip(self.production_bushels,
+                                             self.contracted_futures)]
+        return self.uncontracted_futures
+
+    def get_contracted_basis_qty(self):
+        if self.contracted_basis_qty is None:
+            self.contracted_basis_qty = [fc.basis_bu_locked / 100
+                                         for fc in self.farm_crops]
+        return self.contracted_basis_qty
+
+    def get_uncontracted_basis_qty(self):
+        if self.uncontracted_basis_qty is None:
+            self.uncontracted_basis_qty = [pb - cb for pb, cb in
+                                           zip(self.production_bushels,
+                                               self.contracted_basis_qty)]
+        return self.uncontracted_basis_qty
+
+    def get_avg_fut_contract_prices(self):
+        if self.avg_fut_contract_prices is None:
+            self.avg_fut_contract_prices = [fc.avg_contract_price
+                                            for fc in self.farm_crops]
+        return self.avg_fut_contract_prices
+
+    def get_avg_basis_contract_prices(self):
+        if self.avg_basis_contract_prices is None:
+            self.avg_basis_contract_prices = [fc.avg_locked_basis
+                                              for fc in self.farm_crops]
+        return self.avg_basis_contract_prices
+
+    def get_assumed_basis_on_remaining(self):
+        if self.assumed_basis_on_remaining is None:
+            self.assumed_basis_on_remaining = [fc.assumed_basis_for_new
+                                               for fc in self.farm_crops]
+        return self.assumed_basis_on_remaining
+
+    def get_contracted_futures_revenue(self):
+        if self.contracted_futures_revenue is None:
+            self.contracted_futures_revenue = [fb * fp for fb, fp in
+                                               zip(self.contracted_futures,
+                                                   self.avg_fut_contract_prices)]
+        return self.contracted_futures_revenue
+
+    def get_contracted_basis_revenue(self):
+        if self.contracted_basis_revenue is None:
+            self.contracted_basis_revenue = [bb * bp for bb, bp in
+                                             zip(self.contracted_basis_qty,
+                                                 self.avg_basis_contract_prices)]
+        return self.contracted_basis_revenue
+
+    def get_total_contracted_revenue(self):
+        if self.total_contracted_revenue is None:
+            self.total_contracted_revenue = [fr + br for fr, br in
+                                             zip(self.contracted_futures_revenue,
+                                                 self.contracted_basis_revenue)]
+        return self.total_contracted_revenue
+
+    def get_uncontracted_futures_revenue(self):
+        if self.uncontracted_futures_revenue is None:
+            self.uncontracted_futures_revenue = [p * uf for p, uf in
+                                                 zip(self.harvest_futures_prices,
+                                                     self.uncontracted_futures)]
+        return self.uncontracted_futures_revenue
+
+    def get_uncontracted_basis_revenue(self):
+        if self.uncontracted_basis_revenue is None:
+            self.uncontracted_basis_revenue = [ab * ub for ab, ub in
+                                               zip(self.assumed_basis_on_remaining,
+                                                   self.uncontracted_basis_qty)]
+        return self.uncontracted_basis_revenue
+
+    def get_total_uncontracted_revenue(self):
+        if self.total_uncontracted_revenue is None:
+            self.total_uncontracted_revenue = [uf + ub for uf, ub in
+                                               zip(self.uncontracted_futures_revenue,
+                                                   self.uncontracted_basis_revenue)]
+        return self.total_uncontracted_revenue
+
+    def get_total_crop_revenue(self):
+        if self.total_crop_revenue is None:
+            self.total_crop_revenue = [cr + ur for cr, ur in
+                                       zip(self.total_contracted_revenue,
+                                           self.total_uncontracted_revenue)]
+        return self.total_crop_revenue
+
+    def get_realized_price_per_bushel(self):
+        if self.realized_price_per_bushel is None:
+            self.realized_price_per_bushel = [tcr / pb for tcr, pb in
+                                              zip(self.total_crop_revenue,
+                                                  self.production_bushels)]
+        return self.realized_price_per_bushel

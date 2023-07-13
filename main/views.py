@@ -61,6 +61,15 @@ class FarmCropAddBudgetView(View):
         return HttpResponse(json_obj, 'application/json', charset='utf-8')
 
 
+class FarmCropDeleteBudgetView(View):
+    def post(self, request, *args, **kwargs):
+        data = json.loads(request.body)
+        farmcrop = int(data['farmcrop'])
+        FarmCrop.delete_farm_budget_crop(farmcrop)
+        json_obj = json.dumps({"time": str(datetime.datetime.now()), "method": "post"})
+        return HttpResponse(json_obj, 'application/json', charset='utf-8')
+
+
 class FarmYearDeleteView(DeleteView):
     model = FarmYear
     success_url = reverse_lazy('farmyears')
