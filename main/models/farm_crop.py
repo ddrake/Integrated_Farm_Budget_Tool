@@ -522,10 +522,6 @@ class FarmCrop(models.Model):
     def contract_basis_revenue(self):
         return self.basis_bu_locked() * self.avg_locked_basis()
 
-    def gov_pmt_portion(self, pf=None, yf=None, is_per_acre=False):
-        return (self.farm_year.calc_gov_pmt(pf, yf, is_per_acre=True) *
-                (1 if is_per_acre else self.planted_acres))
-
     # -----------------------------------------
     # Cost methods in $/acre except where noted
     # -----------------------------------------

@@ -33,7 +33,7 @@ class BudgetTable(object):
         self.farm_year = FarmYear.objects.get(pk=farm_year_id)
 
         # cache/apportion values for current settings
-        self.farm_year.calc_gov_pmt()
+        self.farmyear_gov_pmt = self.farm_year.calc_gov_pmt()
         self.farm_crops = [fc for fc in
                            self.farm_year.farm_crops.all()
                            .order_by('farm_crop_type_id')
@@ -211,8 +211,16 @@ class BudgetTable(object):
 
     def get_gov_pmt(self, scaling='kd'):
         if self.gov_pmt is None:
-            self.gov_pmt = [fc.gov_pmt_portion() for fc in self.farm_crops]
+            self.gov_pmt = [self.farmyear_gov_pmt * fc.planted_acres /
+                            self.total_planted_acres
+                            for fc in self.farm_crops]
         return self.getitems(self.gov_pmt, None, scaling, False, False)
+
+    def gov_pmt_portion(self, pf=None, yf=None, is_per_acre=False,
+                        farmyear_gov_pmt=None):
+        if farmyear_gov_pmt is None:
+            farmyear_gov_pmt = self.farm_year.calc_gov_pmt(pf, yf, is_per_acre=True)
+        return farmyear_gov_pmt * (1 if is_per_acre else self.planted_acres)
 
     def get_other_gov_pmts(self, scaling='kd'):
         if self.other_gov_pmts is None:
