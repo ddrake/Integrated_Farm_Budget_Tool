@@ -123,7 +123,9 @@ class BudgetTable(object):
                             for fc in self.farm_crops]
 
     def get_info(self):
-        return {'farmyear': self.farm_year.pk}
+        return {'farmyear': self.farm_year.pk,
+                'costperacrows': [42, 43],
+                'costperacspan': len(self.farm_crops)-1}
 
     def get_tables(self):
         if len(self.farm_crops) == 0:
@@ -144,33 +146,53 @@ class BudgetTable(object):
         """
         Make the ($000) budget table rows
         """
-        results = [('PRE-TAX CASH FLOW BUDGET',
-                   [str(fct).replace('Winter', 'W').replace('Spring', 'S')
-                    for fct in self.farm_crop_types] +
-                   'Other Total'.split())]
-        return results + [(n, getattr(self, m)(scaling='kd')) for n, m in
-                          zip(self.row_labels, self.__class__.METHODS)]
+        results = []
+        header = ('PRE-TAX CASH FLOW BUDGET',
+                  [str(fct).replace('Winter', 'W').replace('Spring', 'S')
+                   for fct in self.farm_crop_types] +
+                  'Other Total'.split())
+        results.append(header)
+        results += [(n, getattr(self, m)(scaling='kd')) for n, m in
+                    zip(self.row_labels, self.__class__.METHODS)]
+        footer = [[''] * (len(header[1])+1) for i in range(3)]
+        results += footer
+        return results
 
     def make_peracre(self):
         """
         Make the per acre budget table rows
         """
-        results = [[str(fct).replace('Winter', 'W') for fct in self.farm_crop_types]]
-        return results + [getattr(self, m)(scaling='pa')
-                          for m in self.__class__.METHODS]
+        results = []
+        header = [str(fct).replace('Winter', 'W') for fct in self.farm_crop_types]
+        results.append(header)
+        results += [getattr(self, m)(scaling='pa') for m in self.__class__.METHODS]
+        footer = [[''] * 2 for i in range(3)]
+        footer[1][0] = 'Adj. Land Rent / Rented Ac.'
+        footer[2][0] = 'Owned Land Cost / Owned Ac.'
+        footer[1][1] = '$' + '{:,.0f}'.format(sum(self.adjusted_land_rent) /
+                                              self.total_rented_acres)
+        footer[2][1] = '$' + '{:,.0f}'.format(sum(self.owned_land_cost) /
+                                              self.total_owned_acres)
+        results += footer
+        return results
 
     def make_perbushel(self):
         """
         Make the per bushel budget table rows
         """
-        results = [[str(fct).replace('Winter', 'W') for fct in self.farm_crop_types]]
-        return results + [getattr(self, m)(scaling='pb')
-                          for m in self.__class__.METHODS]
+        results = []
+        header = [str(fct).replace('Winter', 'W') for fct in self.farm_crop_types]
+        results.append(header)
+        results += [getattr(self, m)(scaling='pb') for m in self.__class__.METHODS]
+        footer = [[''] * len(header) for i in range(3)]
+        results += footer
+        return results
 
     def make_wheatdc(self):
         """
         Make the wheat dc budget table if we have budgets for wheat and dc beans
         """
+        results = []
         fcts = [fct.pk for fct in self.farm_crop_types]
         if 5 not in fcts or 3 not in fcts:
             return None
@@ -178,10 +200,14 @@ class BudgetTable(object):
         vals = [[getattr(self, m)(scaling='raw')[i] for i in ixs]
                 for m in self.__class__.METHODS]
         acres = [self.acres[i] for i in ixs]
-        results = [['$(000)', '$/acre']]
-        return (results +
-                [[f'${sum(pair)/1000:,.0f}',
-                  f'${sum((v/a for v, a in zip(pair, acres))):,.0f}'] for pair in vals])
+        header = [['$(000)', '$/acre']]
+        results += header
+        results += [[f'${sum(pair)/1000:,.0f}',
+                     f'${sum((v/a for v, a in zip(pair, acres))):,.0f}']
+                    for pair in vals]
+        footer = [[''] * len(header) for i in range(3)]
+        results += footer
+        return results
 
     def getitems(self, items, other, scaling, no_totcol, dollarsign):
         """
@@ -522,9 +548,12 @@ class RevenueDetails:
     """
     def __init__(self, farm_year_id):
         self.farm_year = FarmYear.objects.get(pk=farm_year_id)
-        self.market_crops = [mc for mc in
-                             self.farm_year.market_crops.all()
-                             if mc.planted_acres() > 0]
+        self.farm_crops = [
+            fc for fc in self.farm_year.farm_crops.all()
+            if fc.planted_acres > 0 and fc.has_budget()]
+        self.colheads = [
+            str(fc.farm_crop_type).replace('Winter', 'W').replace('Spring', 'S')
+            for fc in self.farm_crops] + ['Total']
 
         self.farm_yields = None                     # bpa
         self.harvest_futures_prices = None          # $
@@ -556,8 +585,94 @@ class RevenueDetails:
         get_total_uncontracted_revenue get_total_crop_revenue
         get_realized_price_per_bushel""".split()
 
-    def get_data(self):
-        self.data = [getattr(self, m)() for m in self.METHODS]
+        # (title, datavar, total, round, $)
+        self.ROWS = [
+            ('Farm Yield per acre', 'farm_yields',
+             False, 1, False),
+            ('Planted Acres', 'planted_acres',
+             True, 0, False),
+            ('Production bushels (000s)', 'production_bushels',
+             True, 1, False),
+            ('Contracted Futures (000s bu)', 'contracted_futures',
+             True, 1, False),
+            ('Uncontracted (Oversold) Futures (000s bu)', 'uncontracted_futures',
+             True, 1, False),
+            ('Total Sensitized Production (000s)', 'production_bushels',
+             True, 1, False),
+            ('Contracted Basis (000s bu)', 'contracted_basis_qty',
+             True, 1, False),
+            ('Uncontracted (Oversold) Basis (000s bu)', 'uncontracted_basis_qty',
+             True, 1, False),
+            ('Total Sensitized Production (000s)', 'production_bushels',
+             True, 1, False),
+            ('Average Futures Contract Price', 'avg_fut_contract_prices',
+             False, 2, True),
+            ('Current Harvest Futures Price', 'harvest_futures_prices',
+             False, 2, True),
+            ('Average Basis Contract Price', 'avg_basis_contract_prices',
+             False, 2, True),
+            ('Assumed Basis on Remaining Basis Contracts', 'assumed_basis_on_remaining',
+             False, 2, True),
+            ('Futures', 'contracted_futures_revenue',
+             True, 0, True),
+            ('Basis', 'contracted_basis_revenue',
+             True, 0, True),
+            ('Total', 'total_contracted_revenue',
+             True, 0, True),
+            ('Futures', 'uncontracted_futures_revenue',
+             True, 0, True),
+            ('Basis', 'uncontracted_basis_revenue',
+             True, 0, True),
+            ('Total', 'total_uncontracted_revenue',
+             True, 0, True),
+            ('Total Crop Revenue ($000)', 'total_crop_revenue',
+             True, 0, True),
+            ('Realized Price per Bushel ($/bu)', 'realized_price_per_bushel',
+             False, 2, True),
+        ]
+
+        self.SECTION_TITLES = [
+            ('Contracted Revenue ($000)', 13),
+            ('Uncontracted (Oversold) Revenue ($000)', 16),
+        ]
+
+        self.BLANK_ROWS = [3, 6, 9, 11, 13, 17, 21]
+
+    def get_rows(self):
+        """
+        Main Method (returns table rows as nested list of strings)
+        """
+        ncrp = len(self.farm_crops)
+        blank = ('', [''] * (ncrp + 1))
+        titles = [((title, [''] * (ncrp + 1)), insrow)
+                  for title, insrow in self.SECTION_TITLES]
+        self.set_data()
+        rows = []
+        for title, data, tot, rd, ds in self.ROWS:
+            fmt = '{:,.' + str(rd) + 'f}'
+            dss = '$' if ds else ''
+            nums = []
+            nums[:] = getattr(self, data)
+            row = [dss + fmt.format(num) for num in nums]
+            row.append((dss + fmt.format(sum(nums))) if tot else '')
+            rows.append((title, row))
+        for t, ir in titles[-1::-1]:
+            rows.insert(ir, t)
+        for ix in self.BLANK_ROWS[-1::-1]:
+            rows.insert(ix, blank)
+        header = [('CROP REVENUE CALCULATIONS', self.colheads)]
+        return header + rows
+
+    def get_formats(self):
+        """
+        Bold headers and bold data columns
+        """
+        return {'bh': [0, 19, 24, 29, 30],
+                'bd': [0, 13, 14, 29, 30],
+                'ol': [7, 11, 22, 27], }
+
+    def set_data(self):
+        self.data = [(m, getattr(self, m)()) for m in self.METHODS]
 
     def get_farm_yields(self):
         if self.farm_yields is None:
@@ -584,7 +699,7 @@ class RevenueDetails:
 
     def get_contracted_futures(self):
         if self.contracted_futures is None:
-            self.contracted_futures = [fc.contracted_bu / 1000
+            self.contracted_futures = [fc.fut_contracted_bu() / 1000
                                        for fc in self.farm_crops]
         return self.contracted_futures
 
@@ -597,7 +712,7 @@ class RevenueDetails:
 
     def get_contracted_basis_qty(self):
         if self.contracted_basis_qty is None:
-            self.contracted_basis_qty = [fc.basis_bu_locked / 100
+            self.contracted_basis_qty = [fc.basis_bu_locked() / 1000
                                          for fc in self.farm_crops]
         return self.contracted_basis_qty
 
@@ -610,19 +725,19 @@ class RevenueDetails:
 
     def get_avg_fut_contract_prices(self):
         if self.avg_fut_contract_prices is None:
-            self.avg_fut_contract_prices = [fc.avg_contract_price
+            self.avg_fut_contract_prices = [fc.avg_contract_price()
                                             for fc in self.farm_crops]
         return self.avg_fut_contract_prices
 
     def get_avg_basis_contract_prices(self):
         if self.avg_basis_contract_prices is None:
-            self.avg_basis_contract_prices = [fc.avg_locked_basis
+            self.avg_basis_contract_prices = [fc.avg_locked_basis()
                                               for fc in self.farm_crops]
         return self.avg_basis_contract_prices
 
     def get_assumed_basis_on_remaining(self):
         if self.assumed_basis_on_remaining is None:
-            self.assumed_basis_on_remaining = [fc.assumed_basis_for_new
+            self.assumed_basis_on_remaining = [fc.assumed_basis_for_new()
                                                for fc in self.farm_crops]
         return self.assumed_basis_on_remaining
 
