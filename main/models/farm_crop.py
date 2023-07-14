@@ -404,7 +404,9 @@ class FarmCrop(models.Model):
         return self.sens_production_bu(yf) - self.fut_contracted_bu()
 
     def basis_bu_locked(self):
-        return self.market_crop.basis_bu_locked
+        mcacres = self.market_crop.planted_acres()
+        return (0 if mcacres == 0 else (self.market_crop.basis_bu_locked *
+                self.planted_acres / mcacres))
 
     def sens_basis_uncontracted_bu(self, yf=None):
         if not self.has_budget():
