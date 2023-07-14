@@ -169,10 +169,12 @@ class BudgetTable(object):
         footer = [[''] * 2 for i in range(3)]
         footer[1][0] = 'Adj. Land Rent / Rented Ac.'
         footer[2][0] = 'Owned Land Cost / Owned Ac.'
-        footer[1][1] = '$' + '{:,.0f}'.format(sum(self.adjusted_land_rent) /
-                                              self.total_rented_acres)
-        footer[2][1] = '$' + '{:,.0f}'.format(sum(self.owned_land_cost) /
-                                              self.total_owned_acres)
+        footer[1][1] = '$' + '{:,.0f}'.format(
+            0 if self.total_rented_acres == 0 else
+            (sum(self.adjusted_land_rent) / self.total_rented_acres))
+        footer[2][1] = '$' + '{:,.0f}'.format(
+            0 if self.total_owned_acres == 0 else
+            (sum(self.owned_land_cost) / self.total_owned_acres))
         results += footer
         return results
 
