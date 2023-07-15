@@ -1,4 +1,6 @@
+from collections import defaultdict
 from .farm_year import FarmYear
+from .market_crop import MarketCrop
 
 
 class BudgetTable(object):
@@ -550,9 +552,11 @@ class RevenueDetails:
     """
     def __init__(self, farm_year_id):
         self.farm_year = FarmYear.objects.get(pk=farm_year_id)
+
         self.farm_crops = [
             fc for fc in self.farm_year.farm_crops.all()
             if fc.planted_acres > 0 and fc.has_budget()]
+
         self.colheads = [
             str(fc.farm_crop_type).replace('Winter', 'W').replace('Spring', 'S')
             for fc in self.farm_crops] + ['Total']
@@ -576,12 +580,23 @@ class RevenueDetails:
         self.total_uncontracted_revenue = None      # $(000)
         self.total_crop_revenue = None              # $(000)
         self.realized_price_per_bushel = None       # $
+        self.market_crop_dict = None
+        self.market_crops = None
+        self.market_crop_production_dict = None
+        self.market_crop_production = None
+        self.market_fut_contracted_bu = None
+        self.market_basis_contracted_bu = None
+        self.frac_mkt_crop_production = None
 
-        self.METHODS = """get_farm_yields get_harvest_futures_prices
-        get_planted_acres get_production_bushels get_contracted_futures
-        get_uncontracted_futures get_contracted_basis_qty get_uncontracted_basis_qty
-        get_avg_fut_contract_prices get_avg_basis_contract_prices
-        get_assumed_basis_on_remaining get_contracted_futures_revenue
+        self.METHODS = """get_market_crop_dict get_market_crops
+        get_market_crop_production_dict get_market_crop_production
+        get_market_fut_contracted_bu get_market_basis_contracted_bu
+        get_farm_yields get_harvest_futures_prices
+        get_planted_acres get_production_bushels get_frac_mkt_crop_production
+        get_contracted_futures get_uncontracted_futures get_contracted_basis_qty
+        get_uncontracted_basis_qty get_avg_fut_contract_prices
+        get_avg_basis_contract_prices get_assumed_basis_on_remaining
+        get_contracted_futures_revenue
         get_contracted_basis_revenue get_total_contracted_revenue
         get_uncontracted_futures_revenue get_uncontracted_basis_revenue
         get_total_uncontracted_revenue get_total_crop_revenue
@@ -676,33 +691,92 @@ class RevenueDetails:
     def set_data(self):
         self.data = [(m, getattr(self, m)()) for m in self.METHODS]
 
+    def get_market_crop_dict(self):
+        if self.market_crop_dict is None:
+            self.market_crop_dict = defaultdict(list)
+            for fc in self.farm_crops:
+                self.market_crop_dict[fc.market_crop_id].append(fc)
+        print(f'{self.market_crop_dict=}')
+        return self.market_crop_dict
+
+    def get_market_crops(self):
+        if self.market_crops is None:
+            self.market_crops = [MarketCrop.objects.get(pk=pk)
+                                 for pk in self.market_crop_dict.keys()]
+        print(f'{self.market_crops=}')
+        return self.market_crops
+
+    def get_market_crop_production_dict(self):
+        if self.market_crop_production_dict is None:
+            self.market_crop_production_dict = {
+                mcid: sum((fc.planted_acres * fc.sens_farm_expected_yield() / 1000
+                          for fc in fcs))
+                for mcid, fcs in self.market_crop_dict.items()}
+        print(f'{self.market_crop_production_dict=}')
+        return self.market_crop_production_dict
+
+    def get_market_crop_production(self):
+        if self.market_crop_production is None:
+            self.market_crop_production = [
+                self.market_crop_production_dict[fc.market_crop_id]
+                for fc in self.farm_crops]
+        print(f'{self.market_crop_production=}')
+        return self.market_crop_production
+
+    def get_market_fut_contracted_bu(self):
+        if self.market_fut_contracted_bu is None:
+            self.market_fut_contracted_bu = [
+                fc.market_crop.contracted_bu / 1000 for fc in self.farm_crops]
+        print(f'{self.market_fut_contracted_bu=}')
+        return self.market_fut_contracted_bu
+
+    def get_market_basis_contracted_bu(self):
+        if self.market_basis_contracted_bu is None:
+            self.market_basis_contracted_bu = [
+                fc.market_crop.basis_bu_locked / 1000 for fc in self.farm_crops]
+        print(f'{self.market_basis_contracted_bu=}')
+        return self.market_basis_contracted_bu
+
     def get_farm_yields(self):
         if self.farm_yields is None:
             self.farm_yields = [fc.sens_farm_expected_yield()
                                 for fc in self.farm_crops]
+        print(f'{self.farm_yields=}')
         return self.farm_yields
 
     def get_harvest_futures_prices(self):
         if self.harvest_futures_prices is None:
             self.harvest_futures_prices = [fc.sens_harvest_price()
                                            for fc in self.farm_crops]
+        print(f'{self.harvest_futures_prices=}')
         return self.harvest_futures_prices
 
     def get_planted_acres(self):
         if self.planted_acres is None:
             self.planted_acres = [fc.planted_acres for fc in self.farm_crops]
+        print(f'{self.planted_acres=}')
         return self.planted_acres
 
     def get_production_bushels(self):
         if self.production_bushels is None:
             self.production_bushels = [ac * yld / 1000 for (ac, yld) in
                                        zip(self.planted_acres, self.farm_yields)]
+        print(f'{self.production_bushels=}')
         return self.production_bushels
+
+    def get_frac_mkt_crop_production(self):
+        if self.frac_mkt_crop_production is None:
+            self.frac_mkt_crop_production = [
+                pb / mpb for pb, mpb
+                in zip(self.production_bushels, self.market_crop_production)]
+        print(f'{self.frac_mkt_crop_production=}')
+        return self.frac_mkt_crop_production
 
     def get_contracted_futures(self):
         if self.contracted_futures is None:
-            self.contracted_futures = [fc.fut_contracted_bu() / 1000
-                                       for fc in self.farm_crops]
+            self.contracted_futures = [
+                mcf * frac for mcf, frac
+                in zip(self.market_fut_contracted_bu, self.frac_mkt_crop_production)]
         return self.contracted_futures
 
     def get_uncontracted_futures(self):
@@ -714,8 +788,9 @@ class RevenueDetails:
 
     def get_contracted_basis_qty(self):
         if self.contracted_basis_qty is None:
-            self.contracted_basis_qty = [fc.basis_bu_locked() / 1000
-                                         for fc in self.farm_crops]
+            self.contracted_basis_qty = [
+                mcb * frac for mcb, frac
+                in zip(self.market_basis_contracted_bu, self.frac_mkt_crop_production)]
         return self.contracted_basis_qty
 
     def get_uncontracted_basis_qty(self):
