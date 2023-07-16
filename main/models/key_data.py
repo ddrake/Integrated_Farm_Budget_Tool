@@ -54,7 +54,7 @@ class KeyData(object):
             ptname = ('RP' if pt == 0 else 'RP-HPE' if pt == 1 else
                       'YP' if pt == 2 else 'None')
             baselvl = 'None' if cl is None else f'{cl:.0%}'
-            baselabels.append('None' if ct is None or pt is None or baselvl is None
+            baselabels.append('None' if ct is None or pt is None or cl is None
                               else f'{ctname} {ptname} {baselvl}')
             scolabels.append('SCO 86%' if options[i][0] else 'No SCO')
             ecolabels.append(f'ECO {options[i][1]:.0%}'
