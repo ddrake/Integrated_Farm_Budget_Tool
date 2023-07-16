@@ -50,9 +50,10 @@ class KeyData(object):
         ecocost = 0
         for i, ci in enumerate(ci_info):
             ct, pt, cl = base_policies[i]
-            ctname = 'Farm' if ct == 1 else 'County'
-            ptname = 'RP' if pt == 0 else 'RP-HPE' if pt == 1 else 'YP'
-            baselvl = f'{cl:.0%}'
+            ctname = 'Farm' if ct == 1 else 'County' if ct == 0 else 'None'
+            ptname = ('RP' if pt == 0 else 'RP-HPE' if pt == 1 else
+                      'YP' if pt == 2 else 'None')
+            baselvl = 'None' if cl is None else f'{cl:.0%}'
             baselabels.append(f'{ctname} {ptname} {baselvl}')
             scolabels.append('SCO 86%' if options[i][0] else 'No SCO')
             ecolabels.append(f'ECO {options[i][1]:.0%}'
