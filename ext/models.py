@@ -532,6 +532,8 @@ class BenchmarkRevenue(models.Model):
     practice = models.SmallIntegerField()
     crop_year = models.SmallIntegerField()
     benchmark_revenue = SmallFloatField()
+    benchmark_yield = SmallFloatField()
+    benchmark_price = SmallFloatField()
 
     class Meta:
         db_table = 'ext_govpmt_benchmark_revenue'

@@ -14,6 +14,7 @@ from .models.market_crop import MarketCrop
 from .models.fsa_crop import FsaCrop
 from .models.budget_table import BudgetTable, RevenueDetails
 from .models.sens_table import SensTable
+from .models.key_data import KeyData
 from ext.models import County
 from .forms import (FarmYearCreateForm, FarmYearUpdateForm, FarmCropUpdateForm,
                     FarmBudgetCropUpdateForm, ZeroAcreFarmBudgetCropUpdateForm)
@@ -186,10 +187,12 @@ class DetailedBudgetView(TemplateView):
         farmyear = kwargs.get('farmyear', None)
         bt = BudgetTable(farmyear)
         rd = RevenueDetails(farmyear)
+        kd = KeyData(farmyear)
         context['rev'] = rd.get_rows()
         context['revfmt'] = rd.get_formats()
         context['info'] = bt.get_info()
         context['tables'] = bt.get_tables()
+        context['keydata'] = kd.get_tables()
         return context
 
 
@@ -200,6 +203,8 @@ class SensitivityTableView(TemplateView):
         context = super().get_context_data(**kwargs)
         farmyear = kwargs.get('farmyear', None)
         st = SensTable(farmyear)
+        kd = KeyData(farmyear, for_sens_table=True)
         context['info'] = st.get_info()
         context['tables'] = st.get_all_tables()
+        context['keydata'] = kd.get_tables()
         return context

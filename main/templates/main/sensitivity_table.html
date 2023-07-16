@@ -4,68 +4,194 @@
 {% endblock title %}
 {% block content %}
 <div class="flex flex-col">
-<div class="p-6 max-w-med mx-auto bg-white rounded-xl shadow-lg flex items-center space-x-4">
-  <div class="shrink-0">
-    {% if tables == None %}
-      <p class="text-xl">
-        Sensitivity tables cannot be generated for the specified farm year.<br>
-        Please ensure that at least one crop has non-zero acres and has had a budget added.
-      </p> 
-    {% else %}
-    <form action="">
-      {% if info.hasdiff %}
-        <label class="block text-gray-700 text-sm font-bold mb-px"
-          for="diff">Differences</label>
-        <input type="checkbox" id="diff">
-        <small class="block text-gray-600 mb-2">Show differences between the current and previous sets of sensitized values</small>
-      {% endif %}
-        <label class="block text-gray-700 text-sm font-bold mb-2"
-          for="type-sel">Type</label>
-        <select 
-          class="bg-white focus:outline-none border border-gray-300 rounded-lg py-2 px-4 block w-full appearance-none leading-normal text-gray-700" 
-          name="type-sel" id="type-sel"
-          >
-          <option value="pretaxamt">Cash Flow</option>
-          <option value="revenue">Revenue</option>
-          <option value="title">Title</option>
-          <option value="indem">Indemnity</option>
-          <option value="cost">Cost</option>
-        </select>
-        <label class="block text-gray-700 text-sm font-bold mb-2"
-          for="crop-sel">Crop</label>
-        <select 
-          class="mb-4 bg-white focus:outline-none border border-gray-300 rounded-lg py-2 px-4 block w-full appearance-none leading-normal text-gray-700" 
-          name="crop-sel" id="crop-sel"
-          >
-          {% for tag, name in info.crops %}
-          <option value="{{tag}}">{{name}}</option>
-          {% endfor %}
-        </select>
-      </form> 
-    {% for sensitem in tables.items %}
-      <table class="text-sm table-auto border border-indigo-800 border-2" id="{{sensitem.0}}">
-      <tbody>
-      {% for row in sensitem.1 %}
-        <tr>
-          {% for col in row %}
-            {% if forloop.parentloop.counter0 in info.spanrows and forloop.counter0 == 0 %}
-              <td colspan="{{info.nmcs}}" class="px-1 py-0 text-left">{{col}}</td>
-            {% else %}
-              <td class="px-1 py-0 text-right">{{col}}</td>
-            {% endif %}
-          {% endfor %}
-        </tr>
+  <div class="p-6 max-w-med mx-auto bg-white rounded-xl shadow-lg flex items-center space-x-4">
+    <div class="shrink-0">
+      {% if tables == None %}
+        <p class="text-xl">
+          Sensitivity tables cannot be generated for the specified farm year.<br>
+          Please ensure that at least one crop has non-zero acres and has had a budget added.
+        </p> 
+      {% else %}
+      <form action="">
+        {% if info.hasdiff %}
+          <label class="block text-gray-700 text-sm font-bold mb-px"
+            for="diff">Differences</label>
+          <input type="checkbox" id="diff">
+          <small class="block text-gray-600 mb-2">Show differences between the current and previous sets of sensitized values</small>
+        {% endif %}
+          <label class="block text-gray-700 text-sm font-bold mb-2"
+            for="type-sel">Type</label>
+          <select 
+            class="bg-white focus:outline-none border border-gray-300 rounded-lg py-2 px-4 block w-full appearance-none leading-normal text-gray-700" 
+            name="type-sel" id="type-sel"
+            >
+            <option value="pretaxamt">Cash Flow</option>
+            <option value="revenue">Revenue</option>
+            <option value="title">Title</option>
+            <option value="indem">Indemnity</option>
+            <option value="cost">Cost</option>
+          </select>
+          <label class="block text-gray-700 text-sm font-bold mb-2"
+            for="crop-sel">Crop</label>
+          <select 
+            class="mb-4 bg-white focus:outline-none border border-gray-300 rounded-lg py-2 px-4 block w-full appearance-none leading-normal text-gray-700" 
+            name="crop-sel" id="crop-sel"
+            >
+            {% for tag, name in info.crops %}
+            <option value="{{tag}}">{{name}}</option>
+            {% endfor %}
+          </select>
+        </form> 
+      {% for sensitem in tables.items %}
+        <table class="text-sm table-auto border border-indigo-800 border-2 stbl" id="{{sensitem.0}}">
+        <tbody>
+        {% for row in sensitem.1 %}
+          <tr>
+            {% for col in row %}
+              {% if forloop.parentloop.counter0 in info.spanrows and forloop.counter0 == 0 %}
+                <td colspan="{{info.nmcs}}" class="px-1 py-0 text-left">{{col}}</td>
+              {% else %}
+                <td class="px-1 py-0 text-right">{{col}}</td>
+              {% endif %}
+            {% endfor %}
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
       {% endfor %}
-      </tbody>
-    </table>
-    {% endfor %}
-    {% endif %}
+      {% endif %}
+    </div>
+  </div> <!-- end sensitivity table -->
+
+  <div class="flex flex-col my-4"> <!-- key data block -->
+    <div class="p-6 max-w-med mx-auto bg-white rounded-xl shadow-lg flex items-center space-x-4">
+      {% if tables != None %}
+      <div class="shrink-0">
+      <div class="flex flex-col items-center">
+        <p class="font-bold text-center">Key Assumptions</p>
+      <table class="text-sm table-auto border border-indigo-800 border-2 mb-3" id="cropinstable">
+        <tbody>
+        {% for row in keydata.cropins.rows %}
+            <tr>
+            {% if forloop.counter0 == 0 %}
+            <td colspan="{{keydata.cropins.colspan}}"
+              class="px-1 py-0 text-center font-bold">{{row.0}}</td>
+            {% else %}
+              <td class="px-1 py-0 text-left font-bold">{{row.0}}</td>
+            {% endif %}
+            {% for col in row.1 %}
+              {% if forloop.parentloop.counter0 == 1 %}
+                <td class="px-1 py-0 text-right font-bold">{{col}}</td>
+              {% else %}
+                {% if forloop.parentloop.last and forloop.last %}
+                  <td class="px-1 py-0 text-right border-t border-black">{{col}}</td>
+                {% else %}
+                  <td class="px-1 py-0 text-right">{{col}}</td>
+                {% endif %}
+              {% endif %}
+            {% endfor %}
+            </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+
+      <table class="text-sm table-auto border border-indigo-800 border-2 mb-3" id="yieldtbl">
+        <tbody>
+        {% for row in keydata.yield.rows %}
+            <tr>
+            {% if forloop.counter0 == 0 %}
+            <td colspan="{{keydata.yield.colspan}}"
+              class="px-1 py-0 text-center font-bold">{{row.0}}</td>
+            {% else %}
+              <td class="px-1 py-0 text-left font-bold">{{row.0}}</td>
+            {% endif %}
+            {% for col in row.1 %}
+              {% if forloop.parentloop.counter0 == 1 %}
+                <td class="px-1 py-0 text-right font-bold">{{col}}</td>
+              {% else %}
+                <td class="px-1 py-0 text-right">{{col}}</td>
+              {% endif %}
+            {% endfor %}
+            </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+
+      <table class="text-sm table-auto border border-indigo-800 border-2 mb-3" id="titletbl">
+        <tbody>
+        {% for row in keydata.title.rows %}
+            <tr>
+            {% if forloop.counter0 == 0 %}
+            <td colspan="{{keydata.title.colspan}}"
+              class="px-1 py-0 text-center font-bold">{{row.0}}</td>
+            {% else %}
+              <td class="px-1 py-0 text-left font-bold">{{row.0}}</td>
+            {% endif %}
+            {% for col in row.1 %}
+              {% if forloop.parentloop.counter0 == 1 %}
+                <td class="px-1 py-0 text-right font-bold">{{col}}</td>
+              {% else %}
+                <td class="px-1 py-0 text-right">{{col}}</td>
+              {% endif %}
+            {% endfor %}
+            </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+
+      <table class="text-sm table-auto border border-indigo-800 border-2 mb-3" id="futcontracttbl">
+        <tbody>
+        {% for row in keydata.futctr.rows %}
+            <tr>
+            {% if forloop.counter0 == 0 %}
+            <td colspan="{{keydata.futctr.colspan}}"
+              class="px-1 py-0 text-center font-bold">{{row.0}}</td>
+            {% else %}
+              <td class="px-1 py-0 text-left font-bold">{{row.0}}</td>
+            {% endif %}
+            {% for col in row.1 %}
+              {% if forloop.parentloop.counter0 == 1 %}
+                <td class="px-1 py-0 text-right font-bold">{{col}}</td>
+              {% else %}
+                <td class="px-1 py-0 text-right">{{col}}</td>
+              {% endif %}
+            {% endfor %}
+            </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+
+      <table class="text-sm table-auto border border-indigo-800 border-2" id="markettbl">
+        <tbody>
+        {% for row in keydata.price.rows %}
+            <tr>
+            {% if forloop.counter0 == 0 %}
+            <td colspan="{{keydata.cropins.colspan}}"
+              class="px-1 py-0 text-center font-bold">{{row.0}}</td>
+            {% else %}
+              <td class="px-1 py-0 text-left font-bold">{{row.0}}</td>
+            {% endif %}
+            {% for col in row.1 %}
+              {% if forloop.parentloop.counter0 == 1 %}
+                <td class="px-1 py-0 text-right font-bold">{{col}}</td>
+              {% else %}
+                <td class="px-1 py-0 text-right">{{col}}</td>
+              {% endif %}
+            {% endfor %}
+            </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+      </div>
+      </div>
+      {% endif %}
+    </div>
+  </div> <!-- end key data block -->
+
+  <div class="mt-2">
+    <a class="text-lg text-indigo-800 hover:text-indigo-600"
+       href="{% url 'dashboard' pk=info.farmyear %}">Back to Dashboard</a>
   </div>
-</div>
-<div class="mt-2">
-  <a class="text-lg text-indigo-800 hover:text-indigo-600"
-     href="{% url 'dashboard' pk=info.farmyear %}">Back to Dashboard</a>
-</div>
 </div>
 <script>
   (() => {
@@ -76,7 +202,7 @@
       let type = document.querySelector("#type-sel").value
       let crop = document.querySelector("#crop-sel").value
       let tblid = type + (diff ? '_diff' : '') + "_" + crop;
-      const matches = document.querySelectorAll("table");
+      const matches = document.querySelectorAll(".stbl");
       matches.forEach((tbl) => {
         if (tbl.id !== tblid) {
           tbl.style.display = 'none';

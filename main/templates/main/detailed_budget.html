@@ -10,140 +10,268 @@
 </style>
 {% endblock style %}
 {% block content %}
-<div class="flex flex-col items-start">
-<div class="flex flex-col">
-<div class="p-6 max-w-med mx-auto bg-white rounded-xl shadow-lg flex items-center space-x-4">
-  {% if tables != None %}
-  <div class="shrink-0">
-    <p class="font-bold text-center">Revenue Calculations</p>
-  <table class="text-sm table-auto border border-indigo-800 border-2" id="kdtable">
-    <tbody>
-    {% for row in rev %}
-        <tr>
-        {% if forloop.counter0 in revfmt.bh %}
-          <td class="px-1 py-0 text-left font-bold">{{row.0}}</td>
-        {% else %}
-          <td class="px-1 py-0 text-left">{{row.0}}</td>
+<div class="flex flex-col items-start"> <!-- contains all -->
+  <div class="flex flex-row space-x-4"> <!-- top block with revenue and key data -->
+    <div class="flex flex-col"> <!-- revenue block -->
+      <div class="p-6 max-w-med mx-auto bg-white rounded-xl shadow-lg flex items-center space-x-4">
+        {% if tables != None %}
+        <div class="shrink-0">
+          <p class="font-bold text-center">Revenue Calculations</p>
+        <table class="text-sm table-auto border border-indigo-800 border-2" id="revcalctable">
+          <tbody>
+          {% for row in rev %}
+              <tr>
+              {% if forloop.counter0 in revfmt.bh %}
+                <td class="px-1 py-0 text-left font-bold">{{row.0}}</td>
+              {% else %}
+                <td class="px-1 py-0 text-left">{{row.0}}</td>
+              {% endif %}
+              {% for col in row.1 %}
+                {% if forloop.parentloop.counter0 in revfmt.bd %}
+                  {% if forloop.parentloop.counter0 in revfmt.ol %}
+                    <td class="px-1 py-0 text-right font-bold border-t border-black">{{col}}</td>
+                  {% else %}
+                    <td class="px-1 py-0 text-right font-bold">{{col}}</td>
+                  {% endif %}
+                {% else %}
+                  {% if forloop.parentloop.counter0 in revfmt.ol %}
+                    <td class="px-1 py-0 text-right border-t border-black">{{col}}</td>
+                  {% else %}
+                    <td class="px-1 py-0 text-right">{{col}}</td>
+                  {% endif %}
+                {% endif %}
+              {% endfor %}
+              </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+        </div>
         {% endif %}
-        {% for col in row.1 %}
-          {% if forloop.parentloop.counter0 in revfmt.bd %}
-            {% if forloop.parentloop.counter0 in revfmt.ol %}
-              <td class="px-1 py-0 text-right font-bold border-t border-black">{{col}}</td>
-            {% else %}
-              <td class="px-1 py-0 text-right font-bold">{{col}}</td>
-            {% endif %}
-          {% else %}
-            {% if forloop.parentloop.counter0 in revfmt.ol %}
-              <td class="px-1 py-0 text-right border-t border-black">{{col}}</td>
-            {% else %}
-              <td class="px-1 py-0 text-right">{{col}}</td>
-            {% endif %}
-          {% endif %}
-        {% endfor %}
-        </tr>
-    {% endfor %}
-    </tbody>
-  </table>
-  </div>
-  {% endif %}
-</div>
-</div>
+      </div>
+    </div> <!-- end revenue block -->
 
-<div class="flex flex-col">
-<div class="p-6 max-w-med mx-auto bg-white rounded-xl shadow-lg flex items-center space-x-4">
-  {% if tables == None %}
-  <div class="shrink-0">
-    <p class="text-xl">
-      A detailed budget cannot be generated for the specified farm year.<br>
-      Please ensure that at least one crop has non-zero acres and has had a budget added.
-    </p> 
-  </div>
-  {% else %}
-  <div class="shrink-0">
-    <p class="font-bold text-center">Budget in $(000)</p>
-  <table class="text-sm table-auto border border-indigo-800 border-2" id="kdtable">
-    <tbody>
-    {% for row in tables.kd %}
-      {% if forloop.counter0 in tables.kdbold %}
-        <tr class="font-bold">
+    <div class="flex flex-col"> <!-- key data block -->
+      <div class="p-6 max-w-med mx-auto bg-white rounded-xl shadow-lg flex items-center space-x-4">
+        {% if tables != None %}
+        <div class="shrink-0">
+        <div class="flex flex-col items-center">
+          <p class="font-bold text-center">Key Assumptions</p>
+        <table class="text-sm table-auto border border-indigo-800 border-2 mb-3" id="cropinstable">
+          <tbody>
+          {% for row in keydata.cropins.rows %}
+              <tr>
+              {% if forloop.counter0 == 0 %}
+              <td colspan="{{keydata.cropins.colspan}}"
+                class="px-1 py-0 text-center font-bold">{{row.0}}</td>
+              {% else %}
+                <td class="px-1 py-0 text-left font-bold">{{row.0}}</td>
+              {% endif %}
+              {% for col in row.1 %}
+                {% if forloop.parentloop.counter0 == 1 %}
+                  <td class="px-1 py-0 text-right font-bold">{{col}}</td>
+                {% else %}
+                  {% if forloop.parentloop.last and forloop.last %}
+                    <td class="px-1 py-0 text-right border-t border-black">{{col}}</td>
+                  {% else %}
+                    <td class="px-1 py-0 text-right">{{col}}</td>
+                  {% endif %}
+                {% endif %}
+              {% endfor %}
+              </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+
+        <table class="text-sm table-auto border border-indigo-800 border-2 mb-3" id="yieldtbl">
+          <tbody>
+          {% for row in keydata.yield.rows %}
+              <tr>
+              {% if forloop.counter0 == 0 %}
+              <td colspan="{{keydata.yield.colspan}}"
+                class="px-1 py-0 text-center font-bold">{{row.0}}</td>
+              {% else %}
+                <td class="px-1 py-0 text-left font-bold">{{row.0}}</td>
+              {% endif %}
+              {% for col in row.1 %}
+                {% if forloop.parentloop.counter0 == 1 %}
+                  <td class="px-1 py-0 text-right font-bold">{{col}}</td>
+                {% else %}
+                  <td class="px-1 py-0 text-right">{{col}}</td>
+                {% endif %}
+              {% endfor %}
+              </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+
+        <table class="text-sm table-auto border border-indigo-800 border-2 mb-3" id="titletbl">
+          <tbody>
+          {% for row in keydata.title.rows %}
+              <tr>
+              {% if forloop.counter0 == 0 %}
+              <td colspan="{{keydata.title.colspan}}"
+                class="px-1 py-0 text-center font-bold">{{row.0}}</td>
+              {% else %}
+                <td class="px-1 py-0 text-left font-bold">{{row.0}}</td>
+              {% endif %}
+              {% for col in row.1 %}
+                {% if forloop.parentloop.counter0 == 1 %}
+                  <td class="px-1 py-0 text-right font-bold">{{col}}</td>
+                {% else %}
+                  <td class="px-1 py-0 text-right">{{col}}</td>
+                {% endif %}
+              {% endfor %}
+              </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+
+        <table class="text-sm table-auto border border-indigo-800 border-2 mb-3" id="futcontracttbl">
+          <tbody>
+          {% for row in keydata.futctr.rows %}
+              <tr>
+              {% if forloop.counter0 == 0 %}
+              <td colspan="{{keydata.futctr.colspan}}"
+                class="px-1 py-0 text-center font-bold">{{row.0}}</td>
+              {% else %}
+                <td class="px-1 py-0 text-left font-bold">{{row.0}}</td>
+              {% endif %}
+              {% for col in row.1 %}
+                {% if forloop.parentloop.counter0 == 1 %}
+                  <td class="px-1 py-0 text-right font-bold">{{col}}</td>
+                {% else %}
+                  <td class="px-1 py-0 text-right">{{col}}</td>
+                {% endif %}
+              {% endfor %}
+              </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+
+        <table class="text-sm table-auto border border-indigo-800 border-2" id="markettbl">
+          <tbody>
+          {% for row in keydata.price.rows %}
+              <tr>
+              {% if forloop.counter0 == 0 %}
+              <td colspan="{{keydata.cropins.colspan}}"
+                class="px-1 py-0 text-center font-bold">{{row.0}}</td>
+              {% else %}
+                <td class="px-1 py-0 text-left font-bold">{{row.0}}</td>
+              {% endif %}
+              {% for col in row.1 %}
+                {% if forloop.parentloop.counter0 == 1 %}
+                  <td class="px-1 py-0 text-right font-bold">{{col}}</td>
+                {% else %}
+                  <td class="px-1 py-0 text-right">{{col}}</td>
+                {% endif %}
+              {% endfor %}
+              </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+        </div>
+        </div>
+        {% endif %}
+      </div>
+    </div> <!-- end key data block -->
+  </div> <!-- end top block with revenue and key data -->
+
+  <div class="flex flex-col"> <!-- main budget block -->
+    <div class="p-6 max-w-med mx-auto bg-white rounded-xl shadow-lg flex items-center space-x-4">
+      {% if tables == None %}
+      <div class="shrink-0">
+        <p class="text-xl">
+          A detailed budget cannot be generated for the specified farm year.<br>
+          Please ensure that at least one crop has non-zero acres and has had a budget added.
+        </p> 
+      </div>
       {% else %}
-        <tr>
-      {% endif %}
-          <td class="px-1 py-0 text-left font-bold">{{row.0}}</td>
-            {% for col in row.1 %}
-            <td class="px-1 py-0 text-right">{{col}}</td>
-            {% endfor %}
-        </tr>
-    {% endfor %}
-    </tbody>
-  </table>
-  </div>
-  <div class="shrink-0">
-    <p class="font-bold text-center" >Budget in $/acre</p>
-  <table class="text-sm table-auto border border-indigo-800 border-2" id="patable">
-    <tbody>
-    {% for row in tables.pa %}
-      {% if forloop.counter0 in tables.pabold %}
-        <tr class="font-bold">
-      {% else %}
-        <tr>
-      {% endif %}
-          {% for col in row %}
-            {% if forloop.parentloop.counter0 in info.costperacrows and forloop.counter0 == 0 %}
-              <td colspan="{{info.costperacspan}}" class="px-1 py-0 text-right">{{col}}</td>
-            {% else %}
+      <div class="shrink-0">
+        <p class="font-bold text-center">Budget in $(000)</p>
+      <table class="text-sm table-auto border border-indigo-800 border-2" id="kdtable">
+        <tbody>
+        {% for row in tables.kd %}
+          {% if forloop.counter0 in tables.kdbold %}
+            <tr class="font-bold">
+          {% else %}
+            <tr>
+          {% endif %}
+              <td class="px-1 py-0 text-left font-bold">{{row.0}}</td>
+                {% for col in row.1 %}
+                <td class="px-1 py-0 text-right">{{col}}</td>
+                {% endfor %}
+            </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+      </div>
+      <div class="shrink-0">
+        <p class="font-bold text-center" >Budget in $/acre</p>
+      <table class="text-sm table-auto border border-indigo-800 border-2" id="patable">
+        <tbody>
+        {% for row in tables.pa %}
+          {% if forloop.counter0 in tables.pabold %}
+            <tr class="font-bold">
+          {% else %}
+            <tr>
+          {% endif %}
+              {% for col in row %}
+                {% if forloop.parentloop.counter0 in info.costperacrows and forloop.counter0 == 0 %}
+                  <td colspan="{{info.costperacspan}}" class="px-1 py-0 text-right">{{col}}</td>
+                {% else %}
+                  <td class="px-1 py-0 text-right">{{col}}</td>
+                {% endif %}
+              {% endfor %}
+            </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+      </div>
+      <div class="shrink-0">
+        <p class="font-bold text-center">Budget in $/bushel</p>
+      <table class="text-sm table-auto border border-indigo-800 border-2" id="pbtable">
+        <tbody>
+        {% for row in tables.pb %}
+          {% if forloop.counter0 in tables.pbbold %}
+            <tr class="font-bold">
+          {% else %}
+            <tr>
+          {% endif %}
+              {% for col in row %}
               <td class="px-1 py-0 text-right">{{col}}</td>
-            {% endif %}
-          {% endfor %}
-        </tr>
-    {% endfor %}
-    </tbody>
-  </table>
-  </div>
-  <div class="shrink-0">
-    <p class="font-bold text-center">Budget in $/bushel</p>
-  <table class="text-sm table-auto border border-indigo-800 border-2" id="pbtable">
-    <tbody>
-    {% for row in tables.pb %}
-      {% if forloop.counter0 in tables.pbbold %}
-        <tr class="font-bold">
-      {% else %}
-        <tr>
+              {% endfor %}
+            </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+      </div>
+      {% if tables.wheatdc %}
+      <div class="shrink-0">
+        <p class="font-bold text-center">Wheat/DC Beans</p>
+      <table class="text-sm table-auto border border-indigo-800 border-2" id="wheatdctable">
+        <tbody>
+        {% for row in tables.wheatdc %}
+          {% if forloop.counter0 in tables.wheatdcbold %}
+            <tr class="font-bold">
+          {% else %}
+            <tr>
+          {% endif %}
+              {% for col in row %}
+              <td class="px-1 py-0 text-right">{{col}}</td>
+              {% endfor %}
+            </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+      </div>
       {% endif %}
-          {% for col in row %}
-          <td class="px-1 py-0 text-right">{{col}}</td>
-          {% endfor %}
-        </tr>
-    {% endfor %}
-    </tbody>
-  </table>
-  </div>
-  {% if tables.wheatdc %}
-  <div class="shrink-0">
-    <p class="font-bold text-center">Wheat/DC Beans</p>
-  <table class="text-sm table-auto border border-indigo-800 border-2" id="wheatdctable">
-    <tbody>
-    {% for row in tables.wheatdc %}
-      {% if forloop.counter0 in tables.wheatdcbold %}
-        <tr class="font-bold">
-      {% else %}
-        <tr>
       {% endif %}
-          {% for col in row %}
-          <td class="px-1 py-0 text-right">{{col}}</td>
-          {% endfor %}
-        </tr>
-    {% endfor %}
-    </tbody>
-  </table>
+    </div>
+  </div> <!-- end main budget block -->
+
+  <div class="mt-2">
+    <a class="text-lg text-indigo-800 hover:text-indigo-600"
+       href="{% url 'dashboard' pk=info.farmyear %}">Back to Dashboard</a>
   </div>
-  {% endif %}
-  {% endif %}
-</div>
-<div class="mt-2">
-  <a class="text-lg text-indigo-800 hover:text-indigo-600"
-     href="{% url 'dashboard' pk=info.farmyear %}">Back to Dashboard</a>
-</div>
-</div>
 </div>
 {% endblock %}

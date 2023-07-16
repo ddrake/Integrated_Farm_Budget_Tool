@@ -109,10 +109,10 @@ class FsaCrop(models.Model):
             practice__in=([0, 1] if self.is_irrigated() else [0, 2]))[0]
         return result.benchmark_revenue
 
-    def sens_mya_price(self):
-        """ currently used only for the FSA crop detail view """
+    def sens_mya_price(self, pf=None):
         mrd = self.farm_year.get_model_run_date()
-        pf = self.price_factor()
+        if pf is None:
+            pf = self.price_factor()
         return (MyaPreEstimate.get_mya_pre_estimate(
             self.farm_year.crop_year, mrd, self.fsa_crop_type_id, pf=pf)
             if mrd < self.farm_year.wasde_first_mya_release_on()
