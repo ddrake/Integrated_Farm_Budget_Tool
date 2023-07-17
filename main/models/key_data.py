@@ -25,6 +25,9 @@ class KeyData(object):
         self.market_crop_names = [
             str(mc.market_crop_type).replace('Winter', 'W').replace('Spring', 'S')
             for mc in self.market_crops]
+        self.market_crop_names_all = [
+            str(mc.market_crop_type).replace('Winter', 'W').replace('Spring', 'S')
+            for mc in self.market_crops_all]
 
     def get_tables(self):
         if len(self.farm_crops) == 0:
@@ -159,7 +162,7 @@ class KeyData(object):
         pfs, prices, sprices = zip(*info)
         rows = []
         rows.append(('Prices', []))
-        rows.append(('', self.market_crop_names))
+        rows.append(('', self.market_crop_names_all))
         rows.append(('Current Harvest Futures', [f'${p:.2f}' for p in prices]))
         if not self.for_sens_table:
             rows.append(('Price Sensitivity Factor', [f'{p:.0%}' for p in pfs]))
