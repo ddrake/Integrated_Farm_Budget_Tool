@@ -16,6 +16,8 @@ class KeyData(object):
         self.market_crop_ids = {fc.market_crop_id: fc for fc in self.farm_crops}.keys()
         self.market_crops = [MarketCrop.objects.get(pk=pk)
                              for pk in self.market_crop_ids]
+        self.market_crops_all = list(MarketCrop.objects.
+                                     filter(farm_year=farm_year_id).all())
         self.fsa_crops = [fsc for fsc in self.farm_year.fsa_crops.all()]
         self.farm_crop_names = [
             str(fc.farm_crop_type).replace('Winter', 'W').replace('Spring', 'S')
@@ -25,12 +27,15 @@ class KeyData(object):
             for mc in self.market_crops]
 
     def get_tables(self):
+        if len(self.farm_crops) == 0:
+            return {}
         return {
             'cropins': self.crop_ins_table(),
             'yield': self.yield_table(),
             'title': self.title_table(),
             'futctr': self.fut_contract_table(),
             'price': self.market_price_table(),
+            'modelrun': self.model_run_table(),
         }
 
     def crop_ins_table(self):
@@ -68,7 +73,7 @@ class KeyData(object):
         costs = [f'${c / 1000:.0f}' for c in allcosts]
 
         rows = []
-        rows.append(('Crop Insurance Selections', []))
+        rows.append(('Crop Insurance', []))
         rows.append(('', self.farm_crop_names + ['$000']))
         rows.append(('Base Policy', baselabels + [costs[0]]))
         rows.append(('SCO', scolabels + [costs[1]]))
@@ -81,22 +86,23 @@ class KeyData(object):
         """
         Show yield factor, actual yields
         """
-        info = ((fc.farmbudgetcrop.yield_factor, fc.sens_farm_expected_yield(yf=1),
+        info = [(fc.farmbudgetcrop.yield_factor, fc.sens_farm_expected_yield(yf=1),
                  fc.sens_farm_expected_yield(), fc.sens_cty_expected_yield(yf=1),
                  fc.sens_cty_expected_yield())
-                for fc in self.farm_crops)
+                for fc in self.farm_crops]
+
         yfs, yields, sensyields, cty, senscty = zip(*info)
         rows = []
-        rows.append(('Yield Information', []))
+        rows.append(('Yields', []))
         rows.append(('', self.farm_crop_names))
         rows.append(('Assumed Farm Yields', [f'{yld:.0f}' for yld in yields]))
         if self.for_sens_table:
             rows.append(('Assumed County Yields', [f'{yld:.0f}' for yld in yields]))
         if not self.for_sens_table:
-            rows.append(('Yield Variability Factor', [str(yf) for yf in yfs]))
-            rows.append(('Sens. Assumed Farm Yields',
+            rows.append(('Yield Sensitivity Factor', [f'{yf:.0%}' for yf in yfs]))
+            rows.append(('Sensitized Farm Yields',
                          [f'{syld:.0f}' for syld in sensyields]))
-            rows.append(('Sens. Assumed County Yields',
+            rows.append(('Sensitized County Yields',
                          [f'{scty:.0f}' for scty in senscty]))
         colspan = len(yields) + 1
         return {'rows': rows, 'colspan': colspan}
@@ -111,7 +117,7 @@ class KeyData(object):
                 for fsc in self.fsa_crops]
         cropnames, plc_acres, arcco_acres, tot_acres, myas, smyas = zip(*info)
         rows = []
-        rows.append(('Title Information', []))
+        rows.append(('Title', []))
         rows.append(('Title Election', cropnames))
         rows.append(('PLC Acres',
                      [f'{0 if tot == 0 else ac/tot:.0%}'
@@ -135,7 +141,7 @@ class KeyData(object):
                 for mc in self.market_crops)
         pcts, spcts, ctprices = zip(*info)
         rows = []
-        rows.append(('Marketed Futures Contracts', []))
+        rows.append(('Marketed Futures', []))
         rows.append(('', self.market_crop_names))
         rows.append(('% of Expected Bushels', [f'{pct:.0%}' for pct in pcts]))
         if not self.for_sens_table:
@@ -149,14 +155,23 @@ class KeyData(object):
         Show current harvest futures, price factor, sensitized harvest price, est MYA
         """
         info = [(mc.price_factor, mc.sens_harvest_price(1), mc.sens_harvest_price())
-                for mc in self.market_crops]
+                for mc in self.market_crops_all]
         pfs, prices, sprices = zip(*info)
         rows = []
-        rows.append(('Assumed Market Prices', []))
+        rows.append(('Prices', []))
         rows.append(('', self.market_crop_names))
         rows.append(('Current Harvest Futures', [f'${p:.2f}' for p in prices]))
         if not self.for_sens_table:
-            rows.append(('Price Sensitivity Factor', [f'${p:.2f}' for p in pfs]))
+            rows.append(('Price Sensitivity Factor', [f'{p:.0%}' for p in pfs]))
             rows.append(('Assumed Harvest Price', [f'${p:.2f}' for p in sprices]))
         colspan = len(prices) + 1
         return {'rows': rows, 'colspan': colspan}
+
+    def model_run_table(self):
+        """
+        Show model run date
+        """
+        mrd = self.farm_year.get_model_run_date().strftime("%m/%d/%Y")
+        rows = []
+        rows.append(('Model Run Date', [f'{mrd}']))
+        return {'rows': rows}

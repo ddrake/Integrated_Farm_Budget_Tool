@@ -55,13 +55,10 @@ class BudgetTable(object):
             'Interest (non-land)', 'Other Costs', 'Total Overhead Costs',
             'Total Non-Land Costs', 'Yield Based Adj. to Non-Land Costs',
             'Total Adjusted Non-Land Costs', 'Operator and Land Return',
-            'Rented Land Costs', 'Revenue Based Adjustment to Land Rent',
-            'Adjusted Land Rent', 'Owned Land Cost (incl. principal payments)',
+            'Rented Land Costs', 'Revenue Based Adj. to Land Rent',
+            'Adjusted Land Rent', 'Owned Land Cost (incl. principal)',
             'Total Land Costs', 'Total Costs', 'PRE-TAX CASH FLOW', ]
 
-        self.kd_boldrows = [0, 1, 6, 14, 21, 29, 32, 33, 36, 38, 39, 40]
-        self.pb_boldrows = [0, 1, 6, 14, 21, 29, 32, 33, 36, 38, 39, 40]
-        self.pa_boldrows = [0, 1, 6, 14, 21, 29, 32, 33, 36, 38, 39, 40]
         for fc in self.farm_crops:
             fc.get_crop_ins_prems()
 
@@ -123,25 +120,24 @@ class BudgetTable(object):
         self.owned_acres = [(0 if fc.farm_crop_type.is_fac else fc.planted_acres) *
                             self.total_owned_acres / self.total_farm_acres
                             for fc in self.farm_crops]
+        self.blank_before_rows = [1, 2, 7, 15, 22, 30, 33, 34, 37, 39, 40, 41]
 
     def get_info(self):
         return {'farmyear': self.farm_year.pk,
-                'costperacrows': [42, 43],
-                'costperacspan': len(self.farm_crops)-1}
+                'bh': [0, 2, 8, 17, 25, 34, 36, 37, 38, 40, 42, 43, 44, 45, 47, 49, 51],
+                'bd': [2, 6, 8, 15, 17, 25, 34, 38, 40, 44, 47, 49, 51],
+                'ol': [8, 17, 25, 34, 38, 44],
+                }
 
     def get_tables(self):
         if len(self.farm_crops) == 0:
             return None
         results = {'kd': self.make_thousands(),
-                   'kdbold': [0, 1, 6, 14, 21, 29, 30, 32, 33, 36, 38, 39, 40],
                    'pa': self.make_peracre(),
-                   'pabold': [0, 1, 6, 14, 21, 29, 30, 32, 33, 36, 38, 39, 40],
-                   'pb': self.make_perbushel(),
-                   'pbbold': [0, 1, 6, 14, 21, 29, 30, 32, 33, 36, 38, 39, 40], }
+                   'pb': self.make_perbushel(), }
         wheatdc = self.make_wheatdc()
         if wheatdc is not None:
             results['wheatdc'] = wheatdc
-            results['wheatdcbold'] = [0, 1, 6, 14, 21, 29, 30, 32, 33, 36, 38, 39, 40]
         return results
 
     def make_thousands(self):
@@ -156,8 +152,30 @@ class BudgetTable(object):
         results.append(header)
         results += [(n, getattr(self, m)(scaling='kd')) for n, m in
                     zip(self.row_labels, self.__class__.METHODS)]
-        footer = [[''] * (len(header[1])+1) for i in range(3)]
+        footer = []
+
+        label = 'Adj. Land Rent / Rented Ac.'
+        coldata = [(0 if ra == 0 else alr / ra) for alr, ra in
+                   zip(self.adjusted_land_rent, self.rented_acres)]
+        totac = sum(self.rented_acres)
+        totdata = 0 if totac == 0 else sum(self.adjusted_land_rent)/totac
+        fmtdata = ['${:,.0f}'.format(cd) for cd in (coldata + [totdata])]
+        fmtdata.insert(-1, '')
+        footer.append((label, fmtdata))
+
+        label = 'Owned Land Cost / Owned Ac.'
+        coldata = [(0 if oa == 0 else olc / oa) for olc, oa in
+                   zip(self.owned_land_cost, self.owned_acres)]
+        totac = sum(self.owned_acres)
+        totdata = 0 if totac == 0 else sum(self.owned_land_cost)/totac
+        fmtdata = ['${:,.0f}'.format(cd) for cd in (coldata + [totdata])]
+        fmtdata.insert(-1, '')
+        footer.append((label, fmtdata))
+
         results += footer
+
+        for b in self.blank_before_rows[-1::-1]:
+            results.insert(b, ('', ['']*(len(header)-1)))
         return results
 
     def make_peracre(self):
@@ -168,16 +186,10 @@ class BudgetTable(object):
         header = [str(fct).replace('Winter', 'W') for fct in self.farm_crop_types]
         results.append(header)
         results += [getattr(self, m)(scaling='pa') for m in self.__class__.METHODS]
-        footer = [[''] * 2 for i in range(3)]
-        footer[1][0] = 'Adj. Land Rent / Rented Ac.'
-        footer[2][0] = 'Owned Land Cost / Owned Ac.'
-        footer[1][1] = '$' + '{:,.0f}'.format(
-            0 if self.total_rented_acres == 0 else
-            (sum(self.adjusted_land_rent) / self.total_rented_acres))
-        footer[2][1] = '$' + '{:,.0f}'.format(
-            0 if self.total_owned_acres == 0 else
-            (sum(self.owned_land_cost) / self.total_owned_acres))
+        footer = [[''] * len(header) for i in range(2)]
         results += footer
+        for b in self.blank_before_rows[-1::-1]:
+            results.insert(b, ['']*len(header))
         return results
 
     def make_perbushel(self):
@@ -188,8 +200,10 @@ class BudgetTable(object):
         header = [str(fct).replace('Winter', 'W') for fct in self.farm_crop_types]
         results.append(header)
         results += [getattr(self, m)(scaling='pb') for m in self.__class__.METHODS]
-        footer = [[''] * len(header) for i in range(3)]
+        footer = [[''] * len(header) for i in range(2)]
         results += footer
+        for b in self.blank_before_rows[-1::-1]:
+            results.insert(b, ['']*len(header))
         return results
 
     def make_wheatdc(self):
@@ -209,8 +223,10 @@ class BudgetTable(object):
         results += [[f'${sum(pair)/1000:,.0f}',
                      f'${sum((v/a for v, a in zip(pair, acres))):,.0f}']
                     for pair in vals]
-        footer = [[''] * len(header) for i in range(3)]
+        footer = [[''] * len(header) for i in range(2)]
         results += footer
+        for b in self.blank_before_rows[-1::-1]:
+            results.insert(b, ['']*len(header))
         return results
 
     def getitems(self, items, other, scaling, no_totcol, dollarsign):
@@ -696,14 +712,12 @@ class RevenueDetails:
             self.market_crop_dict = defaultdict(list)
             for fc in self.farm_crops:
                 self.market_crop_dict[fc.market_crop_id].append(fc)
-        print(f'{self.market_crop_dict=}')
         return self.market_crop_dict
 
     def get_market_crops(self):
         if self.market_crops is None:
             self.market_crops = [MarketCrop.objects.get(pk=pk)
                                  for pk in self.market_crop_dict.keys()]
-        print(f'{self.market_crops=}')
         return self.market_crops
 
     def get_market_crop_production_dict(self):
@@ -712,7 +726,6 @@ class RevenueDetails:
                 mcid: sum((fc.planted_acres * fc.sens_farm_expected_yield() / 1000
                           for fc in fcs))
                 for mcid, fcs in self.market_crop_dict.items()}
-        print(f'{self.market_crop_production_dict=}')
         return self.market_crop_production_dict
 
     def get_market_crop_production(self):
@@ -720,48 +733,41 @@ class RevenueDetails:
             self.market_crop_production = [
                 self.market_crop_production_dict[fc.market_crop_id]
                 for fc in self.farm_crops]
-        print(f'{self.market_crop_production=}')
         return self.market_crop_production
 
     def get_market_fut_contracted_bu(self):
         if self.market_fut_contracted_bu is None:
             self.market_fut_contracted_bu = [
                 fc.market_crop.contracted_bu / 1000 for fc in self.farm_crops]
-        print(f'{self.market_fut_contracted_bu=}')
         return self.market_fut_contracted_bu
 
     def get_market_basis_contracted_bu(self):
         if self.market_basis_contracted_bu is None:
             self.market_basis_contracted_bu = [
                 fc.market_crop.basis_bu_locked / 1000 for fc in self.farm_crops]
-        print(f'{self.market_basis_contracted_bu=}')
         return self.market_basis_contracted_bu
 
     def get_farm_yields(self):
         if self.farm_yields is None:
             self.farm_yields = [fc.sens_farm_expected_yield()
                                 for fc in self.farm_crops]
-        print(f'{self.farm_yields=}')
         return self.farm_yields
 
     def get_harvest_futures_prices(self):
         if self.harvest_futures_prices is None:
             self.harvest_futures_prices = [fc.sens_harvest_price()
                                            for fc in self.farm_crops]
-        print(f'{self.harvest_futures_prices=}')
         return self.harvest_futures_prices
 
     def get_planted_acres(self):
         if self.planted_acres is None:
             self.planted_acres = [fc.planted_acres for fc in self.farm_crops]
-        print(f'{self.planted_acres=}')
         return self.planted_acres
 
     def get_production_bushels(self):
         if self.production_bushels is None:
             self.production_bushels = [ac * yld / 1000 for (ac, yld) in
                                        zip(self.planted_acres, self.farm_yields)]
-        print(f'{self.production_bushels=}')
         return self.production_bushels
 
     def get_frac_mkt_crop_production(self):
@@ -769,7 +775,6 @@ class RevenueDetails:
             self.frac_mkt_crop_production = [
                 pb / mpb for pb, mpb
                 in zip(self.production_bushels, self.market_crop_production)]
-        print(f'{self.frac_mkt_crop_production=}')
         return self.frac_mkt_crop_production
 
     def get_contracted_futures(self):
