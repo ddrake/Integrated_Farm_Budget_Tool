@@ -126,9 +126,9 @@ class KeyData(object):
                      [f'{0 if tot == 0 else ac/tot:.0%}'
                       for ac, tot in zip(arcco_acres, tot_acres)]))
         if self.for_sens_table:
-            rows.append(('Est. National MYA Price', [f'${mya:.2f}' for mya in myas]))
+            rows.append(('Estimated MYA Price', [f'${mya:.2f}' for mya in myas]))
         else:
-            rows.append(('Est. National MYA Price', [f'${mya:.2f}' for mya in smyas]))
+            rows.append(('Estimated MYA Price', [f'${mya:.2f}' for mya in smyas]))
         colspan = len(cropnames) + 1
         return {'rows': rows, 'colspan': colspan}
 
