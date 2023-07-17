@@ -48,11 +48,9 @@
         {% for row in sensitem.1 %}
           <tr>
             {% for col in row %}
-              {% if forloop.parentloop.counter0 in info.spanrows and forloop.counter0 == 0 %}
-                <td colspan="{{info.nmcs}}" class="px-1 py-0 text-left">{{col}}</td>
-              {% else %}
-                <td class="px-1 py-0 text-right">{{col}}</td>
-              {% endif %}
+            <td {% if col.1 %} colspan="{{col.1}}" {% endif %} class="px-1 py-0 {{col.2}}">
+              {{col.0}}
+            </td>
             {% endfor %}
           </tr>
         {% endfor %}

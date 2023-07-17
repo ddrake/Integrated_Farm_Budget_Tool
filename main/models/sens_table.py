@@ -7,7 +7,7 @@ and "crops" in {corn, fsbeans, wwheat, swheat, dcbeans, farm, wheatdc}.
 depending on farm_crops specified
 """
 import numpy as np
-from numpy import array, zeros, empty
+from numpy import array, zeros
 
 from main.models.farm_year import FarmYear
 from main.models.farm_crop import FarmCrop
@@ -47,6 +47,10 @@ class SensTable(object):
         self.nmcs = len(self.market_crops)
         self.npfs = len(self.pfrange)
         self.nyfs = len(self.yfrange)
+        self.nrows = self.nfcs + self.npfs + 5
+        self.ncols = self.nmcs + self.nyfs + 1
+        self.yld1 = self.nmcs + self.nyfs - 2
+        self.prc1 = self.nfcs + self.npfs - 1
 
         # wheat/dc special case
         self.wheatdcixs = None
@@ -63,10 +67,9 @@ class SensTable(object):
         self.harvest_prices = [fc.harvest_price() for fc in self.farm_crops]
         self.mkt_harvest_prices = [mc.harvest_price() for mc in self.market_crops]
 
-        # sensitized price, yield arrays
         # TODO: once prices are finalized (post next July contract end) we should
-        # no longer sensitize them, but without this optimization, senstable will
-        # be much slower!  Really need to vectorize the whole application.
+        # no longer sensitize them. At that point in time, will sensitivity tables
+        # still be of value?
         self.prices = np.outer(self.pfrange, self.harvest_prices)
         self.mprices = np.outer(self.pfrange, self.mkt_harvest_prices)
         # once yields are finalized, we no longer sensitize them
@@ -89,6 +92,8 @@ class SensTable(object):
         self.priceblock = None
         self.info = None
         self.tot_nonland_cost = [fc.total_nonland_costs() for fc in self.farm_crops]
+        self.yieldsblock = None
+        self.pricesblock = None
 
     def set_gov_pmts(self, pf, yf):
         # set apportioned gov pmt in dollars (optimization)
@@ -102,10 +107,10 @@ class SensTable(object):
             names = (['Farm'] + self.croptypenames[:] +
                      (['Wheat/DC Beans'] if self.wheatdc else []))
             tags = [n.lower().replace(' ', '_').replace('/', '_') for n in names]
-            self.info = {'farmyear': self.farm_year.pk, 'nfcs': self.nfcs,
-                         'nmcs': self.nmcs, 'spanrows': [0, 1, self.nfcs+1],
+            self.info = {'farmyear': self.farm_year.pk,
                          'crops': zip(tags, names),
-                         'hasdiff': self.farm_year.sensitivity_data is not None}
+                         'hasdiff': self.farm_year.sensitivity_data is not None,
+                         }
         return self.info
 
     def save_sens_data(self):
@@ -163,6 +168,39 @@ class SensTable(object):
         for args in items:
             rslt.update(self.get_formatted(*args))
 
+    def add_styles(self, table):
+        bkg = ' bg-slate-100'
+        bord = ' border border-black'
+        bordx = ' border-x border-black'
+        bordy = ' border-y border-black'
+        bordt = ' border-t border-black'
+        bordb = ' border-b border-black'
+        bordl = ' border-l border-black'
+        bordr = ' border-r border-black'
+        bold = ' font-bold'
+        left = ' text-left'
+        right = ' text-right'
+        center = ' text-center'
+        under = ' underline'
+        # Titles
+        table[:2, 0, 2] += left+bold
+        # Assumed farm yields block
+        table[2, self.nmcs, 2] += center+bold+bord  # 'Assumed Farm Yields'
+        table[3:self.nfcs+3, self.nmcs, 2] += left+bold+bordl
+        table[3:self.nfcs+3, self.nmcs+1:, 2] += right
+        table[3:self.nfcs+3, -1, 2] += bordr
+        table[3:self.nfcs+3, self.yld1, 2] += bordx+bkg
+        # Assumed harvest prices block
+        table[self.nfcs+3, 0, 2] += center+bold
+        table[self.nfcs+4, :self.nmcs, 2] += right+under+bold
+        table[self.nfcs+5:self.nfcs+5+self.npfs, :self.nmcs, 2] += right
+
+    def add_spans(self, table):
+        table[0, 0, 1] = str(self.ncols)             # title
+        table[1, 0, 1] = str(self.ncols)             # subtitle
+        table[2, self.nmcs, 1] = str(self.nyfs+1)    # 'Assumed farm yields'
+        table[self.nfcs+3, 0, 1] = str(self.nmcs)    # 'Assumed harvest prices'
+
     def get_formatted(self, tag, values, title, subtitle):
         """
         Takes a name (e.g. 'revenue'), a 3D values array, a title and subtitle
@@ -178,62 +216,66 @@ class SensTable(object):
                 for n in names]
         result = {}
         for i, n in enumerate(names):
-            full = self.full_block(n, title, subtitle, values[i, ...]).tolist()
-            # delete title columns that will be replaced by colspans
+            maintitle = f'{n} {title}'
+            full = self.full_block(n, values[i, ...], maintitle, subtitle)
+            self.add_spans(full)
+            self.add_styles(full)
+            full = full.tolist()
+            # delete columns which will be spanned over
             for row in full[:2]:
-                del row[1:self.nmcs]
-            result[tags[i]] = full
-            row = full[self.nfcs+1]
+                del row[1:self.ncols]
+            row = full[2]
+            del row[self.nmcs+1:]
+            row = full[self.nfcs+3]
             del row[1:self.nmcs]
+
+            result[tags[i]] = full
         return result
 
     # --------------------------------------------
     # Construction of table blocks (string arrays)
     # --------------------------------------------
-    def full_block(self, crop, title, subtitle, values):
+    def full_block(self, crop, values, title, subtitle):
         """
         string array representing the full table
+        with third dimension: [value, span, style]
         """
-        block = empty((self.nfcs+self.npfs+3, self.nmcs+self.nyfs+1),
-                      dtype=object)
-        block[:self.nfcs+1, :self.nmcs] = self.title_block(crop, title, subtitle)
-        block[:self.nfcs+1, self.nmcs:] = self.yields_block()
-        block[self.nfcs+1:, :self.nmcs] = self.prices_block()
-        block[self.nfcs+1:, self.nmcs:] = self.sens_block(values)
+        block = np.full((self.nrows, self.ncols, 3), '', dtype=object)
+        block[:3, :, 0] = self.title_block(title, subtitle)
+        block[3:self.nfcs+3, self.nmcs:, 0] = self.yields_block()
+        block[self.nfcs+3:, :self.nmcs, 0] = self.prices_block()
+        block[self.nfcs+3:, self.nmcs:, 0] = self.sens_block(values)
         return block
 
-    def title_block(self, crop, title, subtitle):
-        block = empty((self.nfcs+1, self.nmcs), dtype=object)
-        block.fill('')
-        block[0, 0] = f'{crop} {title}'
+    def title_block(self, title, subtitle):
+        block = np.full((3, self.ncols), '', dtype=object)
+        block[0, 0] = title
         block[1, 0] = subtitle
+        block[2, self.nmcs] = 'ASSUMED FARM YIELDS'
         return block
 
     def yields_block(self):
-        if self.yieldblock is None:
-            block = np.empty((self.nfcs+1, self.nyfs+1), dtype=object)
+        if self.yieldsblock is None:
+            block = np.full((self.nfcs, self.nyfs+1), '',  dtype=object)
             block.fill('')
-            block[0, 0] = 'ASSUMED FARM YIELDS'
-            block[1:self.nfcs+1, 0] = self.croptypenames
-            block[1:self.nfcs+1, 1:] = [list(map('{:.0f}'.format, ll))
-                                        for ll in self.yields.T.tolist()]
-            self.yieldblock = block
-        return self.yieldblock
+            block[:self.nfcs, 0] = self.croptypenames
+            block[:self.nfcs, 1:] = [list(map('{:.0f}'.format, ll))
+                                     for ll in self.yields.T.tolist()]
+            self.yieldsblock = block
+        return self.yieldsblock
 
     def prices_block(self):
-        if self.priceblock is None:
-            block = np.empty((self.npfs+2, self.nmcs), dtype=object)
-            block.fill('')
+        if self.pricesblock is None:
+            block = np.full((self.npfs+2, self.nmcs), '', dtype=object)
             block[0, 0] = 'ASSUMED HARVEST PRICES'
-            block[1, :] = self.mktcropnames
+            block[1, :] = self.mktcropnames[:]
             block[2:, :] = [list(map('${:.2f}'.format, ll))
                             for ll in self.mprices.tolist()]
-            self.priceblock = block
-        return self.priceblock
+            self.pricesblock = block
+        return self.pricesblock
 
     def sens_block(self, values):
-        block = empty((self.npfs+2, self.nyfs+1), dtype=object)
-        block.fill('')
+        block = np.full((self.npfs+2, self.nyfs+1), '', dtype=object)
         block[0, 0] = 'Price'
         block[0, 1] = 'Yields'
         block[1, 1:] = list(map('{:.0%}'.format, self.yfrange))
@@ -268,7 +310,7 @@ class SensTable(object):
             other_cost = self.farm_year.other_nongrain_expense
             self.cost_values = self.get_values_array(
                 'total_cost', noncrop=other_cost,
-                kwargs={'sprice': None, 'bprice': None})
+                kwargs={'sprice': None})
         return self.cost_values
 
     def get_pretaxamt_values(self):
@@ -304,8 +346,6 @@ class SensTable(object):
                     else:
                         if 'sprice' in kwargs:
                             kwargs['sprice'] = self.prices[j, i]
-                        if 'bprice' in kwargs:
-                            kwargs['bprice'] = self.harvest_prices[i]
                         value = (getattr(crop, methodname)(pf=pf, yf=yf, **kwargs))
                         result[i, j, k] = value * acres / 1000
         result[cropct, ...] = result[:cropct, ...].sum(axis=0) + noncrop / 1000

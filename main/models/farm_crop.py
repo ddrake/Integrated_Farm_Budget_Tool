@@ -422,7 +422,7 @@ class FarmCrop(models.Model):
         return self.fut_contracted_bu() * self.avg_contract_price()
 
     def pretax_amount(self, pf=None, yf=None, is_cash_flow=False, is_per_acre=False,
-                      sprice=None, bprice=None):
+                      sprice=None):
         """ returns pretax amount in dollars unless is_per_acre is True """
         if not self.has_budget():
             return 0
@@ -434,7 +434,7 @@ class FarmCrop(models.Model):
         return (0 if acres == 0 else
                 self.gross_rev(pf, yf, sprice) /
                 (acres if is_per_acre else 1) -
-                self.total_cost(pf, yf, is_cash_flow, sprice, bprice) *
+                self.total_cost(pf, yf, is_cash_flow, sprice) *
                 (1 if is_per_acre else acres))
 
     def gross_rev(self, pf=None, yf=None, sprice=None):
@@ -494,7 +494,7 @@ class FarmCrop(models.Model):
         return (self.noncontract_fut_revenue(yf, pf, sprice) +
                 self.noncontract_basis_revenue(yf))
 
-    def frac_rev_excess(self, pf=None, yf=None, sprice=None, bprice=None):
+    def frac_rev_excess(self, pf=None, yf=None, sprice=None):
         """ fraction revenue excess or (shortfall) """
         if not self.has_budget():
             return 0
@@ -561,7 +561,7 @@ class FarmCrop(models.Model):
                  else yf) - 1))
 
     def revenue_based_adj_to_land_rent(self, pf=None, yf=None,
-                                       sprice=None, bprice=None):
+                                       sprice=None):
         """ a fraction """
         if not self.has_budget():
             return 0
@@ -571,11 +571,11 @@ class FarmCrop(models.Model):
             yf = self.farmbudgetcrop.yield_factor
         cf = self.farm_year.var_rent_cap_floor_frac
         fv = self.farm_year.frac_var_rent()
-        fre = self.frac_rev_excess(pf, yf, sprice, bprice)
+        fre = self.frac_rev_excess(pf, yf, sprice)
         result = fv * math.copysign(cf, fre) if abs(fre) > cf else fre
         return result
 
-    def rented_land_costs(self, pf=None, yf=None, sprice=None, bprice=None):
+    def rented_land_costs(self, pf=None, yf=None, sprice=None):
         """ in dollars per planted acre (landcost=0 for dc soybeans in std. budgets) """
         if not self.has_budget():
             return 0
@@ -588,24 +588,24 @@ class FarmCrop(models.Model):
                               self.farm_year.total_rented_acres() /
                               self.farm_year.total_farm_acres())
         return (rented_costperacre *
-                (1 + self.revenue_based_adj_to_land_rent(pf, yf, sprice, bprice)))
+                (1 + self.revenue_based_adj_to_land_rent(pf, yf, sprice)))
 
     def owned_land_costs(self):
         return (0 if self.farm_crop_type.is_fac else
                 (self.farm_year.total_owned_land_expense() /
                  self.farm_year.total_farm_acres()))
 
-    def land_costs(self, pf=None, yf=None, sprice=None, bprice=None):
+    def land_costs(self, pf=None, yf=None, sprice=None):
         if not self.has_budget():
             return 0
         if sprice is None and pf is None:
             pf = self.price_factor()
         if yf is None:
             yf = self.farmbudgetcrop.yield_factor
-        return (self.rented_land_costs(pf, yf, sprice, bprice) +
+        return (self.rented_land_costs(pf, yf, sprice) +
                 self.owned_land_costs())
 
-    def total_cost(self, pf=None, yf=None, sprice=None, bprice=None,
+    def total_cost(self, pf=None, yf=None, sprice=None,
                    tot_nonland_cost=None):
         """ used in sensitivity table """
         if not self.has_budget():
@@ -617,7 +617,7 @@ class FarmCrop(models.Model):
         if tot_nonland_cost is None:
             tot_nonland_cost = self.total_nonland_costs()
         return (tot_nonland_cost * (1 + self.yield_adj_to_nonland_costs(yf)) +
-                self.land_costs(pf, yf, sprice, bprice))
+                self.land_costs(pf, yf, sprice))
 
     # -------------
     # Price methods

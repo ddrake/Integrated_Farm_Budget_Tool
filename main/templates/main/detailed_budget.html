@@ -234,7 +234,7 @@
         <p class="font-bold text-center" >Budget in $/acre</p>
       <table class="text-sm table-auto border border-indigo-800 border-2" id="patable">
         <tbody>
-        {% for row in tables.pb %}
+        {% for row in tables.pa %}
           <tr>
             {% for col in row %}
               {% if forloop.parentloop.counter0 in info.ol %}
@@ -271,7 +271,7 @@
         <p class="font-bold text-center">Wheat/DC Beans</p>
       <table class="text-sm table-auto border border-indigo-800 border-2" id="wheatdctable">
         <tbody>
-        {% for row in tables.pb %}
+        {% for row in tables.wheatdc %}
           <tr>
             {% for col in row %}
               {% if forloop.parentloop.counter0 in info.ol %}

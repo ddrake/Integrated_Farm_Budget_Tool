@@ -53,12 +53,9 @@ class MarketCrop(models.Model):
         """
         Get the harvest price for the given date from the correct exchange for the
         crop type and county.  Note: insurancedates gives the exchange and ticker.
-        TODO: We need to add a check of the model_run_date vs contract_end_date,
-           and use a similar query, but with different join to get the July price if
-           the model run is after contract end.  Finally if the model run date is after
-           the July contract end, we need the last July price, but no special logic
-           is needed.
         """
+        # TODO: return a boolean "price locked" if the model run date is after the
+        # expiration date of the post_ticker contract
         if priced_on is None:
             priced_on = self.farm_year.get_model_run_date()
 
