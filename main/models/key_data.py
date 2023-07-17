@@ -139,18 +139,15 @@ class KeyData(object):
         """
         Show pct of expected bushels and avg. contract price
         """
-        info = ((mc.futures_pct_of_expected(yf=1),
-                 mc.futures_pct_of_expected(), mc.avg_contract_price)
+        info = ((mc.futures_pct_of_expected(), mc.avg_contract_price)
                 for mc in self.market_crops)
-        pcts, spcts, ctprices = zip(*info)
+        spcts, ctprices = zip(*info)
         rows = []
         rows.append(('Marketed Futures', []))
         rows.append(('', self.market_crop_names))
-        rows.append(('% of Expected Bushels', [f'{pct:.0%}' for pct in pcts]))
-        if not self.for_sens_table:
-            rows.append(('% of Sensitized Bushels', [f'{pct:.0%}' for pct in pcts]))
+        rows.append(('% of Expected Bushels', [f'{pct:.0%}' for pct in spcts]))
         rows.append(('Avg. Futures Contract Price', [f'${pr:.2f}' for pr in ctprices]))
-        colspan = len(pcts) + 1
+        colspan = len(spcts) + 1
         return {'rows': rows, 'colspan': colspan}
 
     def market_price_table(self):
