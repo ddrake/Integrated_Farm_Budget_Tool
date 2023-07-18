@@ -176,7 +176,7 @@ class FarmYear(models.Model):
 
             insdt = InsuranceDates.objects.get(
                 state_id=self.state_id, county_code=self.county_code,
-                market_crop_type_id=mktct.id)
+                market_crop_type_id=mktct.id, crop_year=self.crop_year)
             proj_price_disc_end = insdt.proj_price_disc_end
             harv_price_disc_end = insdt.harv_price_disc_mth_end
             cty_yield_final = datetime(self.crop_year+1,
