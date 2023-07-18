@@ -27,7 +27,7 @@ class SensTable(object):
         # price and yield factors
         self.pfrange = array([.5, .6, .7, .8, .9, .95, 1, 1.05,
                               1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7])
-        self.yfrange = array([.4, .5, .6, .7, .8, .9, 1, 1.05, 1.1])
+        self.yfrange = array([.5, .6, .7, .8, .9, .95, 1, 1.05, 1.1])
 
         # crop info
         self.croptypes = [fc.farm_crop_type for fc in self.farm_crops]
