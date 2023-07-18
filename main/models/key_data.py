@@ -68,9 +68,10 @@ class KeyData(object):
             ecolabels.append(f'ECO {options[i][1]:.0%}'
                              if options[i][1] is not None else 'No ECO')
             acres = self.farm_crops[i].planted_acres
-            basecost += ci['base'] * acres
-            scocost += ci['sco'] * acres
-            ecocost += ci['eco'] * acres
+            if ci is not None:
+                basecost += ci['base'] * acres
+                scocost += ci['sco'] * acres
+                ecocost += ci['eco'] * acres
         allcosts = [basecost, scocost, ecocost]
         allcosts.append(sum(allcosts))
         costs = [f'${c / 1000:.0f}' for c in allcosts]
