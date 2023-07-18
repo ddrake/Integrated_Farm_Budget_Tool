@@ -27,19 +27,23 @@
                 <td class="px-1 py-0 text-left">{{row.0}}</td>
               {% endif %}
               {% for col in row.1 %}
-                {% if forloop.parentloop.counter0 in revfmt.bd %}
-                  {% if forloop.parentloop.counter0 in revfmt.ol %}
-                    <td class="px-1 py-0 text-right font-bold overline">{{col}}</td>
-                  {% else %}
-                    <td class="px-1 py-0 text-right font-bold">{{col}}</td>
-                  {% endif %}
+                {% if forloop.counter0 == revfmt.blank %}
+                  <td class="px-1 py-0">&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;</td>
                 {% else %}
-                  {% if forloop.parentloop.counter0 in revfmt.ol %}
-                    <td class="px-1 py-0 text-right overline">{{col}}</td>
+                  {% if forloop.parentloop.counter0 in revfmt.bd %}
+                    {% if forloop.parentloop.counter0 in revfmt.ol %}
+                      <td class="px-1 py-0 text-right font-bold overline">{{col}}</td>
+                    {% else %}
+                      <td class="px-1 py-0 text-right font-bold">{{col}}</td>
+                    {% endif %}
                   {% else %}
-                    <td class="px-1 py-0 text-right">{{col}}</td>
+                    {% if forloop.parentloop.counter0 in revfmt.ol %}
+                      <td class="px-1 py-0 text-right overline">{{col}}</td>
+                    {% else %}
+                      <td class="px-1 py-0 text-right">{{col}}</td>
+                    {% endif %}
                   {% endif %}
-                {% endif %}
+              {% endif %}
               {% endfor %}
               </tr>
           {% endfor %}

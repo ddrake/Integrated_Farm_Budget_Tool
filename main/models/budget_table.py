@@ -33,6 +33,8 @@ class BudgetTable(object):
           The view should check for None, and show a message about adding budgets.
         """
         self.farm_year = FarmYear.objects.get(pk=farm_year_id)
+        self.revenue_details = RevenueDetails(farm_year_id=farm_year_id)
+        self.revenue_details.set_data()
 
         # cache/apportion values for current settings
         self.farmyear_gov_pmt = self.farm_year.calc_gov_pmt()
@@ -53,10 +55,10 @@ class BudgetTable(object):
             'Light vehicle', 'Mach. Depreciation', 'Total Power Costs', 'Hired Labor',
             'Building repair and rent', 'Building depreciation', 'Insurance', 'Misc.',
             'Interest (non-land)', 'Other Costs', 'Total Overhead Costs',
-            'Total Non-Land Costs', 'Yield Based Adj. to Non-Land Costs',
+            'Total Non-Land Costs', 'Yield Based Adjustment to Non-Land Costs',
             'Total Adjusted Non-Land Costs', 'Operator and Land Return',
-            'Rented Land Costs', 'Revenue Based Adj. to Land Rent',
-            'Adjusted Land Rent', 'Owned Land Cost (incl. principal)',
+            'Rented Land Costs', 'Revenue Based Adjustment to Land Rent',
+            'Adjusted Land Rent', 'Owned Land Cost (incl. principal payments)',
             'Total Land Costs', 'Total Costs', 'PRE-TAX CASH FLOW', ]
 
         for fc in self.farm_crops:
@@ -252,7 +254,9 @@ class BudgetTable(object):
 
     def get_crop_revenue(self, scaling='kd'):
         if self.crop_revenue is None:
-            self.crop_revenue = [fc.grain_revenue() for fc in self.farm_crops]
+            self.crop_revenue = [rev*1000 for rev
+                                 in self.revenue_details.total_crop_revenue]
+            # self.crop_revenue = [fc.grain_revenue() for fc in self.farm_crops]
         return self.getitems(self.crop_revenue, None, scaling, False, True)
 
     def get_gov_pmt(self, scaling='kd'):
@@ -573,9 +577,10 @@ class RevenueDetails:
             fc for fc in self.farm_year.farm_crops.all()
             if fc.planted_acres > 0 and fc.has_budget()]
 
+        # Blank column before total is for alignment with budget
         self.colheads = [
             str(fc.farm_crop_type).replace('Winter', 'W').replace('Spring', 'S')
-            for fc in self.farm_crops] + ['Total']
+            for fc in self.farm_crops] + [''] + ['Total']
 
         self.farm_yields = None                     # bpa
         self.harvest_futures_prices = None          # $
@@ -676,8 +681,8 @@ class RevenueDetails:
         Main Method (returns table rows as nested list of strings)
         """
         ncrp = len(self.farm_crops)
-        blank = ('', [''] * (ncrp + 1))
-        titles = [((title, [''] * (ncrp + 1)), insrow)
+        blank = ('', [''] * (ncrp + 2))
+        titles = [((title, [''] * (ncrp + 2)), insrow)
                   for title, insrow in self.SECTION_TITLES]
         self.set_data()
         rows = []
@@ -687,6 +692,7 @@ class RevenueDetails:
             nums = []
             nums[:] = getattr(self, data)
             row = [dss + fmt.format(num) for num in nums]
+            row.append('')  # spacer to align with budget
             row.append((dss + fmt.format(sum(nums))) if tot else '')
             rows.append((title, row))
         for t, ir in titles[-1::-1]:
@@ -702,11 +708,14 @@ class RevenueDetails:
         """
         return {'bh': [0, 19, 24, 29, 30],
                 'bd': [0, 13, 14, 29, 30],
-                'ol': [7, 11, 22, 27], }
+                'ol': [7, 11, 22, 27],
+                'blank': len(self.farm_crops), }
 
     def set_data(self):
         self.data = [(m, getattr(self, m)()) for m in self.METHODS]
 
+    # TODO: I think most of this can be eliminated now that apportioning by
+    # production fraction is being done correctly in farm_crop / market_crop
     def get_market_crop_dict(self):
         if self.market_crop_dict is None:
             self.market_crop_dict = defaultdict(list)

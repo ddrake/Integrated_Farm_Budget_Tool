@@ -12,7 +12,7 @@ from .models.farm_crop import FarmCrop
 from .models.farm_budget_crop import FarmBudgetCrop
 from .models.market_crop import MarketCrop
 from .models.fsa_crop import FsaCrop
-from .models.budget_table import BudgetTable, RevenueDetails
+from .models.budget_table import BudgetTable
 from .models.sens_table import SensTable
 from .models.key_data import KeyData
 from ext.models import County
@@ -188,7 +188,7 @@ class DetailedBudgetView(TemplateView):
         context = super().get_context_data(**kwargs)
         farmyear = kwargs.get('farmyear', None)
         bt = BudgetTable(farmyear)
-        rd = RevenueDetails(farmyear)
+        rd = bt.revenue_details
         kd = KeyData(farmyear)
         context['rev'] = rd.get_rows()
         context['revfmt'] = rd.get_formats()

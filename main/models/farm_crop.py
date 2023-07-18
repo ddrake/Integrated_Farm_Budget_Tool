@@ -391,10 +391,14 @@ class FarmCrop(models.Model):
             yf = self.farmbudgetcrop.yield_factor
         return self.planted_acres * self.sens_farm_expected_yield(yf)
 
-    def fut_contracted_bu(self):
-        mcacres = self.market_crop.planted_acres()
-        return (0 if mcacres == 0 else (self.market_crop.contracted_bu *
-                self.planted_acres / mcacres))
+    def fut_contracted_bu(self, yf=None):
+        """ apportion based on fraction of market crop production """
+        if not self.has_budget():
+            return 0
+        if yf is None:
+            yf = self.farmbudgetcrop.yield_factor
+        return (self.market_crop.production_frac_for_farm_crop(self, yf) *
+                self.market_crop.contracted_bu)
 
     def sens_fut_uncontracted_bu(self, yf=None):
         if not self.has_budget():
@@ -403,10 +407,14 @@ class FarmCrop(models.Model):
             yf = self.farmbudgetcrop.yield_factor
         return self.sens_production_bu(yf) - self.fut_contracted_bu()
 
-    def basis_bu_locked(self):
-        mcacres = self.market_crop.planted_acres()
-        return (0 if mcacres == 0 else (self.market_crop.basis_bu_locked *
-                self.planted_acres / mcacres))
+    def basis_bu_locked(self, yf=None):
+        """ apportion based on fraction of market crop production """
+        if not self.has_budget():
+            return 0
+        if yf is None:
+            yf = self.farmbudgetcrop.yield_factor
+        return (self.market_crop.production_frac_for_farm_crop(self, yf) *
+                self.market_crop.basis_bu_locked)
 
     def sens_basis_uncontracted_bu(self, yf=None):
         if not self.has_budget():
