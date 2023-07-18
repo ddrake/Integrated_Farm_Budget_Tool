@@ -50,7 +50,7 @@ class SensTable(object):
         self.nrows = self.nfcs + self.npfs + 5
         self.ncols = self.nmcs + self.nyfs + 1
         self.yld1 = self.nmcs + self.nyfs - 2
-        self.prc1 = self.nfcs + self.npfs - 1
+        self.prc1 = self.nfcs + self.npfs - 4
 
         # wheat/dc special case
         self.wheatdcixs = None
@@ -189,11 +189,35 @@ class SensTable(object):
         table[3:self.nfcs+3, self.nmcs, 2] += left+bold+bordl
         table[3:self.nfcs+3, self.nmcs+1:, 2] += right
         table[3:self.nfcs+3, -1, 2] += bordr
-        table[3:self.nfcs+3, self.yld1, 2] += bordx+bkg
+        table[3:self.nfcs+3, self.yld1, 2] += bordx+bkg+bold
+        table[self.nfcs+2, self.nmcs:, 2] += bordb
+        table[self.nfcs+4:, self.yld1, 2] += bordx
+        # Yield Bracket
+        table[3:self.nfcs+3, self.yld1-2, 2] += bordl
         # Assumed harvest prices block
-        table[self.nfcs+3, 0, 2] += center+bold
+        table[self.nfcs+3, 0, 2] += center+bold+bord
+        table[self.nfcs+4, self.nmcs, 2] += bordl
         table[self.nfcs+4, :self.nmcs, 2] += right+under+bold
         table[self.nfcs+5:self.nfcs+5+self.npfs, :self.nmcs, 2] += right
+        table[self.prc1, :self.nmcs+1, 2] += bordy+bkg+bold
+        table[self.prc1, self.nmcs+1:, 2] += bordy
+        # Price Bracket
+        table[self.prc1-2, :self.nmcs, 2] += bordt
+        table[self.prc1+2, :self.nmcs, 2] += bordb
+        # Base value
+        table[self.prc1, self.yld1, 2] += bord+bkg+bold
+        # Base value bracket
+        table[self.prc1-2, self.yld1-2:, 2] += bordt
+        table[self.prc1+2, self.yld1-2:, 2] += bordb
+        table[self.prc1-2:self.prc1+3, self.yld1-2, 2] += bordl
+
+        # Yield %
+        table[self.nfcs+4, self.nmcs+1:, 2] += bordy+bold
+        table[self.nfcs+4, self.nmcs+1, 2] += bordl
+        table[self.nfcs+4, self.yld1, 2] += bkg
+        # Price %
+        table[self.nfcs+5:, self.nmcs, 2] += bordx+bold
+        table[self.nfcs+5, self.nmcs, 2] += bordt+bold
 
     def add_spans(self, table):
         table[0, 0, 1] = str(self.ncols)             # title
@@ -276,8 +300,9 @@ class SensTable(object):
 
     def sens_block(self, values):
         block = np.full((self.npfs+2, self.nyfs+1), '', dtype=object)
-        block[0, 0] = 'Price'
-        block[0, 1] = 'Yields'
+        # Maybe not necessary
+        # block[0, 0] = 'Price'
+        # block[0, 1] = 'Yields'
         block[1, 1:] = list(map('{:.0%}'.format, self.yfrange))
         block[2:, 0] = list(map('{:.0%}'.format, self.pfrange))
         lst = values.tolist()
