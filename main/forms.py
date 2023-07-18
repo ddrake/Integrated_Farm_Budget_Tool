@@ -7,6 +7,7 @@ from crispy_forms.layout import Layout, Field, Submit, Fieldset
 from .models.farm_year import FarmYear
 from .models.farm_crop import FarmCrop
 from .models.farm_budget_crop import FarmBudgetCrop
+from .models.market_crop import MarketCrop
 
 
 class AjaxChoiceIntField(forms.ChoiceField):
@@ -32,6 +33,7 @@ class FarmYearUpdateForm(ModelForm):
         super().__init__(*args, **kwargs)
         self.helper = FormHelper()
         self.helper.add_input(Submit('submit', 'Update'))
+        self.helper.form_id = 'farmyearform'
         self.helper.layout = Layout(
             Field('farm_name'),
             Fieldset('Owned Land Information',
@@ -40,11 +42,11 @@ class FarmYearUpdateForm(ModelForm):
                      'land_repairs'),
             Fieldset('Rented Land Information',
                      'cash_rented_acres', 'variable_rented_acres',
-                     'var_rent_cap_floor_frac'),
+                     Field('var_rent_cap_floor_frac', css_class="percent")),
             Fieldset('Non-grain income and expense',
                      'other_nongrain_income', 'other_nongrain_expense'),
             Fieldset('Farm Level Title Settings', 'eligible_persons_for_cap',
-                     'est_sequest_frac'),
+                     Field('est_sequest_frac', css_class="percent")),
             Fieldset('Report Controls',
                      'is_model_run_date_manual', 'manual_model_run_date'),
         )
@@ -77,7 +79,7 @@ class FarmCropUpdateForm(ModelForm):
                      'ye_use', 'ta_aph_yield'),
             Fieldset('Crop Insurance Choices',
                      'coverage_type', 'product_type', 'base_coverage_level', 'sco_use',
-                     'eco_level', 'prot_factor'),
+                     'eco_level', Field('prot_factor', css_class="percent")),
         )
 
     class Meta:
@@ -93,12 +95,13 @@ class FarmBudgetCropUpdateForm(ModelForm):
         super().__init__(*args, **kwargs)
         self.helper = FormHelper()
         self.helper.add_input(Submit('submit', 'Update'))
+        self.helper.form_id = 'farmbudgetform'
         self.helper.layout = Layout(
             Fieldset('Baseline Yield',
                      'baseline_yield_for_var_rent'),
             Fieldset('Expected Yields',
                      'farm_yield', 'county_yield', 'is_farm_yield_final',
-                     'yield_factor'),
+                     Field('yield_factor', css_class='percent')),
             Fieldset('Revenue Items',
                      'other_gov_pmts', 'other_revenue'),
             Fieldset('Direct Costs',
@@ -109,9 +112,11 @@ class FarmBudgetCropUpdateForm(ModelForm):
                      'machine_depr'),
             Fieldset('Overhead Costs', 'labor_and_mgmt', 'building_repair_and_rent',
                      'building_depr', 'insurance', 'misc_overhead_costs',
-                     'interest_nonland', 'other_overhead_costs', 'rented_land_costs'),
+                     'interest_nonland', 'other_overhead_costs'),
             Fieldset('Land Costs', 'rented_land_costs'),
-            Fieldset('Cost Adjustments', 'yield_variability', 'are_costs_final'),
+            Fieldset('Cost Adjustments',
+                     Field('yield_variability', css_class='percent'),
+                     'are_costs_final'),
         )
 
     class Meta:
@@ -132,11 +137,36 @@ class ZeroAcreFarmBudgetCropUpdateForm(ModelForm):
         super().__init__(*args, **kwargs)
         self.helper = FormHelper()
         self.helper.add_input(Submit('submit', 'Update'))
+        self.helper.form_id = 'farmbudgetform'
         self.helper.layout = Layout(
             Fieldset('Expected Yields',
-                     'county_yield', 'is_farm_yield_final', 'yield_factor'),
+                     'county_yield', 'is_farm_yield_final',
+                     Field('yield_factor', css_class='percent')),
         )
 
     class Meta:
         model = FarmBudgetCrop
         fields = '''county_yield is_farm_yield_final yield_factor'''.split()
+
+
+class MarketCropUpdateForm(ModelForm):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.helper = FormHelper()
+        self.helper.add_input(Submit('submit', 'Update'))
+        self.helper.form_id = 'marketcropform'
+        self.helper.layout = Layout(
+            Fieldset('Contracted Grain',
+                     'contracted_bu', 'avg_contract_price',
+                     'basis_bu_locked', 'avg_locked_basis'),
+            Fieldset('Uncontracted Grain',
+                     'assumed_basis_for_new',
+                     Field('price_factor', css_class='percent')),
+        )
+
+    class Meta:
+        model = MarketCrop
+        fields = '''contracted_bu avg_contract_price basis_bu_locked
+                    avg_locked_basis assumed_basis_for_new
+                    price_factor'''.split()

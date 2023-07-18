@@ -89,7 +89,7 @@ class FarmCrop(models.Model):
     prot_factor = models.FloatField(
         default=1, validators=[MinVal(0.8), MaxVal(1.2)],
         verbose_name="selected payment factor",
-        help_text="Selected payment factor for county premiums/indemnities.")
+        help_text="Selected percent payment factor for county premiums/indemnities.")
     farm_crop_type = models.ForeignKey(FarmCropType, on_delete=models.CASCADE)
     market_crop = models.ForeignKey(MarketCrop, on_delete=models.CASCADE,
                                     related_name='farm_crops')

@@ -38,7 +38,8 @@ class FarmBudgetCrop(models.Model):
         help_text='Set this to the estimated final county yield after harvest')
     description = models.CharField(max_length=50)
     yield_variability = models.FloatField(
-        default=0, validators=[MinVal(0), MaxVal(1)])
+        default=0, validators=[MinVal(0), MaxVal(1)],
+        help_text='Percent of nonland cost assumed to depend on yield')
     other_gov_pmts = models.FloatField(
         default=0, validators=[MinVal(0), MaxVal(99999)])
     other_revenue = models.FloatField(
@@ -111,12 +112,12 @@ class FarmBudgetCrop(models.Model):
         help_text=('Fixed farm yield used for variable rent ' +
                    'and yield-based cost adjustment'))
     is_farm_yield_final = models.BooleanField(
-        default=False, verbose_name="yields final?",
+        default=False, verbose_name="Are yields final?",
         help_text='Adjust expected yield(s) and check this box after harvest')
     yield_factor = models.FloatField(
         default=1, validators=[MinVal(0), MaxVal(2)],
         verbose_name='yield sensititivity factor',
-        help_text=('Modify expected yield(s) prior to harvest, ' +
+        help_text=('Percent of expected yield(s) assesed prior to harvest, ' +
                    'affecting detailed budget'))
     are_costs_final = models.BooleanField(
         default=False, verbose_name="Costs final?",

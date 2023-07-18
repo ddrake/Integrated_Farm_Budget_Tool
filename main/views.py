@@ -17,7 +17,8 @@ from .models.sens_table import SensTable
 from .models.key_data import KeyData
 from ext.models import County
 from .forms import (FarmYearCreateForm, FarmYearUpdateForm, FarmCropUpdateForm,
-                    FarmBudgetCropUpdateForm, ZeroAcreFarmBudgetCropUpdateForm)
+                    FarmBudgetCropUpdateForm, ZeroAcreFarmBudgetCropUpdateForm,
+                    MarketCropUpdateForm)
 
 
 def index(request):
@@ -37,6 +38,7 @@ class FarmYearDashboard(DetailView):
 class FarmYearCreateView(CreateView):
     model = FarmYear
     form_class = FarmYearCreateForm
+    template_name = 'main/farmyear_form.html'
 
     def get_success_url(self):
         return reverse('farmyears')
@@ -86,6 +88,7 @@ class FarmYearDeleteView(DeleteView):
 class FarmYearUpdateView(UpdateView):
     form_class = FarmYearUpdateForm
     model = FarmYear
+    template_name = 'main/farmyear_update_form.html'
 
     def get_success_url(self):
         return reverse_lazy('farmyear_detail', args=[self.get_object().pk])
@@ -162,9 +165,8 @@ class FarmBudgetCropUpdateView(UpdateView):
 
 class MarketCropUpdateView(UpdateView):
     model = MarketCrop
+    form_class = MarketCropUpdateForm
     template_name_suffix = "_update_form"
-    fields = ['contracted_bu', 'avg_contract_price', 'basis_bu_locked',
-              'avg_locked_basis', 'assumed_basis_for_new', 'price_factor', ]
 
     def get_success_url(self):
         return reverse_lazy('marketcrop_list', args=[self.get_object().farm_year_id])

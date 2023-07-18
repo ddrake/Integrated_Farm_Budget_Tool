@@ -35,8 +35,10 @@ class MarketCrop(models.Model):
     market_crop_type = models.ForeignKey(MarketCropType, on_delete=models.CASCADE)
     fsa_crop = models.ForeignKey(FsaCrop, on_delete=models.CASCADE,
                                  related_name='market_crops')
-    price_factor = models.FloatField(default=1, validators=[MinVal(0), MaxVal(10)],
-                                     verbose_name='price sensititivity factor')
+    price_factor = models.FloatField(
+        default=1, validators=[MinVal(0), MaxVal(10)],
+        verbose_name='price sensititivity factor',
+        help_text=('Percent of current futures price, reflected in detailed budget'))
 
     def __str__(self):
         return f'{self.market_crop_type}'

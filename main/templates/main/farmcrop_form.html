@@ -34,6 +34,27 @@
             document.getElementById("id_prot_factor").removeAttribute('disabled', '')
         });
 
+    window.addEventListener('load', (event) => {
+        document.querySelector("#id-farmcropform").reset();
+        console.log('hello')
+        const matches = document.querySelectorAll(".percent");
+        matches.forEach((fld) => {
+            console.log(fld.value)
+            fld.value = parseFloat(fld.value)*100;
+            console.log(fld.value)
+        })
+    });
+
+    const form = document.querySelector("#id-farmcropform");
+    form.addEventListener("submit", (event) => {
+        const matches = document.querySelectorAll(".percent");
+        matches.forEach((fld) => {
+            console.log(fld.value)
+            fld.value = parseFloat(fld.value)/100;
+            console.log(fld.value)
+        })
+    });
+
     function updateBaseCoverageLevels(value) {
         let options = '<option value="">--------</option>\n';
         if (value !== '') {
