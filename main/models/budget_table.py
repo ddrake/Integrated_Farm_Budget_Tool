@@ -36,8 +36,6 @@ class BudgetTable(object):
         self.revenue_details = RevenueDetails(farm_year_id=farm_year_id)
         self.revenue_details.set_data()
 
-        # cache/apportion values for current settings
-        self.farmyear_gov_pmt = self.farm_year.calc_gov_pmt()
         self.farm_crops = [fc for fc in
                            self.farm_year.farm_crops.all()
                            .order_by('farm_crop_type_id')
@@ -64,6 +62,7 @@ class BudgetTable(object):
         for fc in self.farm_crops:
             fc.get_crop_ins_prems()
 
+        self.farmyear_gov_pmt = None
         # cached values in dollars
         self.crop_revenue = None
         self.avg_realized_price = None
@@ -134,6 +133,8 @@ class BudgetTable(object):
     def get_tables(self):
         if len(self.farm_crops) == 0:
             return None
+        # cache/apportion values for current settings
+        self.farmyear_gov_pmt = self.farm_year.calc_gov_pmt()
         results = {'kd': self.make_thousands(),
                    'pa': self.make_peracre(),
                    'pb': self.make_perbushel(), }
