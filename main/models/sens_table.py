@@ -218,6 +218,8 @@ class SensTable(object):
         # Price %
         table[self.nfcs+5:, self.nmcs, 2] += bordx+bold
         table[self.nfcs+5, self.nmcs, 2] += bordt+bold
+        # Sensitized values
+        table[self.nfcs+5:, self.nmcs+1:, 2] += right
 
     def add_spans(self, table):
         table[0, 0, 1] = str(self.ncols)             # title
