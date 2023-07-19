@@ -13,25 +13,23 @@
     </div>
 </div>
 <script>
+/*
+For reference on this rounding implementation, see: https://stackoverflow.com/questions/11832914/
+For reference on setting formData, see: https://stackoverflow.com/questions/4517366/
+*/
 (() => {
-    window.addEventListener('load', (event) => {
+    document.addEventListener('DOMContentLoaded', (event) => {
         document.querySelector("#farmyearform").reset();
-        console.log('hello')
-        const matches = document.querySelectorAll(".percent");
-        matches.forEach((fld) => {
-            console.log(fld.value)
-            fld.value = parseFloat(fld.value)*100;
-            console.log(fld.value)
+        document.querySelectorAll(".percent").forEach((fld) => {
+            fld.value = +(parseFloat(fld.value)*100).toFixed(2);
         })
     });
 
     const form = document.querySelector("#farmyearform");
-    form.addEventListener("submit", (event) => {
-        const matches = document.querySelectorAll(".percent");
-        matches.forEach((fld) => {
-            console.log(fld.value)
-            fld.value = parseFloat(fld.value)/100;
-            console.log(fld.value)
+    form.addEventListener("formdata", (e) => {
+        document.querySelectorAll(".percent").forEach((fld) => {
+            let strval = (parseFloat(fld.value)/100).toFixed(4);
+            e.formData.set(fld.getAttribute("name"), strval);
         })
     });
 })();

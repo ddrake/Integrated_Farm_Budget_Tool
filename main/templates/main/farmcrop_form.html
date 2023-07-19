@@ -39,15 +39,17 @@
         document.querySelector("#id-farmcropform").reset();
         const matches = document.querySelectorAll(".percent");
         matches.forEach((fld) => {
-            fld.value = parseFloat(fld.value)*100;
+            fld.value = +(parseFloat(fld.value)*100).toFixed(2);
         })
     }
 
     const form = document.querySelector("#id-farmcropform");
-    form.addEventListener("submit", (event) => {
-        const matches = document.querySelectorAll(".percent");
-        matches.forEach((fld) => {
-            fld.value = parseFloat(fld.value)/100;
+    form.addEventListener("formdata", (e) => {
+        const formData = e.formData;
+        document.querySelectorAll(".percent").forEach((fld) => {
+            let strval = (parseFloat(fld.value)/100).toFixed(4);
+            console.log(strval)
+            formData.set(fld.getAttribute("name"), strval);
         })
     });
 

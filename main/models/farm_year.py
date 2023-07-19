@@ -45,7 +45,9 @@ class FarmYear(models.Model):
         default=0, validators=[MinVal(0), MaxVal(99999)],
         verbose_name="straight cash rent acres")
     var_rent_cap_floor_frac = models.FloatField(
-        default=0, validators=[MinVal(0), MaxVal(1)],
+        default=0, validators=[
+            MinVal(0),
+            MaxVal(1, message="Ensure this value is less than or equal to 100")],
         verbose_name="variable rent floor/cap",
         help_text=("Floor and cap on variable rent as a percent of starting base rent"))
     annual_land_int_expense = models.FloatField(
@@ -83,7 +85,10 @@ class FarmYear(models.Model):
         help_text='Use the manually-set model run date (advanced).')
     sensitivity_data = models.JSONField(null=True, blank=True)
     est_sequest_frac = models.FloatField(
-        default=0.062, verbose_name='estimated sequestration percent',
+        default=0.062, validators=[
+            MinVal(0),
+            MaxVal(0.1, message="Ensure this value is less than or equal to 10")],
+        verbose_name='estimated sequestration percent',
         help_text='Estimated reduction to computed total pre-cap title payment')
 
     def __init__(self, *args, **kwargs):

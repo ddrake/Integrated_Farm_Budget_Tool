@@ -36,7 +36,9 @@ class MarketCrop(models.Model):
     fsa_crop = models.ForeignKey(FsaCrop, on_delete=models.CASCADE,
                                  related_name='market_crops')
     price_factor = models.FloatField(
-        default=1, validators=[MinVal(0), MaxVal(10)],
+        default=1, validators=[
+            MinVal(0),
+            MaxVal(10, message="Ensure this value is less than or equal to 1000")],
         verbose_name='price sensititivity factor',
         help_text=('Percent of current futures price, reflected in detailed budget'))
 

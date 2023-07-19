@@ -14,26 +14,21 @@
 
 <script>
 (() => {
-    window.addEventListener('load', (event) => {
+    document.addEventListener('DOMContentLoaded', (event) => {
         document.querySelector("#farmbudgetform").reset();
-        console.log('hello')
-        const matches = document.querySelectorAll(".percent");
-        matches.forEach((fld) => {
-            console.log(fld.value)
-            fld.value = parseFloat(fld.value)*100;
-            console.log(fld.value)
+        document.querySelectorAll(".percent").forEach((fld) => {
+            fld.value = +(parseFloat(fld.value)*100).toFixed(2);
         })
     });
 
     const form = document.querySelector("#farmbudgetform");
-    form.addEventListener("submit", (event) => {
-        const matches = document.querySelectorAll(".percent");
-        matches.forEach((fld) => {
-            console.log(fld.value)
-            fld.value = parseFloat(fld.value)/100;
-            console.log(fld.value)
+    form.addEventListener("formdata", (e) => {
+        document.querySelectorAll(".percent").forEach((fld) => {
+            let strval = (parseFloat(fld.value)/100).toFixed(4);
+            e.formData.set(fld.getAttribute("name"), strval);
         })
     });
+
 })();
 </script>
 {% endblock content %}
