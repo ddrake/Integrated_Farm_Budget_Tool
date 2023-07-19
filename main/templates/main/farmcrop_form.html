@@ -17,6 +17,7 @@
         let origval = "{{ farmcrop.base_coverage_level }}";
         let covType = document.getElementById("coverage_type")
         let val = covType.value;
+        scaleUpPercents()
         updateBaseCoverageLevels(val); 
         covLevel.value = origval;
         manageScoAndProtFactor(val);
@@ -34,28 +35,21 @@
             document.getElementById("id_prot_factor").removeAttribute('disabled', '')
         });
 
-    /*
-    window.addEventListener('load', (event) => {
+    function scaleUpPercents() {
         document.querySelector("#id-farmcropform").reset();
-        console.log('hello')
         const matches = document.querySelectorAll(".percent");
         matches.forEach((fld) => {
-            console.log(fld.value)
             fld.value = parseFloat(fld.value)*100;
-            console.log(fld.value)
         })
-    });
+    }
 
     const form = document.querySelector("#id-farmcropform");
     form.addEventListener("submit", (event) => {
         const matches = document.querySelectorAll(".percent");
         matches.forEach((fld) => {
-            console.log(fld.value)
             fld.value = parseFloat(fld.value)/100;
-            console.log(fld.value)
         })
     });
-    */
 
     function updateBaseCoverageLevels(value) {
         let options = '<option value="">--------</option>\n';
@@ -86,7 +80,7 @@
             } else {
                 scouse.removeAttribute('disabled', '')
                 ecolevel.removeAttribute('disabled', '')
-                prot.value = '1.0';
+                prot.value = '100';
                 prot.setAttribute('disabled', '')
             }
         }
