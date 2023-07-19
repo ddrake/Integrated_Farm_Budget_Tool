@@ -675,7 +675,7 @@ class RevenueDetails:
             ('Uncontracted (Oversold) Revenue ($000)', 16),
         ]
 
-        self.BLANK_ROWS = [3, 6, 9, 11, 13, 17, 21]
+        self.BLANK_ROWS = [0, 3, 6, 9, 11, 13, 17, 21]
 
     def get_rows(self):
         """
@@ -700,16 +700,17 @@ class RevenueDetails:
             rows.insert(ir, t)
         for ix in self.BLANK_ROWS[-1::-1]:
             rows.insert(ix, blank)
-        header = [('CROP REVENUE CALCULATIONS', self.colheads)]
+        header = [('', self.colheads)]
         return header + rows
 
     def get_formats(self):
         """
         Bold headers and bold data columns
         """
-        return {'bh': [0, 19, 24, 29, 30],
-                'bd': [0, 13, 14, 29, 30],
-                'ol': [7, 11, 22, 27],
+        return {'bh': [20, 25, 30, 31],
+                'bd': [0, 14, 15, 30, 31],
+                'ol': [8, 12, 23, 28],
+                'ul': [0],
                 'blank': len(self.farm_crops), }
 
     def set_data(self):

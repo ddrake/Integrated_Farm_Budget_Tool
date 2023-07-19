@@ -33,12 +33,16 @@
                   {% if forloop.parentloop.counter0 in revfmt.bd %}
                     {% if forloop.parentloop.counter0 in revfmt.ol %}
                       <td class="px-1 py-0 text-right font-bold overline">{{col}}</td>
+                    {% elif forloop.parentloop.counter0 in revfmt.ul %}
+                      <td class="px-1 py-0 text-right font-bold underline">{{col}}</td>
                     {% else %}
                       <td class="px-1 py-0 text-right font-bold">{{col}}</td>
                     {% endif %}
                   {% else %}
                     {% if forloop.parentloop.counter0 in revfmt.ol %}
                       <td class="px-1 py-0 text-right overline">{{col}}</td>
+                    {% elif forloop.parentloop.counter0 in revfmt.ul %}
+                      <td class="px-1 py-0 text-right font-bold underline">{{col}}</td>
                     {% else %}
                       <td class="px-1 py-0 text-right">{{col}}</td>
                     {% endif %}
@@ -63,7 +67,8 @@
         <table class="text-sm table-auto border border-indigo-800 border-2 mb-2" id="yieldtbl">
           <tbody>
           {% for row in keydata.modelrun.rows %}
-            <tr>
+          
+          <tr>
               <td class="px-1 py-0 text-left font-bold">{{row.0}}</td>
               {% for col in row.1 %}
                 <td class="px-1 py-0 text-right">{{col}}</td>
@@ -76,7 +81,7 @@
         <table class="text-sm table-auto border border-indigo-800 border-2 mb-2" id="yieldtbl">
           <tbody>
           {% for row in keydata.yield.rows %}
-              <tr>
+              <tr {% if forloop.first %} class="border-b border-black" {% endif %}>
               {% if forloop.counter0 == 0 %}
               <td colspan="{{keydata.yield.colspan}}"
                 class="px-1 py-0 text-center font-bold">{{row.0}}</td>
@@ -98,7 +103,7 @@
         <table class="text-sm table-auto border border-indigo-800 border-2 mb-2" id="markettbl">
           <tbody>
           {% for row in keydata.price.rows %}
-              <tr>
+              <tr {% if forloop.first %} class="border-b border-black" {% endif %}>
               {% if forloop.counter0 == 0 %}
               <td colspan="{{keydata.cropins.colspan}}"
                 class="px-1 py-0 text-center font-bold">{{row.0}}</td>
@@ -120,7 +125,7 @@
         <table class="text-sm table-auto border border-indigo-800 border-2 mb-2" id="futcontracttbl">
           <tbody>
           {% for row in keydata.futctr.rows %}
-              <tr>
+              <tr {% if forloop.first %} class="border-b border-black" {% endif %}>
               {% if forloop.counter0 == 0 %}
               <td colspan="{{keydata.futctr.colspan}}"
                 class="px-1 py-0 text-center font-bold">{{row.0}}</td>
@@ -142,7 +147,7 @@
         <table class="text-sm table-auto border border-indigo-800 border-2 mb-2" id="cropinstable">
           <tbody>
           {% for row in keydata.cropins.rows %}
-              <tr>
+              <tr {% if forloop.first %} class="border-b border-black" {% endif %}>
               {% if forloop.counter0 == 0 %}
               <td colspan="{{keydata.cropins.colspan}}"
                 class="px-1 py-0 text-center font-bold">{{row.0}}</td>
@@ -168,7 +173,7 @@
         <table class="text-sm table-auto border border-indigo-800 border-2" id="titletbl">
           <tbody>
           {% for row in keydata.title.rows %}
-              <tr>
+              <tr {% if forloop.first %} class="border-b border-black" {% endif %}>
               {% if forloop.counter0 == 0 %}
               <td colspan="{{keydata.title.colspan}}"
                 class="px-1 py-0 text-center font-bold">{{row.0}}</td>
@@ -193,6 +198,10 @@
     </div> <!-- end key data block -->
   </div> <!-- end top block with revenue and key data -->
 
+  <div class="text-lg mt-2 text-center w-full">
+    <p>PRE-TAX CASH FLOW BUDGET</p>
+    <hr class="bg-black h-1">
+  </div>
   <div class="flex flex-col"> <!-- main budget block -->
     <div class="p-6 max-w-med mx-auto bg-white rounded-xl shadow-lg flex items-center space-x-2">
       {% if tables == None %}
@@ -204,7 +213,7 @@
       </div>
       {% else %}
       <div class="shrink-0">
-        <p class="font-bold text-center">Budget in $(000)</p>
+        <p class="font-bold text-center">Budget $(000)</p>
       <table class="text-sm table-auto border border-indigo-800 border-2" id="kdtable">
         <tbody>
         {% for row in tables.kd %}
@@ -235,7 +244,7 @@
       </table>
       </div>
       <div class="shrink-0">
-        <p class="font-bold text-center" >Budget in $/acre</p>
+        <p class="font-bold text-center" >Budget $/acre</p>
       <table class="text-sm table-auto border border-indigo-800 border-2" id="patable">
         <tbody>
         {% for row in tables.pa %}
@@ -253,7 +262,7 @@
       </table>
       </div>
       <div class="shrink-0">
-        <p class="font-bold text-center">Budget in $/bushel</p>
+        <p class="font-bold text-center">Budget $/bushel</p>
       <table class="text-sm table-auto border border-indigo-800 border-2" id="pbtable">
         <tbody>
         {% for row in tables.pb %}
