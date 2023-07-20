@@ -125,7 +125,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
 STATIC_URL = 'static/'
 
 IMPERSONATE = {
-    'REDIRECT_URL': '/dashboard/',
+    'REDIRECT_URL': '/farmyears/',
     'PAGINATE_COUNT': 10,
     'REQUIRE_SUPERUSER': True,
 }
