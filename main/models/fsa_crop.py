@@ -7,7 +7,7 @@ from django.utils.translation import gettext_lazy as _
 from ext.models import (FsaCropType, PriceYield, MyaPreEstimate, MyaPost,
                         BenchmarkRevenue)
 from core.models.gov_pmt import GovPmt
-from .farm_year import FarmYear, BaselineFarmYear
+from .farm_year import FarmYear
 
 
 def get_current_year():
@@ -145,8 +145,3 @@ class FsaCrop(models.Model):
 
     class Meta:
         ordering = ['fsa_crop_type_id']
-
-
-class BaselineFsaCrop(models.Model):
-    farm_year = models.ForeignKey(BaselineFarmYear, on_delete=models.CASCADE)
-    fsa_crop_type = models.ForeignKey(FsaCropType, on_delete=models.CASCADE)

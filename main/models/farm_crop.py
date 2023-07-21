@@ -9,8 +9,8 @@ from ext.models import (Subcounty, SubcountyAvail, BudgetCrop, FarmCropType,
                         InsCropType, PriceYield, AreaRate)
 from core.models.premium import Premium
 from core.models.indemnity import Indemnity
-from .farm_year import FarmYear, BaselineFarmYear
-from .market_crop import MarketCrop, BaselineMarketCrop
+from .farm_year import FarmYear
+from .market_crop import MarketCrop
 from . import util
 
 
@@ -700,12 +700,3 @@ class FarmCrop(models.Model):
 
     class Meta:
         ordering = ['farm_crop_type_id']
-
-
-class BaselineFarmCrop(models.Model):
-    farm_crop_type = models.ForeignKey(FarmCropType, on_delete=models.CASCADE)
-    market_crop = models.ForeignKey(BaselineMarketCrop,
-                                    on_delete=models.CASCADE,
-                                    related_name='farm_crops')
-    farm_year = models.ForeignKey(BaselineFarmYear, on_delete=models.CASCADE,
-                                  related_name='farm_crops')

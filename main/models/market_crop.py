@@ -2,8 +2,8 @@ from django.core.validators import (
     MinValueValidator as MinVal, MaxValueValidator as MaxVal)
 from django.db import models
 from ext.models import FuturesContract, FuturesPrice, MarketCropType
-from .farm_year import FarmYear, BaselineFarmYear
-from .fsa_crop import FsaCrop, BaselineFsaCrop
+from .farm_year import FarmYear
+from .fsa_crop import FsaCrop
 
 
 class MarketCrop(models.Model):
@@ -135,11 +135,3 @@ class MarketCrop(models.Model):
 
     class Meta:
         ordering = ['market_crop_type_id']
-
-
-class BaselineMarketCrop(models.Model):
-    market_crop_type = models.ForeignKey(MarketCropType, on_delete=models.CASCADE)
-    farm_year = models.ForeignKey(BaselineFarmYear, on_delete=models.CASCADE,
-                                  related_name='market_crops')
-    fsa_crop = models.ForeignKey(BaselineFsaCrop, on_delete=models.CASCADE,
-                                 related_name='market_crops')

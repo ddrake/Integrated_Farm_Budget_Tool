@@ -90,6 +90,7 @@ class FarmYear(models.Model):
             MaxVal(0.1, message="Ensure this value is less than or equal to 10")],
         verbose_name='estimated sequestration percent',
         help_text='Estimated reduction to computed total pre-cap title payment')
+    benchmark_budget_data = models.JSONField(null=True, blank=True)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -263,13 +264,3 @@ class FarmYear(models.Model):
             models.UniqueConstraint('farm_name', 'user', 'crop_year',
                                     name='farm_name_unique_for_user_crop_year'), ]
         ordering = ['-crop_year', 'farm_name']
-
-
-class BaselineFarmYear(models.Model):
-    """
-    When a user sets the baseline for a farm year, all values (fields and method
-    results) for the farmyear will be copied to the record in baselines table
-    which references the farm year.  The baseline has a similar structure to the
-    FarmYear, but all its associated models have only fields and no methods.
-    """
-    farm_year = models.ForeignKey(FarmYear, on_delete=models.CASCADE)
