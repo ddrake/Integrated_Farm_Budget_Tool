@@ -42,8 +42,14 @@
       <dt>Priced on</dt>
       <dd class="text-right">{{d.priceinfo.priced_on}}</dd>
     </dl>
+    <a class="text-xs text-indigo-800 hover:text-indigo-600"
+       href="https://www.barchart.com/futures/quotes/{{d.priceinfo.ticker}}/interactive-chart"
+       target="_blank">
+        {{d.marketcrop}}, {{d.priceinfo.futures_month}} Interactive Chart - Barchart.com</a>
+    <div class="mt-2">
     <a class="text-lg text-indigo-800 hover:text-indigo-600"
        href="{% url 'marketcrop_update' pk=d.marketcrop.pk %}">Edit</a>
+    </div>
   </div>
   {% endfor %}
 </div>
