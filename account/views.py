@@ -1,10 +1,10 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render
 from django.views.generic import CreateView, TemplateView, RedirectView
-from django.contrib.auth import login, authenticate
+from django.contrib.auth import login
 
 from django.urls import reverse_lazy
 from django.utils.http import urlsafe_base64_decode
-from django.utils.encoding import force_str # force_text on older versions of Django
+from django.utils.encoding import force_str  # force_text on older versions of Django
 
 from .forms import RegistrationForm, token_generator, user_model
 
@@ -18,16 +18,17 @@ class RegistrationView(CreateView):
         to_return = super().form_valid(form)
 
         user = form.save()
-        user.is_active = False # Turns the user status to inactive
+        user.is_active = False  # Turns the user status to inactive
         user.save()
 
         form.send_activation_email(self.request, user)
 
         return to_return
 
+
 class ActivateView(RedirectView):
 
-    url = reverse_lazy('dashboard')
+    url = reverse_lazy('farmyears')
 
     # Custom get method
     def get(self, request, uidb64, token):
@@ -44,6 +45,7 @@ class ActivateView(RedirectView):
             return super().get(request, uidb64, token)
         else:
             return render(request, 'account/activate_account_invalid.html')
+
 
 class CheckEmailView(TemplateView):
     template_name = 'account/check_email.html'
