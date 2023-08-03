@@ -23,30 +23,12 @@
     <div class="mt-2 px-8">
       {% if not user.is_authenticated %}
         <div class="text-center">
-        <a class="text-xl text-indigo-700 hover:text-indigo-500"
-           href="{% url 'register' %}">Register</a> for free or
-        <a class="text-xl text-indigo-700 hover:text-indigo-500"
-           href="{% url 'login' %}">Log In</a>
-        <br>
-        <hr class="slate-500 mt-3 mb-2">
-      </div>
+          <a class="text-xl text-indigo-700 hover:text-indigo-500"
+             href="{% url 'register' %}">Register</a> for free or
+          <a class="text-xl text-indigo-700 hover:text-indigo-500"
+             href="{% url 'login' %}">Log In</a>
+        </div>
       {% endif %}
-      
-      <p class="text-lg mb-2">This open source project is based at <em>Github</em></p>
-      <ul class="text-base">
-        <li>See the <a class="text-indigo-700 hover:text-indigo-500"
-               href="https://github.com/ddrake/Integrated_Farm_Budget_Tool/wiki">
-            Wiki</a> for help getting started and detailed documentation.
-        </li>
-        <li>Visit the <a class="text-indigo-700 hover:text-indigo-500"
-               href="https://github.com/ddrake/Integrated_Farm_Budget_Tool/discussions">
-            Discussions forum
-          </a> to get questions answered and contribute to the IFBT community.
-        </li>
-        <li>Visit the <a class="text-indigo-700 hover:text-indigo-500"
-               href="https://github.com/ddrake/Integrated_Farm_Budget_Tool">
-            Repository</a> to view the source code.
-        </li>
     </div>
     <div id="app" class="max-w-screen-lg mx-auto px-4 md:px-8 py-6 transition-all duration-500 ease-linear">
       <div class="w-[800px] mx-auto">
@@ -70,7 +52,7 @@ var slidesContainer = document.querySelector(".slides-container");
 var slideWidth = slidesContainer.querySelector(".slide").clientWidth;
 var index = 1;
 function nextSlide() {
-  console.log("index is " + index)
+  // console.log("index is " + index)
   index += 1;
   if (index > 3) {
     index = 1;
