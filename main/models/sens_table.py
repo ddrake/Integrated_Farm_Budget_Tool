@@ -170,6 +170,8 @@ class SensTable(object):
 
     def add_styles(self, table):
         bkg = ' bg-slate-100'
+        bkggrn = ' bg-green-100'
+        bkgred = ' bg-red-100'
         bord = ' border border-black'
         bordx = ' border-x border-black'
         bordy = ' border-y border-black'
@@ -218,7 +220,13 @@ class SensTable(object):
         # Price %
         table[self.nfcs+5:, self.nmcs, 2] += bordx+bold
         table[self.nfcs+5, self.nmcs, 2] += bordt+bold
+
         # Sensitized values
+        def isneg(s):
+            return s.startswith('-')
+        visneg = np.vectorize(isneg)
+        table[self.nfcs+5:, self.nmcs+1:, 2] = np.where(
+            visneg(table[self.nfcs+5:, self.nmcs+1:, 0]), bkgred, bkggrn)
         table[self.nfcs+5:, self.nmcs+1:, 2] += right
 
     def add_spans(self, table):
