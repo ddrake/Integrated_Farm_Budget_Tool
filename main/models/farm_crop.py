@@ -583,7 +583,7 @@ class FarmCrop(models.Model):
         cf = self.farm_year.var_rent_cap_floor_frac
         fv = self.farm_year.frac_var_rent()
         fre = self.frac_rev_excess(pf, yf, sprice)
-        result = fv * math.copysign(cf, fre) if abs(fre) > cf else fre
+        result = fv * (math.copysign(cf, fre) if abs(fre) > cf else fre)
         return result
 
     def rented_land_costs(self, pf=None, yf=None, sprice=None):
