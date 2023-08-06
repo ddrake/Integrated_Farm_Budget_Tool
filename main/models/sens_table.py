@@ -207,7 +207,7 @@ class SensTable(object):
         table[self.prc1-2, :self.nmcs, 2] += bordt
         table[self.prc1+2, :self.nmcs, 2] += bordb
         # Base value
-        table[self.prc1, self.yld1, 2] += bord+bkg+bold
+        table[self.prc1, self.yld1, 2] += bord+bold
         # Base value bracket
         table[self.prc1-2, self.yld1-2:, 2] += bordt
         table[self.prc1+2, self.yld1-2:, 2] += bordb
@@ -225,7 +225,7 @@ class SensTable(object):
         def isneg(s):
             return s.startswith('-')
         visneg = np.vectorize(isneg)
-        table[self.nfcs+5:, self.nmcs+1:, 2] = np.where(
+        table[self.nfcs+5:, self.nmcs+1:, 2] += np.where(
             visneg(table[self.nfcs+5:, self.nmcs+1:, 0]), bkgred, bkggrn)
         table[self.nfcs+5:, self.nmcs+1:, 2] += right
 
