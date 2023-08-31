@@ -34,6 +34,11 @@ class FarmYearDashboard(DetailView):
     model = FarmYear
     template_name = 'main/dashboard.html'
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['farmyear_id'] = self.kwargs['pk']
+        return context
+
 
 class FarmYearCreateView(CreateView):
     model = FarmYear
@@ -93,9 +98,19 @@ class FarmYearUpdateView(UpdateView):
     def get_success_url(self):
         return reverse_lazy('farmyear_detail', args=[self.get_object().pk])
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['farmyear_id'] = self.get_object().pk
+        return context
+
 
 class FarmYearDetailView(DetailView):
     model = FarmYear
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['farmyear_id'] = self.get_object().pk
+        return context
 
 
 class FarmYearFarmCropListView(ListView):
@@ -104,6 +119,11 @@ class FarmYearFarmCropListView(ListView):
     def get_queryset(self):
         self.farmyear = get_object_or_404(FarmYear, pk=self.kwargs['farmyear'])
         return FarmCrop.objects.filter(farm_year=self.farmyear)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['farmyear_id'] = self.kwargs['farmyear']
+        return context
 
 
 class FarmYearFarmBudgetCropListView(ListView):
@@ -115,7 +135,7 @@ class FarmYearFarmBudgetCropListView(ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['farmyear'] = self.kwargs['farmyear']
+        context['farmyear'] = context['farmyear_id'] = self.kwargs['farmyear']
         return context
 
 
@@ -131,6 +151,7 @@ class FarmYearMarketCropListView(ListView):
         context['mc_priceinfo_list'] = [
             {'marketcrop': mc, 'priceinfo': mc.harvest_futures_price_info()}
             for mc in context['marketcrop_list']]
+        context['farmyear_id'] = self.kwargs['farmyear']
         return context
 
 
@@ -141,6 +162,11 @@ class FarmYearFsaCropListView(ListView):
         self.farmyear = get_object_or_404(FarmYear, pk=self.kwargs['farmyear'])
         return FsaCrop.objects.filter(farm_year=self.farmyear)
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['farmyear_id'] = self.kwargs['farmyear']
+        return context
+
 
 class FarmCropUpdateView(UpdateView):
     model = FarmCrop
@@ -148,6 +174,11 @@ class FarmCropUpdateView(UpdateView):
 
     def get_success_url(self):
         return reverse_lazy('farmcrop_list', args=[self.get_object().farm_year_id])
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['farmyear_id'] = self.get_object().farm_year_id
+        return context
 
 
 class FarmBudgetCropUpdateView(UpdateView):
@@ -162,6 +193,11 @@ class FarmBudgetCropUpdateView(UpdateView):
         return reverse_lazy('farmbudgetcrop_list',
                             args=[self.get_object().farm_year_id])
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['farmyear_id'] = self.get_object().farm_year_id
+        return context
+
 
 class MarketCropUpdateView(UpdateView):
     model = MarketCrop
@@ -171,6 +207,11 @@ class MarketCropUpdateView(UpdateView):
     def get_success_url(self):
         return reverse_lazy('marketcrop_list', args=[self.get_object().farm_year_id])
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['farmyear_id'] = self.get_object().farm_year_id
+        return context
+
 
 class FsaCropUpdateView(UpdateView):
     model = FsaCrop
@@ -179,6 +220,11 @@ class FsaCropUpdateView(UpdateView):
 
     def get_success_url(self):
         return reverse_lazy('fsacrop_list', args=[self.get_object().farm_year_id])
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['farmyear_id'] = self.get_object().farm_year_id
+        return context
 
 
 class DetailedBudgetView(TemplateView):
@@ -195,6 +241,7 @@ class DetailedBudgetView(TemplateView):
         context['info'] = bt.get_info()
         context['tables'] = bt.get_tables()
         context['keydata'] = kd.get_tables()
+        context['farmyear_id'] = farmyear
         return context
 
 
@@ -207,4 +254,5 @@ class SensitivityTableView(TemplateView):
         st = SensTable(farmyear)
         context['info'] = st.get_info()
         context['tables'] = st.get_all_tables()
+        context['farmyear_id'] = farmyear
         return context
