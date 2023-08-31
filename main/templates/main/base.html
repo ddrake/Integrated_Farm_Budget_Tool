@@ -34,25 +34,39 @@
       <div class="w-full block flex-grow sm:flex sm:items-center sm:w-auto">
         <div class="text-sm sm:flex-grow">
           {% if user.is_authenticated %}
-          <a
-						href="{% url 'farmyears' %}"
-            class="block mt-4 sm:inline-block sm:mt-0 text-teal-200 hover:text-white text-lg mr-4"
-          >
-            My Farm Years
-          </a>
-          <a
-            href="https://github.com/ddrake/Integrated_Farm_Budget_Tool/wiki"
-            target="_blank"
-            class="block mt-4 sm:inline-block sm:mt-0 text-teal-200 hover:text-white ml-4"
+            <a
+              href="{% url 'farmyears' %}"
+              class="block mt-4 sm:inline-block sm:mt-0 text-teal-200 hover:text-white text-lg mr-4"
             >
-            Info</a>
-          <a
-            href="https://github.com/ddrake/Integrated_Farm_Budget_Tool/discussions"
-            target="_blank"
-            class="block mt-4 sm:inline-block sm:mt-0 text-teal-200 hover:text-white ml-4"
+              My Farm Years
+            </a>
+            {% if farmyear_id %}
+            <a
+              href="{% url 'dashboard' pk=farmyear_id %}"
+              class="block mt-4 sm:inline-block sm:mt-0 text-teal-200 hover:text-white text-lg mr-4"
             >
-            Help
-          </a>
+              Dashboard
+            </a>
+            {% endif %}
+            <a
+              href="https://www.youtube.com/playlist?list=PLtK9WRr4peUo7E8guq2992McdADixAh1U"
+              target="_blank"
+              class="block mt-4 sm:inline-block sm:mt-0 text-teal-200 hover:text-white ml-4"
+              >
+              Video Tutorials</a>
+            <a
+              href="https://github.com/ddrake/Integrated_Farm_Budget_Tool/wiki"
+              target="_blank"
+              class="block mt-4 sm:inline-block sm:mt-0 text-teal-200 hover:text-white ml-4"
+              >
+              Info</a>
+            <a
+              href="https://github.com/ddrake/Integrated_Farm_Budget_Tool/discussions"
+              target="_blank"
+              class="block mt-4 sm:inline-block sm:mt-0 text-teal-200 hover:text-white ml-4"
+              >
+              Help
+            </a>
           {% endif %}
         </div>
         <div>
