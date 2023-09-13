@@ -67,7 +67,8 @@ class FarmYear(models.Model):
         help_text="Number of eligible entities for FSA payment cap")
     other_nongrain_income = models.FloatField(
         default=0, validators=[MinVal(0), MaxVal(999999)],
-        help_text="Other non-grain income in dollars")
+        verbose_name="other nongrain revenue",
+        help_text="Other non-grain revenue in dollars")
     other_nongrain_expense = models.FloatField(
         default=0, validators=[MinVal(0), MaxVal(999999)],
         help_text="Other non-grain expense in dollars")
