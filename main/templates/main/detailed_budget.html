@@ -131,7 +131,7 @@
                   <td class="px-1 py-0 text-left font-bold">{{row.0}}</td>
                 {% endif %}
                 {% for col in row.1 %}
-                {% if forloop.parentloop.counter0 >= 1 and forloop.parentloop.counter0 <= 2 %}
+                  {% if forloop.parentloop.counter0 >= 1 and forloop.parentloop.counter0 <= 2 %}
                     <td class="px-1 py-0 text-center font-bold">{{col}}</td>
                   {% else %}
                     <td class="px-1 py-0 text-right">{{col}}</td>
@@ -147,7 +147,7 @@
             {% for row in cur.keydata.price.rows %}
                 <tr {% if forloop.first %} class="border-b border-black" {% endif %}>
                 {% if forloop.counter0 == 0 %}
-                <td colspan="{{cur.keydata.cropins.colspan}}"
+                <td colspan="{{cur.keydata.price.colspan}}"
                   class="px-1 py-0 text-center font-bold">{{row.0}}</td>
                 {% else %}
                   <td class="px-1 py-0 text-left font-bold">{{row.0}}</td>
@@ -457,7 +457,11 @@
             <tr>
                 <td class="px-1 py-0 text-left font-bold">{{row.0}}</td>
                 {% for col in row.1 %}
-                  <td class="px-1 py-0 text-right">{{col}}</td>
+                  {% if forloop.parentloop.counter0 >= 1 and forloop.parentloop.counter0 <= 2 %}
+                    <td class="px-1 py-0 text-center font-bold">{{col}}</td>
+                  {% else %}
+                    <td class="px-1 py-0 text-right">{{col}}</td>
+                  {% endif %}
                 {% endfor %}
               </tr>
             {% endfor %}
@@ -475,8 +479,8 @@
                   <td class="px-1 py-0 text-left font-bold">{{row.0}}</td>
                 {% endif %}
                 {% for col in row.1 %}
-                  {% if forloop.parentloop.counter0 == 1 %}
-                    <td class="px-1 py-0 text-right font-bold">{{col}}</td>
+                  {% if forloop.parentloop.counter0 >= 1 and forloop.parentloop.counter0 <= 2 %}
+                    <td class="px-1 py-0 text-center font-bold">{{col}}</td>
                   {% else %}
                     <td class="px-1 py-0 text-right">{{col}}</td>
                   {% endif %}
@@ -491,14 +495,14 @@
             {% for row in base.keydata.price.rows %}
                 <tr {% if forloop.first %} class="border-b border-black" {% endif %}>
                 {% if forloop.counter0 == 0 %}
-                <td colspan="{{base.keydata.cropins.colspan}}"
+                <td colspan="{{base.keydata.price.colspan}}"
                   class="px-1 py-0 text-center font-bold">{{row.0}}</td>
                 {% else %}
                   <td class="px-1 py-0 text-left font-bold">{{row.0}}</td>
                 {% endif %}
                 {% for col in row.1 %}
-                  {% if forloop.parentloop.counter0 == 1 %}
-                    <td class="px-1 py-0 text-right font-bold">{{col}}</td>
+                  {% if forloop.parentloop.counter0 >= 1 and forloop.parentloop.counter0 <= 2 %}
+                    <td class="px-1 py-0 text-center font-bold">{{col}}</td>
                   {% else %}
                     <td class="px-1 py-0 text-right">{{col}}</td>
                   {% endif %}
@@ -519,8 +523,8 @@
                   <td class="px-1 py-0 text-left font-bold">{{row.0}}</td>
                 {% endif %}
                 {% for col in row.1 %}
-                  {% if forloop.parentloop.counter0 == 1 %}
-                    <td class="px-1 py-0 text-right font-bold">{{col}}</td>
+                  {% if forloop.parentloop.counter0 >= 1 and forloop.parentloop.counter0 <= 2 %}
+                    <td class="px-1 py-0 text-center font-bold">{{col}}</td>
                   {% else %}
                     <td class="px-1 py-0 text-right">{{col}}</td>
                   {% endif %}
@@ -541,8 +545,8 @@
                   <td class="px-1 py-0 text-left font-bold">{{row.0}}</td>
                 {% endif %}
                 {% for col in row.1 %}
-                  {% if forloop.parentloop.counter0 == 1 %}
-                    <td class="px-1 py-0 text-right font-bold">{{col}}</td>
+                  {% if forloop.parentloop.counter0 >= 1 and forloop.parentloop.counter0 <= 2 %}
+                    <td class="px-1 py-0 text-center font-bold">{{col}}</td>
                   {% else %}
                     {% if forloop.parentloop.last and forloop.last %}
                       <td class="px-1 py-0 text-right border-t border-black">{{col}}</td>
@@ -695,7 +699,7 @@
             </div>
           {% if base.tables.wheatdc %}
           <div class="shrink-0">
-            <p class="font-bold text-center">Wheat/DC Beans</p>
+            <p class="font-bold text-center">Wheat/DC</p>
             <table class="text-sm table-auto border border-indigo-800 border-2" id="wheatdctable">
               <tbody>
               {% for row in base.tables.wheatdc.0 %}
@@ -802,7 +806,11 @@
             <tr>
                 <td class="px-1 py-0 text-left font-bold">{{row.0}}</td>
                 {% for col in row.1 %}
-                  <td class="px-1 py-0 text-right">{{col}}</td>
+                  {% if forloop.parentloop.counter0 >= 1 and forloop.parentloop.counter0 <= 2 %}
+                    <td class="px-1 py-0 text-center font-bold">{{col}}</td>
+                  {% else %}
+                    <td class="px-1 py-0 text-right">{{col}}</td>
+                  {% endif %}
                 {% endfor %}
               </tr>
             {% endfor %}
@@ -820,8 +828,8 @@
                   <td class="px-1 py-0 text-left font-bold">{{row.0}}</td>
                 {% endif %}
                 {% for col in row.1 %}
-                  {% if forloop.parentloop.counter0 == 1 %}
-                    <td class="px-1 py-0 text-right font-bold">{{col}}</td>
+                  {% if forloop.parentloop.counter0 >= 1 and forloop.parentloop.counter0 <= 2 %}
+                    <td class="px-1 py-0 text-center font-bold">{{col}}</td>
                   {% else %}
                     <td class="px-1 py-0 text-right">{{col}}</td>
                   {% endif %}
@@ -836,14 +844,14 @@
             {% for row in var.keydata.price.rows %}
                 <tr {% if forloop.first %} class="border-b border-black" {% endif %}>
                 {% if forloop.counter0 == 0 %}
-                <td colspan="{{var.keydata.cropins.colspan}}"
+                <td colspan="{{var.keydata.price.colspan}}"
                   class="px-1 py-0 text-center font-bold">{{row.0}}</td>
                 {% else %}
                   <td class="px-1 py-0 text-left font-bold">{{row.0}}</td>
                 {% endif %}
                 {% for col in row.1 %}
-                  {% if forloop.parentloop.counter0 == 1 %}
-                    <td class="px-1 py-0 text-right font-bold">{{col}}</td>
+                  {% if forloop.parentloop.counter0 >= 1 and forloop.parentloop.counter0 <= 2 %}
+                    <td class="px-1 py-0 text-center font-bold">{{col}}</td>
                   {% else %}
                     <td class="px-1 py-0 text-right">{{col}}</td>
                   {% endif %}
@@ -864,8 +872,8 @@
                   <td class="px-1 py-0 text-left font-bold">{{row.0}}</td>
                 {% endif %}
                 {% for col in row.1 %}
-                  {% if forloop.parentloop.counter0 == 1 %}
-                    <td class="px-1 py-0 text-right font-bold">{{col}}</td>
+                  {% if forloop.parentloop.counter0 >= 1 and forloop.parentloop.counter0 <= 2 %}
+                    <td class="px-1 py-0 text-center font-bold">{{col}}</td>
                   {% else %}
                     <td class="px-1 py-0 text-right">{{col}}</td>
                   {% endif %}
@@ -886,8 +894,8 @@
                   <td class="px-1 py-0 text-left font-bold">{{row.0}}</td>
                 {% endif %}
                 {% for col in row.1 %}
-                  {% if forloop.parentloop.counter0 == 1 %}
-                    <td class="px-1 py-0 text-right font-bold">{{col}}</td>
+                  {% if forloop.parentloop.counter0 >= 1 and forloop.parentloop.counter0 <= 2 %}
+                    <td class="px-1 py-0 text-center font-bold">{{col}}</td>
                   {% else %}
                     {% if forloop.parentloop.last and forloop.last %}
                       <td class="px-1 py-0 text-right border-t border-black">{{col}}</td>
@@ -1040,7 +1048,7 @@
             </div>
           {% if var.tables.wheatdc %}
           <div class="shrink-0">
-            <p class="font-bold text-center">Wheat/DC Beans</p>
+            <p class="font-bold text-center">Wheat/DC</p>
             <table class="text-sm table-auto border border-indigo-800 border-2" id="wheatdctable">
               <tbody>
               {% for row in var.tables.wheatdc.0 %}
