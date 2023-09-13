@@ -1,0 +1,19 @@
+{% extends 'main/base.html' %}
+{% block title %}
+<title>Confirm baseline update</title>
+{% endblock title %}
+{% load tailwind_filters %}
+{% block content %}
+<div class="p-6 max-w-med mx-auto bg-white rounded-xl shadow-lg flex items-center space-x-4">
+  <div>
+    <h1 class="block text-xl mb-2">Are you sure you want to update the baseline budget?</h1>
+    <form action="/updatebaseline/" method="post">
+      {% csrf_token %}
+      <input name="farmyear" type="hidden" value="{{farmyear_id}}">
+      <p>A baseline budget has previously been set for this crop year.<br>
+          Updating will make the <em>current budget</em> the baseline for the crop year.</p>
+      <button type="submit" class="btn-primary ml-4 mt-2">Update Baseline</button>
+    </form>
+  </div>
+</div>
+{% endblock content %}

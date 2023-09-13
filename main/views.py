@@ -1,7 +1,7 @@
-import json
 import datetime
-from django.shortcuts import render, get_object_or_404
-from django.http import JsonResponse, HttpResponse
+import json
+from django.shortcuts import render, get_object_or_404, redirect
+from django.http import JsonResponse, HttpResponse, FileResponse
 from django.core.exceptions import PermissionDenied
 from django.views.generic.edit import CreateView, DeleteView, UpdateView
 from django.views.generic import DetailView, ListView, TemplateView
@@ -12,9 +12,9 @@ from .models.farm_crop import FarmCrop
 from .models.farm_budget_crop import FarmBudgetCrop
 from .models.market_crop import MarketCrop
 from .models.fsa_crop import FsaCrop
-from .models.budget_table import BudgetTable
+from .models.budget_table import BudgetManager
+from .models.budget_pdf import BudgetPdf
 from .models.sens_table import SensTable
-from .models.key_data import KeyData
 from ext.models import County
 from .forms import (FarmYearCreateForm, FarmYearUpdateForm, FarmCropUpdateForm,
                     FarmBudgetCropUpdateForm, ZeroAcreFarmBudgetCropUpdateForm,
@@ -28,6 +28,33 @@ def index(request):
 def farmyears(request):
     farm_years = FarmYear.objects.filter(user=request.user).all()
     return render(request, 'main/farmyears.html', {'farm_years': farm_years})
+
+
+class BudgetPdfView(View):
+    """
+    Expect URL of the form: downloadbudget/23/?b=1
+    (b=0: current budget, b=1: baseline, b=2: variance)
+    """
+    def get(self, request, *args, **kwargs):
+        farm_year = kwargs['farmyear']
+        budgettype = request.GET.get('b', 0)
+        buffer = BudgetPdf(farm_year, budgettype).create()
+        return FileResponse(buffer, as_attachment=True, filename="Budget.pdf")
+
+
+class FarmYearConfirmBaselineUpdate(View):
+    def get(self, request, *args, **kwargs):
+        farm_year_id = kwargs['farmyear']
+        return render(request, 'main/farmyear_confirm_baseline_update.html',
+                      {'farmyear_id': farm_year_id})
+
+
+class FarmYearUpdateBaselineView(View):
+    def post(self, request, *args, **kwargs):
+        farm_year_id = request.POST['farmyear']
+        farm_year = get_object_or_404(FarmYear, pk=farm_year_id)
+        farm_year.update_baseline()
+        return redirect(reverse('dashboard', args=[farm_year_id]))
 
 
 class FarmYearDashboard(DetailView):
@@ -233,14 +260,11 @@ class DetailedBudgetView(TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         farmyear = kwargs.get('farmyear', None)
-        bt = BudgetTable(farmyear)
-        rd = bt.revenue_details
-        kd = KeyData(farmyear)
-        context['rev'] = rd.get_rows()
-        context['revfmt'] = rd.get_formats()
-        context['info'] = bt.get_info()
-        context['tables'] = bt.get_tables()
-        context['keydata'] = kd.get_tables()
+        bm = BudgetManager(farmyear)
+        budgets = bm.update_budget_text()
+        context['cur'] = budgets['cur']
+        context['base'] = budgets['base']
+        context['var'] = budgets['var']
         context['farmyear_id'] = farmyear
         return context
 

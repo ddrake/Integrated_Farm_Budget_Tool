@@ -12,9 +12,6 @@ from core.models.gov_pmt import GovPmt
 from . import util
 
 
-# ---------
-# Farm Year
-# ---------
 class FarmYear(models.Model):
     """
     Holds non-crop-specific values for a crop year for a farm
@@ -90,7 +87,24 @@ class FarmYear(models.Model):
             MaxVal(0.1, message="Ensure this value is less than or equal to 10")],
         verbose_name='estimated sequestration percent',
         help_text='Estimated reduction to computed total pre-cap title payment')
-    benchmark_budget_data = models.JSONField(null=True, blank=True)
+    # Dict of numerical data For computing variance or displaying benchmark budget.
+    # Includes revenue values, but not key data.
+    # This field is updated each time a budget is computed.
+    current_budget_data = models.JSONField(null=True, blank=True)
+    # If the user sets or updates the benchmark, we simply copy the current budget data
+    # to the benchmark budget data.
+    baseline_budget_data = models.JSONField(null=True, blank=True)
+    # Dict of dicts with text and styles info.  Keys are 'cur', 'base' and 'var'
+    # value for 'cur' is current budget; 'base' and 'var' values are initially None.
+    # Each subdict contains all information (including revenue and key data) display or
+    # print a "budget".
+    # After user has set a baseline, subdicts for baseline 'base' and variance 'var'
+    # are set to dicts in subsequent budget runs and stored for PDF generation.
+    # It's not necessary to generate 'base' each run, since it only changes if the user
+    # updates the baseline.
+    # If the user updates the baseline, 'base' is
+    # set to the value of 'cur' by the AJAX view code.
+    budget_text = models.JSONField(null=True, blank=True)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -103,6 +117,25 @@ class FarmYear(models.Model):
         if not self.is_model_run_date_manual:
             mmrd = datetime.today().date()
         return mmrd.date() if hasattr(mmrd, 'date') else mmrd
+
+    def has_budget(self):
+        return (self.budget_text is not None and
+                self.budget_text['cur'] is not None)
+
+    def has_baseline_budget(self):
+        return (self.budget_text is not None and
+                self.budget_text['base'] is not None)
+
+    def update_baseline(self):
+        """
+        Called by POST from dashboard (button active after first budget run).
+        Set or update the benchmark budget to the current budget data.
+        Update the budget_text dict setting 'base' to 'cur'.
+        I think there is no need to copy or deepcopy due to JSON conversion
+        """
+        self.baseline_budget_data = self.current_budget_data
+        self.budget_text['base'] = self.budget_text['cur']
+        self.save()
 
     def wasde_first_mya_release_on(self):
         return datetime(self.crop_year, 5, 10).date()

@@ -20,6 +20,18 @@
     <p>Outputs:</p>
     <a class="pl-4 text-lg text-indigo-800 hover:text-indigo-600"
        href="{% url 'detailedbudget' farmyear=farmyear.pk %}">Detailed Budget</a><br>
+      {% if farmyear.has_budget and not farmyear.has_baseline_budget %}
+      <form action="/updatebaseline/" method="post">
+        {% csrf_token %}
+        <input name="farmyear" type="hidden" value="{{farmyear.pk}}">
+        <p class="ml-4">Baseline budget has not been set</p>
+        <button type="submit" class="btn-primary ml-4">Set Baseline</button>
+      </form>
+      {% elif farmyear.has_budget %}
+      <p class="ml-4">Baseline budget has been set
+        <a class="pl-4 text-indigo-800 hover:text-indigo-600"
+          href="{% url 'confirmbaselineupdate' farmyear=farmyear.pk %}">Update Baseline</a></p>
+      {% endif %}
     <a class="pl-4 text-lg text-indigo-800 hover:text-indigo-600"
        href="{% url 'sensitivity' farmyear=farmyear.pk %}">Sensitivity Tables</a>
   </div>
