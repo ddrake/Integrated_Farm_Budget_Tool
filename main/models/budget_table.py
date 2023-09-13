@@ -167,54 +167,55 @@ class BudgetTable(object):
 
         self.ROWS = [
             # data key, other, no_total, dollarsign
-            ('crop_revenue', None, False, True),
-            ('gov_pmt', None, False, False),
-            ('other_gov_pmts', None, False, False),
-            ('crop_ins_indems', None, False, False),
+            ('crop_revenue', 0, False, True),
+            ('gov_pmt', 0, False, False),
+            ('other_gov_pmts', 0, False, False),
+            ('crop_ins_indems', 0, False, False),
             ('other_revenue', self.farm_year.other_nongrain_income, False, False),
             ('gross_revenue', self.farm_year.other_nongrain_income, False, True),
-            ('fertilizers', None, False, False),
-            ('pesticides', None, False, False),
-            ('seed', None, False, False),
-            ('drying', None, False, False),
-            ('storage', None, False, False),
-            ('crop_ins_prems', None, False, False),
-            ('other_direct_costs', None, False, False),
-            ('total_direct_costs', None, False, False),
-            ('machine_hire_lease', None, False, False),
-            ('utilities', None, False, False),
-            ('machine_repair', None, False, False),
-            ('fuel_and_oil', None, False, False),
-            ('light_vehicle', None, False, False),
-            ('machine_depreciation', None, False, False),
-            ('total_power_costs', None, False, True),
-            ('hired_labor', None, False, False),
-            ('building_repair_rent', None, False, False),
-            ('building_depreciation', None, False, False),
-            ('insurance', None, False, False),
-            ('misc', None, False, False),
-            ('interest_nonland', None, False, False),
+            ('fertilizers', 0, False, False),
+            ('pesticides', 0, False, False),
+            ('seed', 0, False, False),
+            ('drying', 0, False, False),
+            ('storage', 0, False, False),
+            ('crop_ins_prems', 0, False, False),
+            ('other_direct_costs', 0, False, False),
+            ('total_direct_costs', 0, False, False),
+            ('machine_hire_lease', 0, False, False),
+            ('utilities', 0, False, False),
+            ('machine_repair', 0, False, False),
+            ('fuel_and_oil', 0, False, False),
+            ('light_vehicle', 0, False, False),
+            ('machine_depreciation', 0, False, False),
+            ('total_power_costs', 0, False, True),
+            ('hired_labor', 0, False, False),
+            ('building_repair_rent', 0, False, False),
+            ('building_depreciation', 0, False, False),
+            ('insurance', 0, False, False),
+            ('misc', 0, False, False),
+            ('interest_nonland', 0, False, False),
             ('other_costs', self.farm_year.other_nongrain_expense, False, False),
             ('total_overhead_costs', self.farm_year.other_nongrain_expense,
              False, True),
             ('total_nonland_costs', self.farm_year.other_nongrain_expense, False, True),
-            ('yield_adj_to_nonland_costs', None, False, False),
+            ('yield_adj_to_nonland_costs', 0, False, False),
             ('total_adj_nonland_costs', self.farm_year.other_nongrain_expense,
              False, True),
             ('operator_and_land_return', (self.farm_year.other_nongrain_income -
                                           self.farm_year.other_nongrain_expense),
              False, True),
-            ('land_costs', None, False, False),
-            ('revenue_based_adjustment_to_land_rent', None, False, False),
-            ('adjusted_land_rent', None, False, True),
-            ('owned_land_cost', None, False, False),
-            ('total_land_cost', None, False, True),
+            ('land_costs', 0, False, False),
+            ('revenue_based_adjustment_to_land_rent', 0, False, False),
+            ('adjusted_land_rent', 0, False, True),
+            ('owned_land_cost', 0, False, False),
+            ('total_land_cost', 0, False, True),
             ('total_cost', self.farm_year.other_nongrain_expense, False, True),
             ('pretax_amount', (self.farm_year.other_nongrain_income -
                                self.farm_year.other_nongrain_expense), False, True),
-            ('adj_land_rent_per_rented_ac', None, False, True),
-            ('owned_land_cost_per_owned_ac', None, False, True),
+            ('adj_land_rent_per_rented_ac', 0, False, True),
+            ('owned_land_cost_per_owned_ac', 0, False, True),
         ]
+        self.rowdict = {r[0]: r[1] for r in self.ROWS}
 
         for fc in self.farm_crops:
             fc.get_crop_ins_prems()
@@ -272,6 +273,7 @@ class BudgetTable(object):
         """
         Make the ($000) budget table rows
         """
+        self.ROWS
         headers, ncols = self.get_headers(kd=True)
         results = [(n, self.getrow(row, 'kd')) for n, row in
                    zip(self.row_labels[:-2], self.ROWS[:-2])]
@@ -338,16 +340,16 @@ class BudgetTable(object):
         """
         Perform totalling scaling and text formatting for a table row
         """
-        name, other, no_totcol, dollarsign = props
+        name, _, no_totcol, dollarsign = props
         items = self.data[name]
         ds = '$' if dollarsign else ''
         if scaling == 'kd':
-            cols = [ds + f'{val/1000:,.0f}' for val in items]
-            cols.append('' if other is None else ds + f'{other/1000:,.0f}')
-            totval = sum(items) if specialtot is None else specialtot
+            cols = [ds + f'{val/1000:,.0f}' for val in items[:-1]]
+            cols.append('' if items[-1] == 0 else ds + f'{items[-1]/1000:,.0f}')
+            totval = sum(items[:-1]) if specialtot is None else specialtot
             cols.append(
                 '' if no_totcol else
-                ds + f'{(totval + (0 if other is None else other))/1000:,.0f}')
+                ds + f'{(totval + items[-1])/1000:,.0f}')
         elif scaling == 'pa':
             cols = [ds + f'{val/ac:,.0f}' for val, ac in zip(items, self.acres)]
         elif scaling == 'pb':
@@ -507,6 +509,10 @@ class BudgetTable(object):
         self.data['owned_land_cost_per_owned_ac'] = [
             (0 if oa == 0 else olc * 1000 / oa) for olc, oa in
             zip(self.data['owned_land_cost'], self.owned_acres)]
+
+        # append 'other' value
+        for k, v in self.data.items():
+            v.append(self.rowdict[k])
 
 
 class RevenueDetails:
