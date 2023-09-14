@@ -16,6 +16,7 @@ from .farm_year import FarmYear
 FS = 8             # regular fontsize
 HFS = FS+2           # header fontsize
 BP = 1             # default bottom padding
+ULBP = 2           # bottom padding for underlined cells
 HBP = 4            # header bottom padding
 LRBP = 4           # last row bottom padding
 HP = 3             # default horizontal padding
@@ -104,7 +105,8 @@ class BudgetPdf(object):
         def make_header(canvas, doc):
             title = f'IFBT {budget_type}'
             today = datetime.now().strftime('%m/%d/%Y')
-            subtitle = f'For {farm_name}, {crop_year} crop year on {today}'
+            subtitle = f'For {farm_name}, {crop_year} crop year'
+            footer = f'Printed {today}'
             page_height, page_width = canvas._pagesize
             canvas.saveState()
             canvas.setLineWidth(5)
@@ -114,6 +116,8 @@ class BudgetPdf(object):
             # canvas.drawCentredString(page_height/2, (.5*inch+14), title)
             canvas.setFont('Helvetica', 12)
             canvas.drawCentredString(page_height/2, page_width-(.5*inch+28), subtitle)
+            canvas.setFont('Helvetica', 10)
+            canvas.drawString(50, 25, footer)
             # canvas.drawCentredString(page_height/2, (.5*inch+28), subtitle)
             # canvas.line(66, 72, 66, page_height-72)
             canvas.restoreState()
@@ -159,8 +163,10 @@ class BudgetPdf(object):
         for r in bolddata:
             revsty.append(('FONT', (1, r+3), (-1, r+3), self.fontbold, FS, FS))
         for r in overline:
-            revsty.append(('LINEABOVE', (1, r+3), (cropcols, r+3), UL, BK))
-            revsty.append(('LINEABOVE', (cropcols+2, r+3), (cropcols+2, r+3), UL, BK))
+            revsty.append(('LINEBELOW', (1, r+3), (cropcols, r+3), UL, BK))
+            revsty.append(('BOTTOMPADDING', (1, r+3), (cropcols, r+3), ULBP))
+            revsty.append(('LINEBELOW', (cropcols+2, r+3), (cropcols+2, r+3), UL, BK))
+            revsty.append(('BOTTOMPADDING', (cropcols+2, r+3), (cropcols+2, r+3), ULBP))
         return revsty
 
     def get_rev_rowheights(self):
@@ -226,6 +232,7 @@ class BudgetPdf(object):
             ('SPAN', (0, 0), (-1, 0)),
             ('ALIGN', (0, 0), (-1, 0), 'CENTER'),
             ('LINEBELOW', (0, 0), (-1, 0), UL, BK),
+            ('BOTTOMPADDING', (0, 0), (-1, 0), ULBP),
             # bold, left-aligned row labels
             ('FONT', (0, 0), (0, -1), self.fontbold, FS, FS),
             ('ALIGN', (1, 0), (0, -1), 'LEFT'),
@@ -255,6 +262,7 @@ class BudgetPdf(object):
             ('SPAN', (0, 0), (-1, 0)),
             ('ALIGN', (0, 0), (-1, 0), 'CENTER'),
             ('LINEBELOW', (0, 0), (-1, 0), UL, BK),
+            ('BOTTOMPADDING', (0, 0), (-1, 0), ULBP),
             # bold, left-aligned row labels
             ('FONT', (0, 0), (0, -1), self.fontbold, FS, FS),
             ('ALIGN', (1, 0), (0, -1), 'LEFT'),
@@ -322,7 +330,8 @@ class BudgetPdf(object):
         rows.append([self.key_cropins[0][0]] + ([''] * len(self.key_cropins[0][1])))
         rows += [[lbl] + data for lbl, data in self.key_cropins[1:]]
         style = self.get_common_key_sty()
-        style.append(('LINEABOVE', (-1, -1), (-1, -1), UL, BK))
+        style.append(('LINEBELOW', (-1, -2), (-1, -2), UL, BK))
+        style.append(('BOTTOMPADDING', (-1, -2), (-1, -2), ULBP))
         return Table(rows, hAlign='CENTER', style=style,
                      rowHeights=self.get_key_rowheights(rows))
 
@@ -406,7 +415,8 @@ class BudgetPdf(object):
         style.append(('ALIGN', (0, 0), (0, -1), 'LEFT'))
         # add special formatting
         for r in self.budget_format['ol']:
-            style.append(('LINEABOVE', (1, r+2), (-1, r+2), UL, BK))
+            style.append(('LINEBELOW', (1, r+1), (-1, r+1), UL, BK))
+            style.append(('BOTTOMPADDING', (1, r+1), (-1, r+1), ULBP))
         for r in self.budget_format['bh']:
             style.append(('FONT', (0, r+2), (0, r+2), self.fontbold, FS, FS))
         for r in self.budget_format['bd']:
@@ -426,7 +436,8 @@ class BudgetPdf(object):
             # ('LINEBELOW', (0, 1), (-1, 1), UL, BK),
         ]
         for r in self.budget_format['ol']:
-            style.append(('LINEABOVE', (0, r+2), (-1, r+2), UL, BK))
+            style.append(('LINEBELOW', (0, r+1), (-1, r+1), UL, BK))
+            style.append(('BOTTOMPADDING', (0, r+1), (-1, r+1), ULBP))
         return Table(rows, hAlign='LEFT', style=style,
                      rowHeights=self.get_bt_rowheights())
 
@@ -441,7 +452,8 @@ class BudgetPdf(object):
             # ('LINEBELOW', (0, 1), (-1, 1), UL, BK),
         ]
         for r in self.budget_format['ol']:
-            style.append(('LINEABOVE', (0, r+2), (-1, r+2), UL, BK))
+            style.append(('LINEBELOW', (0, r+1), (-1, r+1), UL, BK))
+            style.append(('BOTTOMPADDING', (0, r+1), (-1, r+1), ULBP))
         return Table(rows, hAlign='LEFT', style=style,
                      rowHeights=self.get_bt_rowheights())
 
@@ -456,7 +468,8 @@ class BudgetPdf(object):
             # ('LINEBELOW', (0, 1), (-1, 1), UL, BK),
         ]
         for r in self.budget_format['ol']:
-            style.append(('LINEABOVE', (0, r+2), (-1, r+2), UL, BK))
+            style.append(('LINEBELOW', (0, r+1), (-1, r+1), UL, BK))
+            style.append(('BOTTOMPADDING', (0, r+1), (-1, r+1), ULBP))
         return Table(rows, hAlign='LEFT', style=style,
                      rowHeights=self.get_bt_rowheights())
 

@@ -92,8 +92,6 @@ class BudgetManager(object):
             cur_headers = set(zip(*cur_headers))
             base_headers = bt['base']['tables']['pa'][0]
             base_headers = set(zip(*base_headers))
-            print(f'{cur_headers=}')
-            print(f'{base_headers=}')
             if (cur_headers != base_headers):
                 return None
         except Exception:
@@ -157,10 +155,10 @@ class BudgetTable(object):
             'Light vehicle', 'Mach. Depreciation', 'Total Power Costs', 'Hired Labor',
             'Building repair and rent', 'Building depreciation', 'Insurance', 'Misc.',
             'Interest (non-land)', 'Other Costs', 'Total Overhead Costs',
-            'Total Non-Land Costs', 'Yield Based Adjustment to Non-Land Costs',
+            'Non-Land Costs', 'Yield Based Adj. to Non-Land Costs',
             'Total Adjusted Non-Land Costs', 'Operator and Land Return',
-            'Rented Land Costs', 'Revenue Based Adjustment to Land Rent',
-            'Adjusted Land Rent', 'Owned Land Cost (incl. principal payments)',
+            'Rented Land Costs', 'Revenue Based Adj. to Land Rent',
+            'Adjusted Land Rent', 'Owned Land Cost (incl. princ. pmts.)',
             'Total Land Costs', 'Total Costs', 'PRE-TAX CASH FLOW',
             'Adj. Land Rent / Rented Ac.', 'Owned Land Cost / Owned Ac.'
         ]
@@ -197,7 +195,8 @@ class BudgetTable(object):
             ('other_costs', self.farm_year.other_nongrain_expense, False, False),
             ('total_overhead_costs', self.farm_year.other_nongrain_expense,
              False, True),
-            ('total_nonland_costs', self.farm_year.other_nongrain_expense, False, True),
+            ('total_nonland_costs', self.farm_year.other_nongrain_expense,
+             False, False),
             ('yield_adj_to_nonland_costs', 0, False, False),
             ('total_adj_nonland_costs', self.farm_year.other_nongrain_expense,
              False, True),
@@ -326,10 +325,12 @@ class BudgetTable(object):
         vals = [[self.data[row[0]][i] for i in ixs]
                 for row in self.ROWS[:-2]]
         acres = [self.acres[i] for i in ixs]
+        dss = [row[3] for row in self.ROWS[:-2]]
         headers = [['', ''], ['$(000)', '$/acre']]
-        results = [[f'${sum(pair)/1000:,.0f}',
-                    f'${sum((v/a for v, a in zip(pair, acres))):,.0f}']
-                   for pair in vals]
+        results = [[add_ds(f'{sum(pair)/1000:,.0f}', no_ds=not ds),
+                    add_ds(f'{sum((v/a for v, a in zip(pair, acres))):,.0f}',
+                           no_ds=not ds)]
+                   for pair, ds in zip(vals, dss)]
         footer = [['']*2 for i in range(2)]
         results += footer
         for b in self.blank_before_rows[-1::-1]:
@@ -342,18 +343,20 @@ class BudgetTable(object):
         """
         name, _, no_totcol, dollarsign = props
         items = self.data[name]
-        ds = '$' if dollarsign else ''
         if scaling == 'kd':
-            cols = [ds + f'{val/1000:,.0f}' for val in items[:-1]]
-            cols.append('' if items[-1] == 0 else ds + f'{items[-1]/1000:,.0f}')
+            cols = [add_ds(f'{val/1000:,.0f}', no_ds=not dollarsign)
+                    for val in items[:-1]]
+            cols.append('' if items[-1] == 0 else
+                        add_ds(f'{items[-1]/1000:,.0f}', no_ds=not dollarsign))
             totval = sum(items[:-1]) if specialtot is None else specialtot
             cols.append(
                 '' if no_totcol else
-                ds + f'{(totval + items[-1])/1000:,.0f}')
+                add_ds(f'{(totval + items[-1])/1000:,.0f}', no_ds=not dollarsign))
         elif scaling == 'pa':
-            cols = [ds + f'{val/ac:,.0f}' for val, ac in zip(items, self.acres)]
+            cols = [add_ds(f'{val/ac:,.0f}', no_ds=not dollarsign)
+                    for val, ac in zip(items, self.acres)]
         elif scaling == 'pb':
-            cols = [ds + f'{val/bu:,.2f}'
+            cols = [add_ds(f'{val/bu:,.2f}', no_ds=not dollarsign)
                     for val, bu in zip(items, self.bushels)]
         else:  # get raw numbers
             cols = items[:]
@@ -546,13 +549,13 @@ class RevenueDetails:
              True, 1, False),
             ('Contracted Futures (000s bu)', 'contracted_futures',
              True, 1, False),
-            ('Uncontracted (Oversold) Futures (000s bu)', 'uncontracted_futures',
+            ('Uncontracted Futures (000s bu)', 'uncontracted_futures',
              True, 1, False),
             ('Total Sensitized Production (000s)', 'production_bushels',
              True, 1, False),
             ('Contracted Basis (000s bu)', 'contracted_basis_qty',
              True, 1, False),
-            ('Uncontracted (Oversold) Basis (000s bu)', 'uncontracted_basis_qty',
+            ('Uncontracted Basis (000s bu)', 'uncontracted_basis_qty',
              True, 1, False),
             ('Total Sensitized Production (000s)', 'production_bushels',
              True, 1, False),
@@ -562,7 +565,7 @@ class RevenueDetails:
              False, 2, True),
             ('Average Basis Contract Price', 'avg_basis_contract_prices',
              False, 2, True),
-            ('Assumed Basis on Remaining Basis Contracts', 'assumed_basis_on_remaining',
+            ('Assumed Basis on Remaining', 'assumed_basis_on_remaining',
              False, 2, True),
             ('Futures', 'contracted_futures_revenue',
              True, 0, True),
@@ -584,7 +587,7 @@ class RevenueDetails:
 
         self.SECTION_TITLES = [
             ('Contracted Revenue ($000)', 13),
-            ('Uncontracted (Oversold) Revenue ($000)', 16),
+            ('Uncontracted Revenue ($000)', 16),
         ]
 
         self.BLANK_ROWS = [0, 3, 6, 9, 11, 13, 17, 21]
@@ -610,12 +613,12 @@ class RevenueDetails:
         rows = []
         for title, var, tot, rd, ds in self.ROWS:
             fmt = '{:,.' + str(rd) + 'f}'
-            dss = '$' if ds else ''
             nums = []
             nums[:] = self.data[var]
-            row = [dss + fmt.format(num) for num in nums]
+            row = [add_ds(fmt.format(num), no_ds=not ds) for num in nums]
             row.append('')  # spacer to align with budget
-            row.append((dss + fmt.format(sum(nums))) if tot else '')
+            row.append(add_ds(fmt.format(sum(nums)), no_ds=not ds)
+                       if tot else '')
             rows.append((title, row))
         for t, ir in titles[-1::-1]:
             rows.insert(ir, t)
@@ -890,3 +893,9 @@ class KeyData(object):
             rows.append(('Estimated MYA Price', [f'${mya:.2f}' for mya in smyas]))
         colspan = len(cropnames) + 1
         return {'rows': rows, 'colspan': colspan}
+
+
+# Dollar sign helper
+def add_ds(text, no_ds=False):
+    return (text if no_ds else
+            f'-${text[1:]}' if text[0] == '-' else f'${text}')
