@@ -138,7 +138,7 @@ LOGGING = {
             "class": "logging.StreamHandler",
         },
         "file": {
-            "level": "ERROR",
+            "level": "WARNING",
             "class": "logging.FileHandler",
             "filename": BASE_DIR / 'debug.log',
         },
@@ -146,10 +146,10 @@ LOGGING = {
     "loggers": {
         "django": {
             "handlers": ["file", "console"],
-            "level": "ERROR",
+            "level": "WARNING",
             "propagate": True,
         },
     },
 }
 
-from .settings_local import *
+from .settings_local import *  # noqa
