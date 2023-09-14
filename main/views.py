@@ -1,3 +1,7 @@
+"""
+Note: Views for which the 'Dashboard' link should appear in the top nav must ensure
+that farmyear_id is in the context.
+"""
 import datetime
 import json
 from django.shortcuts import render, get_object_or_404, redirect
@@ -21,6 +25,15 @@ from .forms import (FarmYearCreateForm, FarmYearUpdateForm, FarmCropUpdateForm,
                     MarketCropUpdateForm)
 
 
+def ensure_same_user(farm_year, request, actionmsg, objmsg):
+    """ Prevent a malicious user from viewing or tampering with another user's data """
+    msg = "%s: %s another user's %s is not permitted."
+    if isinstance(farm_year, int):
+        farm_year = get_object_or_404(FarmYear, pk=farm_year)
+    if not request.user == farm_year.user:
+        raise PermissionDenied(msg % (request.user.username, actionmsg, objmsg))
+
+
 def index(request):
     return render(request, 'main/index.html')
 
@@ -30,40 +43,17 @@ def farmyears(request):
     return render(request, 'main/farmyears.html', {'farm_years': farm_years})
 
 
-class BudgetPdfView(View):
-    """
-    Expect URL of the form: downloadbudget/23/?b=1
-    (b=0: current budget, b=1: baseline, b=2: variance)
-    """
-    def get(self, request, *args, **kwargs):
-        farm_year = kwargs['farmyear']
-        budgettype = request.GET.get('b', 0)
-        buffer = BudgetPdf(farm_year, budgettype).create()
-        return FileResponse(buffer, as_attachment=True, filename="Budget.pdf")
-
-
-class FarmYearConfirmBaselineUpdate(View):
-    def get(self, request, *args, **kwargs):
-        farm_year_id = kwargs['farmyear']
-        return render(request, 'main/farmyear_confirm_baseline_update.html',
-                      {'farmyear_id': farm_year_id})
-
-
-class FarmYearUpdateBaselineView(View):
-    def post(self, request, *args, **kwargs):
-        farm_year_id = request.POST['farmyear']
-        farm_year = get_object_or_404(FarmYear, pk=farm_year_id)
-        farm_year.update_baseline()
-        return redirect(reverse('dashboard', args=[farm_year_id]))
-
-
 class FarmYearDashboard(DetailView):
     model = FarmYear
     template_name = 'main/dashboard.html'
 
+    def get(self, request, *args, **kwargs):
+        ensure_same_user(self.get_object(), request, "Viewing", "dashboard")
+        return super().get(request, *args, **kwargs)
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['farmyear_id'] = self.kwargs['pk']
+        context['farmyear_id'] = self.kwargs.get('pk', None)
         return context
 
 
@@ -76,6 +66,7 @@ class FarmYearCreateView(CreateView):
         return reverse('farmyears')
 
     def form_valid(self, form):
+        # don't put custom logic in delete() handler do this instead
         form.instance.user = self.request.user
         return super().form_valid(form)
 
@@ -109,18 +100,30 @@ class FarmYearDeleteView(DeleteView):
     model = FarmYear
     success_url = reverse_lazy('farmyears')
 
-    def delete(request, *args, **kwargs):
-        farm_year_id = int(request.POST['id'])
-        fy = FarmYear.objects.get(pk=farm_year_id)
-        if not request.user.is_superuser and request.user != fy.user:
-            raise PermissionDenied("Only an admin can delete another user's farm.")
-        super().delete(request, *args, **kwargs)
+    def get(self, request, *args, **kwargs):
+        ensure_same_user(self.get_object(), request, "Deleting", "farm year")
+        return super().get(request, *args, **kwargs)
+
+    def form_valid(self, form):
+        # don't put custom logic in delete() handler do this instead
+        form.instance.user = self.request.user
+        return super().form_valid(form)
 
 
 class FarmYearUpdateView(UpdateView):
     form_class = FarmYearUpdateForm
     model = FarmYear
     template_name = 'main/farmyear_update_form.html'
+
+    def get(self, request, *args, **kwargs):
+        farmyear = self.get_object()
+        ensure_same_user(farmyear, request, "Updating", "farm year")
+        return super().get(request, *args, **kwargs)
+
+    def post(self, request, *args, **kwargs):
+        farmyear = self.get_object()
+        ensure_same_user(farmyear, request, "Updating", "farm year")
+        return super().post(request, *args, **kwargs)
 
     def get_success_url(self):
         return reverse_lazy('farmyear_detail', args=[self.get_object().pk])
@@ -134,18 +137,27 @@ class FarmYearUpdateView(UpdateView):
 class FarmYearDetailView(DetailView):
     model = FarmYear
 
+    def get(self, request, *args, **kwargs):
+        ensure_same_user(self.get_object(), request, "Viewing", "farm details")
+        return super().get(request, *args, **kwargs)
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['farmyear_id'] = self.get_object().pk
+        context['farmyear_id'] = context['object'].pk
         return context
 
 
 class FarmYearFarmCropListView(ListView):
     template_name = 'main/farmcrops_for_farmyear.html'
 
+    def get(self, request, *args, **kwargs):
+        ensure_same_user(self.kwargs.get('farmyear', None), request,
+                         "Viewing", "farm crops")
+        return super().get(request, *args, **kwargs)
+
     def get_queryset(self):
-        self.farmyear = get_object_or_404(FarmYear, pk=self.kwargs['farmyear'])
-        return FarmCrop.objects.filter(farm_year=self.farmyear)
+        return FarmCrop.objects.filter(
+            farm_year=self.kwargs.get('farmyear', None))
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -156,22 +168,31 @@ class FarmYearFarmCropListView(ListView):
 class FarmYearFarmBudgetCropListView(ListView):
     template_name = 'main/farmbudgetcrops_for_farmyear.html'
 
+    def get(self, request, *args, **kwargs):
+        ensure_same_user(self.kwargs.get('farmyear', None), request,
+                         "Viewing", "farm budget crops")
+        return super().get(request, *args, **kwargs)
+
     def get_queryset(self):
-        self.farmyear = get_object_or_404(FarmYear, pk=self.kwargs['farmyear'])
-        return FarmBudgetCrop.objects.filter(farm_year=self.farmyear)
+        return FarmBudgetCrop.objects.filter(
+            farm_year=self.kwargs.get('farmyear', None))
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['farmyear'] = context['farmyear_id'] = self.kwargs['farmyear']
+        context['farmyear'] = context['farmyear_id'] = self.kwargs.get('farmyear', None)
         return context
 
 
 class FarmYearMarketCropListView(ListView):
     template_name = 'main/marketcrops_for_farmyear.html'
 
+    def get(self, request, *args, **kwargs):
+        ensure_same_user(self.kwargs.get('farmyear', None), request,
+                         "Viewing", "market crops")
+        return super().get(request, *args, **kwargs)
+
     def get_queryset(self):
-        self.farmyear = get_object_or_404(FarmYear, pk=self.kwargs['farmyear'])
-        return MarketCrop.objects.filter(farm_year=self.farmyear)
+        return MarketCrop.objects.filter(farm_year=self.kwargs.get('farmyear', None))
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -185,19 +206,33 @@ class FarmYearMarketCropListView(ListView):
 class FarmYearFsaCropListView(ListView):
     template_name = 'main/fsacrops_for_farmyear.html'
 
+    def get(self, request, *args, **kwargs):
+        ensure_same_user(self.kwargs.get('farmyear', None), request,
+                         "Viewing", "fsa crops")
+        return super().get(request, *args, **kwargs)
+
     def get_queryset(self):
-        self.farmyear = get_object_or_404(FarmYear, pk=self.kwargs['farmyear'])
-        return FsaCrop.objects.filter(farm_year=self.farmyear)
+        farmyear = get_object_or_404(FarmYear, pk=self.kwargs.get('farmyear', None))
+        return FsaCrop.objects.filter(farm_year=farmyear)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['farmyear_id'] = self.kwargs['farmyear']
+        context['farmyear_id'] = self.kwargs.get('farmyear', None)
         return context
 
 
 class FarmCropUpdateView(UpdateView):
     model = FarmCrop
     form_class = FarmCropUpdateForm
+
+    def get(self, request, *args, **kwargs):
+        ensure_same_user(self.get_object().farm_year, request,
+                         "Updating", "farm crops")
+        return super().get(request, *args, **kwargs)
+
+    def post(self, request, *args, **kwargs):
+        ensure_same_user(self.get_object().farm_year, request, "Updating", "farm crops")
+        return super().post(request, *args, **kwargs)
 
     def get_success_url(self):
         return reverse_lazy('farmcrop_list', args=[self.get_object().farm_year_id])
@@ -210,6 +245,16 @@ class FarmCropUpdateView(UpdateView):
 
 class FarmBudgetCropUpdateView(UpdateView):
     model = FarmBudgetCrop
+
+    def get(self, request, *args, **kwargs):
+        ensure_same_user(self.get_object().farm_year, request,
+                         "Updating", "farm budget crops")
+        return super().get(request, *args, **kwargs)
+
+    def post(self, request, *args, **kwargs):
+        ensure_same_user(self.get_object().farm_year, request,
+                         "Updating", "farm budget crops")
+        return super().post(request, *args, **kwargs)
 
     def get_form_class(self):
         fbc = self.get_form_kwargs()['instance']
@@ -231,6 +276,16 @@ class MarketCropUpdateView(UpdateView):
     form_class = MarketCropUpdateForm
     template_name_suffix = "_update_form"
 
+    def get(self, request, *args, **kwargs):
+        ensure_same_user(self.get_object().farm_year, request,
+                         "Updating", "market crops")
+        return super().get(request, *args, **kwargs)
+
+    def post(self, request, *args, **kwargs):
+        ensure_same_user(self.get_object().farm_year, request,
+                         "Updating", "market crops")
+        return super().post(request, *args, **kwargs)
+
     def get_success_url(self):
         return reverse_lazy('marketcrop_list', args=[self.get_object().farm_year_id])
 
@@ -245,6 +300,14 @@ class FsaCropUpdateView(UpdateView):
     template_name_suffix = "_update_form"
     fields = ['plc_base_acres', 'arcco_base_acres', 'plc_yield', ]
 
+    def get(self, request, *args, **kwargs):
+        ensure_same_user(self.get_object().farm_year, request, "Updating", "fsa crops")
+        return super().get(request, *args, **kwargs)
+
+    def post(self, request, *args, **kwargs):
+        ensure_same_user(self.get_object().farm_year, request, "Updating", "fsa crops")
+        return super().post(request, *args, **kwargs)
+
     def get_success_url(self):
         return reverse_lazy('fsacrop_list', args=[self.get_object().farm_year_id])
 
@@ -257,26 +320,65 @@ class FsaCropUpdateView(UpdateView):
 class DetailedBudgetView(TemplateView):
     template_name = 'main/detailed_budget.html'
 
+    def get(self, request, *args, **kwargs):
+        ensure_same_user(kwargs.get('farmyear', None), request, "Viewing", "budgets")
+        return super().get(request, *args, **kwargs)
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        farmyear = kwargs.get('farmyear', None)
-        bm = BudgetManager(farmyear)
+        farm_year = get_object_or_404(FarmYear, pk=kwargs.get('farmyear', None))
+        bm = BudgetManager(farm_year)
         budgets = bm.update_budget_text()
         context['cur'] = budgets['cur']
         context['base'] = budgets['base']
         context['var'] = budgets['var']
-        context['farmyear_id'] = farmyear
+        context['farmyear_id'] = farm_year.pk
         return context
+
+
+class FarmYearConfirmBaselineUpdate(View):
+    def get(self, request, *args, **kwargs):
+        farm_year_id = kwargs.get('farmyear', None)
+        ensure_same_user(farm_year_id, request, "Updating", "baseline budget")
+        return render(request, 'main/farmyear_confirm_baseline_update.html',
+                      {'farmyear_id': farm_year_id})
+
+
+class FarmYearUpdateBaselineView(View):
+    def post(self, request, *args, **kwargs):
+        farm_year_id = request.POST.get('farmyear', None)
+        farm_year = get_object_or_404(FarmYear, pk=farm_year_id)
+        ensure_same_user(farm_year, request, "Updating", "baseline budget")
+        farm_year.update_baseline()
+        return redirect(reverse('dashboard', args=[farm_year_id]))
+
+
+class BudgetPdfView(View):
+    """
+    Expect URL of the form: downloadbudget/23/?b=1
+    (b=0: current budget, b=1: baseline, b=2: variance)
+    """
+    def get(self, request, *args, **kwargs):
+        farm_year = get_object_or_404(FarmYear, pk=kwargs.get('farmyear', None))
+        ensure_same_user(farm_year, request, "Printing", "budget")
+        budgettype = request.GET.get('b', 0)
+        buffer = BudgetPdf(farm_year, budgettype).create()
+        return FileResponse(buffer, as_attachment=True, filename="Budget.pdf")
 
 
 class SensitivityTableView(TemplateView):
     template_name = 'main/sensitivity_table.html'
 
+    def get(self, request, *args, **kwargs):
+        ensure_same_user(kwargs.get('farmyear', None), request, "Viewing",
+                         "sensitivity tables")
+        return super().get(request, *args, **kwargs)
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        farmyear = kwargs.get('farmyear', None)
-        st = SensTable(farmyear)
+        farm_year = get_object_or_404(FarmYear, pk=kwargs.get('farmyear', None))
+        st = SensTable(farm_year)
         context['info'] = st.get_info()
         context['tables'] = st.get_all_tables()
-        context['farmyear_id'] = farmyear
+        context['farmyear_id'] = farm_year.pk
         return context
