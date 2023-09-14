@@ -176,7 +176,7 @@ class BudgetTable(object):
             ('storage', 0, False, False),
             ('crop_ins_prems', 0, False, False),
             ('other_direct_costs', 0, False, False),
-            ('total_direct_costs', 0, False, False),
+            ('total_direct_costs', 0, False, True),
             ('machine_hire_lease', 0, False, False),
             ('utilities', 0, False, False),
             ('machine_repair', 0, False, False),
