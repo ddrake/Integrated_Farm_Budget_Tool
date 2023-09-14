@@ -1,4 +1,3 @@
-from .farm_year import FarmYear
 from .market_crop import MarketCrop
 
 
@@ -17,9 +16,8 @@ class BudgetManager(object):
        print it, display the variance or baseline and print that without having to
        recompute anything.
     """
-    def __init__(self, farm_year_id):
-        self.farm_year_id = farm_year_id
-        self.farm_year = FarmYear.objects.get(pk=farm_year_id)
+    def __init__(self, farm_year):
+        self.farm_year = farm_year
         self.budget_table = None
         self.key_data = None
 
@@ -57,9 +55,9 @@ class BudgetManager(object):
         Also construct the values dict and save in farmyear.current_budget_data
         """
         cur_budget = {}
-        bt = BudgetTable(self.farm_year_id)
+        bt = BudgetTable(self.farm_year)
         rd = bt.revenue_details
-        kd = KeyData(self.farm_year_id)
+        kd = KeyData(self.farm_year)
 
         cur_budget['rev'] = rd.get_rows()
         cur_budget['revfmt'] = rd.get_formats()
@@ -105,10 +103,10 @@ class BudgetManager(object):
         cr = cur['revenue']
         cb = cur['budget']
         # Generate variance budget
-        varbt = BudgetTable(self.farm_year_id, revenue_data=getvar(br, cr),
+        varbt = BudgetTable(self.farm_year, revenue_data=getvar(br, cr),
                             budget_data=getvar(bb, cb))
         rd = varbt.revenue_details
-        kd = KeyData(self.farm_year_id)
+        kd = KeyData(self.farm_year)
 
         var_budget = {}
         var_budget['rev'] = rd.get_rows()
@@ -126,15 +124,15 @@ class BudgetTable(object):
     per bushel (pb), and if the farm has wheat/dc beans, a dc beans table in (kd)
     """
 
-    def __init__(self, farm_year_id, revenue_data=None, budget_data=None):
+    def __init__(self, farm_year, revenue_data=None, budget_data=None):
         """
         Optional revenue_data and budget_data for computing variance
         Get a queryset of all farm crops with budgets for the farm year
           ordered by farm_crop_type.  If no farm crops have budgets, return None.
           The view should check for None, and show a message about adding budgets.
         """
-        self.farm_year = FarmYear.objects.get(pk=farm_year_id)
-        self.revenue_details = RevenueDetails(farm_year_id, data=revenue_data)
+        self.farm_year = farm_year
+        self.revenue_details = RevenueDetails(farm_year, data=revenue_data)
         # numerical data used in budgets (dict of lists)
         self.data = budget_data
         # Some budget values are computed using revenue detail data
@@ -523,10 +521,10 @@ class RevenueDetails:
     Generates data and a nested list structure (table rows) for a Grain Revenue
     buildup table to be included with the Detailed Budget
     """
-    def __init__(self, farm_year_id, data=None):
+    def __init__(self, farm_year, data=None):
         """ optional data argument for variance budget computation """
 
-        self.farm_year = FarmYear.objects.get(pk=farm_year_id)
+        self.farm_year = farm_year
 
         self.data = data
 
@@ -691,12 +689,12 @@ class KeyData(object):
     """
     Generates Key Data tables associated with current budget
     """
-    def __init__(self, farm_year_id, for_sens_table=False):
+    def __init__(self, farm_year, for_sens_table=False):
         """
         In the context of the sensitivity table, data related to global yield and price
         factors would be confusing so we customize based on for_sens_table.
         """
-        self.farm_year = FarmYear.objects.get(pk=farm_year_id)
+        self.farm_year = farm_year
         self.for_sens_table = for_sens_table
         self.model_run = self.farm_year.get_model_run_date()
         self.farm_crops = [fc for fc in self.farm_year.farm_crops
@@ -705,7 +703,7 @@ class KeyData(object):
         self.market_crops = [MarketCrop.objects.get(pk=pk)
                              for pk in self.market_crop_ids]
         self.market_crops_all = list(MarketCrop.objects.
-                                     filter(farm_year=farm_year_id).all())
+                                     filter(farm_year=farm_year).all())
         self.fsa_crops = [fsc for fsc in self.farm_year.fsa_crops.all()]
         self.farm_crop_names = [
             str(fc.farm_crop_type).replace('Winter', 'W').replace('Spring', 'S')

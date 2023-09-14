@@ -10,8 +10,6 @@ from reportlab.platypus.doctemplate import (PageTemplate, BaseDocTemplate,
 from reportlab.platypus.frames import Frame
 from reportlab.platypus.tables import Table
 
-from .farm_year import FarmYear
-
 # Global constants
 FS = 8             # regular fontsize
 HFS = FS+2           # header fontsize
@@ -28,9 +26,8 @@ BK = colors.black
 
 
 class BudgetPdf(object):
-    def __init__(self, farm_year_id, budget_type):
-        self.farm_year_id = farm_year_id
-        self.farm_year = FarmYear.objects.get(pk=farm_year_id)
+    def __init__(self, farm_year, budget_type):
+        self.farm_year = farm_year
         self.budget_type = budget_type
 
         budget_text = self.farm_year.budget_text[budget_type]
