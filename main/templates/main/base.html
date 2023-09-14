@@ -41,12 +41,70 @@
               My Farm Years
             </a>
             {% if farmyear_id %}
-            <a
-              href="{% url 'dashboard' pk=farmyear_id %}"
-              class="block mt-4 sm:inline-block sm:mt-0 text-teal-200 hover:text-white text-lg mr-4"
-            >
-              Dashboard
-            </a>
+            <div class="inline-block w-36 group relative cursor-pointer">
+              <div class="flex items-center space-x-1 bg-gray-800 px-0">
+                <a
+                  href="{% url 'dashboard' pk=farmyear_id %}"
+                  class="menu-hover my-1 text-lg font-medium text-teal-200  hover:text-white mx-1"
+                >
+                  Dashboard
+                </a>
+                <span>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke-width="1.5"
+                    stroke="white"
+                    class="h-5 w-5"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      d="M19.5 8.25l-7.5 7.5-7.5-7.5"
+                    />
+                  </svg>
+                </span>
+              </div>
+              <div
+                class="invisible absolute z-50 flex w-full flex-col bg-gray-800 py-1 px-2 text-gray-100 shadow-xl group-hover:visible"
+              >
+                <span
+                  class="my-1.5 block border-b border-gray-800 py-0 font-normal text-gray-300  mx-0.5 leading-tight"
+                  >Inputs</span >
+                <a
+                  href="{% url 'farmyear_detail' pk=farmyear_id %}"
+                  class="my-1.5 block border-b border-gray-800 py-0 font-normal text-teal-200  hover:text-white mx-0.5 leading-tight"
+                  >Farm Specific Data</a>
+                <a
+                  href="{% url 'farmcrop_list' farmyear=farmyear_id %}"
+                  class="my-1.5 block border-b border-gray-800 py-0 font-normal text-teal-200  hover:text-white mx-0.5 leading-tight"
+                  >Crop Acreage / Crop Insurance</a>
+                <a
+                  href="{% url 'farmbudgetcrop_list' farmyear=farmyear_id %}"
+                  class="my-1.5 block border-b border-gray-800 py-0 font-normal text-teal-200  hover:text-white mx-0.5 leading-tight"
+                  >Yield and Expense Budgets</a>
+                <a
+                  href="{% url 'marketcrop_list' farmyear=farmyear_id %}"
+                  class="my-1.5 block border-b border-gray-800 py-0 font-normal text-teal-200  hover:text-white mx-0.5 leading-tight"
+                  >Grain Marketing</a>
+                <a
+                  href="{% url 'fsacrop_list' farmyear=farmyear_id %}"
+                  class="my-1.5 block border-b border-gray-800 py-0 font-normal text-teal-200  hover:text-white mx-0.5 leading-tight"
+                  >Title Elections</a>
+                <span
+                  class="my-1.5 block border-b border-gray-800 py-0 font-normal text-gray-300  mx-0.5 leading-tight"
+                  >Outputs</span>
+                <a
+                  href="{% url 'detailedbudget' farmyear=farmyear_id %}"
+                  class="my-1.5 block border-b border-gray-800 py-0 font-normal text-teal-200  hover:text-white mx-0.5 leading-tight"
+                  >Detailed Budget</a>
+                <a
+                  href="{% url 'sensitivity' farmyear=farmyear_id %}"
+                  class="mt-1.5 mb-0 block border-b border-gray-800 py-0 font-normal text-teal-200  hover:text-white mx-0.5 leading-tight"
+                  >Sensitivity Tables</a>
+              </div>
+            </div>
             {% endif %}
             <a
               href="https://www.youtube.com/playlist?list=PLtK9WRr4peUo7E8guq2992McdADixAh1U"
