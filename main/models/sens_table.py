@@ -9,19 +9,18 @@ depending on farm_crops specified
 import numpy as np
 from numpy import array, zeros
 
-from main.models.farm_year import FarmYear
 from main.models.farm_crop import FarmCrop
 from main.models.market_crop import MarketCrop
 
 
 class SensTable(object):
-    def __init__(self, farm_year_id):
-        self.farm_year = FarmYear.objects.get(pk=farm_year_id)
+    def __init__(self, farm_year):
+        self.farm_year = farm_year
         self.farm_crops = [fc for fc in
-                           FarmCrop.objects.filter(farm_year_id=farm_year_id)
+                           FarmCrop.objects.filter(farm_year=farm_year)
                            if fc.planted_acres > 0 and fc.has_budget]
         self.market_crops = [mc for mc in
-                             MarketCrop.objects.filter(farm_year_id=farm_year_id)
+                             MarketCrop.objects.filter(farm_year=farm_year)
                              if any(fc in self.farm_crops
                                     for fc in mc.farm_crops.all())]
         # price and yield factors
