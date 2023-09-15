@@ -211,7 +211,9 @@ class FarmCrop(models.Model):
     # -------------------------------------------------
     def get_crop_ins_prems(self):
         """
-        Compute and cache premiums if not set; return cached value.
+        Compute and save premiums; return computed value.
+        Note: We're not trying to cache these except to have premiums once the crop year
+        is over.
         """
         self.set_prems()
         self.prems_computed_for = self.farm_year.get_model_run_date()
