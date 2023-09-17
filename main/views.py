@@ -18,7 +18,7 @@ from .models.market_crop import MarketCrop
 from .models.fsa_crop import FsaCrop
 from .models.budget_table import BudgetManager
 from .models.budget_pdf import BudgetPdf
-from .models.sens_table import SensTable
+from .models.sens_table import SensTableGroup
 from ext.models import County
 from .forms import (FarmYearCreateForm, FarmYearUpdateForm, FarmCropUpdateForm,
                     FarmBudgetCropUpdateForm, ZeroAcreFarmBudgetCropUpdateForm,
@@ -377,7 +377,7 @@ class SensitivityTableView(TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         farm_year = get_object_or_404(FarmYear, pk=kwargs.get('farmyear', None))
-        st = SensTable(farm_year)
+        st = SensTableGroup(farm_year)
         context['info'] = st.get_info()
         context['tables'] = st.get_all_tables()
         context['farmyear_id'] = farm_year.pk
