@@ -119,16 +119,19 @@ class FsaCrop(models.Model):
             else MyaPost.get_mya_post_estimate(
                 self.farm_year.crop_year, mrd, self.fsa_crop_type_id, pf=pf))
 
-    def gov_payment(self, sens_mya_price, yf=None):
-        if yf is None:
-            yf = self.yield_factor()
+    def gov_payment(self, sens_mya_price, yf=None, cty_yield=None):
+        if cty_yield is None:
+            if yf is None:
+                yf = self.yield_factor()
+            cty_yield = self.cty_expected_yield(yf=yf)
+
         gp = GovPmt(plc_base_acres=self.plc_base_acres,
                     arcco_base_acres=self.arcco_base_acres, plc_yield=self.plc_yield,
-                    estimated_county_yield=self.cty_expected_yield(yf=yf),
+                    estimated_county_yield=cty_yield,
                     effective_ref_price=self.effective_ref_price,
                     natl_loan_rate=self.natl_loan_rate, sens_mya_price=sens_mya_price,
                     benchmark_revenue=self.benchmark_revenue())
-        return gp.prog_pmt_pre_sequest(yf)
+        return gp.prog_pmt_pre_sequest()
 
     def clean(self):
         field_crop_sco_use = any((fc.sco_use for fc in self.farm_crops()))

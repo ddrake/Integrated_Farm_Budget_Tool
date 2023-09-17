@@ -228,26 +228,33 @@ class FarmYear(models.Model):
                 harv_price_disc_end=harv_price_disc_end,
                 cty_yield_final=cty_yield_final)
 
-    def calc_gov_pmt(self, pf=None, yf=None, is_per_acre=False):
+    def calc_gov_pmt(self, pf=None, yf=None, is_per_acre=False, mya_prices=None,
+                     cty_yields=None):
         """
         Compute the total, capped government payment and cache apportioned values
         in the corresponding FSA crops.
         ALWAYS call this method, before reading the values from the FSA crops, since
         no cache invalidation is performed.
+        If (pre-sensitized) mya_prices are provided, use them.
         """
-        if pf is None:
-            pf = [fc.price_factor() for fc in self.fsa_crops.all()]
-        if yf is None:
-            yf = [fc.yield_factor() for fc in self.fsa_crops.all()]
-        mrd = self.get_model_run_date()
-        if mrd < self.wasde_first_mya_release_on():
-            mya_prices = MyaPreEstimate.get_mya_pre_estimates(
-                self.crop_year, mrd, pf=pf)
+        if mya_prices is None:
+            if pf is None:
+                pf = [fc.price_factor() for fc in self.fsa_crops.all()]
+            mrd = self.get_model_run_date()
+            if mrd < self.wasde_first_mya_release_on():
+                mya_prices = MyaPreEstimate.get_mya_pre_estimates(
+                    self.crop_year, mrd, pf=pf)
+            else:
+                mya_prices = MyaPost.get_mya_post_estimates(
+                    self.crop_year, mrd, pf=pf)
+        if cty_yields is None:
+            if yf is None:
+                yf = [fc.yield_factor() for fc in self.fsa_crops.all()]
+            total = sum((fc.gov_payment(mya_prices[i], yf=yf[i])
+                         for i, fc in enumerate(self.fsa_crops.all())))
         else:
-            mya_prices = MyaPost.get_mya_post_estimates(
-                self.crop_year, mrd, pf=pf)
-        total = sum((fc.gov_payment(mya_prices[i], yf=yf[i])
-                     for i, fc in enumerate(self.fsa_crops.all())))
+            total = sum((fc.gov_payment(mya_prices[i], cty_yield=cty_yields[i])
+                         for i, fc in enumerate(self.fsa_crops.all())))
         total_pmt = round(
             min(FarmYear.FSA_PMT_CAP_PER_PRINCIPAL * self.eligible_persons_for_cap,
                 total * (1 - GovPmt.SEQUEST_FRAC)))
