@@ -167,10 +167,12 @@ class SensTableGroup(object):
         tags = [f"{tag}_{n.lower().replace(' ', '_').replace('/', '_')}"
                 for n in self.croptypenames]
         stc = cs['crop'](self)
-        rslt.update(stc.get_all_formatted(tags, values[:-1, ...], title, subtitle,
+
+        ix = -2 if self.wheatdc else -1
+        rslt.update(stc.get_all_formatted(tags, values[:ix, ...], title, subtitle,
                                           self.croptypenames))
         stf = cs['farm'](self)
-        rslt.update(stf.get_formatted(f"{tag}_farm", values[-2, ...],
+        rslt.update(stf.get_formatted(f"{tag}_farm", values[ix, ...],
                                       f'FARM {title}', subtitle))
         if self.wheatdc:
             stw = cs['wheatdc'](self)
