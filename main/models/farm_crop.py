@@ -215,9 +215,11 @@ class FarmCrop(models.Model):
         Note: We're not trying to cache these except to have premiums once the crop year
         is over.
         """
-        self.set_prems()
-        self.prems_computed_for = self.farm_year.get_model_run_date()
-        self.save()
+        from datetime import datetime
+        if datetime.now().year == self.farm_year.crop_year:
+            self.set_prems()
+            self.prems_computed_for = self.farm_year.get_model_run_date()
+            self.save()
         return self.crop_ins_prems
 
     def prem_price_yield_data(self):
