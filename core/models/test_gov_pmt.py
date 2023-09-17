@@ -78,13 +78,3 @@ class GovPmtAllARCCOTestCase(TestCase):
         pmt = self.govpmt.prog_pmt_pre_sequest()
         expected = 0
         self.assertEqual(pmt, expected)
-
-    def test_with_yf_0_55(self):
-        pmt = self.govpmt.prog_pmt_pre_sequest(yf=0.55)
-        expected = 287350.98
-        self.assertEqual(pmt, expected)
-
-    def test_with_yf_0_7(self):
-        pmt = self.govpmt.prog_pmt_pre_sequest(yf=0.7)
-        expected = 181277.65
-        self.assertEqual(pmt, expected)

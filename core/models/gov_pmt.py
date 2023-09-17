@@ -31,21 +31,23 @@ class GovPmt():
         self.plc_base_acres = plc_base_acres
         self.arcco_base_acres = arcco_base_acres
         self.plc_yield = plc_yield
+        # pre-sensitized county yield
         self.estimated_county_yield = estimated_county_yield
         self.effective_ref_price = effective_ref_price
         self.natl_loan_rate = natl_loan_rate
+        # pre-sensitized mya price
         self.sens_mya_price = sens_mya_price
         self.benchmark_revenue = benchmark_revenue
 
     # Government Payment Totals
     # -------------------------
 
-    def prog_pmt_pre_sequest(self, yf=1):
+    def prog_pmt_pre_sequest(self):
         """
         Government Payments Y56:AA56: Sensitized total pre-sequestration payment
         over both programs.
         """
-        result = round(self.arc_pmt_pre_sequest(yf) +
+        result = round(self.arc_pmt_pre_sequest() +
                        self.plc_pmt_pre_sequest(), 2)
         return result
 
@@ -93,11 +95,11 @@ class GovPmt():
 
     # ARC-CO
     # ------
-    def arc_pmt_pre_sequest(self, yf=1):
+    def arc_pmt_pre_sequest(self):
         """
         Government Payments Y48:AA48: Sensitized ARC payment pre-sequestration.
         """
-        return self.net_payment_acres_arc() * self.arc_pmt_rate(yf)
+        return self.net_payment_acres_arc() * self.arc_pmt_rate()
 
     def net_payment_acres_arc(self):
         """
@@ -105,12 +107,12 @@ class GovPmt():
         """
         return GovPmt.BASE_TO_NET_PMT_FRAC * self.arcco_base_acres
 
-    def arc_pmt_rate(self, yf=1):
+    def arc_pmt_rate(self):
         """
         Government Payments Y44:AA44: Sensitized ARC Payment rate.
         """
         return min(self.arc_capped_bmk_revenue(),
-                   self.revenue_shortfall(yf))
+                   self.revenue_shortfall())
 
     def arc_capped_bmk_revenue(self):
         """
@@ -119,12 +121,12 @@ class GovPmt():
         return (self.arc_bmk_county_revenue() *
                 GovPmt.CAP_ON_BMK_COUNTY_REV)
 
-    def revenue_shortfall(self, yf=1):
+    def revenue_shortfall(self):
         """
         Government Payments Y42:AA42: Sensitized revenue shortfall.
         """
         return max(0, (self.arc_guar_revenue() -
-                       self.actual_crop_revenue(yf)))
+                       self.actual_crop_revenue()))
 
     def arc_bmk_county_revenue(self):
         """
@@ -139,19 +141,10 @@ class GovPmt():
         """
         return (self.arc_bmk_county_revenue() * GovPmt.GUAR_REV_FRAC)
 
-    def actual_crop_revenue(self, yf=1):
+    def actual_crop_revenue(self):
         """
         Government Payments Y41:AA41: price/yield-sensitized actual
         revenue for the crop.
         """
-        return (max(self.sens_mya_price,
-                    self.natl_loan_rate) *
-                self.arc_county_rma_yield(yf))
-
-    def arc_county_rma_yield(self, yf=1):
-        """
-        Government Payments Y40:AA40 -> AR25:AT25: Yield-sensitized County
-        actual/est yield (RMA) for the crop.
-        Note: this is NOT the same as the county_rma_yield in the base class
-        """
-        return self.estimated_county_yield * yf
+        return (max(self.sens_mya_price, self.natl_loan_rate) *
+                self.estimated_county_yield)
