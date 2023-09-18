@@ -93,7 +93,8 @@ class SensTableGroup(object):
 
         self.mya_prices = np.array([[fc.sens_mya_price(pf) for pf in self.pfrange]
                                     for fc in self.fsa_crops])
-        self.mya_pcts = self.mya_prices / self.mya_prices[:, 6].reshape(3, 1)
+        self.mya_pcts = (self.mya_prices /
+                         self.mya_prices[:, 6].reshape(len(self.mya_prices), 1))
 
         self.yields = np.array(
             [[fc.sens_farm_expected_yield(yf) for yf in self.yfrange]
@@ -124,7 +125,16 @@ class SensTableGroup(object):
             if revenue_p.shape == self.revenue_values.shape:
                 self.get_tables(rslt, arrays=(revenue_p, title_p, indem_p,
                                               cost_p, cashflow_p))
-        self.save_sens_data()
+        self.save_sens_data(rslt)
+
+        # delete spanned columns for html
+        for k, v in rslt.items():
+            cs = (SensTableTitle if k[:5] == 'title' else
+                  SensTableStdFarm if k[-4:] == 'farm' else
+                  SensTableStdWheatDC if k[-14:] == 'wheat_dc_beans' else
+                  SensTableStdCrop)
+            cs(self).delete_spanned_cols(v)
+
         return rslt
 
     def get_tables(self, rslt, arrays=None):
@@ -166,9 +176,9 @@ class SensTableGroup(object):
 
         tags = [f"{tag}_{n.lower().replace(' ', '_').replace('/', '_')}"
                 for n in self.croptypenames]
-        stc = cs['crop'](self)
 
         ix = -2 if self.wheatdc else -1
+        stc = cs['crop'](self)
         rslt.update(stc.get_all_formatted(tags, values[:ix, ...], title, subtitle,
                                           self.croptypenames))
         stf = cs['farm'](self)
@@ -206,7 +216,8 @@ class SensTableGroup(object):
                                                 cty_yields=cty_yields)
         self.gov_pmts = [totgovpmt * ac / self.total_acres for ac in self.acres]
 
-    def save_sens_data(self):
+    def save_sens_data(self, rslt):
+        self.farm_year.sensitivity_text = rslt
         alldata = [ar.tolist() for ar in
                    [self.revenue_values, self.title_values, self.indem_values,
                     self.cost_values, self.cashflow_values]]
@@ -370,9 +381,6 @@ class SensTableStdCrop(SensTable):
             full = full.tolist()
             # at this point, full is a triply nested list such that full[row, col]
             # is a list with three elements: value as str, colspan as str, styles as str
-
-            # delete columns which will be spanned over
-            self.delete_spanned_cols(full)
             rslt[tags[i]] = full
         return rslt
 
@@ -538,9 +546,6 @@ class SensTableStdFarm(SensTable):
         full = full.tolist()
         # at this point, full is a triply nested list such that full[row, col]
         # is a list with three elements: value as str, colspan as str, styles as str
-
-        # delete columns which will be spanned over
-        self.delete_spanned_cols(full)
         return {tag: full}
 
     # --------------------------------------------
@@ -710,9 +715,6 @@ class SensTableStdWheatDC(SensTable):
         full = full.tolist()
         # at this point, full is a triply nested list such that full[row, col]
         # is a list with three elements: value as str, colspan as str, styles as str
-
-        # delete columns which will be spanned over
-        self.delete_spanned_cols(full)
         return {tag: full}
 
     # --------------------------------------------
@@ -877,9 +879,6 @@ class SensTableTitle(SensTable):
         full = full.tolist()
         # at this point, full is a triply nested list such that full[row, col]
         # is a list with three elements: value as str, colspan as str, styles as str
-
-        # delete columns which will be spanned over
-        self.delete_spanned_cols(full)
         return {tag: full}
 
     def get_all_formatted(self, tags, values, title, subtitle, names):
@@ -895,9 +894,6 @@ class SensTableTitle(SensTable):
             full = full.tolist()
             # at this point, full is a triply nested list such that full[row, col]
             # is a list with three elements: value as str, colspan as str, styles as str
-
-            # delete columns which will be spanned over
-            self.delete_spanned_cols(full)
             rslt[tags[i]] = full
         return rslt
 

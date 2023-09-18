@@ -82,6 +82,7 @@ class FarmYear(models.Model):
         default=False,
         help_text='Use the manually-set model run date (advanced).')
     sensitivity_data = models.JSONField(null=True, blank=True)
+    sensitivity_text = models.JSONField(null=True, blank=True)
     est_sequest_frac = models.FloatField(
         default=0.062, validators=[
             MinVal(0),
