@@ -8,7 +8,7 @@ from .views import (
     FsaCropUpdateView, FarmCropAddBudgetView, FarmYearFarmBudgetCropListView,
     FarmBudgetCropUpdateView, DetailedBudgetView, SensitivityTableView,
     FarmYearDashboard, FarmCropDeleteBudgetView, FarmYearUpdateBaselineView,
-    FarmYearConfirmBaselineUpdate, BudgetPdfView)
+    FarmYearConfirmBaselineUpdate, BudgetPdfView, SensitivityPdfView)
 
 from . import views
 
@@ -60,4 +60,6 @@ urlpatterns = [
          name='confirmbaselineupdate'),
     path('sensitivity/<int:farmyear>',
          login_required(SensitivityTableView.as_view()), name='sensitivity'),
+    path('downloadsens/<int:farmyear>',
+         login_required(SensitivityPdfView.as_view()), name='downloadsens'),
 ]

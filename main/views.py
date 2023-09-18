@@ -19,6 +19,7 @@ from .models.fsa_crop import FsaCrop
 from .models.budget_table import BudgetManager
 from .models.budget_pdf import BudgetPdf
 from .models.sens_table import SensTableGroup
+from .models.sens_pdf import SensPdf
 from ext.models import County
 from .forms import (FarmYearCreateForm, FarmYearUpdateForm, FarmCropUpdateForm,
                     FarmBudgetCropUpdateForm, ZeroAcreFarmBudgetCropUpdateForm,
@@ -364,6 +365,18 @@ class BudgetPdfView(View):
         budgettype = request.GET.get('b', 0)
         buffer = BudgetPdf(farm_year, budgettype).create()
         return FileResponse(buffer, as_attachment=True, filename="Budget.pdf")
+
+
+class SensitivityPdfView(View):
+    """
+    Expect URL of the form: downloadsens/23/?tag=revenue_diff_corn
+    """
+    def get(self, request, *args, **kwargs):
+        farm_year = get_object_or_404(FarmYear, pk=kwargs.get('farmyear', None))
+        ensure_same_user(farm_year, request, "Printing", "sensitivity table")
+        senstype = request.GET.get('tag', 0)
+        buffer = SensPdf(farm_year, senstype).create()
+        return FileResponse(buffer, as_attachment=True, filename="Sensitivity.pdf")
 
 
 class SensitivityTableView(TemplateView):

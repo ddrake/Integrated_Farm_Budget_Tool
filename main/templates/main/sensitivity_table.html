@@ -12,7 +12,9 @@
           Please ensure that at least one crop has non-zero acres and has had a budget added.
         </p> 
       {% else %}
-      <form action="">
+      <form action="" class="w-full">
+        <div class="flex items-center mb-6">
+        <div class="w-5/6 pr-10 border-r border-gray-300">
         {% if info.hasdiff %}
           <label class="block text-gray-700 text-sm font-bold mb-px"
             for="diff">Differences</label>
@@ -41,7 +43,12 @@
             <option value="{{tag}}">{{name}}</option>
             {% endfor %}
           </select>
-        </form> 
+        </div>
+        <div class="w-1/6 ml-6">
+          <button id="print" class="btn-primary">Print</button>
+        </div>
+        </div>
+      </form> 
       {% for sensitem in tables.items %}
         <table class="text-sm table-auto border border-indigo-800 border-2 stbl" id="{{sensitem.0}}">
         <tbody>
@@ -106,7 +113,16 @@
          .addEventListener("change", (event) => {
              managevisibility()
          });
- 
+    document
+      .querySelector("#print")
+        .addEventListener("click", (event) => {
+          let diff = (diffcb ? document.querySelector("#diff").checked : false)
+          let type = document.querySelector("#type-sel").value
+          let crop = document.querySelector("#crop-sel").value
+          let tblid = type + (diff ? '_diff' : '') + "_" + crop;
+          location.href = "{% url 'downloadsens' farmyear=farmyear_id %}" + `?tag=${tblid}`
+          event.preventDefault();
+        });
   })();
 </script>
 {% endblock %}
