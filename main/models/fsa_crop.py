@@ -74,6 +74,8 @@ class FsaCrop(models.Model):
         """
         if yf is None:
             yf = self.yield_factor()
+        if len(self.farm_crops()) == 0:
+            return 0
         farm_crop = self.farm_crops()[0]
         if self.farm_year.get_model_run_date() > farm_crop.cty_yield_final:
             py = PriceYield.objects.get(
