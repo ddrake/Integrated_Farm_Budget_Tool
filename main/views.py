@@ -376,7 +376,8 @@ class SensitivityPdfView(View):
         ensure_same_user(farm_year, request, "Printing", "sensitivity table")
         senstype = request.GET.get('tag', 0)
         buffer = SensPdf(farm_year, senstype).create()
-        return FileResponse(buffer, as_attachment=True, filename="Sensitivity.pdf")
+        filename = f"Sensitivity_{senstype}.pdf"
+        return FileResponse(buffer, as_attachment=True, filename=filename)
 
 
 class SensitivityTableView(TemplateView):

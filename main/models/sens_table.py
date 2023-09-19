@@ -346,6 +346,90 @@ class SensTable(object):
         self.mcidx_for_fc = [self.market_crops.index(fc.market_crop)
                              for fc in self.farm_crops]
 
+    def add_styles(self, table):
+        """
+        This method is overridden in SensTitle
+        """
+        bkg = ' bg-slate-100'
+        bkggrn = ' bg-green-100'
+        bkgred = ' bg-red-100'
+        bord = ' border border-black'
+        bordx = ' border-x border-black'
+        bordy = ' border-y border-black'
+        bordt = ' border-t border-black'
+        bordb = ' border-b border-black'
+        bordl = ' border-l border-black'
+        bordr = ' border-r border-black'
+        bold = ' font-bold'
+        left = ' text-left'
+        right = ' text-right'
+        center = ' text-center'
+        under = ' underline'
+        # Titles
+        table[:2, 0, 2] += left+bold
+        # Assumed farm yields block
+        table[2, self.nmcs, 2] += center+bold+bordl  # 'Assumed Farm Yields'
+        table[2, self.nmcs:, 2] += bordy
+        table[3:self.nfcs+3, self.nmcs, 2] += left+bold+bordl
+        table[3:self.nfcs+3, self.nmcs+1:, 2] += right
+        table[3:self.nfcs+3, -1, 2] += bordr
+        table[3:self.nfcs+3, self.yld1, 2] += bordx+bkg+bold
+        table[self.nfcs+2, self.nmcs:, 2] += bordb
+        table[self.nfcs+4:, self.yld1, 2] += bordx
+        # Yield Bracket
+        table[3:self.nfcs+3, self.yld1-2, 2] += bordl
+        # Assumed harvest prices block
+        table[self.nfcs+3, 0, 2] += center+bold
+        table[self.nfcs+3, :self.nmcs, 2] += bordy
+        table[self.nfcs+3:self.nfcs+5, self.nmcs, 2] += bordl
+        table[self.nfcs+4, :self.nmcs, 2] += right+under+bold
+        table[self.nfcs+5:self.nfcs+5+self.npfs, :self.nmcs, 2] += right
+        table[self.prc1, :self.nmcs+1, 2] += bordy+bkg+bold
+        table[self.prc1, self.nmcs+1:, 2] += bordy
+        # Price Bracket
+        table[self.prc1-2, :self.nmcs, 2] += bordt
+        table[self.prc1+2, :self.nmcs, 2] += bordb
+        # Base value
+        table[self.prc1, self.yld1, 2] += bord+bold
+        # Base value bracket
+        table[self.prc1-2, self.yld1-2:, 2] += bordt
+        table[self.prc1+2, self.yld1-2:, 2] += bordb
+        table[self.prc1-2:self.prc1+3, self.yld1-2, 2] += bordl
+
+        # Yield %
+        table[self.nfcs+4, self.nmcs+1:, 2] += bordy+bold
+        table[self.nfcs+4, self.nmcs+1, 2] += bordl
+        table[self.nfcs+4, self.yld1, 2] += bkg
+        # Price %
+        table[self.nfcs+5:, self.nmcs, 2] += bordx+bold
+        table[self.nfcs+5, self.nmcs, 2] += bordt+bold
+
+        # Sensitized values
+        def isneg(s):
+            return s.startswith('-')
+        visneg = np.vectorize(isneg)
+        table[self.nfcs+5:, self.nmcs+1:, 2] += np.where(
+            visneg(table[self.nfcs+5:, self.nmcs+1:, 0]), bkgred, bkggrn)
+        table[self.nfcs+5:, self.nmcs+1:, 2] += right
+
+        # De-duplicate style strings
+        rs, cs, _ = table.shape
+        for r in range(rs):
+            for c in range(cs):
+                table[r, c, 2] = ' '.join(list(set(table[r, c, 2].split())))
+
+    def delete_spanned_cols(self, full):
+        """
+        This method is overridden in SensTitle
+        Given the full table as nested list, delete spanned colums
+        """
+        for row in full[:2]:
+            del row[1:self.ncols]
+        row = full[2]
+        del row[self.nmcs+1:]
+        row = full[self.nfcs+3]
+        del row[1:self.nmcs]
+
 
 # @@@@@@@@@@@@@@@@@@@@@@@@
 # STD CROP
@@ -439,82 +523,6 @@ class SensTableStdCrop(SensTable):
         table[2, self.nmcs, 1] = str(self.nyfs+1)    # 'Assumed farm yields'
         table[self.nfcs+3, 0, 1] = str(self.nmcs)    # 'Assumed harvest prices'
 
-    def add_styles(self, table):
-        bkg = ' bg-slate-100'
-        bkggrn = ' bg-green-100'
-        bkgred = ' bg-red-100'
-        bord = ' border border-black'
-        bordx = ' border-x border-black'
-        bordy = ' border-y border-black'
-        bordt = ' border-t border-black'
-        bordb = ' border-b border-black'
-        bordl = ' border-l border-black'
-        bordr = ' border-r border-black'
-        bold = ' font-bold'
-        left = ' text-left'
-        right = ' text-right'
-        center = ' text-center'
-        under = ' underline'
-        # Titles
-        table[:2, 0, 2] += left+bold
-        # Assumed farm yields block
-        table[2, self.nmcs, 2] += center+bold+bord  # 'Assumed Farm Yields'
-        table[3:self.nfcs+3, self.nmcs, 2] += left+bold+bordl
-        table[3:self.nfcs+3, self.nmcs+1:, 2] += right
-        table[3:self.nfcs+3, -1, 2] += bordr
-        table[3:self.nfcs+3, self.yld1, 2] += bordx+bkg+bold
-        table[self.nfcs+2, self.nmcs:, 2] += bordb
-        table[self.nfcs+4:, self.yld1, 2] += bordx
-        # Yield Bracket
-        table[3:self.nfcs+3, self.yld1-2, 2] += bordl
-        # Assumed harvest prices block
-        table[self.nfcs+3, 0, 2] += center+bold+bord
-        table[self.nfcs+4, self.nmcs, 2] += bordl
-        table[self.nfcs+4, :self.nmcs, 2] += right+under+bold
-        table[self.nfcs+5:self.nfcs+5+self.npfs, :self.nmcs, 2] += right
-        table[self.prc1, :self.nmcs+1, 2] += bordy+bkg+bold
-        table[self.prc1, self.nmcs+1:, 2] += bordy
-        # Price Bracket
-        table[self.prc1-2, :self.nmcs, 2] += bordt
-        table[self.prc1+2, :self.nmcs, 2] += bordb
-        # Base value
-        table[self.prc1, self.yld1, 2] += bord+bold
-        # Base value bracket
-        table[self.prc1-2, self.yld1-2:, 2] += bordt
-        table[self.prc1+2, self.yld1-2:, 2] += bordb
-        table[self.prc1-2:self.prc1+3, self.yld1-2, 2] += bordl
-
-        # Yield %
-        table[self.nfcs+4, self.nmcs+1:, 2] += bordy+bold
-        table[self.nfcs+4, self.nmcs+1, 2] += bordl
-        table[self.nfcs+4, self.yld1, 2] += bkg
-        # Price %
-        table[self.nfcs+5:, self.nmcs, 2] += bordx+bold
-        table[self.nfcs+5, self.nmcs, 2] += bordt+bold
-
-        # Sensitized values
-        def isneg(s):
-            return s.startswith('-')
-        visneg = np.vectorize(isneg)
-        table[self.nfcs+5:, self.nmcs+1:, 2] += np.where(
-            visneg(table[self.nfcs+5:, self.nmcs+1:, 0]), bkgred, bkggrn)
-        table[self.nfcs+5:, self.nmcs+1:, 2] += right
-
-        # De-duplicate style strings
-        rs, cs, _ = table.shape
-        for r in range(rs):
-            for c in range(cs):
-                table[r, c, 2] = ' '.join(list(set(table[r, c, 2].split())))
-
-    def delete_spanned_cols(self, full):
-        """ Given the full table as nested list, delete spanned colums """
-        for row in full[:2]:
-            del row[1:self.ncols]
-        row = full[2]
-        del row[self.nmcs+1:]
-        row = full[self.nfcs+3]
-        del row[1:self.nmcs]
-
 
 # @@@@@@@@@@@@@@@@@@@@@@@@
 # STD FARM
@@ -603,82 +611,6 @@ class SensTableStdFarm(SensTable):
         table[1, 0, 1] = str(self.ncols)             # subtitle
         table[2, self.nmcs, 1] = str(self.nyfs+1)    # 'Assumed farm yields'
         table[self.nfcs+3, 0, 1] = str(self.nmcs)    # 'Assumed harvest prices'
-
-    def add_styles(self, table):
-        bkg = ' bg-slate-100'
-        bkggrn = ' bg-green-100'
-        bkgred = ' bg-red-100'
-        bord = ' border border-black'
-        bordx = ' border-x border-black'
-        bordy = ' border-y border-black'
-        bordt = ' border-t border-black'
-        bordb = ' border-b border-black'
-        bordl = ' border-l border-black'
-        bordr = ' border-r border-black'
-        bold = ' font-bold'
-        left = ' text-left'
-        right = ' text-right'
-        center = ' text-center'
-        under = ' underline'
-        # Titles
-        table[:2, 0, 2] += left+bold
-        # Assumed farm yields block
-        table[2, self.nmcs, 2] += center+bold+bord  # 'Assumed Farm Yields'
-        table[3:self.nfcs+3, self.nmcs, 2] += left+bold+bordl
-        table[3:self.nfcs+3, self.nmcs+1:, 2] += right
-        table[3:self.nfcs+3, -1, 2] += bordr
-        table[3:self.nfcs+3, self.yld1, 2] += bordx+bkg+bold
-        table[self.nfcs+2, self.nmcs:, 2] += bordb
-        table[self.nfcs+4:, self.yld1, 2] += bordx
-        # Yield Bracket
-        table[3:self.nfcs+3, self.yld1-2, 2] += bordl
-        # Assumed harvest prices block
-        table[self.nfcs+3, 0, 2] += center+bold+bord
-        table[self.nfcs+4, self.nmcs, 2] += bordl
-        table[self.nfcs+4, :self.nmcs, 2] += right+under+bold
-        table[self.nfcs+5:self.nfcs+5+self.npfs, :self.nmcs, 2] += right
-        table[self.prc1, :self.nmcs+1, 2] += bordy+bkg+bold
-        table[self.prc1, self.nmcs+1:, 2] += bordy
-        # Price Bracket
-        table[self.prc1-2, :self.nmcs, 2] += bordt
-        table[self.prc1+2, :self.nmcs, 2] += bordb
-        # Base value
-        table[self.prc1, self.yld1, 2] += bord+bold
-        # Base value bracket
-        table[self.prc1-2, self.yld1-2:, 2] += bordt
-        table[self.prc1+2, self.yld1-2:, 2] += bordb
-        table[self.prc1-2:self.prc1+3, self.yld1-2, 2] += bordl
-
-        # Yield %
-        table[self.nfcs+4, self.nmcs+1:, 2] += bordy+bold
-        table[self.nfcs+4, self.nmcs+1, 2] += bordl
-        table[self.nfcs+4, self.yld1, 2] += bkg
-        # Price %
-        table[self.nfcs+5:, self.nmcs, 2] += bordx+bold
-        table[self.nfcs+5, self.nmcs, 2] += bordt+bold
-
-        # Sensitized values
-        def isneg(s):
-            return s.startswith('-')
-        visneg = np.vectorize(isneg)
-        table[self.nfcs+5:, self.nmcs+1:, 2] += np.where(
-            visneg(table[self.nfcs+5:, self.nmcs+1:, 0]), bkgred, bkggrn)
-        table[self.nfcs+5:, self.nmcs+1:, 2] += right
-
-        # De-duplicate style strings
-        rs, cs, _ = table.shape
-        for r in range(rs):
-            for c in range(cs):
-                table[r, c, 2] = ' '.join(list(set(table[r, c, 2].split())))
-
-    def delete_spanned_cols(self, full):
-        """ Given the full table as nested list, delete spanned colums """
-        for row in full[:2]:
-            del row[1:self.ncols]
-        row = full[2]
-        del row[self.nmcs+1:]
-        row = full[self.nfcs+3]
-        del row[1:self.nmcs]
 
 
 # @@@@@@@@@@@@@@@@@@@@@@@@
@@ -772,82 +704,6 @@ class SensTableStdWheatDC(SensTable):
         table[1, 0, 1] = str(self.ncols)             # subtitle
         table[2, self.nmcs, 1] = str(self.nyfs+1)    # 'Assumed farm yields'
         table[self.nfcs+3, 0, 1] = str(self.nmcs)    # 'Assumed harvest prices'
-
-    def add_styles(self, table):
-        bkg = ' bg-slate-100'
-        bkggrn = ' bg-green-100'
-        bkgred = ' bg-red-100'
-        bord = ' border border-black'
-        bordx = ' border-x border-black'
-        bordy = ' border-y border-black'
-        bordt = ' border-t border-black'
-        bordb = ' border-b border-black'
-        bordl = ' border-l border-black'
-        bordr = ' border-r border-black'
-        bold = ' font-bold'
-        left = ' text-left'
-        right = ' text-right'
-        center = ' text-center'
-        under = ' underline'
-        # Titles
-        table[:2, 0, 2] += left+bold
-        # Assumed farm yields block
-        table[2, self.nmcs, 2] += center+bold+bord  # 'Assumed Farm Yields'
-        table[3:self.nfcs+3, self.nmcs, 2] += left+bold+bordl
-        table[3:self.nfcs+3, self.nmcs+1:, 2] += right
-        table[3:self.nfcs+3, -1, 2] += bordr
-        table[3:self.nfcs+3, self.yld1, 2] += bordx+bkg+bold
-        table[self.nfcs+2, self.nmcs:, 2] += bordb
-        table[self.nfcs+4:, self.yld1, 2] += bordx
-        # Yield Bracket
-        table[3:self.nfcs+3, self.yld1-2, 2] += bordl
-        # Assumed harvest prices block
-        table[self.nfcs+3, 0, 2] += center+bold+bord
-        table[self.nfcs+4, self.nmcs, 2] += bordl
-        table[self.nfcs+4, :self.nmcs, 2] += right+under+bold
-        table[self.nfcs+5:self.nfcs+5+self.npfs, :self.nmcs, 2] += right
-        table[self.prc1, :self.nmcs+1, 2] += bordy+bkg+bold
-        table[self.prc1, self.nmcs+1:, 2] += bordy
-        # Price Bracket
-        table[self.prc1-2, :self.nmcs, 2] += bordt
-        table[self.prc1+2, :self.nmcs, 2] += bordb
-        # Base value
-        table[self.prc1, self.yld1, 2] += bord+bold
-        # Base value bracket
-        table[self.prc1-2, self.yld1-2:, 2] += bordt
-        table[self.prc1+2, self.yld1-2:, 2] += bordb
-        table[self.prc1-2:self.prc1+3, self.yld1-2, 2] += bordl
-
-        # Yield %
-        table[self.nfcs+4, self.nmcs+1:, 2] += bordy+bold
-        table[self.nfcs+4, self.nmcs+1, 2] += bordl
-        table[self.nfcs+4, self.yld1, 2] += bkg
-        # Price %
-        table[self.nfcs+5:, self.nmcs, 2] += bordx+bold
-        table[self.nfcs+5, self.nmcs, 2] += bordt+bold
-
-        # Sensitized values
-        def isneg(s):
-            return s.startswith('-')
-        visneg = np.vectorize(isneg)
-        table[self.nfcs+5:, self.nmcs+1:, 2] += np.where(
-            visneg(table[self.nfcs+5:, self.nmcs+1:, 0]), bkgred, bkggrn)
-        table[self.nfcs+5:, self.nmcs+1:, 2] += right
-
-        # De-duplicate style strings
-        rs, cs, _ = table.shape
-        for r in range(rs):
-            for c in range(cs):
-                table[r, c, 2] = ' '.join(list(set(table[r, c, 2].split())))
-
-    def delete_spanned_cols(self, full):
-        """ Given the full table as nested list, delete spanned colums """
-        for row in full[:2]:
-            del row[1:self.ncols]
-        row = full[2]
-        del row[self.nmcs+1:]
-        row = full[self.nfcs+3]
-        del row[1:self.nmcs]
 
 
 # @@@@@@@@@@@@@@@@@@@@@@@@
@@ -974,7 +830,8 @@ class SensTableTitle(SensTable):
         # Titles
         table[:2, 0, 2] += left+bold
         # Assumed county yields block
-        table[2, self.nfsacs*2, 2] += center+bold+bord  # 'Assumed County Yields'
+        table[2, self.nfsacs*2, 2] += center+bold+bordl  # 'Assumed County Yields'
+        table[2, self.nfsacs*2:, 2] += bordy
         # Yields
         table[3:self.nfsacs+3, self.nfsacs*2, 2] += left+bold+bordl
         table[3:self.nfsacs+3, self.nfsacs*2+1:, 2] += right
@@ -985,9 +842,10 @@ class SensTableTitle(SensTable):
         # Yield Bracket
         table[3:self.nfsacs+3, self.yld1-2, 2] += bordl
         # Assumed MYA prices block
-        table[self.nfsacs+3, 0, 2] += center+bold+bord
-        table[self.nfsacs+4, self.nfsacs*2, 2] += bordl
-        table[self.nfsacs+4, :self.nfsacs*2:2, 2] += center+under+bold
+        table[self.nfsacs+3, 0, 2] += center+bold
+        table[self.nfsacs+3, :self.nfsacs*2, 2] += bordy
+        table[self.nfsacs+3:self.nfsacs+5, self.nfsacs*2, 2] += bordl
+        table[self.nfsacs+4, :self.nfsacs*2, 2] += center+under+bold
         # Not sure if this helps...
         # table[self.nfsacs+4, 2:self.nfsacs*2:2, 2] += bordl
         table[self.nfsacs+5:self.nfsacs+5+self.npfs, :self.nfsacs*2, 2] += right
