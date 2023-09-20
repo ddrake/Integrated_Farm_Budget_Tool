@@ -1,7 +1,7 @@
 from django.core.validators import (
     MinValueValidator as MinVal, MaxValueValidator as MaxVal)
 from django.db import models
-from ext.models import FuturesContract, FuturesPrice, MarketCropType
+from ext.models import FuturesPrice, MarketCropType
 from .farm_year import FarmYear
 from .fsa_crop import FsaCrop
 
@@ -58,42 +58,30 @@ class MarketCrop(models.Model):
         Get the harvest price for the given date from the correct exchange for the
         crop type and county.  Note: insurancedates gives the exchange and ticker.
         """
-        # TODO: return a boolean "price locked" if the model run date is after the
-        # expiration date of the post_ticker contract
+        # TODO: consider returning a boolean "price locked" if the model run date
+        # is after the expiration date of the post_ticker contract
         if priced_on is None:
             priced_on = self.farm_year.get_model_run_date()
 
-        rec = FuturesContract.objects.raw("""
-        SELECT id, ticker, croptype, exchange, futures_month, contract_end_date
-        FROM public.ext_futurescontract
-        WHERE ticker = (SELECT ticker
-            FROM ext_insurancedates
-            WHERE crop_year=%s and state_id=%s and county_code=%s
-            and market_crop_type_id=%s)
-        """, params=[self.farm_year.crop_year, self.farm_year.state_id,
-                     self.farm_year.county_code, self.market_crop_type_id])[0]
-
-        ticker = ('ticker' if priced_on <= rec.contract_end_date else
-                  'post_ticker')
-
         sql = """
-        SELECT fp.id, fp.exchange, fp.futures_month, fp.ticker, fp.priced_on,
-               fp.price
+            SELECT fp.id, fp.exchange, fp.futures_month, fp.ticker,
+            fp.priced_on, fp.price
             FROM ext_futuresprice fp
-            INNER JOIN (
-            SELECT crop_year, state_id, county_code, market_crop_type_id,
-            """ + ticker + """
-            FROM ext_insurancedates idt
-            WHERE crop_year=%s and state_id=%s and county_code=%s
-              and market_crop_type_id=%s) idt
-            ON fp.ticker = idt.""" + ticker + """
-            WHERE fp.priced_on <= %s
-            order by priced_on desc limit 1;
-        """
+            WHERE ticker=
+                (select ticker from ext_tickers_for_crop_location
+                 where crop_year=%s and state_id=%s and county_code=%s
+                 and market_crop_type_id=%s
+                 and (%s <= contract_end_date
+                     or contract_end_date = last_contract_end_date)
+                 order by contract_end_date limit 1)
+            AND fp.priced_on <= %s
+            ORDER BY priced_on desc limit 1
+            """
+
         rec = FuturesPrice.objects.raw(
             sql, params=[self.farm_year.crop_year, self.farm_year.state_id,
                          self.farm_year.county_code, self.market_crop_type_id,
-                         priced_on])[0]
+                         priced_on, priced_on])[0]
         return rec.price if price_only else rec
 
     def planted_acres(self):
