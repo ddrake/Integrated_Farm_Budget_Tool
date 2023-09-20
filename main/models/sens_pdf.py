@@ -47,12 +47,12 @@ class SensPdf(object):
         # start = perf_counter()
         buffer = io.BytesIO()
         objects_to_draw = [Spacer(1*inch, 1*inch), self.get_table()]
-        title = f"Sensitivity Table: {' '.join(self.senstag.split('_'))}"
+
         doc_template = SimpleDocTemplate(
             buffer, pagesize=(11*inch, 8.5*inch),
             leftMargin=0.25*inch, rightMargin=0.25*inch,
             topMargin=0.325*inch, bottomMargin=0.25*inch,
-            title=title, author='IFBT')
+            title='Sensitivity Table', author='IFBT')
 
         doc_template.build(objects_to_draw, onFirstPage=self.first_page_header())
         buffer.seek(0)
