@@ -1,3 +1,4 @@
+from datetime import datetime
 from django.core.validators import (
     MinValueValidator as MinVal, MaxValueValidator as MaxVal)
 from django.db import models
@@ -11,22 +12,6 @@ class MarketCrop(models.Model):
     A crop which can be marketed and which has a unique set of futures prices
     for a given county.
     """
-    contracted_bu = models.FloatField(
-        default=0, validators=[MinVal(0), MaxVal(999999)],
-        verbose_name="contracted bushels",
-        help_text="Current contracted bushels on futures.")
-    avg_contract_price = models.FloatField(
-        default=0, validators=[MinVal(0), MaxVal(30)],
-        verbose_name="avg. contract price",
-        help_text="Average price for futures contracts.")
-    basis_bu_locked = models.FloatField(
-        default=0, validators=[MinVal(0), MaxVal(999999)],
-        verbose_name="bushels with basis locked",
-        help_text="Number of bushels with contracted basis set.")
-    avg_locked_basis = models.FloatField(
-        default=0, validators=[MinVal(-2), MaxVal(2)],
-        verbose_name="avg. locked basis",
-        help_text="Average basis on basis contracts in place.")
     assumed_basis_for_new = models.FloatField(
         default=0, validators=[MinVal(-2), MaxVal(2)],
         help_text="Assumed basis for non-contracted bushels.")
@@ -44,6 +29,40 @@ class MarketCrop(models.Model):
 
     def __str__(self):
         return f'{self.market_crop_type}'
+
+    def contracted_bu(self):
+        return sum(c.bushels for c in self.get_futures_contracts())
+
+    def basis_bu_locked(self):
+        return sum(c.bushels for c in self.get_basis_contracts())
+
+    def avg_contract_price(self):
+        pairs = [(c.price*c.bushels, c.bushels) for c in self.get_futures_contracts()]
+        if len(pairs) == 0:
+            return 0
+        else:
+            amounts, bushels = zip(*pairs)
+            tot_bu = sum(bushels)
+            return sum(amounts) / tot_bu if tot_bu > 0 else 0
+
+    def avg_locked_basis(self):
+        pairs = [(c.price*c.bushels, c.bushels) for c in self.get_basis_contracts()]
+        if len(pairs) == 0:
+            return 0
+        else:
+            amounts, bushels = zip(*pairs)
+            tot_bu = sum(bushels)
+            return sum(amounts) / tot_bu if tot_bu > 0 else 0
+
+    def get_basis_contracts(self):
+        model_run_date = self.farm_year.get_model_run_date()
+        return self.contracts.filter(
+            is_basis=True, contract_date__lte=model_run_date)
+
+    def get_futures_contracts(self):
+        model_run_date = self.farm_year.get_model_run_date()
+        return self.contracts.filter(
+            is_basis=False, contract_date__lte=model_run_date)
 
     def harvest_price(self):
         return self.harvest_futures_price_info(price_only=True)
@@ -109,11 +128,11 @@ class MarketCrop(models.Model):
 
     def futures_pct_of_expected(self, yf=None):
         tot = self.expected_total_bushels(yf=yf)
-        return (0 if tot == 0 else self.contracted_bu / tot)
+        return (0 if tot == 0 else self.contracted_bu() / tot)
 
     def basis_pct_of_expected(self, yf=None):
         tot = self.expected_total_bushels(yf=yf)
-        return (0 if tot == 0 else self.basis_bu_locked / tot)
+        return (0 if tot == 0 else self.basis_bu_locked() / tot)
 
     def production_frac_for_farm_crop(self, farmcrop, yf=None):
         expbu = self.expected_total_bushels(yf)
@@ -123,3 +142,39 @@ class MarketCrop(models.Model):
 
     class Meta:
         ordering = ['market_crop_type_id']
+
+
+class Contract(models.Model):
+    """
+    Represents a futures or basis contract
+    If a manual model_run_date is set, we should warn the user that contracts with
+    contract date in the future are not displayed or included in budget or sensitivity.
+    Otherwise, they might think they missed one and add a duplicate contract.
+    """
+    is_basis = models.BooleanField(
+        default=False,
+        help_text='Specifies a basis contract instead of a futures contract.')
+
+    contract_date = models.DateField(
+        default=datetime.today)
+
+    bushels = models.IntegerField(default=0)
+
+    price = models.FloatField(
+        default=0, verbose_name="price per bushel")
+
+    terminal = models.CharField(max_length=60, blank=True)
+
+    contract_number = models.CharField(max_length=25, blank=True)
+
+    delivery_start_date = models.DateField(
+        null=True, blank=True)
+
+    delivery_end_date = models.DateField(
+        null=True, blank=True)
+
+    market_crop = models.ForeignKey(
+        MarketCrop, on_delete=models.CASCADE, related_name='contracts')
+
+    class Meta:
+        ordering = ['contract_date']

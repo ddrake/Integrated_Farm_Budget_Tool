@@ -4,11 +4,90 @@
 {% endblock title %}
 {% load tailwind_filters crispy_forms_tags %}
 {% block content %}
-<div class="p-6 max-w-med mx-auto bg-white rounded-xl shadow-lg flex items-center space-x-4">
-    <div>
-      <h1 class="block text-xl mb-2">Edit market crop {{ marketcrop }}</h1>
-      {% crispy form %}
+
+<div class="flex flex-col gap-y-4">
+  <div class="p-6 max-w-med mx-auto bg-white rounded-xl shadow-lg flex flex-col items-center">
+    <h2 class="text-xl">Futures Contracts</h2>
+    {% if futures_contracts %}
+      <table>
+        <tbody>
+          <tr>
+            <td>Contract Date</td>
+             <td>Bushels</td>
+             <td>Price</td>
+             <td>Terminal</td>
+             <td>Contract #</td>
+             <td>Delivery Start</td>
+             <td>Delivery End</td>
+             <td>Edit</td>
+             <td>Delete</td>
+           </tr>
+        {% for ct in futures_contracts %}
+           <tr>
+             <td>{{ct.contract_date}}</td>
+             <td>{{ct.bushels}}</td>
+             <td>{{ct.price}}</td>
+             <td>{{ct.terminal}}</td>
+             <td>{{ct.contract_number}}</td>
+             <td>{{ct.delivery_start}}</td>
+             <td>{{ct.delivery_end}}</td>
+             <td><a href="">Edit</a></td>
+             <td><a href="">Delete</a></td>
+           </tr>
+        {% endfor %}
+      {% else %}
+      <p class="text-base">No Futures Contracts have been entered yet</p>
+      {% endif %}
+      <div>
+      <a class="text-lg text-indigo-800 hover:text-indigo-600"
+         href="{% url 'contract_create' market_crop=marketcrop.pk is_basis=0 %}">
+          Add A Futures Contract</a>
     </div>
+  </div>
+  <div class="p-6 max-w-med mx-auto bg-white rounded-xl shadow-lg flex flex-col items-center">
+      <h2 class="text-xl">Basis Contracts</h2>
+      {% if futures_contracts %}
+        <table>
+          <tbody>
+            <tr>
+              <td>Contract Date</td>
+              <td>Bushels</td>
+              <td>Price</td>
+              <td>Terminal</td>
+              <td>Contract #</td>
+              <td>Delivery Start</td>
+              <td>Delivery End</td>
+              <td>Edit</td>
+              <td>Delete</td>
+            </tr>
+        {% for ct in basis_contracts %}
+          <tr>
+             <td>{{ct.contract_date}}</td>
+             <td>{{ct.bushels}}</td>
+             <td>{{ct.price}}</td>
+             <td>{{ct.terminal}}</td>
+             <td>{{ct.contract_number}}</td>
+             <td>{{ct.delivery_start}}</td>
+             <td>{{ct.delivery_end}}</td>
+             <td><a href="">Edit</a></td>
+             <td><a href="">Delete</a></td>
+          </tr>
+        {% endfor %}
+      {% else %}
+        <p class="text-base">No Basis Contracts have been entered yet</p>
+      {% endif %}
+      <div>
+      <a class="text-lg text-indigo-800 hover:text-indigo-600"
+         href="{% url 'contract_create' market_crop=marketcrop.pk is_basis=1 %}">
+          Add A Basis Contract</a>
+    </div>
+  </div>
+  <div class="p-6 max-w-med mx-auto bg-white rounded-xl shadow-lg flex items-center space-x-4">
+      <div>
+        <h1 class="block text-xl mb-2">Edit market crop {{ marketcrop }}</h1>
+        {% crispy form %}
+      </div>
+  </div>
 </div>
 <script>
 (() => {

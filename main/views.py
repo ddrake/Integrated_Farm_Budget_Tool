@@ -14,7 +14,7 @@ from django.urls import reverse, reverse_lazy
 from .models.farm_year import FarmYear
 from .models.farm_crop import FarmCrop
 from .models.farm_budget_crop import FarmBudgetCrop
-from .models.market_crop import MarketCrop
+from .models.market_crop import MarketCrop, Contract
 from .models.fsa_crop import FsaCrop
 from .models.budget_table import BudgetManager
 from .models.budget_pdf import BudgetPdf
@@ -23,7 +23,7 @@ from .models.sens_pdf import SensPdf
 from ext.models import County
 from .forms import (FarmYearCreateForm, FarmYearUpdateForm, FarmCropUpdateForm,
                     FarmBudgetCropUpdateForm, ZeroAcreFarmBudgetCropUpdateForm,
-                    MarketCropUpdateForm)
+                    MarketCropUpdateForm, ContractCreateForm, ContractUpdateForm)
 
 
 def ensure_same_user(farm_year, request, actionmsg, objmsg):
@@ -293,8 +293,11 @@ class MarketCropUpdateView(UpdateView):
         return reverse_lazy('marketcrop_list', args=[self.get_object().farm_year_id])
 
     def get_context_data(self, **kwargs):
+        market_crop = self.get_object()
         context = super().get_context_data(**kwargs)
         context['farmyear_id'] = self.get_object().farm_year_id
+        context['futures_contracts'] = market_crop.get_futures_contracts()
+        context['basis_contracts'] = market_crop.get_basis_contracts()
         return context
 
 
@@ -318,6 +321,57 @@ class FsaCropUpdateView(UpdateView):
         context = super().get_context_data(**kwargs)
         context['farmyear_id'] = self.get_object().farm_year_id
         return context
+
+
+class ContractCreateView(CreateView):
+    model = Contract
+    form_class = ContractCreateForm
+    template_name = 'main/contract_form.html'
+
+    def dispatch(self, request, *args, **kwargs):
+        print(f'in view dispatch: {kwargs=}')
+        self.extra_context = {'market_crop': kwargs['market_crop'],
+                              'is_basis': kwargs['is_basis']}
+        return super().get(request, *args, **kwargs)
+
+    def get_initial(self):
+        print(f'in get_initial: {self.extra_context=}')
+        return {'market_crop': self.extra_context['market_crop'],
+                'is_basis': 'on' if self.extra_context['is_basis'] == 1 else ''}
+
+    def post(self, request, *args, **kwargs):
+        # ensure_same_user(self.get_object().market_crop.farm_year,
+        #                  request, "Creating", "contracts")
+        return super().post(request, *args, **kwargs)
+
+    def get_success_url(self):
+        mc_id = self.kwargs.get('market_crop', None)
+        return reverse('marketcrop_update', args=[mc_id])
+
+    # def get_context_data(self, **kwargs):
+    #     context = super().get_context_data(**kwargs)
+    #     print(f'in view get context: {context=}')
+    #     mc_id = kwargs.get('market_crop', None)
+    #     market_crop = get_object_or_404(MarketCrop, pk=mc_id)
+    #     context['farmyear_id'] = market_crop.farm_year_id
+    #     return context
+
+
+class ContractUpdateView(UpdateView):
+    model = Contract
+    form_class = ContractUpdateForm
+    template_name = "main/contract_form.html"
+
+    def get(self, request, *args, **kwargs):
+        ensure_same_user(self.get_object().farm_year, request, "Updating", "fsa crops")
+        return super().get(request, *args, **kwargs)
+
+    def post(self, request, *args, **kwargs):
+        ensure_same_user(self.get_object().farm_year, request, "Updating", "fsa crops")
+        return super().post(request, *args, **kwargs)
+
+    def get_success_url(self):
+        return reverse_lazy('fsacrop_list', args=[self.get_object().farm_year_id])
 
 
 class DetailedBudgetView(TemplateView):

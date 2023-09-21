@@ -8,7 +8,8 @@ from .views import (
     FsaCropUpdateView, FarmCropAddBudgetView, FarmYearFarmBudgetCropListView,
     FarmBudgetCropUpdateView, DetailedBudgetView, SensitivityTableView,
     FarmYearDashboard, FarmCropDeleteBudgetView, FarmYearUpdateBaselineView,
-    FarmYearConfirmBaselineUpdate, BudgetPdfView, SensitivityPdfView)
+    FarmYearConfirmBaselineUpdate, BudgetPdfView, SensitivityPdfView,
+    ContractCreateView)
 
 from . import views
 
@@ -41,6 +42,8 @@ urlpatterns = [
          login_required(FarmYearMarketCropListView.as_view()), name='marketcrop_list'),
     path('marketcrop/update/<int:pk>', login_required(MarketCropUpdateView.as_view()),
          name='marketcrop_update'),
+    path('contract/create/<int:market_crop>/<int:is_basis>',
+         login_required(ContractCreateView.as_view()), name='contract_create'),
     path('fsacrops/<int:farmyear>', login_required(FarmYearFsaCropListView.as_view()),
          name='fsacrop_list'),
     path('fsacrop/update/<int:pk>', login_required(FsaCropUpdateView.as_view()),

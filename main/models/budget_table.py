@@ -809,7 +809,7 @@ class KeyData(object):
         """
         Show pct of expected bushels and avg. contract price
         """
-        info = ((mc.futures_pct_of_expected(), mc.avg_contract_price)
+        info = ((mc.futures_pct_of_expected(), mc.avg_contract_price())
                 for mc in self.market_crops)
         spcts, ctprices = zip(*info)
         rows = []

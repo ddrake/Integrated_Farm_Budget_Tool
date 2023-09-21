@@ -405,7 +405,7 @@ class FarmCrop(models.Model):
         if yf is None:
             yf = self.farmbudgetcrop.yield_factor
         return (self.market_crop.production_frac_for_farm_crop(self, yf) *
-                self.market_crop.contracted_bu)
+                self.market_crop.contracted_bu())
 
     def sens_fut_uncontracted_bu(self, yf=None):
         if not self.has_budget():
@@ -421,7 +421,7 @@ class FarmCrop(models.Model):
         if yf is None:
             yf = self.farmbudgetcrop.yield_factor
         return (self.market_crop.production_frac_for_farm_crop(self, yf) *
-                self.market_crop.basis_bu_locked)
+                self.market_crop.basis_bu_locked())
 
     def sens_basis_uncontracted_bu(self, yf=None):
         if not self.has_budget():
@@ -645,10 +645,10 @@ class FarmCrop(models.Model):
         return self.market_crop.sens_harvest_price(pf=pf)
 
     def avg_contract_price(self):
-        return self.market_crop.avg_contract_price
+        return self.market_crop.avg_contract_price()
 
     def avg_locked_basis(self):
-        return self.market_crop.avg_locked_basis
+        return self.market_crop.avg_locked_basis()
 
     def assumed_basis_for_new(self):
         return self.market_crop.assumed_basis_for_new

@@ -2,12 +2,12 @@ from django.forms import ModelForm
 from django import forms
 
 from crispy_forms.helper import FormHelper
-from crispy_forms.layout import Layout, Field, Submit, Fieldset
+from crispy_forms.layout import Layout, Field, Submit, Fieldset, Hidden
 
 from .models.farm_year import FarmYear
 from .models.farm_crop import FarmCrop
 from .models.farm_budget_crop import FarmBudgetCrop
-from .models.market_crop import MarketCrop
+from .models.market_crop import MarketCrop, Contract
 
 
 class AjaxChoiceIntField(forms.ChoiceField):
@@ -157,9 +157,6 @@ class MarketCropUpdateForm(ModelForm):
         self.helper.add_input(Submit('submit', 'Update'))
         self.helper.form_id = 'marketcropform'
         self.helper.layout = Layout(
-            Fieldset('Contracted Grain',
-                     'contracted_bu', 'avg_contract_price',
-                     'basis_bu_locked', 'avg_locked_basis'),
             Fieldset('Uncontracted Grain',
                      'assumed_basis_for_new',
                      Field('price_factor', css_class='percent')),
@@ -167,6 +164,54 @@ class MarketCropUpdateForm(ModelForm):
 
     class Meta:
         model = MarketCrop
-        fields = '''contracted_bu avg_contract_price basis_bu_locked
-                    avg_locked_basis assumed_basis_for_new
+        fields = '''assumed_basis_for_new
                     price_factor'''.split()
+
+
+class ContractCreateForm(ModelForm):
+
+    def __init__(self, *args, **kwargs):
+        print(f'in form: {kwargs=}')
+        super().__init__(*args, **kwargs)
+        self.helper = FormHelper()
+        self.helper.add_input(Submit('submit', 'Create'))
+        self.helper.form_id = 'contractform'
+        self.helper.layout = Layout(
+            Fieldset('Contract Information',
+                     'contract_date', 'bushels', 'price', 'terminal',
+                     'contract_number', 'delivery_start_date',
+                     'delivery_end_date',
+                     Field('is_basis', type='hidden'),
+                     Field('market_crop', type='hidden'),
+                     )
+        )
+
+    class Meta:
+        model = Contract
+        fields = '''contract_date bushels price terminal
+                    contract_number delivery_start_date
+                    delivery_end_date is_basis market_crop'''.split()
+
+
+class ContractUpdateForm(ModelForm):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.helper = FormHelper()
+        self.helper.add_input(Submit('submit', 'Create'))
+        self.helper.form_id = 'contractform'
+        self.helper.layout = Layout(
+            Fieldset('Contract Information',
+                     'contract_date', 'bushels', 'price', 'terminal',
+                     'contract_number', 'delivery_start_date',
+                     'delivery_end_date',
+                     Hidden('is_basis', kwargs['is_basis']),
+                     Hidden('market_crop', kwargs['market_crop']),
+                     )
+        )
+
+    class Meta:
+        model = Contract
+        fields = '''contract_date bushels price terminal
+                    contract_number delivery_start_date
+                    delivery_end_date is_basis market_crop'''.split()
