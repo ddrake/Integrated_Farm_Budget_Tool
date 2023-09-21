@@ -105,10 +105,12 @@ class FarmYearDeleteView(DeleteView):
         ensure_same_user(self.get_object(), request, "Deleting", "farm year")
         return super().get(request, *args, **kwargs)
 
-    def form_valid(self, form):
-        # don't put custom logic in delete() handler do this instead
-        form.instance.user = self.request.user
-        return super().form_valid(form)
+    def delete(request, *args, **kwargs):
+        farm_year_id = int(request.POST['id'])
+        fy = FarmYear.objects.get(pk=farm_year_id)
+        if not request.user.is_superuser and request.user != fy.user:
+            raise PermissionDenied("Only an admin can delete another user's farm.")
+        super().delete(request, *args, **kwargs)
 
 
 class FarmYearUpdateView(UpdateView):
