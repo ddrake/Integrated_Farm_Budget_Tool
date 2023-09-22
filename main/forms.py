@@ -193,25 +193,25 @@ class ContractCreateForm(ModelForm):
                     delivery_end_date is_basis market_crop'''.split()
 
 
-# class ContractUpdateForm(ModelForm):
+class ContractUpdateForm(ModelForm):
 
-#     def __init__(self, *args, **kwargs):
-#         super().__init__(*args, **kwargs)
-#         self.helper = FormHelper()
-#         self.helper.add_input(Submit('submit', 'Create'))
-#         self.helper.form_id = 'contractform'
-#         self.helper.layout = Layout(
-#             Fieldset('Contract Information',
-#                      'contract_date', 'bushels', 'price', 'terminal',
-#                      'contract_number', 'delivery_start_date',
-#                      'delivery_end_date',
-#                      Hidden('is_basis', kwargs['is_basis']),
-#                      Hidden('market_crop', kwargs['market_crop']),
-#                      )
-#         )
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.helper = FormHelper()
+        self.helper.add_input(Submit('submit', 'Update'))
+        self.helper.form_id = 'contractform'
+        self.helper.layout = Layout(
+            Fieldset('Contract Information',
+                     'contract_date', 'bushels', 'price', 'terminal',
+                     'contract_number', 'delivery_start_date',
+                     'delivery_end_date',
+                     Field('is_basis', type='hidden'),
+                     Field('market_crop', type='hidden'),
+                     )
+        )
 
-#     class Meta:
-#         model = Contract
-#         fields = '''contract_date bushels price terminal
-#                     contract_number delivery_start_date
-#                     delivery_end_date is_basis market_crop'''.split()
+    class Meta:
+        model = Contract
+        fields = '''contract_date bushels price terminal
+                    contract_number delivery_start_date
+                    delivery_end_date is_basis market_crop'''.split()

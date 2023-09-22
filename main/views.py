@@ -23,7 +23,7 @@ from .models.sens_pdf import SensPdf
 from ext.models import County
 from .forms import (FarmYearCreateForm, FarmYearUpdateForm, FarmCropUpdateForm,
                     FarmBudgetCropUpdateForm, ZeroAcreFarmBudgetCropUpdateForm,
-                    MarketCropUpdateForm, ContractCreateForm)
+                    MarketCropUpdateForm, ContractCreateForm, ContractUpdateForm)
 
 
 def ensure_same_user(farm_year, request, actionmsg, objmsg):
@@ -67,7 +67,6 @@ class FarmYearCreateView(CreateView):
         return reverse('farmyears')
 
     def form_valid(self, form):
-        # don't put custom logic in delete() handler do this instead
         form.instance.user = self.request.user
         return super().form_valid(form)
 
@@ -306,48 +305,50 @@ class ContractCreateView(CreateView):
     form_class = ContractCreateForm
     template_name = 'main/contract_form.html'
 
-    def dispatch(self, request, *args, **kwargs):
-        print(f'in view dispatch: {kwargs=}')
+    def get(self, request, *args, **kwargs):
+        # print(f'in view get: {kwargs=}')
         self.extra_context = {'market_crop': kwargs['market_crop'],
                               'is_basis': kwargs['is_basis']}
         return super().get(request, *args, **kwargs)
 
     def get_initial(self):
-        print(f'in get_initial: {self.extra_context=}')
-        return {'market_crop': self.extra_context['market_crop'],
-                'is_basis': 'on' if self.extra_context['is_basis'] == 1 else ''}
+        if self.extra_context:
+            # print(f'in get_initial: {self.extra_context=}')
+            return {'market_crop': self.extra_context['market_crop'],
+                    'is_basis': 'on' if self.extra_context['is_basis'] == 1 else ''}
 
     def post(self, request, *args, **kwargs):
-        # TODO: ensure_same_user(self.get_object().market_crop.farm_year,
-        #                  request, "Creating", "contracts")
+        print(f'in view post: {request.POST=}')
+        pk = request.POST.get('market_crop', None)
+        mc = get_object_or_404(MarketCrop, pk=pk)
+        if mc.farm_year.user != request.user:
+            msg = "Adding a contract to another user's crop is not permitted"
+            raise PermissionDenied(msg)
         return super().post(request, *args, **kwargs)
 
     def get_success_url(self):
         mc_id = self.kwargs.get('market_crop', None)
         return reverse('marketcrop_update', args=[mc_id])
 
-    def form_valid(self, form):
-        # don't put custom logic in delete() handler do this instead
-        print(f'in form valid: {form.instance}')
 
+class ContractUpdateView(UpdateView):
+    model = Contract
+    form_class = ContractUpdateForm
+    template_name = "main/contract_form.html"
 
-# class ContractUpdateView(UpdateView):
-#     model = Contract
-#     form_class = ContractUpdateForm
-#     template_name = "main/contract_form.html"
+    def get(self, request, *args, **kwargs):
+        ensure_same_user(self.get_object().market_crop.farm_year, request,
+                         "Updating", "contracts")
+        return super().get(request, *args, **kwargs)
 
-#     def get(self, request, *args, **kwargs):
-#         ensure_same_user(self.get_object().farm_year, request,
-#                          "Updating", "fsa crops")
-#         return super().get(request, *args, **kwargs)
+    def post(self, request, *args, **kwargs):
+        ensure_same_user(self.get_object().market_crop.farm_year, request,
+                         "Updating", "contracts")
+        return super().post(request, *args, **kwargs)
 
-#     def post(self, request, *args, **kwargs):
-#         ensure_same_user(self.get_object().farm_year, request,
-#                          "Updating", "fsa crops")
-#         return super().post(request, *args, **kwargs)
-
-#     def get_success_url(self):
-#         return reverse_lazy('fsacrop_list', args=[self.get_object().farm_year_id])
+    def get_success_url(self):
+        return reverse('marketcrop_update',
+                       args=[self.get_object().market_crop_id])
 
 
 class FsaCropUpdateView(UpdateView):

@@ -6,6 +6,12 @@
 {% block content %}
 
 <div class="flex flex-col gap-y-4">
+  <div class="p-6 max-w-med mx-auto bg-white rounded-xl shadow-lg flex items-center space-x-4">
+    <div>
+      <h1 class="block text-xl mb-2">Edit market crop {{ marketcrop }}</h1>
+      {% crispy form %}
+    </div>
+  </div>  <!-- end form block -->
   <div class="p-6 max-w-med mx-auto bg-white rounded-xl shadow-lg flex flex-col items-center">
     <h2 class="text-xl">Futures Contracts</h2>
     {% if futures_contracts %}
@@ -34,7 +40,7 @@
              <td class="border border-slate-300 px-2">
                <a
                  class="text-indigo-800 hover:text-indigo-600"
-                 href="">Edit</a>
+                 href="{% url 'contract_update' pk=ct.pk %}">Edit</a>
              </td>
              <td class="border border-slate-300 px-2">
                <a
@@ -82,7 +88,7 @@
              <td class="border border-slate-300 px-2">
                <a
                  class="text-indigo-800 hover:text-indigo-600"
-                 href="">Edit</a>
+                 href="{% url 'contract_update' pk=ct.pk %}">Edit</a>
              </td>
              <td class="border border-slate-300 px-2">
                <a
@@ -102,13 +108,7 @@
           Add a Basis Contract</a>
     </div>
   </div>  <!-- end basis contracts block -->
-  <div class="p-6 max-w-med mx-auto bg-white rounded-xl shadow-lg flex items-center space-x-4">
-    <div>
-      <h1 class="block text-xl mb-2">Edit market crop {{ marketcrop }}</h1>
-      {% crispy form %}
-    </div>
-  </div>
-</div>  <!-- end form block -->
+</div>
 <script>
 (() => {
     document.addEventListener('DOMContentLoaded', (event) => {
