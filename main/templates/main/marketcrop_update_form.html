@@ -10,85 +10,105 @@
     <h2 class="text-xl">Futures Contracts</h2>
     {% if futures_contracts %}
       <table>
-        <tbody>
-          <tr>
-            <td>Contract Date</td>
-             <td>Bushels</td>
-             <td>Price</td>
-             <td>Terminal</td>
-             <td>Contract #</td>
-             <td>Delivery Start</td>
-             <td>Delivery End</td>
-             <td>Edit</td>
-             <td>Delete</td>
+        <tbody class="class=border-collapse border border-slate-400">
+          <tr class="font-bold">
+            <td class="border border-slate-300 px-2">Contract Date</td>
+             <td class="border border-slate-300 px-2">Bushels</td>
+             <td class="border border-slate-300 px-2">Price</td>
+             <td class="border border-slate-300 px-2">Terminal</td>
+             <td class="border border-slate-300 px-2">Contract #</td>
+             <td class="border border-slate-300 px-2">Delivery Start</td>
+             <td class="border border-slate-300 px-2">Delivery End</td>
+             <td class="border border-slate-300 px-2">Edit</td>
+             <td class="border border-slate-300 px-2">Delete</td>
            </tr>
-        {% for ct in futures_contracts %}
+           {% for ct in futures_contracts %}
            <tr>
-             <td>{{ct.contract_date}}</td>
-             <td>{{ct.bushels}}</td>
-             <td>{{ct.price}}</td>
-             <td>{{ct.terminal}}</td>
-             <td>{{ct.contract_number}}</td>
-             <td>{{ct.delivery_start}}</td>
-             <td>{{ct.delivery_end}}</td>
-             <td><a href="">Edit</a></td>
-             <td><a href="">Delete</a></td>
+             <td class="border border-slate-300 px-2">{{ct.contract_date}}</td>
+             <td class="border border-slate-300 px-2">{{ct.bushels}}</td>
+             <td class="border border-slate-300 px-2">{{ct.price}}</td>
+             <td class="border border-slate-300 px-2">{{ct.terminal}}</td>
+             <td class="border border-slate-300 px-2">{{ct.contract_number}}</td>
+             <td class="border border-slate-300 px-2">{{ct.delivery_start}}</td>
+             <td class="border border-slate-300 px-2">{{ct.delivery_end}}</td>
+             <td class="border border-slate-300 px-2">
+               <a
+                 class="text-indigo-800 hover:text-indigo-600"
+                 href="">Edit</a>
+             </td>
+             <td class="border border-slate-300 px-2">
+               <a
+                 class="text-red-800 hover:text-red-600"
+                 href="">Delete</a>
+             </td>
            </tr>
-        {% endfor %}
-      {% else %}
+           {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
       <p class="text-base">No Futures Contracts have been entered yet</p>
-      {% endif %}
-      <div>
+    {% endif %}
+    <div>
       <a class="text-lg text-indigo-800 hover:text-indigo-600"
          href="{% url 'contract_create' market_crop=marketcrop.pk is_basis=0 %}">
-          Add A Futures Contract</a>
+          Add a Futures Contract</a>
     </div>
-  </div>
+  </div> <!-- end futures contracts block -->
   <div class="p-6 max-w-med mx-auto bg-white rounded-xl shadow-lg flex flex-col items-center">
-      <h2 class="text-xl">Basis Contracts</h2>
-      {% if futures_contracts %}
-        <table>
-          <tbody>
-            <tr>
-              <td>Contract Date</td>
-              <td>Bushels</td>
-              <td>Price</td>
-              <td>Terminal</td>
-              <td>Contract #</td>
-              <td>Delivery Start</td>
-              <td>Delivery End</td>
-              <td>Edit</td>
-              <td>Delete</td>
-            </tr>
-        {% for ct in basis_contracts %}
-          <tr>
-             <td>{{ct.contract_date}}</td>
-             <td>{{ct.bushels}}</td>
-             <td>{{ct.price}}</td>
-             <td>{{ct.terminal}}</td>
-             <td>{{ct.contract_number}}</td>
-             <td>{{ct.delivery_start}}</td>
-             <td>{{ct.delivery_end}}</td>
-             <td><a href="">Edit</a></td>
-             <td><a href="">Delete</a></td>
-          </tr>
-        {% endfor %}
-      {% else %}
-        <p class="text-base">No Basis Contracts have been entered yet</p>
-      {% endif %}
-      <div>
+    <h2 class="text-xl">Basis Contracts</h2>
+    {% if basis_contracts %}
+      <table>
+        <tbody class="class=border-collapse border border-slate-400">
+          <tr class="font-bold">
+            <td class="border border-slate-300 px-2">Contract Date</td>
+             <td class="border border-slate-300 px-2">Bushels</td>
+             <td class="border border-slate-300 px-2">Price</td>
+             <td class="border border-slate-300 px-2">Terminal</td>
+             <td class="border border-slate-300 px-2">Contract #</td>
+             <td class="border border-slate-300 px-2">Delivery Start</td>
+             <td class="border border-slate-300 px-2">Delivery End</td>
+             <td class="border border-slate-300 px-2">Edit</td>
+             <td class="border border-slate-300 px-2">Delete</td>
+           </tr>
+           {% for ct in basis_contracts %}
+           <tr>
+             <td class="border border-slate-300 px-2">{{ct.contract_date}}</td>
+             <td class="border border-slate-300 px-2">{{ct.bushels}}</td>
+             <td class="border border-slate-300 px-2">{{ct.price}}</td>
+             <td class="border border-slate-300 px-2">{{ct.terminal}}</td>
+             <td class="border border-slate-300 px-2">{{ct.contract_number}}</td>
+             <td class="border border-slate-300 px-2">{{ct.delivery_start}}</td>
+             <td class="border border-slate-300 px-2">{{ct.delivery_end}}</td>
+             <td class="border border-slate-300 px-2">
+               <a
+                 class="text-indigo-800 hover:text-indigo-600"
+                 href="">Edit</a>
+             </td>
+             <td class="border border-slate-300 px-2">
+               <a
+                 class="text-red-800 hover:text-red-600"
+                 href="">Delete</a>
+             </td>
+           </tr>
+           {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <p class="text-base">No Basis Contracts have been entered yet</p>
+    {% endif %}
+    <div>
       <a class="text-lg text-indigo-800 hover:text-indigo-600"
          href="{% url 'contract_create' market_crop=marketcrop.pk is_basis=1 %}">
-          Add A Basis Contract</a>
+          Add a Basis Contract</a>
+    </div>
+  </div>  <!-- end basis contracts block -->
+  <div class="p-6 max-w-med mx-auto bg-white rounded-xl shadow-lg flex items-center space-x-4">
+    <div>
+      <h1 class="block text-xl mb-2">Edit market crop {{ marketcrop }}</h1>
+      {% crispy form %}
     </div>
   </div>
-  <div class="p-6 max-w-med mx-auto bg-white rounded-xl shadow-lg flex items-center space-x-4">
-      <div>
-        <h1 class="block text-xl mb-2">Edit market crop {{ marketcrop }}</h1>
-        {% crispy form %}
-      </div>
-  </div>
-</div>
+</div>  <!-- end form block -->
 <script>
 (() => {
     document.addEventListener('DOMContentLoaded', (event) => {

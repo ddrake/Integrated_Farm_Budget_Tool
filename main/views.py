@@ -23,7 +23,7 @@ from .models.sens_pdf import SensPdf
 from ext.models import County
 from .forms import (FarmYearCreateForm, FarmYearUpdateForm, FarmCropUpdateForm,
                     FarmBudgetCropUpdateForm, ZeroAcreFarmBudgetCropUpdateForm,
-                    MarketCropUpdateForm, ContractCreateForm, ContractUpdateForm)
+                    MarketCropUpdateForm, ContractCreateForm)
 
 
 def ensure_same_user(farm_year, request, actionmsg, objmsg):
@@ -301,6 +301,55 @@ class MarketCropUpdateView(UpdateView):
         return context
 
 
+class ContractCreateView(CreateView):
+    model = Contract
+    form_class = ContractCreateForm
+    template_name = 'main/contract_form.html'
+
+    def dispatch(self, request, *args, **kwargs):
+        print(f'in view dispatch: {kwargs=}')
+        self.extra_context = {'market_crop': kwargs['market_crop'],
+                              'is_basis': kwargs['is_basis']}
+        return super().get(request, *args, **kwargs)
+
+    def get_initial(self):
+        print(f'in get_initial: {self.extra_context=}')
+        return {'market_crop': self.extra_context['market_crop'],
+                'is_basis': 'on' if self.extra_context['is_basis'] == 1 else ''}
+
+    def post(self, request, *args, **kwargs):
+        # TODO: ensure_same_user(self.get_object().market_crop.farm_year,
+        #                  request, "Creating", "contracts")
+        return super().post(request, *args, **kwargs)
+
+    def get_success_url(self):
+        mc_id = self.kwargs.get('market_crop', None)
+        return reverse('marketcrop_update', args=[mc_id])
+
+    def form_valid(self, form):
+        # don't put custom logic in delete() handler do this instead
+        print(f'in form valid: {form.instance}')
+
+
+# class ContractUpdateView(UpdateView):
+#     model = Contract
+#     form_class = ContractUpdateForm
+#     template_name = "main/contract_form.html"
+
+#     def get(self, request, *args, **kwargs):
+#         ensure_same_user(self.get_object().farm_year, request,
+#                          "Updating", "fsa crops")
+#         return super().get(request, *args, **kwargs)
+
+#     def post(self, request, *args, **kwargs):
+#         ensure_same_user(self.get_object().farm_year, request,
+#                          "Updating", "fsa crops")
+#         return super().post(request, *args, **kwargs)
+
+#     def get_success_url(self):
+#         return reverse_lazy('fsacrop_list', args=[self.get_object().farm_year_id])
+
+
 class FsaCropUpdateView(UpdateView):
     model = FsaCrop
     template_name_suffix = "_update_form"
@@ -321,57 +370,6 @@ class FsaCropUpdateView(UpdateView):
         context = super().get_context_data(**kwargs)
         context['farmyear_id'] = self.get_object().farm_year_id
         return context
-
-
-class ContractCreateView(CreateView):
-    model = Contract
-    form_class = ContractCreateForm
-    template_name = 'main/contract_form.html'
-
-    def dispatch(self, request, *args, **kwargs):
-        print(f'in view dispatch: {kwargs=}')
-        self.extra_context = {'market_crop': kwargs['market_crop'],
-                              'is_basis': kwargs['is_basis']}
-        return super().get(request, *args, **kwargs)
-
-    def get_initial(self):
-        print(f'in get_initial: {self.extra_context=}')
-        return {'market_crop': self.extra_context['market_crop'],
-                'is_basis': 'on' if self.extra_context['is_basis'] == 1 else ''}
-
-    def post(self, request, *args, **kwargs):
-        # ensure_same_user(self.get_object().market_crop.farm_year,
-        #                  request, "Creating", "contracts")
-        return super().post(request, *args, **kwargs)
-
-    def get_success_url(self):
-        mc_id = self.kwargs.get('market_crop', None)
-        return reverse('marketcrop_update', args=[mc_id])
-
-    # def get_context_data(self, **kwargs):
-    #     context = super().get_context_data(**kwargs)
-    #     print(f'in view get context: {context=}')
-    #     mc_id = kwargs.get('market_crop', None)
-    #     market_crop = get_object_or_404(MarketCrop, pk=mc_id)
-    #     context['farmyear_id'] = market_crop.farm_year_id
-    #     return context
-
-
-class ContractUpdateView(UpdateView):
-    model = Contract
-    form_class = ContractUpdateForm
-    template_name = "main/contract_form.html"
-
-    def get(self, request, *args, **kwargs):
-        ensure_same_user(self.get_object().farm_year, request, "Updating", "fsa crops")
-        return super().get(request, *args, **kwargs)
-
-    def post(self, request, *args, **kwargs):
-        ensure_same_user(self.get_object().farm_year, request, "Updating", "fsa crops")
-        return super().post(request, *args, **kwargs)
-
-    def get_success_url(self):
-        return reverse_lazy('fsacrop_list', args=[self.get_object().farm_year_id])
 
 
 class DetailedBudgetView(TemplateView):
