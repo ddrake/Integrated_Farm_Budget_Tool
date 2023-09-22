@@ -283,11 +283,11 @@ class FarmYear(models.Model):
         isdatetime = hasattr(mmrd, 'date')
         model_run_date = mmrd.date() if isdatetime else mmrd
         if model_run_date < first_date:
-            raise ValidationError({'model_run_date': _(
+            raise ValidationError({'manual_model_run_date': _(
                 "The earliest a model run date can be set " +
                 "is Jan 11 of the crop year.")})
         if model_run_date > last_date:
-            raise ValidationError({'model_run_date': _(
+            raise ValidationError({'manual_model_run_date': _(
                 "The model run date cannot be in the future.")})
 
     def save(self, *args, **kwargs):
