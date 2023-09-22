@@ -71,6 +71,22 @@ class FarmYearCreateView(CreateView):
         return super().form_valid(form)
 
 
+class FarmYearDeleteView(DeleteView):
+    model = FarmYear
+    success_url = reverse_lazy('farmyears')
+
+    def get(self, request, *args, **kwargs):
+        ensure_same_user(self.get_object(), request, "Deleting", "farm year")
+        return super().get(request, *args, **kwargs)
+
+    def delete(request, *args, **kwargs):
+        farm_year_id = int(request.POST['id'])
+        fy = FarmYear.objects.get(pk=farm_year_id)
+        if request.user != fy.user:
+            raise PermissionDenied("Deleting another user's farm is not permittd.")
+        super().delete(request, *args, **kwargs)
+
+
 class GetCountyView(View):
     def get(self, request, state_id, *args, **kwargs):
         counties = County.code_and_name_for_state_id(state_id)
@@ -94,22 +110,6 @@ class FarmCropDeleteBudgetView(View):
         FarmCrop.delete_farm_budget_crop(farmcrop)
         json_obj = json.dumps({"time": str(datetime.datetime.now()), "method": "post"})
         return HttpResponse(json_obj, 'application/json', charset='utf-8')
-
-
-class FarmYearDeleteView(DeleteView):
-    model = FarmYear
-    success_url = reverse_lazy('farmyears')
-
-    def get(self, request, *args, **kwargs):
-        ensure_same_user(self.get_object(), request, "Deleting", "farm year")
-        return super().get(request, *args, **kwargs)
-
-    def delete(request, *args, **kwargs):
-        farm_year_id = int(request.POST['id'])
-        fy = FarmYear.objects.get(pk=farm_year_id)
-        if not request.user.is_superuser and request.user != fy.user:
-            raise PermissionDenied("Only an admin can delete another user's farm.")
-        super().delete(request, *args, **kwargs)
 
 
 class FarmYearUpdateView(UpdateView):
@@ -306,19 +306,16 @@ class ContractCreateView(CreateView):
     template_name = 'main/contract_form.html'
 
     def get(self, request, *args, **kwargs):
-        # print(f'in view get: {kwargs=}')
         self.extra_context = {'market_crop': kwargs['market_crop'],
                               'is_basis': kwargs['is_basis']}
         return super().get(request, *args, **kwargs)
 
     def get_initial(self):
         if self.extra_context:
-            # print(f'in get_initial: {self.extra_context=}')
             return {'market_crop': self.extra_context['market_crop'],
                     'is_basis': 'on' if self.extra_context['is_basis'] == 1 else ''}
 
     def post(self, request, *args, **kwargs):
-        print(f'in view post: {request.POST=}')
         pk = request.POST.get('market_crop', None)
         mc = get_object_or_404(MarketCrop, pk=pk)
         if mc.farm_year.user != request.user:
@@ -345,6 +342,26 @@ class ContractUpdateView(UpdateView):
         ensure_same_user(self.get_object().market_crop.farm_year, request,
                          "Updating", "contracts")
         return super().post(request, *args, **kwargs)
+
+    def get_success_url(self):
+        return reverse('marketcrop_update',
+                       args=[self.get_object().market_crop_id])
+
+
+class ContractDeleteView(DeleteView):
+    model = Contract
+    template_name = "main/contract_confirm_delete.html"
+
+    def get(self, request, *args, **kwargs):
+        ensure_same_user(self.get_object().market_crop.farm_year,
+                         request, "Deleting", "contract")
+        return super().get(request, *args, **kwargs)
+
+    def delete(request, *args, **kwargs):
+        c = get_object_or_404(Contract, pk=request.POST.get('pk', None))
+        if request.user != c.market_crop.farm_year.user:
+            raise PermissionDenied("Deleting another user's contract is not permitted.")
+        super().delete(request, *args, **kwargs)
 
     def get_success_url(self):
         return reverse('marketcrop_update',

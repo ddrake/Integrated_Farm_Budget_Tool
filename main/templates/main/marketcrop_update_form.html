@@ -32,7 +32,7 @@
            <tr>
              <td class="border border-slate-300 px-2">{{ct.contract_date}}</td>
              <td class="border border-slate-300 px-2">{{ct.bushels}}</td>
-             <td class="border border-slate-300 px-2">{{ct.price}}</td>
+             <td class="border border-slate-300 px-2">{{ct.price|floatformat:"2g"}}</td>
              <td class="border border-slate-300 px-2">{{ct.terminal}}</td>
              <td class="border border-slate-300 px-2">{{ct.contract_number}}</td>
              <td class="border border-slate-300 px-2">{{ct.delivery_start}}</td>
@@ -45,7 +45,7 @@
              <td class="border border-slate-300 px-2">
                <a
                  class="text-red-800 hover:text-red-600"
-                 href="">Delete</a>
+                 href="{% url 'contract_delete' pk=ct.pk %}">Delete</a>
              </td>
            </tr>
            {% endfor %}
@@ -80,7 +80,7 @@
            <tr>
              <td class="border border-slate-300 px-2">{{ct.contract_date}}</td>
              <td class="border border-slate-300 px-2">{{ct.bushels}}</td>
-             <td class="border border-slate-300 px-2">{{ct.price}}</td>
+             <td class="border border-slate-300 px-2">{{ct.price|floatformat:"2g"}}</td>
              <td class="border border-slate-300 px-2">{{ct.terminal}}</td>
              <td class="border border-slate-300 px-2">{{ct.contract_number}}</td>
              <td class="border border-slate-300 px-2">{{ct.delivery_start}}</td>
@@ -93,7 +93,7 @@
              <td class="border border-slate-300 px-2">
                <a
                  class="text-red-800 hover:text-red-600"
-                 href="">Delete</a>
+                 href="{% url 'contract_delete' pk=ct.pk %}">Delete</a>
              </td>
            </tr>
            {% endfor %}
@@ -108,6 +108,10 @@
           Add a Basis Contract</a>
     </div>
   </div>  <!-- end basis contracts block -->
+  <div class="mt-2">
+    <a class="text-lg text-indigo-800 hover:text-indigo-600"
+       href="{% url 'marketcrop_list' farmyear=marketcrop.farm_year.pk %}">Back to Market Crops</a>
+  </div>
 </div>
 <script>
 (() => {

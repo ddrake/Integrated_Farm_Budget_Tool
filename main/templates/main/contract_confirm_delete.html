@@ -6,7 +6,7 @@
 {% block content %}
 <div class="p-6 max-w-med mx-auto bg-white rounded-xl shadow-lg flex items-center space-x-4">
     <div>
-        <h1 class="block text-xl mb-2">Are you sure you want to delete "{{ object }}"?</h1>
+        <h1 class="block text-xl mb-2">Are you sure you want to delete the specified contract?</h1>
         <form method="post">
             {% csrf_token %}
             {{ form|crispy }}

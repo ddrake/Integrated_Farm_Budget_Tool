@@ -2,7 +2,7 @@ from django.forms import ModelForm
 from django import forms
 
 from crispy_forms.helper import FormHelper
-from crispy_forms.layout import Layout, Field, Submit, Fieldset, Hidden
+from crispy_forms.layout import Layout, Field, Submit, Fieldset, HTML
 
 from .models.farm_year import FarmYear
 from .models.farm_crop import FarmCrop
@@ -171,12 +171,15 @@ class MarketCropUpdateForm(ModelForm):
 class ContractCreateForm(ModelForm):
 
     def __init__(self, *args, **kwargs):
-        print(f'in form: {kwargs=}')
         super().__init__(*args, **kwargs)
+        kind = ('' if kwargs.get('initial', None) is None else
+                'Basis' if kwargs['initial'].get('is_basis', '') == 'on' else
+                'Futures')
         self.helper = FormHelper()
         self.helper.add_input(Submit('submit', 'Create'))
         self.helper.form_id = 'contractform'
         self.helper.layout = Layout(
+            HTML(f"""<h1 class="block text-xl mb-2">Add {kind} Contract</h1>"""),
             Fieldset('Contract Information',
                      'contract_date', 'bushels', 'price', 'terminal',
                      'contract_number', 'delivery_start_date',
@@ -201,6 +204,7 @@ class ContractUpdateForm(ModelForm):
         self.helper.add_input(Submit('submit', 'Update'))
         self.helper.form_id = 'contractform'
         self.helper.layout = Layout(
+            HTML("""<h1 class="block text-xl mb-2">Edit Contract</h1>"""),
             Fieldset('Contract Information',
                      'contract_date', 'bushels', 'price', 'terminal',
                      'contract_number', 'delivery_start_date',
