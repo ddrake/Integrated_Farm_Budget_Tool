@@ -297,8 +297,8 @@ class FarmCrop(models.Model):
         pre_discov = mrd <= self.proj_price_disc_end
         pre_harv = mrd <= self.harv_price_disc_end
         pre_cty_yield = mrd <= self.cty_yield_final
-        harv_price = self.sens_harvest_price(pf)
-        sens_harv_price = harv_price * pf
+        harv_price = self.harvest_price()
+        sens_harv_price = self.sens_harvest_price(pf)
         py = PriceYield.objects.get(
             crop_year=self.farm_year.crop_year, state_id=self.farm_year.state_id,
             county_code=self.farm_year.county_code,
