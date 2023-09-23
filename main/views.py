@@ -4,6 +4,7 @@ that farmyear_id is in the context.
 """
 import datetime
 import json
+import csv
 from django.shortcuts import render, get_object_or_404, redirect
 from django.http import JsonResponse, HttpResponse, FileResponse
 from django.core.exceptions import PermissionDenied
@@ -454,15 +455,36 @@ class SensitivityPdfView(View):
 
 
 class ContractPdfView(View):
-    """
-    Expect URL of the form: downloadsens/23/?tag=revenue_diff_corn
-    """
     def get(self, request, *args, **kwargs):
         farm_year = get_object_or_404(FarmYear, pk=kwargs.get('farmyear', None))
         ensure_same_user(farm_year, request, "Printing", "Contracts")
         buffer = ContractPdf(farm_year).create()
         filename = "Grain Contracts.pdf"
         return FileResponse(buffer, as_attachment=True, filename=filename)
+
+
+class ContractCsvView(View):
+    def get(self, request, *args, **kwargs):
+        farm_year = get_object_or_404(FarmYear, pk=kwargs.get('farmyear', None))
+        ensure_same_user(farm_year, request, "Printing", "Contracts")
+        response = HttpResponse(
+            content_type='text/csv',
+            headers={'Content-Disposition':
+                     'attachment; filename="GrainContracts.csv"'},
+        )
+        writer = csv.writer(response)
+        writer.writerow(['Crop', 'Futures/Basis', 'Contract Date', 'Bushels', 'Price',
+                         'Terminal', 'Contract #', 'Delivery Start', 'Delivery End'])
+        for mc in farm_year.market_crops.all():
+            for c in mc.get_futures_contracts():
+                writer.writerow(
+                    [mc, 'Futures', c.contract_date, c.bushels, c.price, c.terminal,
+                     c.contract_number, c.delivery_start_date, c.delivery_end_date])
+            for c in mc.get_basis_contracts():
+                writer.writerow(
+                    [mc, 'Basis', c.contract_date, c.bushels, c.price, c.terminal,
+                     c.contract_number, c.delivery_start_date, c.delivery_end_date])
+        return response
 
 
 class SensitivityTableView(TemplateView):

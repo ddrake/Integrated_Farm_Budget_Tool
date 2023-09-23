@@ -61,6 +61,10 @@
   <a class="text-lg text-indigo-800 hover:text-indigo-600"
      href="{% url 'downloadcontracts' farmyear=marketcrop_list.0.farm_year.pk %}"
      >Print Contracts PDF</a>
+  &nbsp;&nbsp;|&nbsp;&nbsp;
+  <a class="text-lg text-indigo-800 hover:text-indigo-600"
+     href="{% url 'downloadcontracts_csv' farmyear=marketcrop_list.0.farm_year.pk %}"
+     >Download Contracts CSV</a>
 </div>
 </div>
 {% endblock %}
