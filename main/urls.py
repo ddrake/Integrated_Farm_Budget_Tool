@@ -9,7 +9,7 @@ from .views import (
     FarmBudgetCropUpdateView, DetailedBudgetView, SensitivityTableView,
     FarmYearDashboard, FarmCropDeleteBudgetView, FarmYearUpdateBaselineView,
     FarmYearConfirmBaselineUpdate, BudgetPdfView, SensitivityPdfView,
-    ContractCreateView, ContractUpdateView, ContractDeleteView)
+    ContractCreateView, ContractUpdateView, ContractDeleteView, ContractPdfView)
 
 from . import views
 
@@ -69,4 +69,6 @@ urlpatterns = [
          login_required(SensitivityTableView.as_view()), name='sensitivity'),
     path('downloadsens/<int:farmyear>',
          login_required(SensitivityPdfView.as_view()), name='downloadsens'),
+    path('downloadcontracts/<int:farmyear>',
+         login_required(ContractPdfView.as_view()), name='downloadcontracts'),
 ]

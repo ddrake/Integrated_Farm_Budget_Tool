@@ -55,7 +55,12 @@
 </div>
 <div class="mt-2">
   <a class="text-lg text-indigo-800 hover:text-indigo-600"
-     href="{% url 'dashboard' pk=marketcrop_list.0.farm_year.pk %}">Back to Dashboard</a>
+     href="{% url 'dashboard' pk=marketcrop_list.0.farm_year.pk %}"
+     >Back to Dashboard</a>
+  &nbsp;&nbsp;|&nbsp;&nbsp;
+  <a class="text-lg text-indigo-800 hover:text-indigo-600"
+     href="{% url 'downloadcontracts' farmyear=marketcrop_list.0.farm_year.pk %}"
+     >Print Contracts PDF</a>
 </div>
 </div>
 {% endblock %}

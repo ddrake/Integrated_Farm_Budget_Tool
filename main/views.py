@@ -20,6 +20,7 @@ from .models.budget_table import BudgetManager
 from .models.budget_pdf import BudgetPdf
 from .models.sens_table import SensTableGroup
 from .models.sens_pdf import SensPdf
+from .models.contract_pdf import ContractPdf
 from ext.models import County
 from .forms import (FarmYearCreateForm, FarmYearUpdateForm, FarmCropUpdateForm,
                     FarmBudgetCropUpdateForm, ZeroAcreFarmBudgetCropUpdateForm,
@@ -449,6 +450,18 @@ class SensitivityPdfView(View):
         senstype = request.GET.get('tag', 0)
         buffer = SensPdf(farm_year, senstype).create()
         filename = f"Sensitivity_{senstype}.pdf"
+        return FileResponse(buffer, as_attachment=True, filename=filename)
+
+
+class ContractPdfView(View):
+    """
+    Expect URL of the form: downloadsens/23/?tag=revenue_diff_corn
+    """
+    def get(self, request, *args, **kwargs):
+        farm_year = get_object_or_404(FarmYear, pk=kwargs.get('farmyear', None))
+        ensure_same_user(farm_year, request, "Printing", "Contracts")
+        buffer = ContractPdf(farm_year).create()
+        filename = "Grain Contracts.pdf"
         return FileResponse(buffer, as_attachment=True, filename=filename)
 
 

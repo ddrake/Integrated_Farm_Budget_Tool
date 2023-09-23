@@ -160,15 +160,15 @@ class Contract(models.Model):
     bushels = models.FloatField(default=0, validators=[MinVal(0), MaxVal(999999)])
 
     price = models.FloatField(
-        default=0, validators=[MinVal(0), MaxVal(30)], verbose_name="price per bushel")
+        default=0, validators=[MinVal(-2), MaxVal(30)], verbose_name="price per bushel")
 
     terminal = models.CharField(max_length=60, blank=True)
 
     contract_number = models.CharField(max_length=25, blank=True)
 
-    delivery_start_date = models.DateField(null=True)
+    delivery_start_date = models.DateField(null=True, blank=True)
 
-    delivery_end_date = models.DateField(null=True)
+    delivery_end_date = models.DateField(null=True, blank=True)
 
     market_crop = models.ForeignKey(
         MarketCrop, on_delete=models.CASCADE, related_name='contracts')
