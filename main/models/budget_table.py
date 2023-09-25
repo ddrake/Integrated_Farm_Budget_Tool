@@ -226,12 +226,14 @@ class BudgetTable(object):
         self.total_rented_acres = self.farm_year.total_rented_acres()
         self.total_owned_acres = self.farm_year.cropland_acres_owned
         self.total_farm_acres = self.total_rented_acres + self.total_owned_acres
-        self.rented_acres = [(0 if fc.farm_crop_type.is_fac else fc.planted_acres) *
-                             self.total_rented_acres / self.total_farm_acres
-                             for fc in self.farm_crops]
-        self.owned_acres = [(0 if fc.farm_crop_type.is_fac else fc.planted_acres) *
-                            self.total_owned_acres / self.total_farm_acres
-                            for fc in self.farm_crops]
+        self.rented_acres = [
+            (0 if (fc.farm_crop_type.is_fac or self.total_farm_acres == 0) else
+             fc.planted_acres * self.total_rented_acres / self.total_farm_acres)
+            for fc in self.farm_crops]
+        self.owned_acres = [
+            (0 if (fc.farm_crop_type.is_fac or self.total_farm_acres == 0) else
+             fc.planted_acres * self.total_owned_acres / self.total_farm_acres)
+            for fc in self.farm_crops]
         self.blank_before_rows = [0, 1, 6, 14, 21, 29, 32, 33, 36, 38, 39, 40]
 
     def get_info(self):
@@ -494,7 +496,9 @@ class BudgetTable(object):
         land_cost = self.farm_year.total_owned_land_expense()
         farm_acres = self.total_farm_acres
         self.data['owned_land_cost'] = [
-            land_cost / farm_acres * ac for ac in self.fsacres]
+            (0 if farm_acres == 0 else land_cost / farm_acres * ac)
+            for ac in self.fsacres]
+
         self.data['total_land_cost'] = [rent + lc for rent, lc in
                                         zip(self.data['adjusted_land_rent'],
                                             self.data['owned_land_cost'])]

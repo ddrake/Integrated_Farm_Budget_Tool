@@ -599,16 +599,17 @@ class FarmCrop(models.Model):
         if yf is None:
             yf = self.farmbudgetcrop.yield_factor
         # rent cost per planted acre
-        rented_costperacre = (self.farmbudgetcrop.rented_land_costs *
-                              self.farm_year.total_rented_acres() /
-                              self.farm_year.total_farm_acres())
+        tot_acres = self.farm_year.total_farm_acres()
+        rented_costperacre = (0 if tot_acres == 0 else
+                              self.farmbudgetcrop.rented_land_costs *
+                              self.farm_year.total_rented_acres() / tot_acres)
         return (rented_costperacre *
                 (1 + self.revenue_based_adj_to_land_rent(pf, yf, sprice)))
 
     def owned_land_costs(self):
-        return (0 if self.farm_crop_type.is_fac else
-                (self.farm_year.total_owned_land_expense() /
-                 self.farm_year.total_farm_acres()))
+        tot_acres = self.farm_year.total_farm_acres()
+        return (0 if self.farm_crop_type.is_fac or tot_acres == 0 else
+                (self.farm_year.total_owned_land_expense() / tot_acres))
 
     def land_costs(self, pf=None, yf=None, sprice=None):
         if not self.has_budget():
