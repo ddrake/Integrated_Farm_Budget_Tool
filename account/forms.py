@@ -1,17 +1,15 @@
 from django import forms
-from django.contrib.auth.forms import UserCreationForm
-
-from django.contrib.sites.shortcuts import get_current_site
 from django.contrib.auth import get_user_model
+from django.contrib.auth.forms import UserCreationForm
+from django.contrib.sites.shortcuts import get_current_site
+from django.template.loader import render_to_string
 from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode
-
-from django.template.loader import render_to_string
-from django.forms import ModelForm
 
 from .token import token_generator
 
 user_model = get_user_model()
+
 
 # Sign Up Form
 class RegistrationForm(UserCreationForm):
