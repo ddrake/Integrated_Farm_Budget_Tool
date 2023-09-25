@@ -1,12 +1,12 @@
 from datetime import datetime
 
+from django.contrib.auth.models import User
 from django.test import TestCase
+from django.urls import reverse
 
 from .models.farm_year import FarmYear
 from .models.farm_crop import FarmCrop
 from .models.budget_table import BudgetManager
-
-from django.contrib.auth.models import User
 
 
 class FarmYearTestCase(TestCase):
@@ -426,3 +426,94 @@ class Madison2023FarmYearTestCase(TestCase):
              [416666.6666666667, 416666.6666666667, 416666.6666666667, 0, 0]}
         }
         self.assertEqual(data, expected)
+
+
+# ----------
+# VIEW TESTS
+# ----------
+
+class Madison2023FarmYearViewTests(TestCase):
+    # Note: I haven't been able to get tests to work if the user is created in the
+    # setup method. Logging in doesn't seem to work then.
+    # Also, these tests are quite slow (2.1 seconds to test 8 views)!
+    def test_farmyears_logged_in(self):
+        self.user = User.objects.create_user(username='testuser', password='12345')
+        self.farm_year = FarmYear.objects.create(
+            user=self.user, farm_name="Madison Farm", state_id=17, county_code=119)
+        self.client.login(username='testuser', password='12345')
+        response = self.client.get(reverse('farmyears'))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Farms')
+
+    def test_farmyears_not_logged_in(self):
+        response = self.client.get(reverse('farmyears'))
+        self.assertEqual(response.status_code, 302)
+
+    def test_dashboard_logged_in(self):
+        self.user = User.objects.create_user(username='testuser', password='12345')
+        self.farm_year = FarmYear.objects.create(
+            user=self.user, farm_name="Madison Farm", state_id=17, county_code=119)
+        self.client.login(username='testuser', password='12345')
+        response = self.client.get(reverse('dashboard', args=[self.farm_year.pk]))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Dashboard')
+
+    def test_dashboard_wrong_user(self):
+        self.user1 = User.objects.create_user(username='user1', password='12345')
+        self.user2 = User.objects.create_user(username='user2', password='12345')
+        self.farm_year = FarmYear.objects.create(
+            user=self.user1, farm_name="Madison Farm", state_id=17, county_code=119)
+        self.client.login(username='user2', password='12345')
+        response = self.client.get(reverse('dashboard', args=[self.farm_year.pk]))
+        self.assertEqual(response.status_code, 403)
+
+    def test_dashboard_not_logged_in(self):
+        self.user = User.objects.create_user(username='testuser', password='12345')
+        self.farm_year = FarmYear.objects.create(
+            user=self.user, farm_name="Madison Farm", state_id=17, county_code=119)
+        response = self.client.get(reverse('dashboard', args=[self.farm_year.pk]))
+        self.assertEqual(response.status_code, 302)
+
+    def test_farmyear_detail_logged_in(self):
+        self.user = User.objects.create_user(username='testuser', password='12345')
+        self.farm_year = FarmYear.objects.create(
+            user=self.user, farm_name="Madison Farm", state_id=17, county_code=119)
+        self.client.login(username='testuser', password='12345')
+        response = self.client.get(reverse('farmyear_detail', args=[self.farm_year.pk]))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Dashboard')
+
+    def test_farmyear_update_logged_in(self):
+        self.user = User.objects.create_user(username='testuser', password='12345')
+        self.farm_year = FarmYear.objects.create(
+            user=self.user, farm_name="Madison Farm", state_id=17, county_code=119)
+        self.client.login(username='testuser', password='12345')
+        response = self.client.get(reverse('farmyear_update', args=[self.farm_year.pk]))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Update Farm Year')
+        # The post will have a lot of items, test post for a different model for now.
+
+    def test_farmyear_delete_logged_in(self):
+        self.user = User.objects.create_user(username='testuser', password='12345')
+        self.farm_year = FarmYear.objects.create(
+            user=self.user, farm_name="Madison Farm", state_id=17, county_code=119)
+        self.client.login(username='testuser', password='12345')
+        response = self.client.get(reverse('farmyear_delete',
+                                           args=[self.farm_year.pk]))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Are you sure you want to delete')
+        response = self.client.post(reverse('farmyear_delete',
+                                            args=[self.farm_year.pk]), {})
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, reverse('farmyears'))
+
+    # Not sure what's wrong with this test.  The view is not redirecting properly.
+    # The view should be setting the user to the request.user...
+    # def test_farmyear_create_logged_in(self):
+    #     self.user = User.objects.create_user(username='testuser', password='12345')
+    #     self.client.login(username='testuser', password='12345')
+    #     response = self.client.post(reverse('farmyear_create'),
+    #                                 {"farm_name": "A Farm",
+    #                                  "state_id": "17", "county_code": "119"})
+    #     print(response.content)
+    #     self.assertEqual(response.status_code, 200)
