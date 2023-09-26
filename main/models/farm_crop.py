@@ -448,7 +448,7 @@ class FarmCrop(models.Model):
                     np.zeros_like(yf))
         if yf is None:
             yf = self.farmbudgetcrop.yield_factor
-        return self.sens_production_bu(yf) - self.fut_contracted_bu()
+        return self.sens_production_bu(yf) - self.fut_contracted_bu(yf)
 
     def basis_bu_locked(self, yf=None):
         """ apportion based on fraction of market crop production """
@@ -527,10 +527,11 @@ class FarmCrop(models.Model):
             pf = self.price_factor()
         if yf is None:
             yf = self.farmbudgetcrop.yield_factor
-        result = (
-            self.sens_fut_uncontracted_bu(yf) * self.sens_harvest_price(pf)
-            if isinstance(pf, numbers.Number) else
-            np.outer(self.sens_harvest_price(pf), self.sens_fut_uncontracted_bu(yf)))
+        if isinstance(pf, numbers.Number):
+            result = self.sens_fut_uncontracted_bu(yf) * self.sens_harvest_price(pf)
+        else:
+            result = np.outer(self.sens_harvest_price(pf),
+                              self.sens_fut_uncontracted_bu(yf))
         return result
 
     def noncontract_basis_revenue(self, yf=None):
@@ -586,9 +587,14 @@ class FarmCrop(models.Model):
             pf = self.price_factor()
         if yf is None:
             yf = self.farmbudgetcrop.yield_factor
-        return (self.contract_fut_revenue() + self.contract_basis_revenue() +
-                self.noncontract_fut_revenue(pf, yf) +
-                self.noncontract_basis_revenue(yf))
+        if isinstance(pf, numbers.Number):
+            return (self.contract_fut_revenue() + self.contract_basis_revenue() +
+                    self.noncontract_fut_revenue(pf, yf) +
+                    self.noncontract_basis_revenue(yf))
+        else:
+            return (self.contract_fut_revenue() + self.contract_basis_revenue() +
+                    self.noncontract_fut_revenue(pf, yf) +
+                    self.noncontract_basis_revenue(yf).reshape(1, len(yf)))
 
     def contract_basis_revenue(self):
         return self.basis_bu_locked() * self.avg_locked_basis()
