@@ -143,10 +143,17 @@ class MarketCrop(models.Model):
         return (0 if tot == 0 else self.basis_bu_locked() / tot)
 
     def production_frac_for_farm_crop(self, farmcrop, yf=None):
-        expbu = self.expected_total_bushels(yf)
-        return (0 if expbu == 0 else
-                (farmcrop.sens_farm_expected_yield(yf) * farmcrop.planted_acres /
-                 expbu))
+        """ scalar or array(ny)  """
+        if yf is None or isinstance(yf, numbers.Number):
+            expbu = self.expected_total_bushels(yf)
+            return (0 if expbu == 0 else
+                    (farmcrop.sens_farm_expected_yield(yf) * farmcrop.planted_acres /
+                     expbu))
+        else:
+            expbu = self.expected_total_bushels(yf)
+            return (np.zeros_like(yf) if expbu.all() == 0 else
+                    (farmcrop.sens_farm_expected_yield(yf) * farmcrop.planted_acres /
+                     expbu))
 
     class Meta:
         ordering = ['market_crop_type_id']
