@@ -12,4 +12,4 @@ Pillow==10.0.1
 psycopg2==2.9.7
 -e git+https://github.com/ddrake/reportlab-mirror@be60236b69993af78f583ba232345a5cb373d954#egg=reportlab
 sqlparse==0.4.4
-typing_extensions==4.7.1
+typing_extensions==4.8.0
