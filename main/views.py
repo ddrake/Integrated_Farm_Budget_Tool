@@ -507,12 +507,13 @@ class ContractCsvView(UserPassesTestMixin, View):
         writer.writerow(['Crop', 'Futures/Basis', 'Contract Date', 'Bushels', 'Price',
                          'Terminal', 'Contract #', 'Delivery Start', 'Delivery End'])
         for mc in farm_year.market_crops.all():
-            for c in mc.get_futures_contracts():
-                writer.writerow(
-                    [mc, 'Futures', c.contract_date, c.bushels, c.price, c.terminal,
-                     c.contract_number, c.delivery_start_date, c.delivery_end_date])
-            for c in mc.get_basis_contracts():
-                writer.writerow(
-                    [mc, 'Basis', c.contract_date, c.bushels, c.price, c.terminal,
-                     c.contract_number, c.delivery_start_date, c.delivery_end_date])
+            if mc.planted_acres() > 0:
+                for c in mc.get_futures_contracts():
+                    writer.writerow(
+                        [mc, 'Futures', c.contract_date, c.bushels, c.price, c.terminal,
+                         c.contract_number, c.delivery_start_date, c.delivery_end_date])
+                for c in mc.get_basis_contracts():
+                    writer.writerow(
+                        [mc, 'Basis', c.contract_date, c.bushels, c.price, c.terminal,
+                         c.contract_number, c.delivery_start_date, c.delivery_end_date])
         return response

@@ -38,7 +38,8 @@ def fmtprice(price):
 class ContractPdf(object):
     def __init__(self, farm_year):
         self.farm_year = farm_year
-        self.market_crops = list(farm_year.market_crops.all())
+        self.market_crops = [mc for mc in farm_year.market_crops.all()
+                             if mc.planted_acres() > 0]
         self.contracts = [(i, (list(mc.get_futures_contracts()),
                                list(mc.get_basis_contracts())))
                           for i, mc in enumerate(self.market_crops)]
@@ -70,7 +71,16 @@ class ContractPdf(object):
         """ Given a marketcrop index and a list of contract objects,
             construct a formatted table
         """
-        crop = str(self.market_crops[mcidx])
+        mc = self.market_crops[mcidx]
+        expected_total_bu = mc.expected_total_bushels()
+        contract_total = (mc.basis_bu_locked() if is_basis else
+                          mc.contracted_bu())
+        remaining = expected_total_bu - contract_total
+        pct_of_expected = (mc.basis_pct_of_expected() if is_basis else
+                           mc.futures_pct_of_expected())
+        avg_contract_price = (mc.avg_locked_basis() if is_basis else
+                              mc.avg_contract_price())
+        crop = str(mc)
         kind = 'Basis' if is_basis else 'Futures'
         title = f'{crop} {kind} Contracts'
         rows = [[title, '', '', '', '', '', ''],
@@ -81,6 +91,14 @@ class ContractPdf(object):
                 [ct.contract_date, f'{ct.bushels:,.0f}', fmtprice(ct.price),
                  ct.terminal, ct.contract_number, ct.delivery_start_date,
                  ct.delivery_end_date])
+        rows.append(['Total / Avg. Price', f'{contract_total:,.0f}',
+                     fmtprice(avg_contract_price), '', '', '', ''])
+        rows.append(['Total Estimated Bu.', f'{expected_total_bu:,.0f}',
+                     '', '', '', '', ''])
+        rows.append(['% of Expected', f'{pct_of_expected:.0%}',
+                     '', '', '', '', ''])
+        rows.append(['Remaining Bu.', f'{remaining:,.0f}',
+                     '', '', '', '', ''])
 
         return Table(rows, hAlign='CENTER', style=self.get_styles(),
                      rowHeights=self.get_rowheights(len(rows)))
@@ -113,6 +131,7 @@ class ContractPdf(object):
             ('LINEBELOW', (0, -1), (-1, -1), BORD, BK),
             ('LINEBEFORE', (0, 0), (0, -1), BORD, BK),
             ('LINEAFTER', (-1, 0), (-1, -1), BORD, BK),
+            ('FONT', (0, -4), (-1, -1), FONTBOLD, FS, FS),
         ]
         return styles
 
