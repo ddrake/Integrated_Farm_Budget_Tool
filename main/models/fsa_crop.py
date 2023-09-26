@@ -95,7 +95,7 @@ class FsaCrop(models.Model):
         if scal:
             pairs = [p for p in pairs if p != (0, 0)]
         else:
-            pairs = [p for p in pairs if p[0] != 0 and not np.all(p[1]) == 0]
+            pairs = [p for p in pairs if p[0] != 0 or not np.all(p[1]) == 0]
         if len(pairs) == 0:
             return (0 if scal else np.zeros_like(yf))
         if len(pairs) == 1:
@@ -141,7 +141,6 @@ class FsaCrop(models.Model):
             if yf is None:
                 yf = self.yield_factor()
             cty_yield = self.cty_expected_yield(yf=yf)
-
         gp = GovPmt(plc_base_acres=self.plc_base_acres,
                     arcco_base_acres=self.arcco_base_acres, plc_yield=self.plc_yield,
                     estimated_county_yield=cty_yield,
