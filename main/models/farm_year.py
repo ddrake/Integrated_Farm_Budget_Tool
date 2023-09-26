@@ -1,3 +1,4 @@
+import numpy as np
 from datetime import datetime, timedelta
 from django.contrib.auth.models import User
 from django.core.exceptions import PermissionDenied, ValidationError
@@ -256,9 +257,9 @@ class FarmYear(models.Model):
         else:
             total = sum((fc.gov_payment(mya_prices[i], cty_yield=cty_yields[i])
                          for i, fc in enumerate(self.fsa_crops.all())))
-        total_pmt = round(
-            min(FarmYear.FSA_PMT_CAP_PER_PRINCIPAL * self.eligible_persons_for_cap,
-                total * (1 - GovPmt.SEQUEST_FRAC)))
+        total_pmt = np.minimum(FarmYear.FSA_PMT_CAP_PER_PRINCIPAL *
+                               self.eligible_persons_for_cap,
+                               total * (1 - GovPmt.SEQUEST_FRAC)).round()
         return total_pmt / self.total_planted_acres() if is_per_acre else total_pmt
 
     # -----------------------

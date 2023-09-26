@@ -1,4 +1,6 @@
+import numbers
 from datetime import datetime
+import numpy as np
 from django.core.validators import (
     MinValueValidator as MinVal, MaxValueValidator as MaxVal)
 from django.db import models
@@ -68,6 +70,7 @@ class MarketCrop(models.Model):
         return self.harvest_futures_price_info(price_only=True)
 
     def sens_harvest_price(self, pf=None):
+        """ array 1d or scalar """
         if pf is None:
             pf = self.price_factor
         return self.harvest_futures_price_info(price_only=True) * pf
@@ -116,9 +119,14 @@ class MarketCrop(models.Model):
                     for fc in self.farm_crops.all())) / self.planted_acres()
 
     def county_bean_yield(self, yf=1):
-        """ for indemnity calculations """
+        """
+        for indemnity calculations
+        1d array or scalar
+        """
         ac = self.planted_acres()
-        return (0 if self.market_crop_type_id != 2 or ac == 0 else
+        return (0 if (isinstance(yf, numbers.Number) and
+                      self.market_crop_type_id != 2 or ac == 0) else
+                np.zeros_like(yf) if self.market_crop_type_id != 2 or ac == 0 else
                 sum((fc.sens_cty_expected_yield(yf) * fc.planted_acres
                      for fc in self.farm_crops.all())) / ac)
 

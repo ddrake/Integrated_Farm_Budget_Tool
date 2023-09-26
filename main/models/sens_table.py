@@ -63,7 +63,7 @@ class SensTableGroup(object):
                               1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7])
         self.yfrange = array([.5, .6, .7, .8, .9, .95, 1, 1.05, 1.1])
 
-        # apportioned gov pmt in dollars
+        # 3d array of apportioned gov pmt in dollars
         self.gov_pmts = None
 
         # computed numeric arrays
@@ -73,7 +73,6 @@ class SensTableGroup(object):
         self.cost_values = None
         self.cashflow_values = None
 
-        self.tot_nonland_cost = [fc.total_nonland_costs() for fc in self.farm_crops]
         # show all fsa crops for both yield and price blocks
         self.fsa_crops = list(self.farm_year.fsa_crops.all())
         self.fsacropnames = [str(fsac) for fsac in self.fsa_crops]
@@ -96,13 +95,11 @@ class SensTableGroup(object):
         self.mya_pcts = (self.mya_prices /
                          self.mya_prices[:, 6].reshape(len(self.mya_prices), 1))
 
-        self.yields = np.array(
-            [[fc.sens_farm_expected_yield(yf) for yf in self.yfrange]
-             for fc in self.farm_crops])
+        self.yields = np.array([fc.sens_farm_expected_yield(self.yfrange)
+                                for fc in self.farm_crops])
 
-        self.cty_yields = np.array(
-            [[fc.cty_expected_yield(yf) for yf in self.yfrange]
-             for fc in self.fsa_crops])
+        self.cty_yields = np.array([fc.cty_expected_yield(self.yfrange)
+                                    for fc in self.fsa_crops])
 
         self.info = None
 
@@ -208,13 +205,15 @@ class SensTableGroup(object):
     # ----------------
     # DATA COMPUTATION
     # ----------------
-    def set_gov_pmts(self, pfix, yfix):
-        # set apportioned gov pmt in dollars (optimization)
-        mya_prices = self.mya_prices[:, pfix]
-        cty_yields = self.cty_yields[:, yfix]
-        totgovpmt = self.farm_year.calc_gov_pmt(mya_prices=mya_prices,
-                                                cty_yields=cty_yields)
-        self.gov_pmts = [totgovpmt * ac / self.total_acres for ac in self.acres]
+    def set_gov_pmts(self):
+        """ set apportioned gov pmt in dollars (optimization) """
+
+        # numpy array
+        totgovpmt = self.farm_year.calc_gov_pmt(mya_prices=self.mya_prices,
+                                                cty_yields=self.cty_yields)
+
+        self.gov_pmts = np.array([totgovpmt * ac / self.total_acres
+                                  for ac in self.acres])
 
     def save_sens_data(self, rslt):
         self.farm_year.sensitivity_text = rslt
@@ -231,7 +230,7 @@ class SensTableGroup(object):
             other_rev = self.farm_year.other_nongrain_income
             self.revenue_values = self.get_values_array(
                 'gross_rev_no_title_indem', noncrop=other_rev,
-                kwargs={'is_per_acre': True, 'sprice': None})
+                kwargs={'is_per_acre': True})
         return self.revenue_values
 
     def get_title_values(self):
@@ -248,8 +247,7 @@ class SensTableGroup(object):
         if self.cost_values is None:
             other_cost = self.farm_year.other_nongrain_expense
             self.cost_values = self.get_values_array(
-                'total_cost', noncrop=other_cost,
-                kwargs={'sprice': None})
+                'total_cost', noncrop=other_cost)
         return self.cost_values
 
     def get_cashflow_values(self):
@@ -269,24 +267,19 @@ class SensTableGroup(object):
         cropct = self.nfcs
         blocks = cropct + (2 if self.wheatdc else 1)
         result = zeros((blocks, len(self.pfrange), len(self.yfrange)))
-        for j, pf in enumerate(self.pfrange):
-            for k, yf in enumerate(self.yfrange):
-                if methodname == 'gov_pmt_portion':
-                    self.set_gov_pmts(j, k)
-                for i, (crop, acres) in enumerate(zip(self.farm_crops, self.acres)):
-                    if methodname == 'gov_pmt_portion':
-                        result[i, j, k] = self.gov_pmts[i] / 1000
-                    elif methodname == 'total_cost':
-                        result[i, j, k] = (
-                            crop.total_cost(
-                                pf=pf, yf=yf,
-                                tot_nonland_cost=self.tot_nonland_cost[i], **kwargs)
-                            * acres / 1000)
-                    else:
-                        if 'sprice' in kwargs:
-                            kwargs['sprice'] = self.prices[j, i]
-                        value = (getattr(crop, methodname)(pf=pf, yf=yf, **kwargs))
-                        result[i, j, k] = value * acres / 1000
+        if methodname == 'gov_pmt_portion':
+            self.set_gov_pmts()
+        for i, (crop, acres) in enumerate(zip(self.farm_crops, self.acres)):
+            if methodname == 'gov_pmt_portion':
+                result[i, ...] = self.gov_pmts[i] / 1000
+            elif methodname == 'total_cost':
+                result[i, ...] = (
+                    crop.total_cost(pf=self.pfrange, yf=self.yfrange, **kwargs)
+                    * acres / 1000)
+            else:
+                value = (getattr(crop, methodname)(pf=self.pfrange,
+                                                   yf=self.yfrange, **kwargs))
+                result[i, ...] = value * acres / 1000
         result[cropct, ...] = result[:cropct, ...].sum(axis=0) + noncrop / 1000
         if self.wheatdc:
             result[-1, ...] = result[self.wheatdcixs, ...].sum(axis=0)
