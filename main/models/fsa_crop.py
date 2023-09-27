@@ -1,4 +1,3 @@
-import numbers
 import numpy as np
 from datetime import datetime
 from django.core.exceptions import ValidationError
@@ -10,6 +9,7 @@ from ext.models import (FsaCropType, PriceYield, MyaPreEstimate, MyaPost,
                         BenchmarkRevenue)
 from core.models.gov_pmt import GovPmt
 from .farm_year import FarmYear
+from .util import scal
 
 
 def get_current_year():
@@ -71,15 +71,11 @@ class FsaCrop(models.Model):
     def cty_expected_yield(self, yf=None):
         """
         Get weighted average of farm crop county yields
-        TODO: This needs to check model run date and use RMA final yields
-        once they are available (and ignore any yield factor).
-        scalar or array(yf)
         """
         if yf is None:
             yf = self.yield_factor()
-        scal = isinstance(yf, numbers.Number)
         if len(self.farm_crops()) == 0:
-            return (0 if scal else np.zeros_like(yf))
+            return (0 if scal(yf) else np.zeros_like(yf))
         farm_crop = self.farm_crops()[0]
         if self.farm_year.get_model_run_date() > farm_crop.cty_yield_final:
             py = PriceYield.objects.get(
@@ -92,17 +88,17 @@ class FsaCrop(models.Model):
                 return py.final_yield
         pairs = [(fc.planted_acres, fc.sens_cty_expected_yield(yf))
                  for fc in self.farm_crops()]
-        if scal:
+        if scal(yf):
             pairs = [p for p in pairs if p != (0, 0)]
         else:
             pairs = [p for p in pairs if p[0] != 0 or not np.all(p[1]) == 0]
         if len(pairs) == 0:
-            return (0 if scal else np.zeros_like(yf))
+            return (0 if scal(yf) else np.zeros_like(yf))
         if len(pairs) == 1:
             return pairs[0][1]
         acres, weight = zip(*((ac, ac*yld) for ac, yld in pairs))
         totacres = sum(acres)
-        if scal:
+        if scal(yf):
             return 0 if totacres == 0 else sum(weight) / totacres
         else:
             return (np.zeros_like(yf) if totacres == 0 else
@@ -132,15 +128,14 @@ class FsaCrop(models.Model):
             else MyaPost.get_mya_post_estimate(
                 self.farm_year.crop_year, mrd, self.fsa_crop_type_id, pf=pf))
 
-    def gov_payment(self, sens_mya_price, yf=None, cty_yield=None):
+    def gov_payment(self, sens_mya_price=None, cty_yield=None):
         """
-        sens_mya_price and cty_yield may be either both scalars or both numpy arrays
-        if sens_mya_price is an array, cty_yield must be provided (as an array)
+        sens_mya_price is array(np), cty_yield is array(ny)
         """
+        if sens_mya_price is None:
+            sens_mya_price = self.sens_mya_price()
         if cty_yield is None:
-            if yf is None:
-                yf = self.yield_factor()
-            cty_yield = self.cty_expected_yield(yf=yf)
+            cty_yield = self.cty_expected_yield()
         gp = GovPmt(plc_base_acres=self.plc_base_acres,
                     arcco_base_acres=self.arcco_base_acres, plc_yield=self.plc_yield,
                     estimated_county_yield=cty_yield,

@@ -1,6 +1,3 @@
-import math
-import numbers
-
 import numpy as np
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.core.validators import (
@@ -14,7 +11,7 @@ from core.models.premium import Premium
 from core.models.indemnity import Indemnity
 from .farm_year import FarmYear
 from .market_crop import MarketCrop
-from . import util
+from .util import any_changed, scal
 
 
 class FarmCrop(models.Model):
@@ -304,11 +301,13 @@ class FarmCrop(models.Model):
     # Crop Ins Indemnity-related methods
     # values in $/acre
     # ----------------------------------
-    def indem_price_yield_data(self, pf=1, yf=1):
+    def indem_price_yield_data(self, pf=None, yf=None):
         """
-        Helper for get_indemnities
-        returns a dict where some values may be arrays or scalars
+        Returns a dict where some values may be scalar or array(np, ny)
+        Used by budget, sensitivity, listview
         """
+        if not self.has_budget():
+            return (0 if scal(pf) else np.zeros((len(pf), len(yf))))
         mrd = self.farm_year.get_model_run_date()
         pre_discov = mrd <= self.proj_price_disc_end
         pre_harv = mrd <= self.harv_price_disc_end
@@ -334,13 +333,12 @@ class FarmCrop(models.Model):
         harvest_price_final = not pre_harv and py.harvest_price is not None
         # scalar or 1d array
         harvest_price = (py.harvest_price
-                         if isinstance(pf, numbers.Number) and harvest_price_final else
+                         if scal(pf) and harvest_price_final else
                          py.harvest_price * np.ones_like(pf) if harvest_price_final else
                          sens_harv_price)
         cty_yield_final = not pre_cty_yield and py.final_yield is not None
         #  scalar or 1d array
-        cty_yield = (py.final_yield if cty_yield_final and
-                     isinstance(yf, numbers.Number) else
+        cty_yield = (py.final_yield if cty_yield_final and scal(yf) else
                      py.final_yield * np.ones_like(yf) if cty_yield_final else
                      sens_cty_exp_yield)
         return {'ey': [exp_yield, True], 'pp': [proj_price, proj_price_final],
@@ -350,12 +348,6 @@ class FarmCrop(models.Model):
 
     def get_indemnities(self, pf=None, yf=None):
         """ scalar or 2d array """
-        if not self.has_budget():
-            return None
-        if pf is None:
-            pf = self.price_factor()
-        if yf is None:
-            yf = self.farmbudgetcrop.yield_factor
         data = self.indem_price_yield_data(pf, yf)
         indem = Indemnity(
             tayield=self.ta_aph_yield,
@@ -373,26 +365,13 @@ class FarmCrop(models.Model):
                 for key, ar in zip(names, indems)}
 
     def get_selected_indemnities(self, pf=None, yf=None):
-        """ None, 2d array or scalar """
-        if not self.has_budget():
-            return None
-        if pf is None:
-            pf = self.price_factor()
-        if yf is None and self.has_budget():
-            yf = self.farmbudgetcrop.yield_factor
-        elif yf is None:
-            yf = 1
+        """ scalar or array(np, ny) """
         return self.get_selected_ins_items(self.get_indemnities(pf, yf))
 
     def get_total_indemnities(self, pf=None, yf=None):
-        """ 2d array or scalar """
+        """ scalar or array(np, ny) used by both budget and sensitivity """
         if not self.has_budget():
-            return (0 if pf is None or isinstance(pf, numbers.Number) else
-                    np.zeros((len(pf), len(yf))))
-        if pf is None:
-            pf = self.price_factor()
-        if yf is None:
-            yf = self.farmbudgetcrop.yield_factor
+            return (0 if scal(pf) else np.zeros((len(pf), len(yf))))
         indems = self.get_selected_indemnities(pf, yf)
         if indems is not None:
             return sum((v for v in indems.values() if v is not None))
@@ -400,134 +379,87 @@ class FarmCrop(models.Model):
     # ----------------------------
     # Yield and Production methods
     # ----------------------------
+    # These should all check for a budget because they may be called from market crop.
+    # They should also be defensive with yf because they could be called from a view.
     def sens_farm_expected_yield(self, yf=None):
-        """ scalar or 1d array """
-        hasbud = self.has_budget()
-        if yf is None and hasbud:
+        """ scalar or array(ny) used by budget and sensitivity """
+        if not self.has_budget():
+            return (0 if scal(yf) else np.zeros_like(yf))
+        if yf is None:
             yf = self.farmbudgetcrop.yield_factor
-        elif yf is None:
-            yf = 1
-        yieldfinal = self.farmbudgetcrop.is_farm_yield_final if hasbud else False
-        farmyield = self.farmbudgetcrop.farm_yield if hasbud else 0
-        return (farmyield if isinstance(yf, numbers.Number) and yieldfinal else
-                farmyield * np.ones_like(yf) if yieldfinal else farmyield * yf)
+        yieldfinal = self.farmbudgetcrop.is_farm_yield_final
+        farmyield = self.farmbudgetcrop.farm_yield
+        return (farmyield if scal(yf) and yieldfinal else
+                farmyield * np.ones_like(yf) if yieldfinal else
+                farmyield * yf)
 
     def sens_cty_expected_yield(self, yf=None):
-        """ scalar or 1d array """
-        hasbud = self.has_budget()
-        if yf is None and hasbud:
+        """ scalar or array(ny) used by budget and sensitivity """
+        if not self.has_budget():
+            return (0 if scal(yf) else np.zeros_like(yf))
+        if yf is None:
             yf = self.farmbudgetcrop.yield_factor
-        elif yf is None:
-            yf = 1
-        yieldfinal = self.farmbudgetcrop.is_farm_yield_final if hasbud else False
-        ctyyield = self.farmbudgetcrop.county_yield if hasbud else 0
-        return (ctyyield if isinstance(yf, numbers.Number) and yieldfinal else
+        yieldfinal = self.farmbudgetcrop.is_farm_yield_final
+        ctyyield = self.farmbudgetcrop.county_yield
+        return (ctyyield if scal(yf) and yieldfinal else
                 ctyyield * np.ones_like(yf) if yieldfinal else ctyyield * yf)
 
     def sens_production_bu(self, yf=None):
         """ scalar or 1d array """
         if not self.has_budget():
-            return (0 if yf is None or isinstance(yf, numbers.Number) else
-                    np.zeros_like(yf))
-        if yf is None:
-            yf = self.farmbudgetcrop.yield_factor
+            return (0 if scal(yf) else np.zeros_like(yf))
         return self.planted_acres * self.sens_farm_expected_yield(yf)
 
     def fut_contracted_bu(self, yf=None):
         """ apportion based on fraction of market crop production """
         if not self.has_budget():
-            return 0
+            return (0 if scal(yf) else np.zeros_like(yf))
         if yf is None:
             yf = self.farmbudgetcrop.yield_factor
         return (self.market_crop.production_frac_for_farm_crop(self, yf) *
                 self.market_crop.contracted_bu())
 
-    def sens_fut_uncontracted_bu(self, yf=None):
-        if not self.has_budget():
-            return (0 if yf is None or isinstance(yf, numbers.Number) else
-                    np.zeros_like(yf))
-        if yf is None:
-            yf = self.farmbudgetcrop.yield_factor
-        return self.sens_production_bu(yf) - self.fut_contracted_bu(yf)
-
     def basis_bu_locked(self, yf=None):
         """ apportion based on fraction of market crop production """
         if not self.has_budget():
-            return 0
+            return (0 if scal(yf) else np.zeros_like(yf))
         if yf is None:
             yf = self.farmbudgetcrop.yield_factor
         return (self.market_crop.production_frac_for_farm_crop(self, yf) *
                 self.market_crop.basis_bu_locked())
 
+    def sens_fut_uncontracted_bu(self, yf=None):
+        if not self.has_budget():
+            return (0 if scal(yf) else np.zeros_like(yf))
+        return self.sens_production_bu(yf) - self.fut_contracted_bu(yf)
+
     def sens_basis_uncontracted_bu(self, yf=None):
         if not self.has_budget():
-            return (0 if yf is None or isinstance(yf, numbers.Number) else
-                    np.zeros_like(yf))
-        if yf is None:
-            yf = self.farmbudgetcrop.yield_factor
+            return (0 if scal(yf) else np.zeros_like(yf))
         return self.sens_production_bu(yf) - self.basis_bu_locked()
 
     # -----------------------------------------------
     # Revenue methods (return values in $ by default)
     # -----------------------------------------------
-    def contract_fut_revenue(self):
-        return self.fut_contracted_bu() * self.avg_contract_price()
-
-    def pretax_amount(self, pf=None, yf=None, is_cash_flow=False, is_per_acre=False,
-                      sprice=None):
-        """ returns pretax amount in dollars unless is_per_acre is True """
-        if not self.has_budget():
-            return 0
-        if sprice is None and pf is None:
-            pf = self.price_factor()
-        if yf is None:
-            yf = self.farmbudgetcrop.yield_factor
-        acres = self.planted_acres
-        return (0 if acres == 0 else
-                self.gross_rev(pf, yf, sprice) /
-                (acres if is_per_acre else 1) -
-                self.total_cost(pf, yf, is_cash_flow, sprice) *
-                (1 if is_per_acre else acres))
-
-    def gross_rev(self, pf=None, yf=None):
-        if not self.has_budget():
-            return 0
-        if pf is None:
-            pf = self.price_factor()
-        if yf is None:
-            yf = self.farmbudgetcrop.yield_factor
-        return (self.gross_rev_no_title_indem(pf, yf) +
-                (self.gov_pmt_portion(pf, yf, is_per_acre=True) +
-                 self.get_total_indemnities()) * self.planted_acres)
-
     def gross_rev_no_title_indem(self, pf=None, yf=None, is_per_acre=False):
-        """ scalar or 2d array """
-        if not self.has_budget():
-            return (0 if pf is None or isinstance(pf, numbers.Number) else
-                    np.zeros((len(pf), len(yf))))
-        if pf is None:
-            pf = self.price_factor()
-        if yf is None:
-            yf = self.farmbudgetcrop.yield_factor
+        """ array(np, ny) used only by sensitivity """
         acres = self.planted_acres
-        return (0 if acres == 0 and isinstance(pf, numbers.Number) else
-                np.zeros(((len(pf), len(yf)))) if acres == 0 else
-                self.grain_revenue(pf, yf) /
-                (acres if is_per_acre else 1) +
+        if not self.has_budget() or acres == 0:
+            return np.zeros((len(pf), len(yf)))
+        return (self.grain_revenue(pf, yf) / (acres if is_per_acre else 1) +
                 (self.farmbudgetcrop.other_gov_pmts +
                  self.farmbudgetcrop.other_revenue) *
                 (1 if is_per_acre else acres))
 
+    def contract_fut_revenue(self, yf=None):
+        return self.fut_contracted_bu(yf) * self.avg_contract_price()
+
+    def contract_basis_revenue(self, yf=None):
+        return self.basis_bu_locked(yf) * self.avg_locked_basis()
+
     def noncontract_fut_revenue(self, pf=None, yf=None):
         """ 2d array or scalar """
-        if not self.has_budget():
-            return (0 if pf is None or isinstance(pf, numbers.Number) else
-                    np.zeros((len(pf), len(yf))))
-        if pf is None:
-            pf = self.price_factor()
-        if yf is None:
-            yf = self.farmbudgetcrop.yield_factor
-        if isinstance(pf, numbers.Number):
+        if scal(pf):
             result = self.sens_fut_uncontracted_bu(yf) * self.sens_harvest_price(pf)
         else:
             result = np.outer(self.sens_harvest_price(pf),
@@ -536,40 +468,17 @@ class FarmCrop(models.Model):
 
     def noncontract_basis_revenue(self, yf=None):
         """ 1d array or scalar """
-        if not self.has_budget():
-            return (0 if yf is None or isinstance(yf, numbers.Number) else
-                    np.zeros_like(yf))
-        if yf is None:
-            yf = self.farmbudgetcrop.yield_factor
-        return (self.sens_basis_uncontracted_bu(yf) *
-                self.assumed_basis_for_new())
-
-    def noncontract_revenue(self, pf=None, yf=None):
-        if not self.has_budget():
-            return (0 if pf is None or isinstance(pf, numbers.Number) else
-                    np.zeros((len(pf), len(yf))))
-        if pf is None:
-            pf = self.price_factor()
-        if yf is None:
-            yf = self.farmbudgetcrop.yield_factor
-        return (self.noncontract_fut_revenue(yf, pf) +
-                self.noncontract_basis_revenue(yf))
+        return self.sens_basis_uncontracted_bu(yf) * self.assumed_basis_for_new()
 
     def frac_rev_excess(self, pf=None, yf=None):
-        """ fraction revenue excess or (shortfall) """
-        if not self.has_budget():
-            return (0 if pf is None or isinstance(pf, numbers.Number) else
-                    np.zeros((len(pf), len(yf))))
-        if pf is None:
-            pf = self.price_factor()
-        if yf is None:
-            yf = self.farmbudgetcrop.yield_factor
+        """
+        scalar or array(np, ny) fraction revenue excess or (shortfall)
+        used by both budget and sensitivity.
+        """
         data = self.indem_price_yield_data(pf=pf)
-        # always a scalar
         base_rev = (self.planted_acres *
                     self.farmbudgetcrop.baseline_yield_for_var_rent * data['pp'][0])
-        # scalar or array(len(pf))
-        if isinstance(pf, numbers.Number):
+        if scal(pf):
             sens_rev = (self.planted_acres * self.sens_farm_expected_yield(yf=yf) *
                         data['hp'][0])
         else:
@@ -579,25 +488,15 @@ class FarmCrop(models.Model):
         return result
 
     def grain_revenue(self, pf=None, yf=None):
-        """ scalar or 2d array """
-        if not self.has_budget():
-            return (0 if pf is None or isinstance(pf, numbers.Number) else
-                    np.zeros((len(pf), len(yf))))
-        if pf is None:
-            pf = self.price_factor()
-        if yf is None:
-            yf = self.farmbudgetcrop.yield_factor
-        if isinstance(pf, numbers.Number):
-            return (self.contract_fut_revenue() + self.contract_basis_revenue() +
+        """ scalar or array(pf, yf) used by sensitivity + others """
+        if scal(pf):
+            return (self.contract_fut_revenue(yf) + self.contract_basis_revenue(yf) +
                     self.noncontract_fut_revenue(pf, yf) +
                     self.noncontract_basis_revenue(yf))
         else:
-            return (self.contract_fut_revenue() + self.contract_basis_revenue() +
+            return (self.contract_fut_revenue(yf) + self.contract_basis_revenue() +
                     self.noncontract_fut_revenue(pf, yf) +
                     self.noncontract_basis_revenue(yf).reshape(1, len(yf)))
-
-    def contract_basis_revenue(self):
-        return self.basis_bu_locked() * self.avg_locked_basis()
 
     # -----------------------------------------
     # Cost methods in $/acre except where noted
@@ -610,6 +509,7 @@ class FarmCrop(models.Model):
                 fbc.storage + self.get_total_premiums() + fbc.other_direct_costs)
 
     def total_nonland_costs(self):
+        """ used by sensitivity table and listview """
         if not self.has_budget():
             return 0
         fbc = self.farmbudgetcrop
@@ -623,16 +523,15 @@ class FarmCrop(models.Model):
         return result
 
     def yield_adj_to_nonland_costs(self, yf=None):
-        """ a fraction """
+        """ a fraction - used by both budget table and sensitivity """
         if not self.has_budget():
-            return (0 if yf is None or isinstance(yf, numbers.Number) else
-                    np.zeros_like(yf))
+            return (0 if scal(yf) else np.zeros_like(yf))
         if yf is None:
             yf = self.farmbudgetcrop.yield_factor
         fbc = self.farmbudgetcrop
         yldfinal = fbc.is_farm_yield_final
         costfinal = fbc.are_costs_final
-        if isinstance(yf, numbers.Number):
+        if scal(yf):
             return (0 if costfinal else
                     fbc.yield_variability *
                     ((fbc.farm_yield/fbc.baseline_yield_for_var_rent if yldfinal
@@ -644,33 +543,29 @@ class FarmCrop(models.Model):
                       if yldfinal else yf) - 1))
 
     def revenue_based_adj_to_land_rent(self, pf=None, yf=None):
-        """ a fraction """
+        """
+        a fraction or array(np, ny) of fractions
+        used by both budget table and sensitivity
+        """
         if not self.has_budget():
-            return (0 if pf is None or isinstance(pf, numbers.Number) else
-                    np.zeros((len(pf), len(yf))))
-        if pf is None:
-            pf = self.price_factor()
-        if yf is None:
-            yf = self.farmbudgetcrop.yield_factor
+            return (0 if scal(pf) else np.zeros((len(pf), len(yf))))
         cf = self.farm_year.var_rent_cap_floor_frac
         fv = self.farm_year.frac_var_rent()
         fre = self.frac_rev_excess(pf, yf)
-        if isinstance(pf, numbers.Number):
-            result = fv * (math.copysign(cf, fre) if abs(fre) > cf else fre)
+        if scal(pf):
+            result = fv * (np.copysign(cf, fre) if abs(fre) > cf else fre)
         else:
-            cf *= np.ones((len(pf), len(yf)))
             result = fv * (np.where(abs(fre) > cf, np.copysign(cf, fre), fre))
         return result
 
     def rented_land_costs(self, pf=None, yf=None):
-        """ in dollars per planted acre (landcost=0 for dc soybeans in std. budgets) """
+        """
+        Scalar or array(np, ny) used by sensitivity table and listview.
+        Rent cost in dollars per planted acre.
+        Land cost = 0 for dc soybeans in std. budgets.
+        """
         if not self.has_budget():
-            return (0 if pf is None or isinstance(pf, numbers.Number) else
-                    np.zeros(len(pf), len(yf)))
-        if pf is None:
-            pf = self.price_factor()
-        if yf is None:
-            yf = self.farmbudgetcrop.yield_factor
+            return (0 if scal(pf) else np.zeros(len(pf), len(yf)))
         # rent cost per planted acre
         tot_acres = self.farm_year.total_farm_acres()
         rented_costperacre = (0 if tot_acres == 0 else
@@ -680,38 +575,23 @@ class FarmCrop(models.Model):
                 (1 + self.revenue_based_adj_to_land_rent(pf, yf)))
 
     def owned_land_costs(self):
+        """ scalar used only by sensitivity table """
         tot_acres = self.farm_year.total_farm_acres()
         return (0 if self.farm_crop_type.is_fac or tot_acres == 0 else
                 (self.farm_year.total_owned_land_expense() / tot_acres))
 
     def land_costs(self, pf=None, yf=None):
-        if not self.has_budget():
-            return (0 if pf is None or isinstance(pf, numbers.Number) else
-                    np.zeros(len(pf), len(yf)))
-        if pf is None:
-            pf = self.price_factor()
-        if yf is None:
-            yf = self.farmbudgetcrop.yield_factor
-        return (self.rented_land_costs(pf, yf) +
-                self.owned_land_costs())
+        """ array(np, ny) used only by sensitivity table """
+        return (self.rented_land_costs(pf, yf) + self.owned_land_costs())
 
     def total_cost(self, pf=None, yf=None):
-        """ used in sensitivity table """
+        """ array(np, ny) used only by sensitivity table """
         if not self.has_budget():
-            return (0 if pf is None or isinstance(pf, numbers.Number) else
-                    np.zeros((len(pf), len(yf))))
-        if pf is None:
-            pf = self.price_factor()
-        if yf is None:
-            yf = self.farmbudgetcrop.yield_factor
+            return (0 if scal(pf) else np.zeros((len(pf), len(yf))))
         tot_nonland_cost = self.total_nonland_costs()
-        if isinstance(pf, numbers.Number):
-            return (tot_nonland_cost * (1 + self.yield_adj_to_nonland_costs(yf)) +
-                    self.land_costs(pf, yf))
-        else:
-            return ((tot_nonland_cost *
-                     (1 + self.yield_adj_to_nonland_costs(yf))).reshape(1, len(yf)) +
-                    self.land_costs(pf, yf))
+        return ((tot_nonland_cost *
+                 (1 + self.yield_adj_to_nonland_costs(yf))).reshape(1, len(yf)) +
+                self.land_costs(pf, yf))
 
     # -------------
     # Price methods
@@ -730,16 +610,6 @@ class FarmCrop(models.Model):
 
     def assumed_basis_for_new(self):
         return self.market_crop.assumed_basis_for_new
-
-    def avg_realized_price(self, pf=None, yf=None):
-        if not self.has_budget():
-            return 0
-        if pf is None:
-            pf = self.price_factor()
-        if yf is None:
-            yf = self.farmbudgetcrop.yield_factor
-        bu = self.sens_production_bu(yf)
-        return 0 if bu == 0 else self.grain_revenue(pf, yf) / bu
 
     # --------------
     # Budget methods
@@ -768,13 +638,13 @@ class FarmCrop(models.Model):
                 "ARC-CO base acres must be zero if SCO is set for related farm crop")})
 
     def save(self, *args, **kwargs):
-        if util.any_changed(self, 'planted_acres'):
+        if any_changed(self, 'planted_acres'):
             # invalidate memory cached variable
             self.farm_year.totalplantedacres = None
         if ('change_related' not in kwargs and
-            util.any_changed(self, 'coverage_type', 'product_type',
-                             'base_coverage_level', 'sco_use', 'eco_level',
-                             'prot_factor')):
+            any_changed(self, 'coverage_type', 'product_type',
+                        'base_coverage_level', 'sco_use', 'eco_level',
+                        'prot_factor')):
             self.update_related_crop_ins_settings()
         elif 'change_related' in kwargs:
             del kwargs['change_related']

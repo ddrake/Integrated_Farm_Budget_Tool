@@ -25,7 +25,7 @@ class SensTableGroup(object):
         # farm crop related info
         self.farm_crops = [fc for fc in
                            FarmCrop.objects.filter(farm_year=farm_year)
-                           if fc.planted_acres > 0 and fc.has_budget]
+                           if fc.planted_acres > 0 and fc.has_budget()]
         self.croptypes = [fc.farm_crop_type for fc in self.farm_crops]
         self.croptypeids = [ct.pk for ct in self.croptypes]
         self.croptypenames = [str(fc.farm_crop_type)

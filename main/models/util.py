@@ -1,4 +1,15 @@
+""" Module util -- utility functions for main model """
+import numbers
 from datetime import datetime
+
+
+def scal(factor):
+    """
+    check whether a price or yield factor is a scalar or an array
+    Rests on the assumption that calls from the sensitivity table will always
+    provide both an array of price factors and an array of yield factors
+    """
+    return factor is None or isinstance(factor, numbers.Number)
 
 
 def get_current_year():

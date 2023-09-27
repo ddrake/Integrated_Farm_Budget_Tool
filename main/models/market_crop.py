@@ -1,4 +1,3 @@
-import numbers
 from datetime import datetime
 import numpy as np
 from django.core.validators import (
@@ -7,6 +6,7 @@ from django.db import models
 from ext.models import FuturesPrice, MarketCropType
 from .farm_year import FarmYear
 from .fsa_crop import FsaCrop
+from .util import scal
 
 
 class MarketCrop(models.Model):
@@ -118,14 +118,13 @@ class MarketCrop(models.Model):
         return sum((fc.yield_factor * fc.planted_acres
                     for fc in self.farm_crops.all())) / self.planted_acres()
 
-    def county_bean_yield(self, yf=1):
+    def county_bean_yield(self, yf=None):
         """
         for indemnity calculations
         1d array or scalar
         """
         ac = self.planted_acres()
-        return (0 if (isinstance(yf, numbers.Number) and
-                      self.market_crop_type_id != 2 or ac == 0) else
+        return (0 if scal(yf) and (self.market_crop_type_id != 2 or ac == 0) else
                 np.zeros_like(yf) if self.market_crop_type_id != 2 or ac == 0 else
                 sum((fc.sens_cty_expected_yield(yf) * fc.planted_acres
                      for fc in self.farm_crops.all())) / ac)
@@ -144,7 +143,7 @@ class MarketCrop(models.Model):
 
     def production_frac_for_farm_crop(self, farmcrop, yf=None):
         """ scalar or array(ny)  """
-        if yf is None or isinstance(yf, numbers.Number):
+        if scal(yf):
             expbu = self.expected_total_bushels(yf)
             return (0 if expbu == 0 else
                     (farmcrop.sens_farm_expected_yield(yf) * farmcrop.planted_acres /

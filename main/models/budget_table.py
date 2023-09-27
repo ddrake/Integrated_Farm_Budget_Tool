@@ -78,10 +78,13 @@ class BudgetManager(object):
         def getvar(baseline, current):
             """ Given baseline and current dicts, compute variance dict """
             variance = {}
-            for k, b in baseline.items():
-                c = current[k]
-                variance[k] = [cc - bb for cc, bb in zip(c, b)]
-            return variance
+            try:
+                for k, b in baseline.items():
+                    c = current[k]
+                    variance[k] = [cc - bb for cc, bb in zip(c, b)]
+                return variance
+            except KeyError:
+                return None
 
         # compare text headers to ensure that the crops match
         bt = self.farm_year.budget_text
@@ -103,8 +106,11 @@ class BudgetManager(object):
         cr = cur['revenue']
         cb = cur['budget']
         # Generate variance budget
-        varbt = BudgetTable(self.farm_year, revenue_data=getvar(br, cr),
-                            budget_data=getvar(bb, cb))
+        var_rev = getvar(br, cr)
+        var_bud = getvar(bb, cb)
+        if var_rev is None or var_bud is None:
+            return None
+        varbt = BudgetTable(self.farm_year, revenue_data=var_rev, budget_data=var_bud)
         rd = varbt.revenue_details
         kd = KeyData(self.farm_year)
 
@@ -207,8 +213,8 @@ class BudgetTable(object):
             ('owned_land_cost', 0, False, False),
             ('total_land_cost', 0, False, True),
             ('total_cost', self.farm_year.other_nongrain_expense, False, True),
-            ('pretax_amount', (self.farm_year.other_nongrain_income -
-                               self.farm_year.other_nongrain_expense), False, True),
+            ('cash_flow', (self.farm_year.other_nongrain_income -
+                           self.farm_year.other_nongrain_expense), False, True),
             ('adj_land_rent_per_rented_ac', 0, False, True),
             ('owned_land_cost_per_owned_ac', 0, False, True),
         ]
@@ -505,9 +511,8 @@ class BudgetTable(object):
         self.data['total_cost'] = [
             nlc + lc for nlc, lc in
             zip(self.data['total_adj_nonland_costs'], self.data['total_land_cost'])]
-        self.data['pretax_amount'] = [gr - tc for gr, tc in
-                                      zip(self.data['gross_revenue'],
-                                          self.data['total_cost'])]
+        self.data['cash_flow'] = [gr - tc for gr, tc in zip(self.data['gross_revenue'],
+                                                            self.data['total_cost'])]
         self.data['adj_land_rent_per_rented_ac'] = [
             (0 if ra == 0 else alr * 1000 / ra) for alr, ra in
             zip(self.data['adjusted_land_rent'], self.rented_acres)]

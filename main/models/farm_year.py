@@ -7,8 +7,8 @@ from django.core.validators import (
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 from ext.models import (
-    State, County, InsurableCropsForCty, MyaPreEstimate, MyaPost,
-    FarmCropType, MarketCropType, FsaCropType, InsuranceDates, ReferencePrices)
+    State, County, InsurableCropsForCty, FarmCropType, MarketCropType, FsaCropType,
+    InsuranceDates, ReferencePrices)
 from core.models.gov_pmt import GovPmt
 from . import util
 
@@ -91,22 +91,10 @@ class FarmYear(models.Model):
         verbose_name='estimated sequestration percent',
         help_text='Estimated reduction to computed total pre-cap title payment')
     # Dict of numerical data For computing variance or displaying benchmark budget.
-    # Includes revenue values, but not key data.
-    # This field is updated each time a budget is computed.
     current_budget_data = models.JSONField(null=True, blank=True)
-    # If the user sets or updates the benchmark, we simply copy the current budget data
-    # to the benchmark budget data.
+    # If the user sets or updates the benchmark, we copy current budget data here.
     baseline_budget_data = models.JSONField(null=True, blank=True)
     # Dict of dicts with text and styles info.  Keys are 'cur', 'base' and 'var'
-    # value for 'cur' is current budget; 'base' and 'var' values are initially None.
-    # Each subdict contains all information (including revenue and key data) display or
-    # print a "budget".
-    # After user has set a baseline, subdicts for baseline 'base' and variance 'var'
-    # are set to dicts in subsequent budget runs and stored for PDF generation.
-    # It's not necessary to generate 'base' each run, since it only changes if the user
-    # updates the baseline.
-    # If the user updates the baseline, 'base' is
-    # set to the value of 'cur' by the AJAX view code.
     budget_text = models.JSONField(null=True, blank=True)
 
     def __init__(self, *args, **kwargs):
@@ -131,10 +119,8 @@ class FarmYear(models.Model):
 
     def update_baseline(self):
         """
-        Called by POST from dashboard (button active after first budget run).
         Set or update the benchmark budget to the current budget data.
         Update the budget_text dict setting 'base' to 'cur'.
-        I think there is no need to copy or deepcopy due to JSON conversion
         """
         self.baseline_budget_data = self.current_budget_data
         self.budget_text['base'] = self.budget_text['cur']
@@ -230,32 +216,15 @@ class FarmYear(models.Model):
                 harv_price_disc_end=harv_price_disc_end,
                 cty_yield_final=cty_yield_final)
 
-    def calc_gov_pmt(self, pf=None, yf=None, is_per_acre=False, mya_prices=None,
-                     cty_yields=None):
+    def calc_gov_pmt(self, is_per_acre=False, mya_prices=None, cty_yields=None):
         """
-        Compute the total, capped government payment and cache apportioned values
-        in the corresponding FSA crops.
-        ALWAYS call this method, before reading the values from the FSA crops, since
-        no cache invalidation is performed.
-        If (pre-sensitized) mya_prices are provided, use them.
+        Compute the total, capped government payment.
         """
-        if mya_prices is None:
-            if pf is None:
-                pf = [fc.price_factor() for fc in self.fsa_crops.all()]
-            mrd = self.get_model_run_date()
-            if mrd < self.wasde_first_mya_release_on():
-                mya_prices = MyaPreEstimate.get_mya_pre_estimates(
-                    self.crop_year, mrd, pf=pf)
-            else:
-                mya_prices = MyaPost.get_mya_post_estimates(
-                    self.crop_year, mrd, pf=pf)
         if cty_yields is None:
-            if yf is None:
-                yf = [fc.yield_factor() for fc in self.fsa_crops.all()]
-            total = sum((fc.gov_payment(mya_prices[i], yf=yf[i])
-                         for i, fc in enumerate(self.fsa_crops.all())))
+            total = sum((fc.gov_payment() for fc in self.fsa_crops.all()))
         else:
-            total = sum((fc.gov_payment(mya_prices[i], cty_yield=cty_yields[i])
+            total = sum((fc.gov_payment(sens_mya_price=mya_prices[i, :],
+                                        cty_yield=cty_yields[i, :])
                          for i, fc in enumerate(self.fsa_crops.all())))
         total_pmt = np.minimum(FarmYear.FSA_PMT_CAP_PER_PRINCIPAL *
                                self.eligible_persons_for_cap,
