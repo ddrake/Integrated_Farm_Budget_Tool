@@ -181,7 +181,7 @@ class Madison2023FarmYearTestCase(TestCase):
              'total_cost':
              [3018721.640972614, 2219737.0370370373,
               333265.92592592596, 154196.0, 140000.0],
-             'pretax_amount':
+             'cash_flow':
              [-20302.890972613823, 14745.221027479041,
               -78513.92592592596, 93937.74193548388, 10000.0],
              'adj_land_rent_per_rented_ac':
@@ -298,7 +298,7 @@ class Madison2023FarmYearTestCase(TestCase):
              'total_cost':
              [2934541.637037037, 2167779.0370370373,
               326200.2059259259, 148336.552, 140000.0],
-             'pretax_amount':
+             'cash_flow':
              [-542500.6370370365, 38646.221027478576,
               -46286.60592592595, 108399.02993548391, 10000.0],
              'adj_land_rent_per_rented_ac':
@@ -417,7 +417,7 @@ class Madison2023FarmYearTestCase(TestCase):
              'total_cost':
              [2894768.9370370368, 2141800.0370370373,
               322667.3459259259, 145406.828, 140000.0],
-             'pretax_amount':
+             'cash_flow':
              [-372671.6547094509, 192993.0658550649,
               -16368.090753512108, 129437.00910789761, 10000.0],
              'adj_land_rent_per_rented_ac':
@@ -517,3 +517,42 @@ class Madison2023FarmYearViewTests(TestCase):
     #                                  "state_id": "17", "county_code": "119"})
     #     print(response.content)
     #     self.assertEqual(response.status_code, 200)
+
+    def test_farmcrops_for_farmyear_list_logged_in(self):
+        self.user = User.objects.create_user(username='testuser', password='12345')
+        self.farm_year = FarmYear.objects.create(
+            user=self.user, farm_name="Madison Farm", state_id=17, county_code=119)
+        self.client.login(username='testuser', password='12345')
+        response = self.client.get(reverse('farmcrop_list', args=[self.farm_year.pk]))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Corn, Non-irrigated')
+
+    def test_marketcrops_for_farmyear_list_logged_in(self):
+        self.user = User.objects.create_user(username='testuser', password='12345')
+        self.farm_year = FarmYear.objects.create(
+            user=self.user, farm_name="Madison Farm", state_id=17, county_code=119)
+        self.client.login(username='testuser', password='12345')
+        response = self.client.get(reverse('marketcrop_list', args=[self.farm_year.pk]))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Market Crop Information')
+
+    def test_fsacrops_for_farmyear_list_logged_in(self):
+        self.user = User.objects.create_user(username='testuser', password='12345')
+        self.farm_year = FarmYear.objects.create(
+            user=self.user, farm_name="Madison Farm", state_id=17, county_code=119)
+        self.client.login(username='testuser', password='12345')
+        response = self.client.get(reverse('fsacrop_list', args=[self.farm_year.pk]))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Farm Specific Title Information')
+
+    def test_farmbudgetcrops_for_farmyear_list_logged_in(self):
+        self.user = User.objects.create_user(username='testuser', password='12345')
+        self.farm_year = FarmYear.objects.create(
+            user=self.user, farm_name="Madison Farm", state_id=17, county_code=119)
+        fc = self.farm_year.farm_crops.filter(farm_crop_type_id=1)[0]
+        FarmCrop.add_farm_budget_crop(fc.pk, 69)
+        self.client.login(username='testuser', password='12345')
+        response = self.client.get(reverse('farmbudgetcrop_list',
+                                           args=[self.farm_year.pk]))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Corn, Non-irrigated')
