@@ -117,15 +117,17 @@ class FarmCrop(models.Model):
     cty_yield_final = models.DateField(null=True)
 
     def __init__(self, *args, **kwargs):
-        self.hasbudget = None
+        # cache results of expensive functions during request
+        self.has_budget_mem = None
+        self.sens_harvest_price_mem = None
+        self.indem_price_yield_data_mem = None
+        self.sens_farm_expected_yield_mem = None
+
         super().__init__(*args, **kwargs)
 
     def __str__(self):
         irr = 'Irrigated' if self.is_irrigated() else 'Non-irrigated'
         return f'{self.farm_crop_type}, {irr}'
-
-    def price_factor(self):
-        return self.market_crop.price_factor
 
     def is_irrigated(self):
         return FarmYear.IRR_PRACTICE[self.ins_practice] == 'Irrigated'
@@ -306,45 +308,50 @@ class FarmCrop(models.Model):
         Returns a dict where some values may be scalar or array(np, ny)
         Used by budget, sensitivity, listview
         """
-        if not self.has_budget():
-            return (0 if scal(pf) else np.zeros((len(pf), len(yf))))
-        mrd = self.farm_year.get_model_run_date()
-        pre_discov = mrd <= self.proj_price_disc_end
-        pre_harv = mrd <= self.harv_price_disc_end
-        pre_cty_yield = mrd <= self.cty_yield_final
-        harv_price = self.harvest_price()
-        sens_harv_price = self.sens_harvest_price(pf)
-        py = PriceYield.objects.get(
-            crop_year=self.farm_year.crop_year, state_id=self.farm_year.state_id,
-            county_code=self.farm_year.county_code,
-            crop_id=self.farm_crop_type.ins_crop_id, crop_type_id=self.ins_crop_type_id,
-            practice=self.ins_practice)
-        exp_yield = py.expected_yield
-        # scalar or 1d array
-        sens_cty_exp_yield = (self.market_crop.county_bean_yield(yf)
-                              if self.farm_crop_type_id in (2, 5)
-                              else self.sens_cty_expected_yield(yf))
-        proj_price_final = not pre_discov and py.projected_price is not None
-        proj_price = (py.projected_price if proj_price_final else harv_price)
-        # price_vol not needed for indemnity, but shown on farm_crop detail view
-        price_vol_final = not pre_discov and py.price_volatility_factor is not None
-        price_vol = (py.price_volatility_factor if price_vol_final else
-                     py.price_volatility_factor_prevyr)
-        harvest_price_final = not pre_harv and py.harvest_price is not None
-        # scalar or 1d array
-        harvest_price = (py.harvest_price
-                         if scal(pf) and harvest_price_final else
-                         py.harvest_price * np.ones_like(pf) if harvest_price_final else
-                         sens_harv_price)
-        cty_yield_final = not pre_cty_yield and py.final_yield is not None
-        #  scalar or 1d array
-        cty_yield = (py.final_yield if cty_yield_final and scal(yf) else
-                     py.final_yield * np.ones_like(yf) if cty_yield_final else
-                     sens_cty_exp_yield)
-        return {'ey': [exp_yield, True], 'pp': [proj_price, proj_price_final],
-                'pv': [price_vol, price_vol_final],
-                'hp': [harvest_price, harvest_price_final],
-                'cy': [cty_yield, cty_yield_final]}
+        if self.indem_price_yield_data_mem is None:
+            if not self.has_budget():
+                return (0 if scal(pf) else np.zeros((len(pf), len(yf))))
+            mrd = self.farm_year.get_model_run_date()
+            pre_discov = mrd <= self.proj_price_disc_end
+            pre_harv = mrd <= self.harv_price_disc_end
+            pre_cty_yield = mrd <= self.cty_yield_final
+            harv_price = self.harvest_price()
+            sens_harv_price = self.sens_harvest_price(pf)
+            py = PriceYield.objects.get(
+                crop_year=self.farm_year.crop_year, state_id=self.farm_year.state_id,
+                county_code=self.farm_year.county_code,
+                crop_id=self.farm_crop_type.ins_crop_id,
+                crop_type_id=self.ins_crop_type_id,
+                practice=self.ins_practice)
+            exp_yield = py.expected_yield
+            # scalar or 1d array
+            sens_cty_exp_yield = (self.market_crop.county_bean_yield(yf)
+                                  if self.farm_crop_type_id in (2, 5)
+                                  else self.sens_cty_expected_yield(yf))
+            proj_price_final = not pre_discov and py.projected_price is not None
+            proj_price = (py.projected_price if proj_price_final else harv_price)
+            # price_vol not needed for indemnity, but shown on farm_crop detail view
+            price_vol_final = not pre_discov and py.price_volatility_factor is not None
+            price_vol = (py.price_volatility_factor if price_vol_final else
+                         py.price_volatility_factor_prevyr)
+            harvest_price_final = not pre_harv and py.harvest_price is not None
+            # scalar or 1d array
+            harvest_price = (py.harvest_price
+                             if scal(pf) and harvest_price_final else
+                             py.harvest_price * np.ones_like(pf)
+                             if harvest_price_final else
+                             sens_harv_price)
+            cty_yield_final = not pre_cty_yield and py.final_yield is not None
+            #  scalar or 1d array
+            cty_yield = (py.final_yield if cty_yield_final and scal(yf) else
+                         py.final_yield * np.ones_like(yf) if cty_yield_final else
+                         sens_cty_exp_yield)
+            self.indem_price_yield_data_mem = (
+                {'ey': [exp_yield, True], 'pp': [proj_price, proj_price_final],
+                 'pv': [price_vol, price_vol_final],
+                 'hp': [harvest_price, harvest_price_final],
+                 'cy': [cty_yield, cty_yield_final]})
+        return self.indem_price_yield_data_mem
 
     def get_indemnities(self, pf=None, yf=None):
         """ scalar or 2d array """
@@ -383,15 +390,18 @@ class FarmCrop(models.Model):
     # They should also be defensive with yf because they could be called from a view.
     def sens_farm_expected_yield(self, yf=None):
         """ scalar or array(ny) used by budget and sensitivity """
-        if not self.has_budget():
-            return (0 if scal(yf) else np.zeros_like(yf))
-        if yf is None:
-            yf = self.farmbudgetcrop.yield_factor
-        yieldfinal = self.farmbudgetcrop.is_farm_yield_final
-        farmyield = self.farmbudgetcrop.farm_yield
-        return (farmyield if scal(yf) and yieldfinal else
+        if self.sens_farm_expected_yield_mem is None:
+            if not self.has_budget():
+                return (0 if scal(yf) else np.zeros_like(yf))
+            if yf is None:
+                yf = self.farmbudgetcrop.yield_factor
+            yieldfinal = self.farmbudgetcrop.is_farm_yield_final
+            farmyield = self.farmbudgetcrop.farm_yield
+            self.sens_farm_expected_yield_mem = (
+                farmyield if scal(yf) and yieldfinal else
                 farmyield * np.ones_like(yf) if yieldfinal else
                 farmyield * yf)
+        return self.sens_farm_expected_yield_mem
 
     def sens_cty_expected_yield(self, yf=None):
         """ scalar or array(ny) used by budget and sensitivity """
@@ -436,7 +446,7 @@ class FarmCrop(models.Model):
     def sens_basis_uncontracted_bu(self, yf=None):
         if not self.has_budget():
             return (0 if scal(yf) else np.zeros_like(yf))
-        return self.sens_production_bu(yf) - self.basis_bu_locked()
+        return self.sens_production_bu(yf) - self.basis_bu_locked(yf)
 
     # -----------------------------------------------
     # Revenue methods (return values in $ by default)
@@ -494,7 +504,7 @@ class FarmCrop(models.Model):
                     self.noncontract_fut_revenue(pf, yf) +
                     self.noncontract_basis_revenue(yf))
         else:
-            return (self.contract_fut_revenue(yf) + self.contract_basis_revenue() +
+            return (self.contract_fut_revenue(yf) + self.contract_basis_revenue(yf) +
                     self.noncontract_fut_revenue(pf, yf) +
                     self.noncontract_basis_revenue(yf).reshape(1, len(yf)))
 
@@ -600,7 +610,10 @@ class FarmCrop(models.Model):
         return self.market_crop.harvest_futures_price_info(price_only=True)
 
     def sens_harvest_price(self, pf=None):
-        return self.market_crop.sens_harvest_price(pf=pf)
+        """ cached scalar or array(pf) used by budget and sensitivity """
+        if self.sens_harvest_price_mem is None:
+            self.sens_harvest_price_mem = self.market_crop.sens_harvest_price(pf=pf)
+        return self.sens_harvest_price_mem
 
     def avg_contract_price(self):
         return self.market_crop.avg_contract_price()
@@ -620,13 +633,13 @@ class FarmCrop(models.Model):
                                           is_irr=self.is_irrigated())]
 
     def has_budget(self):
-        if self.hasbudget is None:
+        if self.has_budget_mem is None:
             try:
                 self.farmbudgetcrop
-                self.hasbudget = True
+                self.has_budget_mem = True
             except ObjectDoesNotExist:
-                self.hasbudget = False
-        return self.hasbudget
+                self.has_budget_mem = False
+        return self.has_budget_mem
 
     # ---------------------
     # Validation and saving

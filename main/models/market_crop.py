@@ -29,32 +29,47 @@ class MarketCrop(models.Model):
         verbose_name='price sensititivity factor',
         help_text=('Percent of current futures price, reflected in detailed budget'))
 
+    def __init__(self, *args, **kwargs):
+        self.contracted_bu_mem = None
+        self.basis_bu_locked_mem = None
+        self.avg_contract_price_mem = None
+        self.avg_locked_basis_mem = None
+        self.planted_acres_mem = None
+        self.harvest_futures_price_info_mem = None
+        self.planted_acres_mem = None
+        self.sens_farm_expected_yield_mem = None
+        self.expected_total_bushels_mem = None
+
+        super().__init__(*args, **kwargs)
+
     def __str__(self):
         return f'{self.market_crop_type}'
 
     def contracted_bu(self):
-        return sum(c.bushels for c in self.get_futures_contracts())
+        if self.contracted_bu_mem is None:
+            self.contracted_bu_mem = sum(c.bushels
+                                         for c in self.get_futures_contracts())
+        return self.contracted_bu_mem
 
     def basis_bu_locked(self):
-        return sum(c.bushels for c in self.get_basis_contracts())
+        if self.basis_bu_locked_mem is None:
+            self.basis_bu_locked_mem = sum(c.bushels
+                                           for c in self.get_basis_contracts())
+        return self.basis_bu_locked_mem
 
     def avg_contract_price(self):
-        pairs = [(c.price*c.bushels, c.bushels) for c in self.get_futures_contracts()]
-        if len(pairs) == 0:
-            return 0
-        else:
-            amounts, bushels = zip(*pairs)
-            tot_bu = sum(bushels)
-            return sum(amounts) / tot_bu if tot_bu > 0 else 0
+        if self.avg_contract_price_mem is None:
+            amounts = [c.price*c.bushels for c in self.get_futures_contracts()]
+            tot_bu = self.contracted_bu()
+            self.avg_contract_price_mem = sum(amounts) / tot_bu if tot_bu > 0 else 0
+        return self.avg_contract_price_mem
 
     def avg_locked_basis(self):
-        pairs = [(c.price*c.bushels, c.bushels) for c in self.get_basis_contracts()]
-        if len(pairs) == 0:
-            return 0
-        else:
-            amounts, bushels = zip(*pairs)
-            tot_bu = sum(bushels)
-            return sum(amounts) / tot_bu if tot_bu > 0 else 0
+        if self.avg_locked_basis_mem is None:
+            amounts = [c.price*c.bushels for c in self.get_basis_contracts()]
+            tot_bu = self.basis_bu_locked()
+            self.avg_locked_basis_mem = sum(amounts) / tot_bu if tot_bu > 0 else 0
+        return self.avg_locked_basis_mem
 
     def get_basis_contracts(self):
         model_run_date = self.farm_year.get_model_run_date()
@@ -80,43 +95,38 @@ class MarketCrop(models.Model):
         Get the harvest price for the given date from the correct exchange for the
         crop type and county.  Note: insurancedates gives the exchange and ticker.
         """
-        # TODO: consider returning a boolean "price locked" if the model run date
-        # is after the expiration date of the post_ticker contract
-        if priced_on is None:
-            priced_on = self.farm_year.get_model_run_date()
+        if not price_only or self.harvest_futures_price_info_mem is None:
+            if priced_on is None:
+                priced_on = self.farm_year.get_model_run_date()
 
-        sql = """
-            SELECT fp.id, fp.exchange, fp.futures_month, fp.ticker,
-            fp.priced_on, fp.price
-            FROM ext_futuresprice fp
-            WHERE ticker=
-                (select ticker from ext_tickers_for_crop_location
-                 where crop_year=%s and state_id=%s and county_code=%s
-                 and market_crop_type_id=%s
-                 and (%s <= contract_end_date
-                     or contract_end_date = last_contract_end_date)
-                 order by contract_end_date limit 1)
-            AND fp.priced_on <= %s
-            ORDER BY priced_on desc limit 1
-            """
+            sql = """
+                SELECT fp.id, fp.exchange, fp.futures_month, fp.ticker,
+                fp.priced_on, fp.price
+                FROM ext_futuresprice fp
+                WHERE ticker=
+                    (select ticker from ext_tickers_for_crop_location
+                     where crop_year=%s and state_id=%s and county_code=%s
+                     and market_crop_type_id=%s
+                     and (%s <= contract_end_date
+                         or contract_end_date = last_contract_end_date)
+                     order by contract_end_date limit 1)
+                AND fp.priced_on <= %s
+                ORDER BY priced_on desc limit 1
+                """
 
-        rec = FuturesPrice.objects.raw(
-            sql, params=[self.farm_year.crop_year, self.farm_year.state_id,
-                         self.farm_year.county_code, self.market_crop_type_id,
-                         priced_on, priced_on])[0]
-        return rec.price if price_only else rec
+            rec = FuturesPrice.objects.raw(
+                sql, params=[self.farm_year.crop_year, self.farm_year.state_id,
+                             self.farm_year.county_code, self.market_crop_type_id,
+                             priced_on, priced_on])[0]
+
+            self.harvest_futures_price_info_mem = rec.price
+        return self.harvest_futures_price_info_mem if price_only else rec
 
     def planted_acres(self):
-        return sum((fc.planted_acres for fc in self.farm_crops.all()))
-
-    def sens_farm_expected_yield(self):
-        """ used in revenue buildup """
-        return sum((fc.sens_farm_expected_yield() for fc in self.farm_crops.all()
-                    if fc.has_budget()))
-
-    def yield_factor(self):
-        return sum((fc.yield_factor * fc.planted_acres
-                    for fc in self.farm_crops.all())) / self.planted_acres()
+        if self.planted_acres_mem is None:
+            self.planted_acres_mem = sum((fc.planted_acres
+                                          for fc in self.farm_crops.all()))
+        return self.planted_acres_mem
 
     def county_bean_yield(self, yf=None):
         """
@@ -130,8 +140,11 @@ class MarketCrop(models.Model):
                      for fc in self.farm_crops.all())) / ac)
 
     def expected_total_bushels(self, yf=None):
-        return sum((fc.sens_farm_expected_yield(yf=yf) * fc.planted_acres
-                    for fc in self.farm_crops.all() if fc.has_budget()))
+        if self.expected_total_bushels_mem is None:
+            self.expected_total_bushels_mem = sum(
+                (fc.sens_farm_expected_yield(yf=yf) * fc.planted_acres
+                 for fc in self.farm_crops.all()))
+        return self.expected_total_bushels_mem
 
     def futures_pct_of_expected(self, yf=None):
         tot = self.expected_total_bushels(yf=yf)
