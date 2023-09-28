@@ -13,14 +13,17 @@
 <script>
  (() => {
      document.addEventListener('DOMContentLoaded', () => {
+        const old_farm_year = '{{farmcrop.old_farm_year}}';
         let covLevel = document.getElementById("base_coverage_level");
         let origval = "{{ farmcrop.base_coverage_level }}";
         let covType = document.getElementById("coverage_type")
         let val = covType.value;
-        scaleUpPercents()
+        scaleUpPercents();
         updateBaseCoverageLevels(val); 
         covLevel.value = origval;
-        manageScoAndProtFactor(val);
+        if (old_farm_year === 'True') {
+           lockAllInputs();
+        }
     });
     document
       .getElementById("coverage_type")
@@ -86,6 +89,17 @@
                 prot.setAttribute('disabled', '')
             }
         }
+    }
+
+    function lockAllInputs() {
+        document.getElementById("id_planted_acres").setAttribute('disabled', '')
+        document.getElementById("ins_practice").setAttribute('disabled', '')
+        document.getElementById("id_rate_yield").setAttribute('disabled', '')
+        document.getElementById("id_adj_yield").setAttribute('disabled', '')
+        document.getElementById("subcounty").setAttribute('disabled', '')
+        document.getElementById("id_ta_use").setAttribute('disabled', '')
+        document.getElementById("id_ye_use").setAttribute('disabled', '')
+        document.getElementById("id_ta_aph_yield").setAttribute('disabled', '')
     }
 
 
