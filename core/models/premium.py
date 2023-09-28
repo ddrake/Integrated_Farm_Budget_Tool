@@ -33,10 +33,6 @@ class Premium:
         self.croptype = None
         # The practice: an integer code for e.g. irrigated, fac non-irrigated, etc.
         self.practice = None
-        # The county practice corresponding to the practice
-        self.cpractice = None
-        # Protection factor (aka payment factor) for ARC
-        self.prot_factor = None
         # The RMA projected harvest price Feb (lookup in ext_price, fallback futprice)
         self.projected_price = None
         # The RMA price volatility factor (lookup in ext_price, fallback prev year vol)
@@ -160,9 +156,8 @@ class Premium:
     def compute_prems(self, rateyield=180, adjyield=180, tayield=190, acres=100,
                       hailfire=0, prevplant=0, tause=1, yieldexcl=0,
                       state=17, county=19, crop=41, croptype=16, practice=3,
-                      prot_factor=1, projected_price=None,
-                      price_volatility_factor=None, subcounty=None,
-                      expected_yield=None):
+                      projected_price=None, price_volatility_factor=None,
+                      subcounty=None, expected_yield=None):
         """
         With farm-specific inputs, compute premiums for optional, basic and enterprise,
         units with RP, RP-HPE or YO protection for all coverage levels.
@@ -172,7 +167,7 @@ class Premium:
         """
         self.store_user_settings(
             rateyield, adjyield, tayield, acres, hailfire, prevplant, tause,
-            yieldexcl, state, county, crop, croptype, practice, prot_factor,
+            yieldexcl, state, county, crop, croptype, practice,
             projected_price, price_volatility_factor, subcounty, expected_yield)
 
         # pass user-specified estimate of price_volatility_factor
@@ -203,8 +198,7 @@ class Premium:
                     or self.scorphpe_base_rate is None
                     or self.scoyp_base_rate is None):
                 # print("SCO Base rates are not available for county/crop",
-                #       "Can't compute SCO premiums",
-                #       "Try specifying the county practice (cpractice)")
+                #       "Can't compute SCO premiums")
                 self.prem_sco = None
             else:
                 self.compute_prems_sco()
@@ -212,8 +206,7 @@ class Premium:
                     or self.ecorphpe_base_rate is None
                     or self.ecoyp_base_rate is None):
                 # print("ECO Base rates are not available for county/crop",
-                #       "Can't compute ECO premiums",
-                #       "Try specifying the county practice (cpractice)")
+                #       "Can't compute ECO premiums")
                 self.prem_eco = None
             else:
                 self.compute_prems_eco()
@@ -525,8 +518,7 @@ class Premium:
         maxliab = round(self.expected_yield * self.projected_price * 1.2, 2)
         self.prem_arc = (maxliab * 100 * rates.T).round(0)
         self.prem_arc[:] -= (self.prem_arc * subs.T).round(0)
-        self.prem_arc[:] = (self.prem_arc / 100 *
-                            self.prot_factor / 1.2).round(2)
+        self.prem_arc[:] = (self.prem_arc / 100 / 1.2).round(2)
 
     # ------------
     # SCO PREMIUMS
@@ -563,7 +555,7 @@ class Premium:
     # -------------------
     def store_user_settings(self, rateyield, adjyield, tayield, acres, hailfire,
                             prevplant, tause, yieldexcl, state, county,
-                            crop, croptype, practice, prot_factor, projected_price,
+                            crop, croptype, practice, projected_price,
                             price_volatility_factor, subcounty, expected_yield):
         """
         Store settings provide by user when calling calc_premiums, and calculate
@@ -583,7 +575,6 @@ class Premium:
         self.crop = crop
         self.croptype = croptype
         self.practice = practice
-        self.prot_factor = prot_factor
         self.projected_price = projected_price
         self.price_volatility_factor = price_volatility_factor
         self.expected_yield = expected_yield

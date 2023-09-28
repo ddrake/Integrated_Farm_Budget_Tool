@@ -23,10 +23,12 @@ class PremiumTestCase(TestCase):
         self.premium = Premium()
 
     def test_with_default_values(self):
-        # Premiums for Default settings; prot_factor 1.2 to match UI (verified)
+        # Premiums for Default settings;
+        # originally using prot_factor 1.2 to match UI (verified) but changed
+        # to 1.0 when prot_factor was factored out of premium and indemnity logic
         # except for ECO YP (UI uses incorrect subsidy)
         prem = self.premium.compute_prems(
-            prot_factor=1.2, projected_price=5.91, price_volatility_factor=18,
+            projected_price=5.91, price_volatility_factor=18,
             expected_yield=221.9)
 
         expected = (
@@ -35,9 +37,9 @@ class PremiumTestCase(TestCase):
                  [0.71,  0.87,  1.01,  1.36,  1.91,  3.08,  6.27, 13.83],
                  [0.73,  0.99,  1.37,  1.96,  2.65,  4.13,  7.74, 15.34]]).T,
             np.array(
-                [[05.35,  9.77, 18.84, 34.91, 58.87],
-                 [04.71,  7.58, 14.16, 24.88, 39.92],
-                 [04.58,  6.26, 11.26, 15.93, 23.98]]).T,
+                [[4.46,  8.14, 15.7,  29.09, 49.06],
+                 [3.92,  6.32, 11.8,  20.73, 33.27],
+                 [3.82,  5.22,  9.38, 13.28, 19.98]]).T,
             np.array(
                 [[12.66, 12.65, 12.59, 11.94, 11.01,  9.61,  6.36,  1.39],
                  [08.9 ,  8.88,  8.83,  8.19,  7.45,  6.54,  4.21,  0.92],
@@ -65,7 +67,6 @@ class PremiumTestCase(TestCase):
             'crop': 41,
             'croptype': 16,
             'practice': 3,
-            'prot_factor': 1.2,
             'projected_price': 5.91,
             'price_volatility_factor': 18,
             'expected_yield': 221.9,
@@ -77,9 +78,9 @@ class PremiumTestCase(TestCase):
                  [0.67,  0.81,  0.94,  1.22,  1.74,  2.81,  5.76, 12.82],
                  [0.68,  0.9 ,  1.23,  1.76,  2.4 ,  3.74,  7.01, 13.92]]).T,
             np.array(
-                [[5.35,  9.77, 18.84, 34.91, 58.87],
-                 [4.71,  7.58, 14.16, 24.88, 39.92],
-                 [4.58,  6.26, 11.26, 15.93, 23.98]]).T,
+                [[4.46,  8.14, 15.7,  29.09, 49.06],
+                 [3.92,  6.32, 11.8,  20.73, 33.27],
+                 [3.82,  5.22,  9.38, 13.28, 19.98]]).T,
             np.array(
                 [[12.66, 12.65, 12.59, 11.94, 11.01,  9.61,  6.36,  1.39],
                  [8.9 ,  8.88,  8.83,  8.19,  7.45,  6.54,  4.21,  0.92],
@@ -107,7 +108,6 @@ class PremiumTestCase(TestCase):
             'crop': 81,
             'croptype': 997,
             'practice': 53,
-            'prot_factor': 1.2,
             'projected_price': 13.76,
             'price_volatility_factor': 13,
             'expected_yield': 68,
@@ -119,9 +119,9 @@ class PremiumTestCase(TestCase):
                  [0.14, 0.17, 0.23, 0.31, 0.47, 0.83, 1.57, 3.08],
                  [0.15, 0.2 , 0.27, 0.39, 0.55, 0.93, 1.77, 3.45]]).T,
             np.array(
-                [[1.89,  3.33,  5.91, 13.52, 26.91],
-                 [1.2 ,  2.17,  5.31, 11.68, 22.32],
-                 [1.34,  1.57,  2.43,  4.09,  8.64]]).T,
+                [[1.58,  2.78,  4.93, 11.27, 22.42],
+                 [1.,    1.81,  4.42,  9.73, 18.6],
+                 [1.12,  1.31,  2.03,  3.41,  7.2]]).T,
             np.array(
                 [[5.23, 5.23, 5.24, 5.23, 5.11, 4.6 , 3.15, 0.7],
                  [4.46, 4.46, 4.47, 4.46, 4.35, 3.86, 2.59, 0.56],
@@ -150,7 +150,6 @@ class PremiumTestCase(TestCase):
             'crop': 11,
             'croptype': 11,
             'practice': 3,
-            'prot_factor': 1.2,
             'projected_price': 8.45,
             'price_volatility_factor': 31,
             'expected_yield': 70.7,
@@ -192,7 +191,6 @@ class PremiumTestCase(TestCase):
             'crop': 41,
             'croptype': 16,
             'practice': 3,
-            'prot_factor': 1.2,
             'projected_price': 5.91,
             'price_volatility_factor': 18,
             'expected_yield': 191.9,
@@ -204,9 +202,9 @@ class PremiumTestCase(TestCase):
                  [1.34,  1.71,  2.16,  2.77,  3.81,  5.94, 11.15, 22.5],
                  [1.58,  2.07,  2.66,  3.42,  4.52,  6.7 , 12.04, 22.92]]).T,
             np.array(
-                [[18.8 , 25.96, 33.8 , 49.35, 70.5],
-                 [15.9 , 20.7 , 25.54, 35.47, 49.01],
-                 [16.01, 18.02, 22.54, 25.84, 34.21]]).T,
+                [[15.67, 21.63, 28.17, 41.12, 58.75],
+                 [13.25, 17.25, 21.28, 29.56, 40.84],
+                 [13.34, 15.02, 18.78, 21.53, 28.51]]).T,
             np.array(
                 [[15.2 , 14.83, 14.61, 14.09, 12.96, 10.86,  7.12,  1.4],
                  [10.23,  9.87,  9.82,  9.58,  8.92,  7.56,  5.  ,  0.99],
@@ -234,7 +232,6 @@ class PremiumTestCase(TestCase):
             'crop': 81,
             'croptype': 997,
             'practice': 53,
-            'prot_factor': 1.2,
             'projected_price': 13.76,
             'price_volatility_factor': 13,
             'expected_yield': 56,
@@ -246,9 +243,9 @@ class PremiumTestCase(TestCase):
                  [0.69,  0.88,  1.2 ,  1.67,  2.29,  3.66,  6.89, 13.42],
                  [0.79,  1.05,  1.41,  1.91,  2.58,  4.14,  7.67, 14.52]]).T,
             np.array(
-                [[1.44,  2.91,  5.83, 13.63, 26.67],
-                 [0.95,  1.71,  4.08,  9.67, 19.31],
-                 [1.06,  1.82,  3.2 ,  5.7 , 11.96]]).T,
+                [[1.2,   2.43,  4.86, 11.36, 22.22],
+                 [0.79,  1.42,  3.4,   8.06, 16.09],
+                 [0.88,  1.52,  2.67,  4.75,  9.97]]).T,
             np.array(
                 [[5.36, 5.35, 5.35, 5.34, 5.13, 4.58, 3.27, 0.7],
                  [3.81, 3.81, 3.82, 3.81, 3.69, 3.33, 2.4 , 0.52],
@@ -276,7 +273,6 @@ class PremiumTestCase(TestCase):
             'crop': 11,
             'croptype': 11,
             'practice': 3,
-            'prot_factor': 1.2,
             'projected_price': 8.45,
             'price_volatility_factor': 31,
             'expected_yield': 70.1,
@@ -288,9 +284,9 @@ class PremiumTestCase(TestCase):
                  [3.59,  4.44,  5.36,  6.46,  8.37, 12.19, 21.  , 37.6],
                  [2.8 ,  3.36,  3.99,  4.84,  6.41,  9.41, 16.37, 29.73]]).T,
             np.array(
-                [[23.37, 32.56, 39.86, 53.79, 69.14],
-                 [20.93, 28.57, 34.32, 45.21, 56.76],
-                 [9.33, 11.19, 14.65, 17.34, 22.57]]).T,
+                [[19.48, 27.13, 33.22, 44.82, 57.62],
+                 [17.44, 23.81, 28.6,  37.68, 47.3],
+                 [7.78,  9.32, 12.21, 14.45, 18.81]]).T,
             np.array(
                 [[18.17, 17.19, 15.74, 14.25, 12.15,  9.27,  5.6 ,  1.02],
                  [15.14, 14.26, 12.92, 11.62,  9.86,  7.49,  4.46,  0.8],
@@ -318,7 +314,6 @@ class PremiumTestCase(TestCase):
             'crop': 81,
             'croptype': 997,
             'practice': 43,
-            'prot_factor': 1.2,
             'projected_price': 13.76,
             'price_volatility_factor': 13,
             'expected_yield': 56,
@@ -331,10 +326,9 @@ class PremiumTestCase(TestCase):
                  [1.28,  1.66,  2.26,  2.94,  3.72,  5.43,  9.59, 18.45],
                  [1.47,  1.9 ,  2.53,  3.24,  4.11,  5.97, 10.49, 19.73]]).T,
             np.array(
-                [[1.44,  2.91,  5.83, 13.63, 26.67],
-                 [0.95,  1.71,  4.08,  9.67, 19.31],
-                 [1.06,  1.82,  3.2 ,  5.7 , 11.96]]
-                ).T,
+                [[1.2,   2.43,  4.86, 11.36, 22.22],
+                 [0.79,  1.42,  3.4,   8.06, 16.09],
+                 [0.88,  1.52,  2.67,  4.75,  9.97]]).T,
             np.array(
                 [[5.25, 5.25, 5.25, 5.23, 5.03, 4.49, 3.2 , 0.68],
                  [3.74, 3.74, 3.74, 3.73, 3.62, 3.26, 2.36, 0.51],
@@ -362,7 +356,6 @@ class PremiumTestCase(TestCase):
             'crop': 41,
             'croptype': 16,
             'practice': 3,
-            'prot_factor': 1.2,
             'subcounty': 'BBB',
             'projected_price': 5.91,
             'price_volatility_factor': 18,
@@ -375,9 +368,9 @@ class PremiumTestCase(TestCase):
                  [6.62,  8.14, 10.2 , 12.4 , 14.81, 20.75, 34.54, 60.3],
                  [6.91,  8.47, 10.45, 12.47, 14.76, 20.56, 34.14, 59.29]]).T,
             np.array(
-                [[15.94, 25.  , 33.7 , 49.47, 71.28],
-                 [11.55, 18.03, 23.63, 33.68, 48.45],
-                 [13.32, 18.05, 24.63, 29.45, 40.23]]).T,
+                [[13.28, 20.83, 28.08, 41.22, 59.4],
+                 [9.63, 15.03, 19.69, 28.07, 40.38],
+                 [11.1,  15.04, 20.52, 24.54, 33.52]]).T,
             np.array(
                 [[18.83, 18.31, 17.46, 15.99, 13.65, 11.02,  7.13,  1.39],
                  [12.65, 12.28, 11.71, 10.67,  8.98,  7.26,  4.75,  0.93],
@@ -405,7 +398,6 @@ class PremiumTestCase(TestCase):
             'crop': 41,
             'croptype': 16,
             'practice': 3,
-            'prot_factor': 1.2,
             'projected_price': 5.91,
             'price_volatility_factor': 18,
             'expected_yield': 191.9,
@@ -417,9 +409,9 @@ class PremiumTestCase(TestCase):
                  [1.2 ,  1.42,  1.8 ,  2.27,  2.9 ,  4.48,  8.51, 16.78],
                  [1.37,  1.72,  2.18,  2.79,  3.57,  5.31,  9.58, 18.09]]).T,
             np.array(
-                [[18.8 , 25.96, 33.8 , 49.35, 70.50],
-                 [15.9 , 20.7 , 25.54, 35.47, 49.01],
-                 [16.01, 18.02, 22.54, 25.84, 34.21]]).T,
+                [[15.67, 21.63, 28.17, 41.12, 58.75],
+                 [13.25, 17.25, 21.28, 29.56, 40.84],
+                 [13.34, 15.02, 18.78, 21.53, 28.51]]).T,
             np.array(
                 [[14.28, 13.92, 13.72, 13.23, 12.17, 10.2 ,  6.69,  1.32],
                  [09.61,  9.27,  9.23,  9.  ,  8.38,  7.1 ,  4.69,  0.93],
@@ -446,7 +438,6 @@ class PremiumTestCase(TestCase):
             'crop': 11,
             'croptype': 11,
             'practice': 2,
-            'prot_factor': 1,
             'projected_price': 8.77,
             'price_volatility_factor': 30,
             'expected_yield': 65.1,

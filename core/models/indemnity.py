@@ -16,8 +16,8 @@ class Indemnity():
     SCO_TOP_LEVEL = 86
 
     def __init__(self, tayield=165, projected_price=5.5, harvest_futures_price=5.25,
-                 rma_cty_expected_yield=None, prot_factor=1,
-                 farm_expected_yield=210, cty_expected_yield=192):
+                 rma_cty_expected_yield=None, farm_expected_yield=210,
+                 cty_expected_yield=192):
         """
         Initialize the class, setting some useful attributes.
         """
@@ -36,8 +36,6 @@ class Indemnity():
         # sensitized estimated county yield or RMA final county yield
         # scalar or 1d array
         self.cty_expected_yield = cty_expected_yield
-        # The protecton factor (scales county premiums and indemnities)
-        self.prot_factor = prot_factor
         # Coverage levels for enterprise, SCO
         self.cover = array(range(50, 86, 5))
         # Coverage levels for county area
@@ -200,8 +198,7 @@ class Indemnity():
         scalar
         """
         return (self.rma_cty_expected_yield *
-                self.projected_price *
-                self.prot_factor)
+                self.projected_price)
 
     def revised_dollars_of_protection_area(self):
         """
@@ -209,9 +206,7 @@ class Indemnity():
         AREA RP used above
         Government Crop Insurance F44: Sensitized revised dollars of protection.
         """
-        return (self.rma_cty_expected_yield *
-                self.prot_factor *
-                self.rev_trigger_condition())  # not ARC-specific
+        return (self.rma_cty_expected_yield * self.rev_trigger_condition())
 
     def payment_factor_area(self):
         """

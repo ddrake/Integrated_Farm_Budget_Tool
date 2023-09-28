@@ -1,3 +1,4 @@
+from datetime import datetime
 import numpy as np
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.core.validators import (
@@ -173,10 +174,7 @@ class FarmCrop(models.Model):
 
     def get_selected_ins_items(self, ins_list):
         def get_item(ar, lvl, pt):
-            if isinstance(ar, list):
-                # premiums
-                return ar[lvl][pt]
-            elif len(ar.shape) == 2:
+            if len(ar.shape) == 2:
                 # indemnities for (pf, yf) pair
                 return ar[lvl, pt]
             else:
@@ -188,10 +186,11 @@ class FarmCrop(models.Model):
         ct, bcl, pt = self.coverage_type, self.base_coverage_level, self.product_type
         farm, county, sco = ins_list['Farm'], ins_list['County'], ins_list['SCO']
         ecolvl, eco = self.eco_level, ins_list['ECO']
-        covtype = 'County' if ct == 0 else 'Farm' if ct == 1 else None
+        covtype, basearray = (('County', county * self.prot_factor) if ct == 0 else
+                              ('Farm', farm) if ct == 1 else (None, None))
         base = (0 if ct is None or bcl is None or pt is None or
                 ct == 0 and county is None or ct == 1 and farm is None else
-                get_item(ins_list[covtype],
+                get_item(basearray,
                          int(round((bcl - (.5 if covtype == 'Farm' else .7))/.05)),
                          pt))
         sco = (0 if ct is None or bcl is None or pt is None or
@@ -223,18 +222,20 @@ class FarmCrop(models.Model):
     # -------------------------------------------------
     # Crop Ins Premium-related methods values in $/acre
     # -------------------------------------------------
+    def old_farm_year(self):
+        return self.farm_year.crop_year < datetime.now().year
+
     def get_crop_ins_prems(self):
         """
         Compute and save premiums; return computed value.
         Note: We're not trying to cache these except to have premiums once the crop year
         is over.
         """
-        from datetime import datetime
-        if datetime.now().year == self.farm_year.crop_year:
+        if not self.old_farm_year():
             self.set_prems()
             self.prems_computed_for = self.farm_year.get_model_run_date()
-            self.save()
-        return self.crop_ins_prems
+            self.save(no_check=True)
+        return {k: np.array(v) for k, v in self.crop_ins_prems.items()}
 
     def prem_price_yield_data(self):
         """
@@ -280,7 +281,6 @@ class FarmCrop(models.Model):
             acres=self.planted_acres,
             tause=self.ta_use,
             yieldexcl=self.ye_use,
-            prot_factor=self.prot_factor,
             price_volatility_factor=int(round(price_vol * 100)),
             projected_price=projected_price,
             expected_yield=expected_yield,
@@ -362,7 +362,6 @@ class FarmCrop(models.Model):
             # sensitized harvest price (scalar or 1d array)
             harvest_futures_price=data['hp'][0],
             rma_cty_expected_yield=data['ey'][0],
-            prot_factor=self.prot_factor,
             # sensitized yields (scalars or 1d arrays)
             farm_expected_yield=self.sens_farm_expected_yield(yf),
             cty_expected_yield=data['cy'][0])
@@ -651,16 +650,13 @@ class FarmCrop(models.Model):
                 "ARC-CO base acres must be zero if SCO is set for related farm crop")})
 
     def save(self, *args, **kwargs):
-        if any_changed(self, 'planted_acres'):
-            # invalidate memory cached variable
-            self.farm_year.totalplantedacres = None
-        if ('change_related' not in kwargs and
+        no_check = kwargs.pop('no_check', None)
+        change_related = kwargs.pop('change_related', None)
+        if (change_related is None and no_check is None and
             any_changed(self, 'coverage_type', 'product_type',
                         'base_coverage_level', 'sco_use', 'eco_level',
                         'prot_factor')):
             self.update_related_crop_ins_settings()
-        elif 'change_related' in kwargs:
-            del kwargs['change_related']
         super().save(*args, **kwargs)
 
     class Meta:
