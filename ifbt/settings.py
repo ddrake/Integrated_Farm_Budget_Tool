@@ -62,6 +62,7 @@ MIDDLEWARE = [
     'impersonate.middleware.ImpersonateMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'django_cprofile_middleware.middleware.ProfilerMiddleware',
 ]
 
 ROOT_URLCONF = 'ifbt.urls'
@@ -129,6 +130,9 @@ IMPERSONATE = {
     'PAGINATE_COUNT': 10,
     'REQUIRE_SUPERUSER': True,
 }
+
+# Disabled unless DEBUG is True
+DJANGO_CPROFILE_MIDDLEWARE_REQUIRE_STAFF = False
 
 LOGGING = {
     "version": 1,
