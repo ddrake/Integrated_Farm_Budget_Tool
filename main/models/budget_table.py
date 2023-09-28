@@ -800,7 +800,7 @@ class KeyData(object):
         """
         Show current harvest futures, price factor, sensitized harvest price
         """
-        info = [(mc.price_factor, mc.sens_harvest_price(1), mc.sens_harvest_price())
+        info = [(mc.price_factor, mc.harvest_price(), mc.sens_harvest_price())
                 for mc in self.market_crops_all]
         pfs, prices, sprices = zip(*info)
         rows = []
