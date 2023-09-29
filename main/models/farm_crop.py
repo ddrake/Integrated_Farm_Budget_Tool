@@ -119,10 +119,11 @@ class FarmCrop(models.Model):
 
     def __init__(self, *args, **kwargs):
         # cache results of expensive functions during request
+        # sensitized farm and county yields not cached (called with different yfs)
         self.has_budget_mem = None
         self.sens_harvest_price_mem = None
         self.indem_price_yield_data_mem = None
-        self.sens_farm_expected_yield_mem = None
+        self.sens_cty_expected_yield_mem = None
 
         super().__init__(*args, **kwargs)
 
@@ -175,10 +176,10 @@ class FarmCrop(models.Model):
     def get_selected_ins_items(self, ins_list):
         def get_item(ar, lvl, pt):
             if len(ar.shape) == 2:
-                # indemnities for (pf, yf) pair
+                # prems or indemnities for array(lvl, pt)
                 return ar[lvl, pt]
             else:
-                # indemnities for array(pf, yf)
+                # prems or indemnities for array(pf, yf, lvl, pt)
                 return ar[..., lvl, pt]
 
         if ins_list is None:
@@ -314,7 +315,6 @@ class FarmCrop(models.Model):
             mrd = self.farm_year.get_model_run_date()
             pre_discov = mrd <= self.proj_price_disc_end
             pre_harv = mrd <= self.harv_price_disc_end
-            pre_cty_yield = mrd <= self.cty_yield_final
             harv_price = self.harvest_price()
             sens_harv_price = self.sens_harvest_price(pf)
             py = PriceYield.objects.get(
@@ -341,16 +341,11 @@ class FarmCrop(models.Model):
                              py.harvest_price * np.ones_like(pf)
                              if harvest_price_final else
                              sens_harv_price)
-            cty_yield_final = not pre_cty_yield and py.final_yield is not None
-            #  scalar or 1d array
-            cty_yield = (py.final_yield if cty_yield_final and scal(yf) else
-                         py.final_yield * np.ones_like(yf) if cty_yield_final else
-                         sens_cty_exp_yield)
             self.indem_price_yield_data_mem = (
                 {'ey': [exp_yield, True], 'pp': [proj_price, proj_price_final],
                  'pv': [price_vol, price_vol_final],
                  'hp': [harvest_price, harvest_price_final],
-                 'cy': [cty_yield, cty_yield_final]})
+                 'cy': [sens_cty_exp_yield]})
         return self.indem_price_yield_data_mem
 
     def get_indemnities(self, pf=None, yf=None):
@@ -387,31 +382,48 @@ class FarmCrop(models.Model):
     # ----------------------------
     # These should all check for a budget because they may be called from market crop.
     # They should also be defensive with yf because they could be called from a view.
-    def sens_farm_expected_yield(self, yf=None):
-        """ scalar or array(ny) used by budget and sensitivity """
-        if self.sens_farm_expected_yield_mem is None:
-            if not self.has_budget():
-                return (0 if scal(yf) else np.zeros_like(yf))
-            if yf is None:
-                yf = self.farmbudgetcrop.yield_factor
-            yieldfinal = self.farmbudgetcrop.is_farm_yield_final
-            farmyield = self.farmbudgetcrop.farm_yield
-            self.sens_farm_expected_yield_mem = (
-                farmyield if scal(yf) and yieldfinal else
-                farmyield * np.ones_like(yf) if yieldfinal else
-                farmyield * yf)
-        return self.sens_farm_expected_yield_mem
+    def farm_expected_yield(self):
+        """ non-sensitized expected yield used by key data """
+        return 0 if not self.has_budget() else self.farmbudgetcrop.farm_yield
 
-    def sens_cty_expected_yield(self, yf=None):
+    def sens_farm_expected_yield(self, yf=None):
         """ scalar or array(ny) used by budget and sensitivity """
         if not self.has_budget():
             return (0 if scal(yf) else np.zeros_like(yf))
         if yf is None:
             yf = self.farmbudgetcrop.yield_factor
         yieldfinal = self.farmbudgetcrop.is_farm_yield_final
-        ctyyield = self.farmbudgetcrop.county_yield
-        return (ctyyield if scal(yf) and yieldfinal else
-                ctyyield * np.ones_like(yf) if yieldfinal else ctyyield * yf)
+        farmyield = self.farmbudgetcrop.farm_yield
+        return (farmyield if scal(yf) and yieldfinal else
+                farmyield * np.ones_like(yf) if yieldfinal else farmyield * yf)
+
+    def sens_cty_expected_yield(self, yf=None):
+        """
+        scalar or array(ny) used by budget and sensitivity
+        1. If the RMA final county yield is available, use it.
+        2. If the county_yield in the budget has been flagged as final, use that
+        3. Otherwise return the sensitized budget county_yield
+        """
+        if self.sens_cty_expected_yield_mem is None:
+            if yf is None:
+                yf = self.farmbudgetcrop.yield_factor
+            if self.farm_year.get_model_run_date() > self.cty_yield_final:
+                py = PriceYield.objects.get(
+                    crop_year=self.farm_year.crop_year,
+                    state_id=self.farm_year.state_id,
+                    county_code=self.farm_year.county_code,
+                    crop_id=self.farm_crop_type.ins_crop_id,
+                    crop_type_id=self.ins_crop_type_id,
+                    practice=self.ins_practice)
+                return py.final_yield if scal(yf) else py.final_yield * np.ones_like(yf)
+            if not self.has_budget():
+                return (0 if scal(yf) else np.zeros_like(yf))
+            yieldfinal = self.farmbudgetcrop.is_farm_yield_final
+            ctyyield = self.farmbudgetcrop.county_yield
+            self.sens_cty_expected_yield_mem = (
+                (ctyyield if scal(yf) else ctyyield * np.ones_like(yf)) *
+                (1 if yieldfinal else yf))
+        return self.sens_cty_expected_yield_mem
 
     def sens_production_bu(self, yf=None):
         """ scalar or 1d array """

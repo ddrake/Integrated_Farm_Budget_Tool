@@ -60,21 +60,12 @@ class FsaCrop(models.Model):
     def cty_expected_yield(self, yf=None):
         """
         Get weighted average of farm crop county yields
+        Note: fc.sens_cty_expected_yield(yf) now considers RMA final yields
         """
         if yf is None:
             yf = self.yield_factor()
         if len(self.farm_crops()) == 0:
             return (0 if scal(yf) else np.zeros_like(yf))
-        farm_crop = self.farm_crops()[0]
-        if self.farm_year.get_model_run_date() > farm_crop.cty_yield_final:
-            py = PriceYield.objects.get(
-                crop_year=self.farm_year.crop_year, state_id=self.farm_year.state_id,
-                county_code=self.farm_year.county_code,
-                crop_id=farm_crop.farm_crop_type.ins_crop_id,
-                crop_type_id=farm_crop.ins_crop_type_id,
-                practice=farm_crop.ins_practice)
-            if py.final_yield is not None:
-                return py.final_yield
         pairs = [(fc.planted_acres, fc.sens_cty_expected_yield(yf))
                  for fc in self.farm_crops()]
         if scal(yf):
