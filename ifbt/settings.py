@@ -139,6 +139,7 @@ LOGGING = {
     "disable_existing_loggers": False,
     "handlers": {
         "console": {
+            "level": "ERROR",
             "class": "logging.StreamHandler",
         },
         "file": {
@@ -150,7 +151,6 @@ LOGGING = {
     "loggers": {
         "django": {
             "handlers": ["file", "console"],
-            "level": "WARNING",
             "propagate": True,
         },
     },
