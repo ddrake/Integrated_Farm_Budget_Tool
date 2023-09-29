@@ -99,9 +99,6 @@ class FarmYear(models.Model):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.totalplantedacres = None
-        self.totalnondcplantedacres = None
-        self.facplantedacres = None
 
     def get_model_run_date(self):
         mmrd = self.manual_model_run_date
@@ -147,24 +144,17 @@ class FarmYear(models.Model):
     def total_farm_acres(self):
         return self.total_rented_acres() + self.cropland_acres_owned
 
+    # these three methods used only in detail view (no need to cache)
     def total_planted_acres(self):
-        if self.totalplantedacres is None:
-            self.totalplantedacres = sum((fc.planted_acres
-                                          for fc in self.farm_crops.all()))
-        return self.totalplantedacres
+        return sum((fc.planted_acres for fc in self.farm_crops.all()))
 
     def fac_planted_acres(self):
-        if self.facplantedacres is None:
-            self.facplantedacres = sum((fc.planted_acres for fc in self.farm_crops.all()
-                                        if fc.farm_crop_type.is_fac))
-        return self.facplantedacres
+        return sum((fc.planted_acres for fc in self.farm_crops.all()
+                    if fc.farm_crop_type.is_fac))
 
     def total_fs_planted_acres(self):
-        if self.totalnondcplantedacres is None:
-            self.totalnondcplantedacres = sum((fc.planted_acres
-                                               for fc in self.farm_crops.all()
-                                               if not fc.farm_crop_type.is_fac))
-        return self.totalnondcplantedacres
+        return sum((fc.planted_acres for fc in self.farm_crops.all()
+                    if not fc.farm_crop_type.is_fac))
 
     def add_insurable_farm_crops(self):
         """
