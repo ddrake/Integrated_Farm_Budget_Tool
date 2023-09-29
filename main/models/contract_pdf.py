@@ -5,7 +5,7 @@ from datetime import datetime
 from reportlab.lib import colors
 from reportlab.lib.units import inch
 from reportlab.platypus.doctemplate import SimpleDocTemplate
-from reportlab.platypus.flowables import Spacer
+from reportlab.platypus.flowables import Spacer, KeepTogether
 from reportlab.platypus.tables import Table
 
 # Global constants
@@ -50,12 +50,12 @@ class ContractPdf(object):
         self.get_tables()
         objects_to_draw = (
             [Spacer(1*inch, 1*inch)] +
-            mergeTwo(self.tables, [Spacer(.25*inch, .25*inch)]*(len(self.tables)-1)))
-
+            mergeTwo([KeepTogether([t]) for t in self.tables],
+                     [Spacer(.25*inch, .25*inch)]*(len(self.tables)-1)))
         doc_template = SimpleDocTemplate(
             buffer, pagesize=(11*inch, 8.5*inch),
             leftMargin=0.25*inch, rightMargin=0.25*inch,
-            topMargin=0.325*inch, bottomMargin=0.25*inch,
+            topMargin=0.325*inch, bottomMargin=0.5*inch,
             title='Grain Contracts', author='IFBT')
 
         doc_template.build(objects_to_draw, onFirstPage=self.first_page_header())
