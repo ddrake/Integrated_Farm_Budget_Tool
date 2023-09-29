@@ -1,6 +1,3 @@
-from .market_crop import MarketCrop
-
-
 class BudgetManager(object):
     """
     1. Manages caching and retrieval of numerical data for baseline budget.
@@ -20,6 +17,10 @@ class BudgetManager(object):
         self.farm_year = farm_year
         self.budget_table = None
         self.key_data = None
+
+        # data common to at least two of budget, revenue, keydata
+        self.farm_crops = [fc for fc in self.farm_year.farm_crops.all()
+                           if fc.has_budget() and fc.planted_acres > 0]
 
     def update_budget_text(self):
         """
@@ -55,9 +56,9 @@ class BudgetManager(object):
         Also construct the values dict and save in farmyear.current_budget_data
         """
         cur_budget = {}
-        bt = BudgetTable(self.farm_year)
+        bt = BudgetTable(self.farm_year, self)
         rd = bt.revenue_details
-        kd = KeyData(self.farm_year)
+        kd = KeyData(self.farm_year, self)
 
         cur_budget['rev'] = rd.get_rows()
         cur_budget['revfmt'] = rd.get_formats()
@@ -110,9 +111,10 @@ class BudgetManager(object):
         var_bud = getvar(bb, cb)
         if var_rev is None or var_bud is None:
             return None
-        varbt = BudgetTable(self.farm_year, revenue_data=var_rev, budget_data=var_bud)
+        varbt = BudgetTable(self.farm_year, self,
+                            revenue_data=var_rev, budget_data=var_bud)
         rd = varbt.revenue_details
-        kd = KeyData(self.farm_year)
+        kd = KeyData(self.farm_year, self)
 
         var_budget = {}
         var_budget['rev'] = rd.get_rows()
@@ -130,7 +132,7 @@ class BudgetTable(object):
     per bushel (pb), and if the farm has wheat/dc beans, a dc beans table in (kd)
     """
 
-    def __init__(self, farm_year, revenue_data=None, budget_data=None):
+    def __init__(self, farm_year, mgr, revenue_data=None, budget_data=None):
         """
         Optional revenue_data and budget_data for computing variance
         Get a queryset of all farm crops with budgets for the farm year
@@ -138,17 +140,14 @@ class BudgetTable(object):
           The view should check for None, and show a message about adding budgets.
         """
         self.farm_year = farm_year
-        self.revenue_details = RevenueDetails(farm_year, data=revenue_data)
+        self.revenue_details = RevenueDetails(farm_year, mgr, data=revenue_data)
         # numerical data used in budgets (dict of lists)
         self.data = budget_data
         # Some budget values are computed using revenue detail data
         if revenue_data is None:
             self.revenue_details.set_data()
 
-        self.farm_crops = [fc for fc in
-                           self.farm_year.farm_crops.all()
-                           .order_by('farm_crop_type_id')
-                           if fc.has_budget() and fc.planted_acres > 0]
+        self.farm_crops = mgr.farm_crops
 
         self.row_labels = [
             'Crop Revenue', 'ARC/PLC',
@@ -530,22 +529,16 @@ class RevenueDetails:
     Generates data and a nested list structure (table rows) for a Grain Revenue
     buildup table to be included with the Detailed Budget
     """
-    def __init__(self, farm_year, data=None):
+    def __init__(self, farm_year, mgr, data=None):
         """ optional data argument for variance budget computation """
 
         self.farm_year = farm_year
 
         self.data = data
 
-        self.farm_crops = [
-            fc for fc in self.farm_year.farm_crops.all()
-            if fc.planted_acres > 0 and fc.has_budget()]
+        self.farm_crops = mgr.farm_crops
 
         # Blank column before total is for alignment with budget
-        # self.colheads = [
-        #     str(fc.farm_crop_type).replace('Winter', 'W').replace('Spring', 'S')
-        #     for fc in self.farm_crops] + [''] + ['Total']
-
         # (title, datavar, total, round, $)
         self.ROWS = [
             ('Farm Yield per acre', 'farm_yields',
@@ -698,21 +691,13 @@ class KeyData(object):
     """
     Generates Key Data tables associated with current budget
     """
-    def __init__(self, farm_year, for_sens_table=False):
-        """
-        In the context of the sensitivity table, data related to global yield and price
-        factors would be confusing so we customize based on for_sens_table.
-        """
+    def __init__(self, farm_year, mgr):
         self.farm_year = farm_year
-        self.for_sens_table = for_sens_table
         self.model_run = self.farm_year.get_model_run_date()
-        self.farm_crops = [fc for fc in self.farm_year.farm_crops
-                           .filter(planted_acres__gt=0).all() if fc.has_budget()]
-        self.market_crop_ids = {fc.market_crop_id: fc for fc in self.farm_crops}.keys()
-        self.market_crops = [MarketCrop.objects.get(pk=pk)
-                             for pk in self.market_crop_ids]
-        self.market_crops_all = list(MarketCrop.objects.
-                                     filter(farm_year=farm_year).all())
+        self.farm_crops = mgr.farm_crops
+        self.market_crops_all = [mc for mc in self.farm_year.market_crops.all()]
+        self.market_crops = [mc for mc in self.market_crops_all if mc.pk in
+                             [fc.market_crop_id for fc in self.farm_crops]]
         self.fsa_crops = [fsc for fsc in self.farm_year.fsa_crops.all()]
         self.farm_crop_names = [
             str(fc.farm_crop_type).replace('Winter', 'W').replace('Spring', 'S')
@@ -774,25 +759,20 @@ class KeyData(object):
         """
         Show yield factor, actual yields
         """
-        info = [(fc.farmbudgetcrop.yield_factor, fc.sens_farm_expected_yield(yf=1),
-                 fc.sens_farm_expected_yield(), fc.sens_cty_expected_yield(yf=1),
-                 fc.sens_cty_expected_yield())
+        info = [(fc.farmbudgetcrop.yield_factor, fc.farm_expected_yield(),
+                 fc.sens_farm_expected_yield(), fc.sens_cty_expected_yield())
                 for fc in self.farm_crops]
 
-        yfs, yields, sensyields, cty, senscty = zip(*info)
+        yfs, yields, sensyields, senscty = zip(*info)
         rows = []
         rows.append(('Yields', []))
         rows += self.get_yield_headers()
-        # rows.append(('', self.farm_crop_names))
         rows.append(('Assumed Farm Yields', [f'{yld:.0f}' for yld in yields]))
-        if self.for_sens_table:
-            rows.append(('Assumed County Yields', [f'{yld:.0f}' for yld in yields]))
-        if not self.for_sens_table:
-            rows.append(('Yield Sensitivity Factor', [f'{yf:.0%}' for yf in yfs]))
-            rows.append(('Sensitized Farm Yields',
-                         [f'{syld:.0f}' for syld in sensyields]))
-            rows.append(('Sensitized County Yields',
-                         [f'{scty:.0f}' for scty in senscty]))
+        rows.append(('Yield Sensitivity Factor', [f'{yf:.0%}' for yf in yfs]))
+        rows.append(('Sensitized Farm Yields',
+                     [f'{syld:.0f}' for syld in sensyields]))
+        rows.append(('Sensitized County Yields',
+                     [f'{scty:.0f}' for scty in senscty]))
         colspan = len(yields) + 1
         return {'rows': rows, 'colspan': colspan}
 
@@ -806,11 +786,9 @@ class KeyData(object):
         rows = []
         rows.append(('Prices', []))
         rows += self.get_market_price_headers()
-        # rows.append(('', self.market_crop_names_all))
         rows.append(('Current Harvest Futures', [f'${p:.2f}' for p in prices]))
-        if not self.for_sens_table:
-            rows.append(('Price Sensitivity Factor', [f'{p:.0%}' for p in pfs]))
-            rows.append(('Assumed Harvest Price', [f'${p:.2f}' for p in sprices]))
+        rows.append(('Price Sensitivity Factor', [f'{p:.0%}' for p in pfs]))
+        rows.append(('Assumed Harvest Price', [f'${p:.2f}' for p in sprices]))
         colspan = len(prices) + 1
         return {'rows': rows, 'colspan': colspan}
 
@@ -894,10 +872,7 @@ class KeyData(object):
         rows.append(('ARC-CO Acres',
                      [f'{0 if tot == 0 else ac/tot:.0%}'
                       for ac, tot in zip(arcco_acres, tot_acres)]))
-        if self.for_sens_table:
-            rows.append(('Estimated MYA Price', [f'${mya:.2f}' for mya in myas]))
-        else:
-            rows.append(('Estimated MYA Price', [f'${mya:.2f}' for mya in smyas]))
+        rows.append(('Estimated MYA Price', [f'${mya:.2f}' for mya in smyas]))
         colspan = len(cropnames) + 1
         return {'rows': rows, 'colspan': colspan}
 
