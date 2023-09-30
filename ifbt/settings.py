@@ -134,26 +134,5 @@ IMPERSONATE = {
 # Disabled unless DEBUG is True
 DJANGO_CPROFILE_MIDDLEWARE_REQUIRE_STAFF = False
 
-LOGGING = {
-    "version": 1,
-    "disable_existing_loggers": False,
-    "handlers": {
-        "console": {
-            "level": "ERROR",
-            "class": "logging.StreamHandler",
-        },
-        "file": {
-            "level": "WARNING",
-            "class": "logging.FileHandler",
-            "filename": BASE_DIR / 'debug.log',
-        },
-    },
-    "loggers": {
-        "django": {
-            "handlers": ["file", "console"],
-            "propagate": True,
-        },
-    },
-}
 
 from .settings_local import *  # noqa
