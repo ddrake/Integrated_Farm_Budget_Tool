@@ -58,7 +58,7 @@ urlpatterns = [
          name='deletebudget'),
 
     # contract related views
-    path('contract/create/<int:market_crop>/<int:is_basis>',
+    path('contract/create/<int:market_crop>',
          ContractCreateView.as_view(), name='contract_create'),
     path('contract/update/<int:pk>',
          ContractUpdateView.as_view(), name='contract_update'),

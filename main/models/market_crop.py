@@ -1,5 +1,6 @@
 from datetime import datetime
 import numpy as np
+from django.core.exceptions import ValidationError
 from django.core.validators import (
     MinValueValidator as MinVal, MaxValueValidator as MaxVal)
 from django.db import models
@@ -45,41 +46,47 @@ class MarketCrop(models.Model):
     def __str__(self):
         return f'{self.market_crop_type}'
 
+    def total_contract_bushels(self):
+        if self.tot_contracted_bu_mem is None:
+            self.tot_contracted_bu_mem = sum(
+                c.bushels for c in self.get_contracts())
+
+    # TODO: rename to futures_contracted_bu
     def contracted_bu(self):
         if self.contracted_bu_mem is None:
-            self.contracted_bu_mem = sum(c.bushels
-                                         for c in self.get_futures_contracts())
+            self.contracted_bu_mem = sum(
+                c.bushels for c in self.get_contracts()
+                if c.futures_price is not None)
         return self.contracted_bu_mem
 
+    # TODO: rename to basis_contracted_bu
     def basis_bu_locked(self):
         if self.basis_bu_locked_mem is None:
-            self.basis_bu_locked_mem = sum(c.bushels
-                                           for c in self.get_basis_contracts())
+            self.basis_bu_locked_mem = sum(
+                c.bushels for c in self.get_contracts())
         return self.basis_bu_locked_mem
 
+    # TODO: rename to avg_futures_contract_price
     def avg_contract_price(self):
         if self.avg_contract_price_mem is None:
-            amounts = [c.price*c.bushels for c in self.get_futures_contracts()]
+            amounts = [c.futures_price*c.bushels for c in self.get_contracts()
+                       if c.futures_price is not None]
             tot_bu = self.contracted_bu()
             self.avg_contract_price_mem = sum(amounts) / tot_bu if tot_bu > 0 else 0
         return self.avg_contract_price_mem
 
+    # TODO: rename to avg_basis_contract_price
     def avg_locked_basis(self):
         if self.avg_locked_basis_mem is None:
-            amounts = [c.price*c.bushels for c in self.get_basis_contracts()]
+            amounts = [c.basis_price*c.bushels for c in self.get_contracts()
+                       if c.basis_price is not None]
             tot_bu = self.basis_bu_locked()
             self.avg_locked_basis_mem = sum(amounts) / tot_bu if tot_bu > 0 else 0
         return self.avg_locked_basis_mem
 
-    def get_basis_contracts(self):
+    def get_contracts(self):
         model_run_date = self.farm_year.get_model_run_date()
-        return self.contracts.filter(
-            is_basis=True, contract_date__lte=model_run_date)
-
-    def get_futures_contracts(self):
-        model_run_date = self.farm_year.get_model_run_date()
-        return self.contracts.filter(
-            is_basis=False, contract_date__lte=model_run_date)
+        return self.contracts.filter(contract_date__lte=model_run_date)
 
     def harvest_price(self):
         return self.harvest_futures_price_info(price_only=True)
@@ -173,21 +180,21 @@ class MarketCrop(models.Model):
 
 class Contract(models.Model):
     """
-    Represents a futures or basis contract
+    Represents a futures / basis contract
     If a manual model_run_date is set, we should warn the user that contracts with
     contract date in the future are not displayed or included in budget or sensitivity.
     Otherwise, they might think they missed one and add a duplicate contract.
     """
-    is_basis = models.BooleanField(
-        default=False,
-        help_text='Specifies a basis contract instead of a futures contract.')
-
     contract_date = models.DateField(default=datetime.today)
 
-    bushels = models.FloatField(default=0, validators=[MinVal(0), MaxVal(999999)])
+    bushels = models.FloatField(default=0, validators=[MinVal(1), MaxVal(999999)])
 
-    price = models.FloatField(
-        default=0, validators=[MinVal(-2), MaxVal(30)], verbose_name="price per bushel")
+    futures_price = models.FloatField(
+        null=True, blank=True, verbose_name="futures price per bushel")
+
+    basis_price = models.FloatField(
+        null=True, blank=True,
+        verbose_name="basis price per bushel")
 
     terminal = models.CharField(max_length=60, blank=True)
 
@@ -202,3 +209,22 @@ class Contract(models.Model):
 
     class Meta:
         ordering = ['contract_date']
+
+    def clean(self):
+        print(f'{self.futures_price=}, {self.basis_price=}')
+        if self.futures_price is None and self.basis_price is None:
+            raise ValidationError(
+                {'futures_price': 'A futures price, a basis, or both must be set',
+                 'basis_price': 'A futures price, a basis, or both must be set'})
+        if self.futures_price is not None and self.futures_price < 1:
+            raise ValidationError(
+                {'futures_price': 'Futures price must be at least $1.00'})
+        if self.futures_price is not None and self.futures_price > 25:
+            raise ValidationError(
+                {'futures_price': 'Futures price must be less than $25.00'})
+        if self.basis_price is not None and self.basis_price < -2:
+            raise ValidationError(
+                {'basis_price': 'Basis price must be at least -$2.00'})
+        if self.basis_price is not None and self.basis_price > 2:
+            raise ValidationError(
+                {'basis_price': 'Basis price must be less than $2.00'})

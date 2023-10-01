@@ -248,8 +248,7 @@ class MarketCropUpdateView(UserPassesTestMixin, UpdateView):
         market_crop = self.get_object()
         context = super().get_context_data(**kwargs)
         context['farmyear_id'] = self.get_object().farm_year_id
-        context['futures_contracts'] = market_crop.get_futures_contracts()
-        context['basis_contracts'] = market_crop.get_basis_contracts()
+        context['contracts'] = market_crop.get_contracts()
         return context
 
 
@@ -306,14 +305,12 @@ class ContractCreateView(UserPassesTestMixin, CreateView):
         return self.request.user == mc.farm_year.user
 
     def get(self, request, *args, **kwargs):
-        self.extra_context = {'market_crop': kwargs['market_crop'],
-                              'is_basis': kwargs['is_basis']}
+        self.extra_context = {'market_crop': kwargs['market_crop']}
         return super().get(request, *args, **kwargs)
 
     def get_initial(self):
         if self.extra_context:
-            return {'market_crop': self.extra_context['market_crop'],
-                    'is_basis': 'on' if self.extra_context['is_basis'] == 1 else ''}
+            return {'market_crop': self.extra_context['market_crop']}
 
     def get_success_url(self):
         mc_id = self.kwargs.get('market_crop', None)
@@ -492,16 +489,14 @@ class ContractCsvView(UserPassesTestMixin, View):
                      'attachment; filename="GrainContracts.csv"'},
         )
         writer = csv.writer(response)
-        writer.writerow(['Crop', 'Futures/Basis', 'Contract Date', 'Bushels', 'Price',
-                         'Terminal', 'Contract #', 'Delivery Start', 'Delivery End'])
+        writer.writerow(['Crop', 'Contract Date', 'Bushels', 'Futures Price',
+                         'Basis Price', 'Terminal', 'Contract #',
+                         'Delivery Start', 'Delivery End'])
         for mc in farm_year.market_crops.all():
             if mc.planted_acres() > 0:
-                for c in mc.get_futures_contracts():
+                for c in mc.get_contracts():
                     writer.writerow(
-                        [mc, 'Futures', c.contract_date, c.bushels, c.price, c.terminal,
-                         c.contract_number, c.delivery_start_date, c.delivery_end_date])
-                for c in mc.get_basis_contracts():
-                    writer.writerow(
-                        [mc, 'Basis', c.contract_date, c.bushels, c.price, c.terminal,
-                         c.contract_number, c.delivery_start_date, c.delivery_end_date])
+                        [mc, c.contract_date, c.bushels, c.futures_price, c.basis_price,
+                         c.terminal, c.contract_number, c.delivery_start_date,
+                         c.delivery_end_date])
         return response

@@ -191,28 +191,31 @@ class ContractCreateForm(ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        kind = ('' if kwargs.get('initial', None) is None else
-                'Basis' if kwargs['initial'].get('is_basis', '') == 'on' else
-                'Futures')
+        mcid = (kwargs.get('initial', None) and
+                kwargs['initial'].get('market_crop', None))
+        if mcid is None:
+            mcid = (kwargs.get('data', None) and
+                    kwargs['data'].get('market_crop', None))
+
+        cropname = str(MarketCrop.objects.get(pk=mcid))
         self.helper = FormHelper()
         self.helper.add_input(Submit('submit', 'Create'))
         self.helper.form_id = 'contractform'
         self.helper.layout = Layout(
-            HTML(f"""<h1 class="block text-xl mb-2">Add {kind} Contract</h1>"""),
+            HTML(f"""<h1 class="block text-xl mb-2">Add {cropname} Contract</h1>"""),
             Fieldset('Contract Information',
-                     'contract_date', 'bushels', 'price', 'terminal',
-                     'contract_number', 'delivery_start_date',
+                     'contract_date', 'bushels', 'futures_price', 'basis_price',
+                     'terminal', 'contract_number', 'delivery_start_date',
                      'delivery_end_date',
-                     Field('is_basis', type='hidden'),
                      Field('market_crop', type='hidden'),
                      )
         )
 
     class Meta:
         model = Contract
-        fields = '''contract_date bushels price terminal
-                    contract_number delivery_start_date
-                    delivery_end_date is_basis market_crop'''.split()
+        fields = '''contract_date bushels futures_price basis_price
+                    terminal contract_number delivery_start_date
+                    delivery_end_date market_crop'''.split()
 
 
 class ContractUpdateForm(ModelForm):
@@ -225,16 +228,15 @@ class ContractUpdateForm(ModelForm):
         self.helper.layout = Layout(
             HTML("""<h1 class="block text-xl mb-2">Edit Contract</h1>"""),
             Fieldset('Contract Information',
-                     'contract_date', 'bushels', 'price', 'terminal',
-                     'contract_number', 'delivery_start_date',
+                     'contract_date', 'bushels', 'futures_price', 'basis_price',
+                     'terminal', 'contract_number', 'delivery_start_date',
                      'delivery_end_date',
-                     Field('is_basis', type='hidden'),
                      Field('market_crop', type='hidden'),
                      )
         )
 
     class Meta:
         model = Contract
-        fields = '''contract_date bushels price terminal
-                    contract_number delivery_start_date
-                    delivery_end_date is_basis market_crop'''.split()
+        fields = '''contract_date bushels futures_price basis_price
+                    terminal contract_number delivery_start_date
+                    delivery_end_date market_crop'''.split()

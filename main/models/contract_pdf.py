@@ -31,6 +31,8 @@ def mergeTwo(l1, l2):
 
 
 def fmtprice(price):
+    if price is None:
+        return ''
     price = f'{price:.2f}'
     return '-$' + price[1:] if price[0] == '-' else '$' + price
 
@@ -40,8 +42,7 @@ class ContractPdf(object):
         self.farm_year = farm_year
         self.market_crops = [mc for mc in farm_year.market_crops.all()
                              if mc.planted_acres() > 0]
-        self.contracts = [(i, (list(mc.get_futures_contracts()),
-                               list(mc.get_basis_contracts())))
+        self.contracts = [(i, list(mc.get_contracts()))
                           for i, mc in enumerate(self.market_crops)]
         self.tables = []
 
@@ -63,42 +64,50 @@ class ContractPdf(object):
         return buffer
 
     def get_tables(self):
-        for i, (futures, basis) in self.contracts:
-            self.tables.append(self.get_table(i, futures, is_basis=False))
-            self.tables.append(self.get_table(i, basis, is_basis=True))
+        for i, c in self.contracts:
+            self.tables.append(self.get_table(i, c))
 
-    def get_table(self, mcidx, contracts, is_basis=False):
+    def get_table(self, mcidx, contracts):
         """ Given a marketcrop index and a list of contract objects,
             construct a formatted table
         """
         mc = self.market_crops[mcidx]
         expected_total_bu = mc.expected_total_bushels()
-        contract_total = (mc.basis_bu_locked() if is_basis else
-                          mc.contracted_bu())
-        remaining = expected_total_bu - contract_total
-        pct_of_expected = (mc.basis_pct_of_expected() if is_basis else
-                           mc.futures_pct_of_expected())
-        avg_contract_price = (mc.avg_locked_basis() if is_basis else
-                              mc.avg_contract_price())
+        futures_total_bu = mc.contracted_bu()
+        basis_total_bu = mc.basis_bu_locked()
+        remaining_futures_bu = expected_total_bu - futures_total_bu
+        remaining_basis_bu = expected_total_bu - basis_total_bu
+        futures_pct_of_expected = mc.futures_pct_of_expected()
+        basis_pct_of_expected = mc.basis_pct_of_expected()
+        avg_futures_price = mc.avg_contract_price()
+        avg_basis_price = mc.avg_locked_basis()
         crop = str(mc)
-        kind = 'Basis' if is_basis else 'Futures'
-        title = f'{crop} {kind} Contracts'
-        rows = [[title, '', '', '', '', '', ''],
-                ['Contract Date', 'Bushels', 'Price', 'Terminal', 'Contract #',
-                 'Delivery Start', 'Delivery End']]
+        title = f'{crop} Contracts'
+        rows = [[title, '', '', '', '', '', '', ''],
+                ['Contract Date', 'Bushels', 'Futures Price', 'Basis Price',
+                 'Terminal', 'Contract #', 'Delivery Start', 'Delivery End']]
         for ct in contracts:
             rows.append(
-                [ct.contract_date, f'{ct.bushels:,.0f}', fmtprice(ct.price),
+                [ct.contract_date, f'{ct.bushels:,.0f}',
+                 fmtprice(ct.futures_price), fmtprice(ct.basis_price),
                  ct.terminal, ct.contract_number, ct.delivery_start_date,
                  ct.delivery_end_date])
-        rows.append(['Total / Avg. Price', f'{contract_total:,.0f}',
-                     fmtprice(avg_contract_price), '', '', '', ''])
+        rows.append(['Futures Totals', f'{futures_total_bu:,.0f}',
+                     fmtprice(avg_futures_price), '', '', '', '', ''])
         rows.append(['Total Estimated Bu.', f'{expected_total_bu:,.0f}',
-                     '', '', '', '', ''])
-        rows.append(['% of Expected', f'{pct_of_expected:.0%}',
-                     '', '', '', '', ''])
-        rows.append(['Remaining Bu.', f'{remaining:,.0f}',
-                     '', '', '', '', ''])
+                     '', '', '', '', '', ''])
+        rows.append(['Futures % of Expected', f'{futures_pct_of_expected:.0%}',
+                     '', '', '', '', '', ''])
+        rows.append(['Remaining Futures Bu.', f'{remaining_futures_bu:,.0f}',
+                     '', '', '', '', '', ''])
+        rows.append(['Basis Totals', f'{basis_total_bu:,.0f}',
+                     fmtprice(avg_basis_price), '', '', '', '', ''])
+        rows.append(['Total Estimated Bu.', f'{expected_total_bu:,.0f}',
+                     '', '', '', '', '', ''])
+        rows.append(['Basis % of Expected', f'{basis_pct_of_expected:.0%}',
+                     '', '', '', '', '', ''])
+        rows.append(['Remaining Basis Bu.', f'{remaining_basis_bu:,.0f}',
+                     '', '', '', '', '', ''])
 
         return Table(rows, hAlign='CENTER', style=self.get_styles(),
                      rowHeights=self.get_rowheights(len(rows)))
@@ -131,7 +140,7 @@ class ContractPdf(object):
             ('LINEBELOW', (0, -1), (-1, -1), BORD, BK),
             ('LINEBEFORE', (0, 0), (0, -1), BORD, BK),
             ('LINEAFTER', (-1, 0), (-1, -1), BORD, BK),
-            ('FONT', (0, -4), (-1, -1), FONTBOLD, FS, FS),
+            ('FONT', (0, -8), (-1, -1), FONTBOLD, FS, FS),
         ]
         return styles
 
