@@ -14,6 +14,15 @@
 <script>
  (() => {
     let xhr;
+    
+    document.addEventListener('DOMContentLoaded', () => {
+      let state =  document.getElementById("state").value
+      if (state) {
+        makeRequest(state)
+      }
+    });
+
+
     document
       .getElementById("state")
          .addEventListener("change", (event) => {
