@@ -63,7 +63,8 @@ class MarketCrop(models.Model):
     def basis_bu_locked(self):
         if self.basis_bu_locked_mem is None:
             self.basis_bu_locked_mem = sum(
-                c.bushels for c in self.get_contracts())
+                c.bushels for c in self.get_contracts()
+                if c.basis_price is not None)
         return self.basis_bu_locked_mem
 
     # TODO: rename to avg_futures_contract_price
