@@ -438,16 +438,16 @@ class FarmCrop(models.Model):
         if yf is None:
             yf = self.farmbudgetcrop.yield_factor
         return (self.market_crop.production_frac_for_farm_crop(self, yf) *
-                self.market_crop.contracted_bu())
+                self.market_crop.futures_contracted_bu())
 
-    def basis_bu_locked(self, yf=None):
+    def basis_contracted_bu(self, yf=None):
         """ apportion based on fraction of market crop production """
         if not self.has_budget():
             return (0 if scal(yf) else np.zeros_like(yf))
         if yf is None:
             yf = self.farmbudgetcrop.yield_factor
         return (self.market_crop.production_frac_for_farm_crop(self, yf) *
-                self.market_crop.basis_bu_locked())
+                self.market_crop.basis_contracted_bu())
 
     def sens_fut_uncontracted_bu(self, yf=None):
         if not self.has_budget():
@@ -457,7 +457,7 @@ class FarmCrop(models.Model):
     def sens_basis_uncontracted_bu(self, yf=None):
         if not self.has_budget():
             return (0 if scal(yf) else np.zeros_like(yf))
-        return self.sens_production_bu(yf) - self.basis_bu_locked(yf)
+        return self.sens_production_bu(yf) - self.basis_contracted_bu(yf)
 
     # -----------------------------------------------
     # Revenue methods (return values in $ by default)
@@ -473,10 +473,10 @@ class FarmCrop(models.Model):
                 (1 if is_per_acre else acres))
 
     def contract_fut_revenue(self, yf=None):
-        return self.fut_contracted_bu(yf) * self.avg_contract_price()
+        return self.fut_contracted_bu(yf) * self.avg_futures_contract_price()
 
     def contract_basis_revenue(self, yf=None):
-        return self.basis_bu_locked(yf) * self.avg_locked_basis()
+        return self.basis_contracted_bu(yf) * self.avg_basis_contract_price()
 
     def noncontract_fut_revenue(self, pf=None, yf=None):
         """ 2d array or scalar """
@@ -626,11 +626,11 @@ class FarmCrop(models.Model):
             self.sens_harvest_price_mem = self.market_crop.sens_harvest_price(pf=pf)
         return self.sens_harvest_price_mem
 
-    def avg_contract_price(self):
-        return self.market_crop.avg_contract_price()
+    def avg_futures_contract_price(self):
+        return self.market_crop.avg_futures_contract_price()
 
-    def avg_locked_basis(self):
-        return self.market_crop.avg_locked_basis()
+    def avg_basis_contract_price(self):
+        return self.market_crop.avg_basis_contract_price()
 
     def assumed_basis_for_new(self):
         return self.market_crop.assumed_basis_for_new

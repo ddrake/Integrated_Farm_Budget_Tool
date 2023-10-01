@@ -648,16 +648,16 @@ class RevenueDetails:
         self.data['uncontracted_futures'] = [
             pb - cf for pb, cf in zip(self.data['production_bushels'],
                                       self.data['contracted_futures'])]
-        self.data['contracted_basis_qty'] = [fc.basis_bu_locked() / 1000
+        self.data['contracted_basis_qty'] = [fc.basis_contracted_bu() / 1000
                                              for fc in self.farm_crops]
         self.data['uncontracted_basis_qty'] = [
             pb - cb for pb, cb in zip(self.data['production_bushels'],
                                       self.data['contracted_basis_qty'])]
-        self.data['avg_fut_contract_prices'] = [fc.avg_contract_price()
+        self.data['avg_fut_contract_prices'] = [fc.avg_futures_contract_price()
                                                 for fc in self.farm_crops]
         self.data['harvest_futures_prices'] = [fc.sens_harvest_price()
                                                for fc in self.farm_crops]
-        self.data['avg_basis_contract_prices'] = [fc.avg_locked_basis()
+        self.data['avg_basis_contract_prices'] = [fc.avg_basis_contract_price()
                                                   for fc in self.farm_crops]
         self.data['assumed_basis_on_remaining'] = [fc.assumed_basis_for_new()
                                                    for fc in self.farm_crops]
@@ -796,7 +796,7 @@ class KeyData(object):
         """
         Show pct of expected bushels and avg. contract price
         """
-        info = ((mc.futures_pct_of_expected(), mc.avg_contract_price())
+        info = ((mc.futures_pct_of_expected(), mc.avg_futures_contract_price())
                 for mc in self.market_crops)
         spcts, ctprices = zip(*info)
         rows = []

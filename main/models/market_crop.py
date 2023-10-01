@@ -31,10 +31,10 @@ class MarketCrop(models.Model):
         help_text=('Percent of current futures price, reflected in detailed budget'))
 
     def __init__(self, *args, **kwargs):
-        self.contracted_bu_mem = None
-        self.basis_bu_locked_mem = None
-        self.avg_contract_price_mem = None
-        self.avg_locked_basis_mem = None
+        self.futures_contracted_bu_mem = None
+        self.basis_contracted_bu_mem = None
+        self.avg_futures_contract_price_mem = None
+        self.avg_basis_contract_price_mem = None
         self.planted_acres_mem = None
         self.harvest_futures_price_info_mem = None
         self.planted_acres_mem = None
@@ -46,44 +46,37 @@ class MarketCrop(models.Model):
     def __str__(self):
         return f'{self.market_crop_type}'
 
-    def total_contract_bushels(self):
-        if self.tot_contracted_bu_mem is None:
-            self.tot_contracted_bu_mem = sum(
-                c.bushels for c in self.get_contracts())
-
-    # TODO: rename to futures_contracted_bu
-    def contracted_bu(self):
-        if self.contracted_bu_mem is None:
-            self.contracted_bu_mem = sum(
+    def futures_contracted_bu(self):
+        if self.futures_contracted_bu_mem is None:
+            self.futures_contracted_bu_mem = sum(
                 c.bushels for c in self.get_contracts()
                 if c.futures_price is not None)
-        return self.contracted_bu_mem
+        return self.futures_contracted_bu_mem
 
-    # TODO: rename to basis_contracted_bu
-    def basis_bu_locked(self):
-        if self.basis_bu_locked_mem is None:
-            self.basis_bu_locked_mem = sum(
+    def basis_contracted_bu(self):
+        if self.basis_contracted_bu_mem is None:
+            self.basis_contracted_bu_mem = sum(
                 c.bushels for c in self.get_contracts()
                 if c.basis_price is not None)
-        return self.basis_bu_locked_mem
+        return self.basis_contracted_bu_mem
 
-    # TODO: rename to avg_futures_contract_price
-    def avg_contract_price(self):
-        if self.avg_contract_price_mem is None:
+    def avg_futures_contract_price(self):
+        if self.avg_futures_contract_price_mem is None:
             amounts = [c.futures_price*c.bushels for c in self.get_contracts()
                        if c.futures_price is not None]
-            tot_bu = self.contracted_bu()
-            self.avg_contract_price_mem = sum(amounts) / tot_bu if tot_bu > 0 else 0
-        return self.avg_contract_price_mem
+            tot_bu = self.futures_contracted_bu()
+            self.avg_futures_contract_price_mem = (sum(amounts) / tot_bu
+                                                   if tot_bu > 0 else 0)
+        return self.avg_futures_contract_price_mem
 
-    # TODO: rename to avg_basis_contract_price
-    def avg_locked_basis(self):
-        if self.avg_locked_basis_mem is None:
+    def avg_basis_contract_price(self):
+        if self.avg_basis_contract_price_mem is None:
             amounts = [c.basis_price*c.bushels for c in self.get_contracts()
                        if c.basis_price is not None]
-            tot_bu = self.basis_bu_locked()
-            self.avg_locked_basis_mem = sum(amounts) / tot_bu if tot_bu > 0 else 0
-        return self.avg_locked_basis_mem
+            tot_bu = self.basis_contracted_bu()
+            self.avg_basis_contract_price_mem = (sum(amounts) / tot_bu
+                                                 if tot_bu > 0 else 0)
+        return self.avg_basis_contract_price_mem
 
     def get_contracts(self):
         model_run_date = self.farm_year.get_model_run_date()
@@ -156,11 +149,11 @@ class MarketCrop(models.Model):
 
     def futures_pct_of_expected(self, yf=None):
         tot = self.expected_total_bushels(yf=yf)
-        return (0 if tot == 0 else self.contracted_bu() / tot)
+        return (0 if tot == 0 else self.futures_contracted_bu() / tot)
 
     def basis_pct_of_expected(self, yf=None):
         tot = self.expected_total_bushels(yf=yf)
-        return (0 if tot == 0 else self.basis_bu_locked() / tot)
+        return (0 if tot == 0 else self.basis_contracted_bu() / tot)
 
     def production_frac_for_farm_crop(self, farmcrop, yf=None):
         """ scalar or array(ny)  """

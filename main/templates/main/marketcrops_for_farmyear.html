@@ -18,17 +18,17 @@
       <dt>Expected Total Bushels</dt>
       <dd class="text-right">{{d.marketcrop.expected_total_bushels|floatformat:"0g"}}</dd>
       <dt>Contracted bushels - futures</dt>
-      <dd class="text-right">{{d.marketcrop.contracted_bu|floatformat:"0g"}}</dd>
+      <dd class="text-right">{{d.marketcrop.futures_contracted_bu|floatformat:"0g"}}</dd>
       <dt>Percent of expected</dt>
       <dd class="text-right">{{d.marketcrop.futures_pct_of_expected|pct}}</dd>
       <dt>Avg. contract price</dt>
-      <dd class="text-right">${{d.marketcrop.avg_contract_price|floatformat:"2g"}}</dd>
+      <dd class="text-right">${{d.marketcrop.avg_futures_contract_price|floatformat:"2g"}}</dd>
       <dt>Contracted bushels - basis</dt>
-      <dd class="text-right">{{d.marketcrop.basis_bu_locked|floatformat:"0g"}}</dd>
+      <dd class="text-right">{{d.marketcrop.basis_contracted_bu|floatformat:"0g"}}</dd>
       <dt>Percent of expected</dt>
       <dd class="text-right">{{d.marketcrop.basis_pct_of_expected|pct}}</dd>
       <dt>Avg. locked basis</dt>
-      <dd class="text-right">${{d.marketcrop.avg_locked_basis|floatformat:"2g"}}</dd>
+      <dd class="text-right">${{d.marketcrop.avg_basis_contract_price|floatformat:"2g"}}</dd>
       <dt>Assumed basis for new crop</dt>
       <dd class="text-right">${{d.marketcrop.assumed_basis_for_new|floatformat:"2g"}}</dd>
       <dt>&nbsp;</dt><dd></dd>

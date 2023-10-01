@@ -73,14 +73,14 @@ class ContractPdf(object):
         """
         mc = self.market_crops[mcidx]
         expected_total_bu = mc.expected_total_bushels()
-        futures_total_bu = mc.contracted_bu()
-        basis_total_bu = mc.basis_bu_locked()
+        futures_total_bu = mc.futures_contracted_bu()
+        basis_total_bu = mc.basis_contracted_bu()
         remaining_futures_bu = expected_total_bu - futures_total_bu
         remaining_basis_bu = expected_total_bu - basis_total_bu
         futures_pct_of_expected = mc.futures_pct_of_expected()
         basis_pct_of_expected = mc.basis_pct_of_expected()
-        avg_futures_price = mc.avg_contract_price()
-        avg_basis_price = mc.avg_locked_basis()
+        avg_futures_price = mc.avg_futures_contract_price()
+        avg_basis_price = mc.avg_basis_contract_price()
         crop = str(mc)
         title = f'{crop} Contracts'
         rows = [[title, '', '', '', '', '', '', ''],
