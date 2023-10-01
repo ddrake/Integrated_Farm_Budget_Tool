@@ -77,14 +77,13 @@ class Madison2023FarmYearTestCase(TestCase):
         beans = qbeans[0]
         wwheat = qwwheat[0]
         # add contracts
-        corn.contracts.create(contract_date=dt, bushels=50000, price=3.5)
-        corn.contracts.create(contract_date=dt, bushels=40000, price=3.6)
-        corn.contracts.create(contract_date=dt, bushels=50000, price=.1, is_basis=True)
-        beans.contracts.create(contract_date=dt, bushels=40000, price=13.2)
-        beans.contracts.create(contract_date=dt, bushels=20000, price=.1, is_basis=True)
-        wwheat.contracts.create(contract_date=dt, bushels=20000, price=7.1)
-        wwheat.contracts.create(contract_date=dt, bushels=30000,
-                                price=.12, is_basis=True)
+        corn.contracts.create(contract_date=dt, bushels=50000, futures_price=3.5)
+        corn.contracts.create(contract_date=dt, bushels=40000, futures_price=3.6)
+        corn.contracts.create(contract_date=dt, bushels=50000, basis_price=.1)
+        beans.contracts.create(contract_date=dt, bushels=40000, futures_price=13.2)
+        beans.contracts.create(contract_date=dt, bushels=20000, basis_price=.1)
+        wwheat.contracts.create(contract_date=dt, bushels=20000, futures_price=7.1)
+        wwheat.contracts.create(contract_date=dt, bushels=30000, basis_price=.12)
         # update the fsa crops
         qcorn = self.farm_year.fsa_crops.filter(fsa_crop_type_id=1)
         qcorn.update(plc_base_acres=1250, arcco_base_acres=1250, plc_yield=180)
