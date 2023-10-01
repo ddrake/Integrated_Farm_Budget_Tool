@@ -1,3 +1,5 @@
+from datetime import datetime
+from django.core.exceptions import ValidationError
 from django.forms import ModelForm
 from django import forms
 
@@ -22,10 +24,27 @@ class FarmYearCreateForm(ModelForm):
         super().__init__(*args, **kwargs)
         self.helper = FormHelper()
         self.helper.add_input(Submit('submit', 'Create'))
+        self.helper.layout = Layout(
+            Fieldset('Farm Information',
+                     'farm_name', 'state', 'county_code',
+                     Field('user', type='hidden'),
+                     )
+        )
+
+    def clean_farm_name(self):
+        farmname = self.cleaned_data['farm_name']
+        user = self.data['user']
+        name_exists = FarmYear.objects.filter(
+            crop_year=datetime.now().year,
+            farm_name=farmname,
+            user=user)
+        if name_exists:
+            raise ValidationError('Farm Name is unique for a given user and crop year')
+        return farmname
 
     class Meta:
         model = FarmYear
-        fields = ['farm_name', 'state', 'county_code']
+        fields = ['farm_name', 'state', 'county_code', 'user']
 
 
 class FarmYearUpdateForm(ModelForm):

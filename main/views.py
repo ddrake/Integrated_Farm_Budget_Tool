@@ -32,9 +32,6 @@ class IndexView(View):
     def get(self, request, *args, **kwargs):
         return render(request, 'main/index.html')
 
-# def index(request):
-#     return render(request, 'main/index.html')
-
 
 # -----------------------
 # Farm Year related views
@@ -70,9 +67,8 @@ class FarmYearCreateView(LoginRequiredMixin, CreateView):
     def get_success_url(self):
         return reverse('farmyears')
 
-    def form_valid(self, form):
-        form.instance.user = self.request.user
-        return super().form_valid(form)
+    def get_initial(self):
+        return {'user': self.request.user}
 
 
 class FarmYearDeleteView(UserPassesTestMixin, DeleteView):
@@ -318,14 +314,6 @@ class ContractCreateView(UserPassesTestMixin, CreateView):
         if self.extra_context:
             return {'market_crop': self.extra_context['market_crop'],
                     'is_basis': 'on' if self.extra_context['is_basis'] == 1 else ''}
-
-    # def post(self, request, *args, **kwargs):
-    #     pk = request.POST.get('market_crop', None)
-    #     mc = get_object_or_404(MarketCrop, pk=pk)
-    #     if mc.farm_year.user != request.user:
-    #         msg = "Adding a contract to another user's crop is not permitted"
-    #         raise PermissionDenied(msg)
-    #     return super().post(request, *args, **kwargs)
 
     def get_success_url(self):
         mc_id = self.kwargs.get('market_crop', None)
