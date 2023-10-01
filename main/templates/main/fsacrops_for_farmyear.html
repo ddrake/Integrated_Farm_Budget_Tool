@@ -37,8 +37,12 @@
         <dd class="text-right">${{fsacrop.effective_ref_price|floatformat:"2g"}}</dd>
         <dt>National Loan Rate:</dt>
         <dd class="text-right">${{fsacrop.natl_loan_rate|floatformat:"2g"}}</dd>
+        <dt>ARC-CO Benchmark County Yield:</dt>
+        <dd class="text-right">{{fsacrop.benchmark_revenue.benchmark_yield|floatformat:"0g"}}</dd>
+        <dt>ARC-CO Benchmark County Price:</dt>
+        <dd class="text-right">${{fsacrop.benchmark_revenue.benchmark_price|floatformat:"2g"}}</dd>
         <dt>ARC-CO Benchmark County Revenue:</dt>
-        <dd class="text-right">${{fsacrop.benchmark_revenue|floatformat:"2g"}}</dd>
+        <dd class="text-right">${{fsacrop.benchmark_revenue.benchmark_revenue|floatformat:"2g"}}</dd>
         <dt>Estimated Sensitized MYA Price:</dt>
         <dd class="text-right">${{fsacrop.sens_mya_price|floatformat:"2g"}}</dd>
       </dl>

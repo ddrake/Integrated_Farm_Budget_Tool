@@ -5,7 +5,7 @@ from django.core.validators import (MinValueValidator as MinVal,
                                     MaxValueValidator as MaxVal)
 from django.db import models
 from django.utils.translation import gettext_lazy as _
-from ext.models import (FsaCropType, PriceYield, MyaPreEstimate, MyaPost,
+from ext.models import (FsaCropType, MyaPreEstimate, MyaPost,
                         BenchmarkRevenue)
 from core.models.gov_pmt import GovPmt
 from .farm_year import FarmYear
@@ -90,13 +90,13 @@ class FsaCrop(models.Model):
                 sorted(pairs, key=lambda p: p[1]*10+(0 if p[0] else 1),
                        reverse=True)[0][0])
 
-    def benchmark_revenue(self):
+    def benchmark_revenue(self, revenue_only=False):
         result = BenchmarkRevenue.objects.filter(
             state_id=self.farm_year.state_id, county_code=self.farm_year.county_code,
             crop=self.fsa_crop_type_id,
             crop_year=self.farm_year.crop_year,
             practice__in=([0, 1] if self.is_irrigated() else [0, 2]))[0]
-        return result.benchmark_revenue
+        return result.benchmark_revenue if revenue_only else result
 
     def sens_mya_price(self, pf=None):
         mrd = self.farm_year.get_model_run_date()
@@ -121,7 +121,7 @@ class FsaCrop(models.Model):
                     estimated_county_yield=cty_yield,
                     effective_ref_price=self.effective_ref_price,
                     natl_loan_rate=self.natl_loan_rate, sens_mya_price=sens_mya_price,
-                    benchmark_revenue=self.benchmark_revenue())
+                    benchmark_revenue=self.benchmark_revenue(revenue_only=True))
         return gp.prog_pmt_pre_sequest()
 
     def clean(self):
