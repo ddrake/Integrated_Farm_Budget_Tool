@@ -77,11 +77,15 @@ class FarmYear(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='farm_years')
     manual_model_run_date = models.DateField(
         default=datetime.today,
-        help_text=(_('Manually-set date for which "current" futures prices<br>' +
-                     'and other date-specific values are looked up.')))
+        help_text=_('Manually-set date for which "current" futures prices<br>' +
+                    'and other date-specific values are looked up.'))
     is_model_run_date_manual = models.BooleanField(
         default=False,
         help_text='Use the manually-set model run date (advanced).')
+    basis_increment = models.FloatField(
+        default=0.1, validators=[MinVal(0), MaxVal(0.5)],
+        help_text=_('increment to noncontract basis for basis sensitivity<br>' +
+                    'Set to zero to turn off basis sensitivity.'))
     sensitivity_data = models.JSONField(null=True, blank=True)
     sensitivity_text = models.JSONField(null=True, blank=True)
     est_sequest_frac = models.FloatField(
