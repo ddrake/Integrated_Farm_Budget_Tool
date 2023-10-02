@@ -1,0 +1,57 @@
+{% extends 'main/base.html' %}
+{% block title %}
+<title>Privacy</title>
+{% endblock title %}
+{% block content %}
+{% load main_extra %}
+<div class="p-6 w-1/2 mx-auto bg-white rounded-xl shadow-lg flex items-center space-x-4">
+  <div class="">
+    <h1 class="text-xl">Privacy Policy</h1>
+    <p class="text-base my-2">
+      <em>Last modified: October 2, 2023</em>
+    </p>
+    <p class="text-base my-2">
+      The Integrated Farm Budget Tool team is committed to protecting your privacy.  This
+      Privacy Notice applies to the ifbt.farm website and describes how we collect and use
+      your personal information when you use our web application to manage risk for your farm.
+      It also describes how to delete your stored data if you so desire.
+    </p>
+    <p class="text-base my-2">
+      The purpose of this application is to aid a user, typically a grain farmer
+      in the U.S., to construct a budget and manage risk.
+      In order to accomplish this task, the following types of data are entered by a user
+      and stored in the system:
+      <ul class="list-disc list-inside">
+        <li>An email address</li>
+        <li>A hashed (i.e. encrypted) password</li>
+        <li>Location information (U.S. state and primary county)</li>
+        <li>Farm operation information, such as crop acreage allocation</li>
+        <li>Cost and revenue information</li>
+      </ul>
+    </p>
+    <p class="text-base my-2">
+      <em>None of the information we collect from a user will ever be shared, sold or otherwise
+        transferred to any other party by us.</em>  It will remain stored in a highly secure
+      database hosted by <a class="text-indigo-700 hover:text-indigo-500"
+        href="https://www.digitalocean.com">DigitalOcean, LLC.</a>
+      Our application and web host maintain high security standards, but because the account
+      login interface is open to the public, it is critical for users to choose a strong
+      password unique to this application if they wish to keep their data private.
+    </p>
+    <p class="text-base my-2">
+      The application allows the user to create multiple 'farm years' to allow users to
+      access past as well as present crop years, and to allow users (with farmland units
+      which are widely separated geographically) to manage multiple farms for a given crop
+      year.  Past and present farm years
+      remain in the system by default, but can be deleted at any time by the user.  If a user
+      has no farm years, a 'Delete Account' link will appear in the top navigation bar.  If the
+      user then clicks this link and confirms the deletion, their email address and hashed
+      password will be deleted from the database, and no information will remain in the system.
+    </p>
+    <p class="text-base my-2">
+      If our privacy policy ever changes, users will be notified of the
+      changes via email.
+    </p>
+  </div>
+</div>
+{% endblock %}
