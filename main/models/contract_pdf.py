@@ -38,23 +38,30 @@ def fmtdate(date):
 
 def fmtprice(price):
     if price is None:
-        return '-  '
+        return ''
     price = f'{price:.2f}'
     return '-$' + price[1:] if price[0] == '-' else '$' + price
 
 
-def fmtbushels(bu):
+def fmttotbushels(bu):
     if bu == 0:
         return '-  '
     return f'{bu:,.0f}'
 
 
+def fmttotprice(price):
+    if price is None or price == 0:
+        return '-  '
+    price = f'{price:.2f}'
+    return '-$' + price[1:] if price[0] == '-' else '$' + price
+
+
 def futuresbushels(bu, futprice):
-    return '-  ' if futprice is None else f'{bu:,.0f}'
+    return '' if futprice is None else f'{bu:,.0f}'
 
 
 def basisbushels(bu, basisprice):
-    return '-  ' if basisprice is None else f'{bu:,.0f}'
+    return '' if basisprice is None else f'{bu:,.0f}'
 
 
 class ContractPdf(object):
@@ -116,9 +123,9 @@ class ContractPdf(object):
                  fmtprice(ct.basis_price),
                  ct.terminal, ct.contract_number,
                  fmtdate(ct.delivery_start_date), fmtdate(ct.delivery_end_date)])
-        rows.append(['Totals', fmtbushels(futures_total_bu),
-                     fmtprice(avg_futures_price), fmtbushels(basis_total_bu),
-                     fmtprice(avg_basis_price), '', '', '', ''])
+        rows.append(['Totals', fmttotbushels(futures_total_bu),
+                     fmttotprice(avg_futures_price), fmttotbushels(basis_total_bu),
+                     fmttotprice(avg_basis_price), '', '', '', ''])
         rows.append(['' , '' , '' , '' , '' , '' , '' , '' , ''])
         rows.append(['Total Estimated Bu.', f'{expected_total_bu:,.0f}',
                      '', f'{expected_total_bu:,.0f}', '', '', '', '', ''])
