@@ -30,11 +30,31 @@ def mergeTwo(l1, l2):
     return [x for x in chain(*zip_longest(l1, l2)) if x is not None]
 
 
+def fmtdate(date):
+    if date is None:
+        return ''
+    return date.strftime('%m/%d/%Y')
+
+
 def fmtprice(price):
     if price is None:
-        return ''
+        return '-  '
     price = f'{price:.2f}'
     return '-$' + price[1:] if price[0] == '-' else '$' + price
+
+
+def fmtbushels(bu):
+    if bu == 0:
+        return '-  '
+    return f'{bu:,.0f}'
+
+
+def futuresbushels(bu, futprice):
+    return '-  ' if futprice is None else f'{bu:,.0f}'
+
+
+def basisbushels(bu, basisprice):
+    return '-  ' if basisprice is None else f'{bu:,.0f}'
 
 
 class ContractPdf(object):
@@ -83,31 +103,29 @@ class ContractPdf(object):
         avg_basis_price = mc.avg_basis_contract_price()
         crop = str(mc)
         title = f'{crop} Contracts'
-        rows = [[title, '', '', '', '', '', '', ''],
-                ['Contract Date', 'Bushels', 'Futures Price', 'Basis Price',
-                 'Terminal', 'Contract #', 'Delivery Start', 'Delivery End']]
+        rows = [[title, '', '', '', '', '', '', '', ''],
+                ['Contract Date', 'Futures Bushels', 'Futures Price',
+                 'Basis Bushels', 'Basis Price', 'Terminal', 'Contract #',
+                 'Delivery Start', 'Delivery End']]
         for ct in contracts:
             rows.append(
-                [ct.contract_date, f'{ct.bushels:,.0f}',
-                 fmtprice(ct.futures_price), fmtprice(ct.basis_price),
-                 ct.terminal, ct.contract_number, ct.delivery_start_date,
-                 ct.delivery_end_date])
-        rows.append(['Futures Totals', f'{futures_total_bu:,.0f}',
-                     fmtprice(avg_futures_price), '', '', '', '', ''])
+                [fmtdate(ct.contract_date),
+                 futuresbushels(ct.bushels, ct.futures_price),
+                 fmtprice(ct.futures_price),
+                 basisbushels(ct.bushels, ct.basis_price),
+                 fmtprice(ct.basis_price),
+                 ct.terminal, ct.contract_number,
+                 fmtdate(ct.delivery_start_date), fmtdate(ct.delivery_end_date)])
+        rows.append(['Totals', fmtbushels(futures_total_bu),
+                     fmtprice(avg_futures_price), fmtbushels(basis_total_bu),
+                     fmtprice(avg_basis_price), '', '', '', ''])
+        rows.append(['' , '' , '' , '' , '' , '' , '' , '' , ''])
         rows.append(['Total Estimated Bu.', f'{expected_total_bu:,.0f}',
-                     '', '', '', '', '', ''])
-        rows.append(['Futures % of Expected', f'{futures_pct_of_expected:.0%}',
-                     '', '', '', '', '', ''])
-        rows.append(['Remaining Futures Bu.', f'{remaining_futures_bu:,.0f}',
-                     '', '', '', '', '', ''])
-        rows.append(['Basis Totals', f'{basis_total_bu:,.0f}',
-                     fmtprice(avg_basis_price), '', '', '', '', ''])
-        rows.append(['Total Estimated Bu.', f'{expected_total_bu:,.0f}',
-                     '', '', '', '', '', ''])
-        rows.append(['Basis % of Expected', f'{basis_pct_of_expected:.0%}',
-                     '', '', '', '', '', ''])
-        rows.append(['Remaining Basis Bu.', f'{remaining_basis_bu:,.0f}',
-                     '', '', '', '', '', ''])
+                     '', f'{expected_total_bu:,.0f}', '', '', '', '', ''])
+        rows.append(['% Contracted', f'{futures_pct_of_expected:.0%}',
+                     '', f'{basis_pct_of_expected:.0%}', '', '', '', '', ''])
+        rows.append(['Remaining Bu.', f'{remaining_futures_bu:,.0f}',
+                     '', f'{remaining_basis_bu:,.0f}', '', '', '', '', ''])
 
         return Table(rows, hAlign='CENTER', style=self.get_styles(),
                      rowHeights=self.get_rowheights(len(rows)))
@@ -118,7 +136,7 @@ class ContractPdf(object):
         """
         styles = [
             # Table title
-            ('FONT', (0, 0), (-1, 0), FONT, HFS, HFS),
+            ('FONT', (0, 0), (-1, 0), FONTBOLD, FS, FS),
             ('SPAN', (0, 0), (-1, 0)),
             ('ALIGN', (0, 0), (-1, 0), 'CENTER'),
             # Column headers
@@ -126,26 +144,29 @@ class ContractPdf(object):
             ('ALIGN', (0, 1), (-1, 1), 'CENTER'),
             # Data
             ('FONT', (0, 2), (-1, -1), FONT, FS, FS),
-            ('GRID', (0, 1), (-1, -1), UL, BK),
             ('RIGHTPADDING', (0, 0), (-1, -1), HP),
             ('LEFTPADDING', (0, 0), (-1, -1), HP),
             # Contract Date
             ('ALIGN', (0, 2), (0, -1), 'LEFT'),
             # Bushels, Price
-            ('ALIGN', (1, 2), (2, -1), 'RIGHT'),
+            ('ALIGN', (1, 2), (4, -1), 'RIGHT'),
             # Terminal, Contract #, Delivery Start, Delivery End
-            ('ALIGN', (3, 2), (6, -1), 'LEFT'),
+            ('ALIGN', (5, 2), (-1, -1), 'LEFT'),
+            # borders above and below column headers
+            ('LINEABOVE', (0, 1), (-1, 1), UL, BK),
+            ('LINEBELOW', (0, 1), (-1, 1), UL, BK),
+            # border above totals
+            ('LINEABOVE', (0, -3), (-1, -3), UL, BK),
             # Table border
             ('LINEABOVE', (0, 0), (-1, 0), BORD, BK),
             ('LINEBELOW', (0, -1), (-1, -1), BORD, BK),
             ('LINEBEFORE', (0, 0), (0, -1), BORD, BK),
             ('LINEAFTER', (-1, 0), (-1, -1), BORD, BK),
-            ('FONT', (0, -8), (-1, -1), FONTBOLD, FS, FS),
         ]
         return styles
 
     def get_rowheights(self, nrows):
-        return [HH] + [NRM] * (nrows - 1)
+        return [NRM] * nrows
 
     def get_title(self):
         return 'Grain Contracts'
