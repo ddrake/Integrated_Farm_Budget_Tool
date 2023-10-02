@@ -25,3 +25,10 @@ def any_changed(instance, *fields):
     dbinst = instance.__class__._default_manager.get(pk=instance.pk)
     return any((getattr(dbinst, field) != getattr(instance, field)
                 for field in fields))
+
+
+def has_farm_years(user):
+    from .farm_year import FarmYear
+    if not isinstance(user, int):
+        user = user.pk
+    return FarmYear.objects.filter(user=user).exists()

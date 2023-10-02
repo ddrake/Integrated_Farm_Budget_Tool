@@ -13,10 +13,12 @@ from .views import (
     DetailedBudgetView, BudgetPdfView,
     SensitivityTableView, SensitivityPdfView,
     ContractCreateView, ContractUpdateView, ContractDeleteView,
-    ContractPdfView, ContractCsvView)
+    ContractPdfView, ContractCsvView, PrivacyView, TermsView)
 
 urlpatterns = [
     path('', IndexView.as_view(), name='index'),
+    path('privacy/', PrivacyView.as_view(), name='privacy'),
+    path('terms/', TermsView.as_view(), name='terms'),
 
     # farm year related urls
     path('farmyears/', FarmYearsView.as_view(), name='farmyears'),

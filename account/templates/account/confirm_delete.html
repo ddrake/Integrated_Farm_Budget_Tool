@@ -1,0 +1,17 @@
+{% extends 'main/base.html' %}
+{% block title %}
+<title>Confirm deletion</title>
+{% endblock title %}
+{% load tailwind_filters %}
+{% block content %}
+<div class="p-6 max-w-med mx-auto bg-white rounded-xl shadow-lg flex items-center space-x-4">
+    <div>
+        <h1 class="block text-xl mb-2">Are you sure you want to delete your ifbt.farm account?</h1>
+        <form method="post">
+            {% csrf_token %}
+            {{ form|crispy }}
+            <button type="submit" class="btn-primary">Confirm</button>
+        </form>
+    </div>
+</div>
+{% endblock content %}

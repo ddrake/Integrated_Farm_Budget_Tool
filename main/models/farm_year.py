@@ -29,6 +29,7 @@ class FarmYear(models.Model):
     PRETAX_CASH_FLOW = 1
     REPORT_TYPES = [(PRETAX_INCOME, 'Pre-tax income'),
                     (PRETAX_CASH_FLOW, 'Pre-tax cash flow')]
+
     farm_name = models.CharField(max_length=60)
     county_code = models.SmallIntegerField(
         verbose_name="primary county",

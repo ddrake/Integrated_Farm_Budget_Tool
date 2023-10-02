@@ -1,5 +1,7 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.views.generic import CreateView, TemplateView, RedirectView
+from django.views import View
+from django.urls import reverse
 from django.contrib.auth import login
 
 from django.urls import reverse_lazy
@@ -49,3 +51,14 @@ class ActivateView(RedirectView):
 
 class CheckEmailView(TemplateView):
     template_name = 'account/check_email.html'
+
+
+class DeleteAccountView(View):
+    template_name = "account/confirm_delete.html"
+
+    def get(self, request, *args, **kwargs):
+        return render(request, self.template_name)
+
+    def post(self, request, *args, **kwargs):
+        request.user.delete()
+        return redirect(reverse('index'))

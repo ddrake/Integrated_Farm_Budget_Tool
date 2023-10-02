@@ -26,11 +26,25 @@ from ext.models import County
 from .forms import (FarmYearCreateForm, FarmYearUpdateForm, FarmCropUpdateForm,
                     FarmBudgetCropUpdateForm, ZeroAcreFarmBudgetCropUpdateForm,
                     MarketCropUpdateForm, ContractCreateForm, ContractUpdateForm)
+from .models.util import has_farm_years
 
 
 class IndexView(View):
     def get(self, request, *args, **kwargs):
-        return render(request, 'main/index.html')
+        return render(request, 'main/index.html',
+                      {'has_farm_years': has_farm_years(request.user)})
+
+
+class PrivacyView(View):
+    def get(self, request, *args, **kwargs):
+        return render(request, 'main/privacy.html',
+                      {'has_farm_years': has_farm_years(request.user)})
+
+
+class TermsView(View):
+    def get(self, request, *args, **kwargs):
+        return render(request, 'main/terms.html',
+                      {'has_farm_years': has_farm_years(request.user)})
 
 
 # -----------------------
@@ -39,7 +53,9 @@ class IndexView(View):
 class FarmYearsView(LoginRequiredMixin, View):
     def get(self, request, *args, **kwargs):
         farm_years = FarmYear.objects.filter(user=request.user.id).all()
-        return render(request, 'main/farmyears.html', {'farm_years': farm_years})
+        return render(request, 'main/farmyears.html',
+                      {'farm_years': farm_years,
+                       'has_farm_years': has_farm_years(request.user)})
 
 
 class FarmYearDashboard(UserPassesTestMixin, DetailView):
@@ -56,6 +72,7 @@ class FarmYearDashboard(UserPassesTestMixin, DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['farmyear_id'] = self.kwargs.get('pk', None)
+        context['has_farm_years'] = True
         return context
 
 
@@ -95,6 +112,7 @@ class FarmYearUpdateView(UserPassesTestMixin, UpdateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['farmyear_id'] = self.get_object().pk
+        context['has_farm_years'] = True
         return context
 
 
@@ -108,6 +126,7 @@ class FarmYearDetailView(UserPassesTestMixin, DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['farmyear_id'] = context['object'].pk
+        context['has_farm_years'] = True
         return context
 
 
@@ -134,6 +153,7 @@ class FarmYearFarmCropListView(UserPassesTestMixin, ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['farmyear_id'] = self.kwargs['farmyear']
+        context['has_farm_years'] = True
         return context
 
 
@@ -151,6 +171,7 @@ class FarmYearFarmBudgetCropListView(UserPassesTestMixin, ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['farmyear'] = context['farmyear_id'] = self.kwargs.get('farmyear', None)
+        context['has_farm_years'] = True
         return context
 
 
@@ -170,6 +191,7 @@ class FarmYearMarketCropListView(UserPassesTestMixin, ListView):
             {'marketcrop': mc, 'priceinfo': mc.harvest_futures_price_info()}
             for mc in context['marketcrop_list']]
         context['farmyear_id'] = self.kwargs['farmyear']
+        context['has_farm_years'] = True
         return context
 
 
@@ -187,6 +209,7 @@ class FarmYearFsaCropListView(UserPassesTestMixin, ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['farmyear_id'] = self.kwargs.get('farmyear', None)
+        context['has_farm_years'] = True
         return context
 
 
@@ -207,6 +230,7 @@ class FarmCropUpdateView(UserPassesTestMixin, UpdateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['farmyear_id'] = self.get_object().farm_year_id
+        context['has_farm_years'] = True
         return context
 
 
@@ -229,6 +253,7 @@ class FarmBudgetCropUpdateView(UserPassesTestMixin, UpdateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['farmyear_id'] = self.get_object().farm_year_id
+        context['has_farm_years'] = True
         return context
 
 
@@ -249,6 +274,7 @@ class MarketCropUpdateView(UserPassesTestMixin, UpdateView):
         context = super().get_context_data(**kwargs)
         context['farmyear_id'] = self.get_object().farm_year_id
         context['contracts'] = market_crop.get_contracts()
+        context['has_farm_years'] = True
         return context
 
 
@@ -267,6 +293,7 @@ class FsaCropUpdateView(UserPassesTestMixin, UpdateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['farmyear_id'] = self.get_object().farm_year_id
+        context['has_farm_years'] = True
         return context
 
 
@@ -321,6 +348,7 @@ class ContractCreateView(UserPassesTestMixin, CreateView):
         mc_id = self.kwargs.get('market_crop', None)
         mc = get_object_or_404(MarketCrop, pk=mc_id)
         context['farmyear_id'] = mc.farm_year_id
+        context['has_farm_years'] = True
         return context
 
 
@@ -341,6 +369,7 @@ class ContractUpdateView(UserPassesTestMixin, UpdateView):
         context = super().get_context_data(**kwargs)
         mc = self.get_object().market_crop
         context['farmyear_id'] = mc.farm_year_id
+        context['has_farm_years'] = True
         return context
 
 
@@ -361,6 +390,7 @@ class ContractDeleteView(UserPassesTestMixin, DeleteView):
         mc_id = context['contract'].market_crop_id
         mc = get_object_or_404(MarketCrop, pk=mc_id)
         context['farmyear_id'] = mc.farm_year_id
+        context['has_farm_years'] = True
         return context
 
 
@@ -383,6 +413,7 @@ class DetailedBudgetView(UserPassesTestMixin, TemplateView):
         context['base'] = budgets['base']
         context['var'] = budgets['var']
         context['farmyear_id'] = farm_year.pk
+        context['has_farm_years'] = True
         return context
 
 
@@ -442,6 +473,7 @@ class SensitivityTableView(UserPassesTestMixin, TemplateView):
         context['info'] = st.get_info()
         context['tables'] = st.get_all_tables()
         context['farmyear_id'] = farm_year.pk
+        context['has_farm_years'] = True
         return context
 
 
