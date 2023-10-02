@@ -9,8 +9,8 @@ from reportlab.platypus.flowables import Spacer, KeepTogether
 from reportlab.platypus.tables import Table
 
 # Global constants
-FS = 10            # regular fontsize
-HFS = 12           # header fontsize
+FS = 9             # regular fontsize
+HFS = 11           # header fontsize
 BP = 1             # default bottom padding
 HBP = 1            # header bottom padding
 ULBP = 2           # bottom padding for underlined cells
