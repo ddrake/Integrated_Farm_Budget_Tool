@@ -464,15 +464,17 @@ class FarmCrop(models.Model):
     # -----------------------------------------------
     # Revenue methods (return values in $ by default)
     # -----------------------------------------------
-    def gross_rev_no_title_indem(self, pf=None, yf=None, is_per_acre=False):
-        """ array(np, ny) used only by sensitivity """
+    def gross_rev_no_title_indem(self, pf=None, yf=None, bf=None):
+        """ array(np, ny, nb) or array(np, ny) used only by sensitivity """
         acres = self.planted_acres
         if not self.has_budget() or acres == 0:
-            return np.zeros((len(pf), len(yf)))
-        return (self.grain_revenue(pf, yf) / (acres if is_per_acre else 1) +
+            if bf is None:
+                return np.zeros((len(pf), len(yf)))
+            else:
+                return np.zeros((len(pf), len(yf), len(bf)))
+        return (self.grain_revenue(pf=pf, yf=yf, bf=bf) +
                 (self.farmbudgetcrop.other_gov_pmts +
-                 self.farmbudgetcrop.other_revenue) *
-                (1 if is_per_acre else acres))
+                 self.farmbudgetcrop.other_revenue) * acres)
 
     def contract_fut_revenue(self, yf=None):
         return self.fut_contracted_bu(yf) * self.avg_futures_contract_price()
@@ -489,9 +491,13 @@ class FarmCrop(models.Model):
                               self.sens_fut_uncontracted_bu(yf))
         return result
 
-    def noncontract_basis_revenue(self, yf=None):
-        """ 1d array or scalar """
-        return self.sens_basis_uncontracted_bu(yf) * self.assumed_basis_for_new()
+    def noncontract_basis_revenue(self, yf=None, bf=None):
+        """ array(ny, nb), array(ny) or scalar """
+        if scal(yf) or bf is None:
+            return self.sens_basis_uncontracted_bu(yf) * self.assumed_basis_for_new()
+        else:
+            return np.outer(self.sens_basis_uncontracted_bu(yf),
+                            self.assumed_basis_for_new(bf))
 
     def frac_rev_excess(self, pf=None, yf=None):
         """
@@ -510,16 +516,23 @@ class FarmCrop(models.Model):
         result = (0 if base_rev == 0 else (sens_rev - base_rev) / base_rev)
         return result
 
-    def grain_revenue(self, pf=None, yf=None):
-        """ scalar or array(pf, yf) used by sensitivity + others """
+    def grain_revenue(self, pf=None, yf=None, bf=None):
+        """ scalar or array(pf, yf) or array(pf, yf, bf) used by sensitivity, others """
         if scal(pf):
-            return (self.contract_fut_revenue(yf) + self.contract_basis_revenue(yf) +
+            return (self.contract_fut_revenue(yf) +
+                    self.contract_basis_revenue(yf) +
                     self.noncontract_fut_revenue(pf, yf) +
                     self.noncontract_basis_revenue(yf))
+        elif bf is None:
+            return ((self.contract_fut_revenue(yf) +
+                     self.contract_basis_revenue(yf) +
+                     self.noncontract_basis_revenue(yf=yf)).reshape(1, len(yf)) +
+                    self.noncontract_fut_revenue(pf, yf))
         else:
-            return (self.contract_fut_revenue(yf) + self.contract_basis_revenue(yf) +
-                    self.noncontract_fut_revenue(pf, yf) +
-                    self.noncontract_basis_revenue(yf).reshape(1, len(yf)))
+            return ((self.contract_fut_revenue(yf) +
+                     self.contract_basis_revenue(yf)).reshape(1, len(yf), 1) +
+                    self.noncontract_fut_revenue(pf, yf).reshape(len(pf), len(yf), 1) +
+                    self.noncontract_basis_revenue(yf, bf).reshape(1, len(yf), len(bf)))
 
     # -----------------------------------------
     # Cost methods in $/acre except where noted
@@ -634,8 +647,9 @@ class FarmCrop(models.Model):
     def avg_basis_contract_price(self):
         return self.market_crop.avg_basis_contract_price()
 
-    def assumed_basis_for_new(self):
-        return self.market_crop.assumed_basis_for_new
+    def assumed_basis_for_new(self, bf=None):
+        """ scalar or array(nb) """
+        return self.market_crop.assumed_basis_for_new + (0 if bf is None else bf)
 
     # --------------
     # Budget methods

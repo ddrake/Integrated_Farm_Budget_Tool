@@ -63,6 +63,12 @@ class SensTableGroup(object):
                               1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7])
         self.yfrange = array([.5, .6, .7, .8, .9, .95, 1, 1.05, 1.1])
 
+        basis_incr = self.farm_year.basis_increment
+        if basis_incr == 0:
+            self.brange = None
+        else:
+            self.bfrange = np.arange(-5, 6) * basis_incr
+
         # 3d array of apportioned gov pmt in dollars
         self.gov_pmts = None
 
@@ -228,26 +234,24 @@ class SensTableGroup(object):
     def get_revenue_values(self):
         if self.revenue_values is None:
             other_rev = self.farm_year.other_nongrain_income
-            self.revenue_values = self.get_values_array(
-                'gross_rev_no_title_indem', noncrop=other_rev,
-                kwargs={'is_per_acre': True})
+            self.revenue_values = self.get_values_array('revenue',
+                                                        noncrop=other_rev)
         return self.revenue_values
 
     def get_title_values(self):
         if self.title_values is None:
-            self.title_values = self.get_values_array('gov_pmt_portion')
+            self.title_values = self.get_values_array('gov_pmt')
         return self.title_values
 
     def get_indem_values(self):
         if self.indem_values is None:
-            self.indem_values = self.get_values_array('get_total_indemnities')
+            self.indem_values = self.get_values_array('indemnity')
         return self.indem_values
 
     def get_cost_values(self):
         if self.cost_values is None:
             other_cost = self.farm_year.other_nongrain_expense
-            self.cost_values = self.get_values_array(
-                'total_cost', noncrop=other_cost)
+            self.cost_values = self.get_values_array('cost', noncrop=other_cost)
         return self.cost_values
 
     def get_cashflow_values(self):
@@ -257,7 +261,7 @@ class SensTableGroup(object):
                                     self.get_indem_values() - self.get_cost_values())
         return self.cashflow_values
 
-    def get_values_array(self, methodname, noncrop=0, kwargs={}):
+    def get_values_array(self, name, noncrop=0, kwargs={}):
         """
         Computes 3D array of values by calling farm_crop methods to get $/acre values.
         noncrop argument is assumed to be in dollars.
@@ -266,20 +270,33 @@ class SensTableGroup(object):
         """
         cropct = self.nfcs
         blocks = cropct + (2 if self.wheatdc else 1)
-        result = zeros((blocks, len(self.pfrange), len(self.yfrange)))
-        if methodname == 'gov_pmt_portion':
+        npf, nyf = len(self.pfrange), len(self.yfrange)
+        result = (zeros((blocks, npf, nyf)) if self.bfrange is None else
+                  zeros((blocks, npf, nyf, len(self.bfrange))))
+        if name == 'gov_pmt':
             self.set_gov_pmts()
         for i, (crop, acres) in enumerate(zip(self.farm_crops, self.acres)):
-            if methodname == 'gov_pmt_portion':
-                result[i, ...] = self.gov_pmts[i] / 1000
-            elif methodname == 'total_cost':
-                result[i, ...] = (
-                    crop.total_cost(pf=self.pfrange, yf=self.yfrange, **kwargs)
-                    * acres / 1000)
+            if name == 'gov_pmt':
+                result[i, :, :] = self.gov_pmts[i] / 1000
+            elif name == 'cost':
+                result[i, :, :] = (
+                    crop.total_cost(
+                        pf=self.pfrange, yf=self.yfrange) * acres / 1000)
+            elif name == 'indemnity':
+                result[i, :, :] = (
+                    crop.total_indemnities(
+                        pf=self.pfrange, yf=self.yfrange) * acres / 1000)
+            elif name == 'revenue':
+                if self.bfrange is None:
+                    result[i, :, :] = (
+                        crop.gross_rev_no_title_indem(
+                            pf=self.pfrange, yf=self.yfrange) / 1000)
+                else:
+                    result[i, ...] = (
+                        crop.gross_rev_no_title_indem(
+                            pf=self.pfrange, yf=self.yfrange, bf=self.bfrange) / 1000)
             else:
-                value = (getattr(crop, methodname)(pf=self.pfrange,
-                                                   yf=self.yfrange, **kwargs))
-                result[i, ...] = value * acres / 1000
+                raise ValueError('Unexpected methodname')
         result[cropct, ...] = result[:cropct, ...].sum(axis=0) + noncrop / 1000
         if self.wheatdc:
             result[-1, ...] = result[self.wheatdcixs, ...].sum(axis=0)
