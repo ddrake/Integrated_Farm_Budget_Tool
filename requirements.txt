@@ -8,7 +8,7 @@ django-impersonate==1.9.1
 django-tailwind==3.6.0
 gunicorn==21.2.0
 numpy==1.26.0
-packaging==23.1
+packaging==23.2
 Pillow==10.0.1
 psycopg2==2.9.8
 -e git+https://github.com/ddrake/reportlab-mirror@78616d99260ece93854ba65658afcc810d4d61ec#egg=reportlab
