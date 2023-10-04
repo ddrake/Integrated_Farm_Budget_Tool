@@ -57,7 +57,7 @@ INSERT INTO public.main_fsacrop(
 plc_base_acres, arcco_base_acres, plc_yield, farm_year_id,
 fsa_crop_type_id, effective_ref_price, natl_loan_rate)
 VALUES (
-{fa.plc_base_acres}, {fa.arcco_base_acres}, {fa.plc_yield}, farm_year_id,
+{fa.plc_base_acres}, {fa.arcco_base_acres}, {fa.plc_yield}, farm_year_id?,
 {fa.fsa_crop_type_id}, {nz(fa.effective_ref_price)}, {nz(fa.natl_loan_rate)})
 returning id;
 
@@ -69,7 +69,7 @@ INSERT INTO public.main_marketcrop(
 assumed_basis_for_new, farm_year_id, fsa_crop_id,
 market_crop_type_id, price_factor)
 VALUES (
-{mc.assumed_basis_for_new}, farm_year_id, fsa_crop_id,
+{mc.assumed_basis_for_new}, farm_year_id?, fsa_crop_id?,
 {mc.market_crop_type_id}, {mc.price_factor})
 returning id;
 
@@ -85,7 +85,7 @@ basis_price, futures_price)
 VALUES (
 {dstr(ct.contract_date)}, {ct.bushels}, {qt(ct.terminal)},
 {qt(ct.contract_number)}, {dstr(ct.delivery_start_date)},
-{dstr(ct.delivery_end_date)}, market_crop_id,
+{dstr(ct.delivery_end_date)}, market_crop_id?,
 {nz(ct.basis_price)}, {nz(ct.futures_price)});
 
 """
@@ -106,8 +106,8 @@ VALUES (
 {nz(fc.product_type)}, {nz(fc.base_coverage_level)}, {bstr(fc.sco_use)},
 {nz(fc.eco_level)}, {fc.prot_factor}, {fc.ins_practice},
 {astr(fc.ins_practices)}, {fc.farm_crop_type_id},
-farm_year_id, {fc.ins_crop_type_id},
-market_crop_id, {dstr(fc.cty_yield_final)},
+farm_year_id?, {fc.ins_crop_type_id},
+market_crop_id?, {dstr(fc.cty_yield_final)},
 {dstr(fc.harv_price_disc_end)},
 {dstr(fc.proj_price_disc_end)})
 returning id;
@@ -139,7 +139,7 @@ VALUES (
 {bc.other_overhead_costs}, {bc.rented_land_costs}, {nz(bc.budget_id)},
 {qt(bc.description)}, {bc.state_id}, {bc.farm_crop_type_id},
 {bstr(bc.is_irr)},
-{bstr(bc.is_rot)}, farm_crop_id, farm_year_id,
+{bstr(bc.is_rot)}, farm_crop_id?, farm_year_id?,
 {nz(bc.budget_crop_id)}, {dstr(bc.budget_date)},
 {bc.baseline_yield_for_var_rent}, {bstr(bc.is_farm_yield_final)},
 {bc.yield_factor}, {bstr(bc.are_costs_final)});
