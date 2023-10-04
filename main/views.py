@@ -22,6 +22,7 @@ from .models.budget_pdf import BudgetPdf
 from .models.sens_table import SensTableGroup
 from .models.sens_pdf import SensPdf
 from .models.contract_pdf import ContractPdf
+from .models.replicate_farmyear import replicate
 from ext.models import County
 from .forms import (FarmYearCreateForm, FarmYearUpdateForm, FarmCropUpdateForm,
                     FarmBudgetCropUpdateForm, ZeroAcreFarmBudgetCropUpdateForm,
@@ -531,4 +532,19 @@ class ContractCsvView(UserPassesTestMixin, View):
                         [mc, c.contract_date, c.bushels, c.futures_price, c.basis_price,
                          c.terminal, c.contract_number, c.delivery_start_date,
                          c.delivery_end_date])
+        return response
+
+
+class ReplicateView(UserPassesTestMixin, View):
+    def test_func(self):
+        farm_year = get_object_or_404(FarmYear, pk=self.kwargs.get('farmyear', None))
+        return self.request.user == farm_year.user
+
+    def get(self, request, *args, **kwargs):
+        farm_year = get_object_or_404(FarmYear, pk=kwargs.get('farmyear', None))
+        sql = replicate(farm_year)
+        response = HttpResponse(sql, headers={
+            "Content-Type": "text/plain",
+            "Content-Disposition": 'attachment; filename="replica.sql"',
+        })
         return response
