@@ -423,7 +423,7 @@ class FarmCrop(models.Model):
             return (0 if scal(yf) else np.zeros_like(yf))
         yieldfinal = self.farmbudgetcrop.is_farm_yield_final
         ctyyield = self.farmbudgetcrop.county_yield
-        self.sens_cty_expected_yield_mem = (
+        return (
             (ctyyield if scal(yf) else ctyyield * np.ones_like(yf)) *
             (1 if yieldfinal else yf))
 
