@@ -163,6 +163,7 @@ class ContractPdf(object):
             ('LINEABOVE', (0, 1), (-1, 1), UL, BK),
             ('LINEBELOW', (0, 1), (-1, 1), UL, BK),
             # border above totals
+            ('LINEABOVE', (1, -5), (4, -5), UL, BK),
             ('LINEABOVE', (0, -3), (-1, -3), UL, BK),
             # Table border
             ('LINEABOVE', (0, 0), (-1, 0), BORD, BK),
