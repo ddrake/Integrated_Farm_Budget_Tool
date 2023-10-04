@@ -63,11 +63,11 @@ class SensTableGroup(object):
                               1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7])
         self.yfrange = array([.5, .6, .7, .8, .9, .95, 1, 1.05, 1.1])
 
-        basis_incr = self.farm_year.basis_increment
-        if basis_incr == 0:
-            self.brange = None
-        else:
-            self.bfrange = np.arange(-5, 6) * basis_incr
+        self.nincr = 3  # the number of increments (should be odd)
+        self.basis_incr = self.farm_year.basis_increment
+        self.nst = (self.nincr - 1)/2
+        self.bfrange = (None if self.basis_incr == 0 else
+                        np.arange(-self.nst, self.nst+1) * self.basis_incr)
 
         # 3d array of apportioned gov pmt in dollars
         self.gov_pmts = None
@@ -82,17 +82,11 @@ class SensTableGroup(object):
         # show all fsa crops for both yield and price blocks
         self.fsa_crops = list(self.farm_year.fsa_crops.all())
         self.fsacropnames = [str(fsac) for fsac in self.fsa_crops]
-        # TODO: we need the MYA prices for the range of market prices set
-        # probably in the base class init.
-        # lengths for layout
 
-        # non-sensitized prices, yields
+        # sensitized and non-sensitized prices, yields
         self.harvest_prices = [fc.harvest_price() for fc in self.farm_crops]
         self.mkt_harvest_prices = [mc.harvest_price() for mc in self.market_crops]
 
-        # TODO: once prices are finalized (post next July contract end) we should
-        # no longer sensitize them. At that point in time, will sensitivity tables
-        # still be of value?
         self.prices = np.outer(self.pfrange, self.harvest_prices)
         self.mprices = np.outer(self.pfrange, self.mkt_harvest_prices)
 
@@ -108,6 +102,7 @@ class SensTableGroup(object):
                                     for fc in self.fsa_crops])
 
         self.info = None
+        self.set_gov_pmts()
 
     def get_all_tables(self):
         """
@@ -138,6 +133,8 @@ class SensTableGroup(object):
                   SensTableStdCrop)
             cs(self).delete_spanned_cols(v)
 
+        with open('test.txt', 'w') as f:
+            f.write(', '.join(rslt.keys()))
         return rslt
 
     def get_tables(self, rslt, arrays=None):
@@ -148,24 +145,56 @@ class SensTableGroup(object):
         if diff:
             revenue_p, title_p, indem_p, cost_p, cashflow_p = arrays
 
-        items = [
-            ['revenue' + ('_diff' if diff else ''),
-             (self.revenue_values - revenue_p) if diff else self.get_revenue_values(),
-             'REVENUE SENSITIVITY ($000)',
-             'Revenue before Indemnity and Title payments'],
-            ['title' + ('_diff' if diff else ''),
-             (self.title_values - title_p) if diff else self.get_title_values(),
-             'TITLE PAYMENT SENSITIVITY ($000)', ''],
-            ['indem' + ('_diff' if diff else ''),
-             (self.indem_values - indem_p) if diff else self.get_indem_values(),
-             'INSURANCE PAYMENT SENSITIVITY ($000)', ''],
-            ['cost' + ('_diff' if diff else ''),
-             (self.cost_values - cost_p) if diff else self.get_cost_values(),
-             'COST SENSITIVITY ($000)', ''],
-            ['cashflow' + ('_diff' if diff else ''),
-             (self.cashflow_values - cashflow_p) if diff else
-             self.get_cashflow_values(),
-             'PROFIT SENSITIVITY ($000)', 'Pre-Tax Cash Flow']]
+        if self.bfrange is None:
+            items = [
+                [f"revenue{'_diff' if diff else ''}",
+                 ((self.revenue_values - revenue_p) if diff else
+                  self.get_revenue_values()),
+                 'REVENUE SENSITIVITY ($000)',
+                 'Revenue before Indemnity and Title payments'],
+                [f"title{'_diff' if diff else ''}",
+                 (self.title_values - title_p) if diff else self.get_title_values(),
+                 'TITLE PAYMENT SENSITIVITY ($000)', ''],
+                [f"indem{'_diff' if diff else ''}",
+                 (self.indem_values - indem_p) if diff else self.get_indem_values(),
+                 'INSURANCE PAYMENT SENSITIVITY ($000)', ''],
+                [f"cost{'_diff' if diff else ''}",
+                 (self.cost_values - cost_p) if diff else self.get_cost_values(),
+                 'COST SENSITIVITY ($000)', ''],
+                [f"cashflow{'_diff' if diff else ''}",
+                 (self.cashflow_values - cashflow_p) if diff else
+                 self.get_cashflow_values(),
+                 'PROFIT SENSITIVITY ($000)', 'Pre-Tax Cash Flow']]
+        else:
+            items = []
+            for i, _ in enumerate(self.bfrange):
+                items.append(
+                    [f"revenue{'_diff' if diff else ''}_{i}",
+                     ((self.revenue_values[..., i] - revenue_p[..., i]) if diff else
+                      self.get_revenue_values()[..., i]),
+                     'REVENUE SENSITIVITY ($000)',
+                     'Revenue before Indemnity and Title payments'])
+            items.append(
+                [f"title{'_diff' if diff else ''}",
+                 ((self.title_values[..., 0] - title_p[..., 0]) if diff else
+                  self.get_title_values()[..., 0]),
+                 'TITLE PAYMENT SENSITIVITY ($000)', ''])
+            items.append(
+                [f"indem{'_diff' if diff else ''}",
+                 ((self.indem_values[..., 0] - indem_p[..., 0]) if diff else
+                  self.get_indem_values()[..., 0]),
+                 'INSURANCE PAYMENT SENSITIVITY ($000)', ''])
+            items.append(
+                [f"cost{'_diff' if diff else ''}",
+                 ((self.cost_values[..., 0] - cost_p[..., 0]) if diff else
+                  self.get_cost_values()[..., 0]),
+                 'COST SENSITIVITY ($000)', ''])
+            for i, _ in enumerate(self.bfrange):
+                items.append(
+                    [f"cashflow{'_diff' if diff else ''}_{i}",
+                     ((self.cashflow_values[..., i] - cashflow_p[..., i]) if diff else
+                      self.get_cashflow_values()[..., i]),
+                     'PROFIT SENSITIVITY ($000)', 'Pre-Tax Cash Flow'])
 
         for var in items:
             self.get_tables_var(rslt, var)
@@ -206,6 +235,9 @@ class SensTableGroup(object):
                          'crops': zip(tags, names),
                          'hasdiff': self.farm_year.sensitivity_data is not None,
                          }
+            if self.bfrange is not None:
+                self.info['nincr'] = self.nincr
+                self.info['basis_incr'] = self.basis_incr
         return self.info
 
     # ----------------
@@ -213,11 +245,9 @@ class SensTableGroup(object):
     # ----------------
     def set_gov_pmts(self):
         """ set apportioned gov pmt in dollars (optimization) """
-
-        # numpy array
+        # array(np, ny)
         totgovpmt = self.farm_year.calc_gov_pmt(mya_prices=self.mya_prices,
                                                 cty_yields=self.cty_yields)
-
         self.gov_pmts = np.array([totgovpmt * ac / self.total_acres
                                   for ac in self.acres])
 
@@ -231,6 +261,7 @@ class SensTableGroup(object):
 
     # -----------------------------------------------------------------------
     # return cached value or compute a 3D numpy array of values in kilodollars
+    # array(nc+, np, ny) or array(nc+, np, ny, nb)
     def get_revenue_values(self):
         if self.revenue_values is None:
             other_rev = self.farm_year.other_nongrain_income
@@ -268,27 +299,29 @@ class SensTableGroup(object):
         Returns a block for each crop followed by a total block
         and possibly a wheat/dc block (if we have wheat and dc beans).
         """
+        nobf = self.bfrange is None
         cropct = self.nfcs
         blocks = cropct + (2 if self.wheatdc else 1)
         npf, nyf = len(self.pfrange), len(self.yfrange)
-        result = (zeros((blocks, npf, nyf)) if self.bfrange is None else
+        result = (zeros((blocks, npf, nyf)) if nobf else
                   zeros((blocks, npf, nyf, len(self.bfrange))))
-        if name == 'gov_pmt':
-            self.set_gov_pmts()
         for i, (crop, acres) in enumerate(zip(self.farm_crops, self.acres)):
             if name == 'gov_pmt':
-                result[i, :, :] = self.gov_pmts[i] / 1000
+                result[i, ...] = (self.gov_pmts[i] if nobf else
+                                  self.gov_pmts[i].reshape(15, 9, 1)) / 1000
             elif name == 'cost':
-                result[i, :, :] = (
-                    crop.total_cost(
-                        pf=self.pfrange, yf=self.yfrange) * acres / 1000)
+                result[i, ...] = ((crop.total_cost(
+                    pf=self.pfrange, yf=self.yfrange) if nobf else
+                                   crop.total_cost(
+                    pf=self.pfrange, yf=self.yfrange).reshape(15, 9, 1)) * acres / 1000)
             elif name == 'indemnity':
-                result[i, :, :] = (
-                    crop.total_indemnities(
-                        pf=self.pfrange, yf=self.yfrange) * acres / 1000)
+                result[i, ...] = ((crop.get_total_indemnities(
+                    pf=self.pfrange, yf=self.yfrange) if nobf else
+                                   crop.get_total_indemnities(
+                    pf=self.pfrange, yf=self.yfrange).reshape(15, 9, 1)) * acres / 1000)
             elif name == 'revenue':
                 if self.bfrange is None:
-                    result[i, :, :] = (
+                    result[i, ...] = (
                         crop.gross_rev_no_title_indem(
                             pf=self.pfrange, yf=self.yfrange) / 1000)
                 else:
@@ -297,9 +330,13 @@ class SensTableGroup(object):
                             pf=self.pfrange, yf=self.yfrange, bf=self.bfrange) / 1000)
             else:
                 raise ValueError('Unexpected methodname')
-        result[cropct, ...] = result[:cropct, ...].sum(axis=0) + noncrop / 1000
-        if self.wheatdc:
-            result[-1, ...] = result[self.wheatdcixs, ...].sum(axis=0)
+
+            # add total column with noncrop value if any
+            result[cropct, ...] = result[:cropct, ...].sum(axis=0) + noncrop / 1000
+
+            # add wheatdc column if we have wheat and dc beans
+            if self.wheatdc:
+                result[-1, ...] = result[self.wheatdcixs, ...].sum(axis=0)
         return result
 
 

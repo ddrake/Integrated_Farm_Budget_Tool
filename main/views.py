@@ -13,8 +13,7 @@ from django.views.generic import DetailView, ListView, TemplateView
 from django.views import View
 from django.urls import reverse, reverse_lazy
 from .models.farm_year import FarmYear
-from .models.farm_crop import FarmCrop
-from .models.farm_budget_crop import FarmBudgetCrop
+from .models.farm_crop import FarmCrop, FarmBudgetCrop
 from .models.market_crop import MarketCrop, Contract
 from .models.fsa_crop import FsaCrop
 from .models.budget_table import BudgetManager

@@ -7,8 +7,7 @@ from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Layout, Field, Submit, Fieldset, HTML
 
 from .models.farm_year import FarmYear
-from .models.farm_crop import FarmCrop
-from .models.farm_budget_crop import FarmBudgetCrop
+from .models.farm_crop import FarmCrop, FarmBudgetCrop
 from .models.market_crop import MarketCrop, Contract
 
 
@@ -67,7 +66,8 @@ class FarmYearUpdateForm(ModelForm):
             Fieldset('Farm Level Title Settings', 'eligible_persons_for_cap',
                      Field('est_sequest_frac', css_class="percent")),
             Fieldset('Report Controls',
-                     'is_model_run_date_manual', 'manual_model_run_date'),
+                     'is_model_run_date_manual', 'manual_model_run_date',
+                     'basis_increment'),
         )
 
     class Meta:
@@ -77,7 +77,7 @@ class FarmYearUpdateForm(ModelForm):
                 annual_land_principal_pmt property_taxes land_repairs
                 eligible_persons_for_cap other_nongrain_income
                 other_nongrain_expense manual_model_run_date
-                is_model_run_date_manual est_sequest_frac'''.split()
+                is_model_run_date_manual est_sequest_frac basis_increment'''.split()
 
 
 class FarmCropUpdateForm(ModelForm):
