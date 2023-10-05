@@ -1,10 +1,11 @@
 # User id for the replica
 USER_ID = 1
+LIVE_TO_LOC = True
 
 
-def nz(val):
+def nz(val, offset=0):
     """ number """
-    return 'NULL' if val is None else f"{val}"
+    return 'NULL' if val is None else f"{val + offset}"
 
 
 def qt(val):
@@ -136,11 +137,12 @@ VALUES (
 {bc.machine_repair}, {bc.fuel_and_oil}, {bc.light_vehicle}, {bc.machine_depr},
 {bc.labor_and_mgmt}, {bc.building_repair_and_rent}, {bc.building_depr},
 {bc.insurance}, {bc.misc_overhead_costs}, {bc.interest_nonland},
-{bc.other_overhead_costs}, {bc.rented_land_costs}, {nz(bc.budget_id)},
+{bc.other_overhead_costs}, {bc.rented_land_costs},
+{nz(bc.budget_id, offset=(3 if LIVE_TO_LOC else 0))},
 {qt(bc.description)}, {bc.state_id}, {bc.farm_crop_type_id},
 {bstr(bc.is_irr)},
 {bstr(bc.is_rot)}, farm_crop_id?, farm_year_id?,
-{nz(bc.budget_crop_id)}, {dstr(bc.budget_date)},
+{nz(bc.budget_crop_id, offset=(63 if LIVE_TO_LOC else 0))}, {dstr(bc.budget_date)},
 {bc.baseline_yield_for_var_rent}, {bstr(bc.is_farm_yield_final)},
 {bc.yield_factor}, {bstr(bc.are_costs_final)});
 
