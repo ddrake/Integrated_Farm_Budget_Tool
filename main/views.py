@@ -13,8 +13,7 @@ from django.views.generic import DetailView, ListView, TemplateView
 from django.views import View
 from django.urls import reverse, reverse_lazy
 from .models.farm_year import FarmYear
-from .models.farm_crop import FarmCrop
-from .models.farm_budget_crop import FarmBudgetCrop
+from .models.farm_crop import FarmCrop, FarmBudgetCrop
 from .models.market_crop import MarketCrop, Contract
 from .models.fsa_crop import FsaCrop
 from .models.budget_table import BudgetManager
@@ -22,7 +21,7 @@ from .models.budget_pdf import BudgetPdf
 from .models.sens_table import SensTableGroup
 from .models.sens_pdf import SensPdf
 from .models.contract_pdf import ContractPdf
-from .models.replicate_farmyear import replicate
+from .models.replicate_farmyear import Replicate
 from ext.models import County
 from .forms import (FarmYearCreateForm, FarmYearUpdateForm, FarmCropUpdateForm,
                     FarmBudgetCropUpdateForm, ZeroAcreFarmBudgetCropUpdateForm,
@@ -542,7 +541,8 @@ class ReplicateView(UserPassesTestMixin, View):
 
     def get(self, request, *args, **kwargs):
         farm_year = get_object_or_404(FarmYear, pk=kwargs.get('farmyear', None))
-        sql = replicate(farm_year)
+        r = Replicate(farm_year)
+        sql = r.replicate()
         response = HttpResponse(sql, headers={
             "Content-Type": "text/plain",
             "Content-Disposition": 'attachment; filename="replica.sql"',
