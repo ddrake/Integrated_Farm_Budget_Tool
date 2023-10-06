@@ -63,7 +63,7 @@ class SensTableGroup(object):
                               1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7])
         self.yfrange = array([.5, .6, .7, .8, .9, .95, 1, 1.05, 1.1])
 
-        self.nincr = 3  # the number of increments (should be odd)
+        self.nincr = 5  # the number of increments (should be odd)
         self.basis_incr = self.farm_year.basis_increment
         self.nst = (self.nincr - 1)/2
         self.bfrange = (None if self.basis_incr == 0 else
