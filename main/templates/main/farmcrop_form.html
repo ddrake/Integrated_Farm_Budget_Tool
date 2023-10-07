@@ -1,8 +1,12 @@
 {% extends 'main/base.html' %}
+{% load static %}
+{% load tailwind_filters crispy_forms_tags %}
 {% block title %}
 <title>Edit farm crop</title>
 {% endblock title %}
-{% load tailwind_filters crispy_forms_tags %}
+{% block script %}
+<script src="{% static 'main/scripts/farmcrop_form.js' %}"></script>
+{% endblock script %}
 {% block content %}
 <div class="p-6 max-w-med mx-auto bg-white rounded-xl shadow-lg flex items-center space-x-4">
     <div>
@@ -38,14 +42,6 @@
             document.getElementById("id_prot_factor").removeAttribute('disabled', '')
         });
 
-    function scaleUpPercents() {
-        document.querySelector("#id-farmcropform").reset();
-        const matches = document.querySelectorAll(".percent");
-        matches.forEach((fld) => {
-            fld.value = +(parseFloat(fld.value)*100).toFixed(2);
-        })
-    }
-
     const form = document.querySelector("#id-farmcropform");
     form.addEventListener("formdata", (e) => {
         const formData = e.formData;
@@ -55,53 +51,6 @@
             formData.set(fld.getAttribute("name"), strval);
         })
     });
-
-    function updateBaseCoverageLevels(value) {
-        let options = '<option value="">--------</option>\n';
-        if (value !== '') {
-            let farmlevels = [['0.5','50%'],['0.55','55%'],['0.6','60%'],['0.65','65%'],
-                              ['0.7','70%'],['0.75','75%'],['0.8','80%'],['0.85','85%']];
-            let ctylevels = [['0.7','70%'],['0.75','75%'],['0.8','80%'],['0.85','85%'],
-                             ['0.9','90%']];
-            let levels = value === '0' ? ctylevels : farmlevels;
-            levels.forEach(opt => {
-                options += `<option value=${opt[0]}>${opt[1]}</option>\n` 
-            });
-        }
-        document.getElementById("base_coverage_level").innerHTML = options;
-    }
-
-    function manageScoAndProtFactor(value) {
-        if (value !== '') {
-            let scouse = document.getElementById("id_sco_use")
-            let ecolevel = document.getElementById("eco_level")
-            let prot = document.getElementById("id_prot_factor")
-            if (value === '0') {
-                scouse.checked = false;
-                ecolevel.value = '';
-                scouse.setAttribute('disabled', '')
-                ecolevel.setAttribute('disabled', '')
-                prot.removeAttribute('disabled', '')
-            } else {
-                scouse.removeAttribute('disabled', '')
-                ecolevel.removeAttribute('disabled', '')
-                prot.value = '100';
-                prot.setAttribute('disabled', '')
-            }
-        }
-    }
-
-    function lockAllInputs() {
-        document.getElementById("id_planted_acres").setAttribute('disabled', '')
-        document.getElementById("ins_practice").setAttribute('disabled', '')
-        document.getElementById("id_rate_yield").setAttribute('disabled', '')
-        document.getElementById("id_adj_yield").setAttribute('disabled', '')
-        document.getElementById("subcounty").setAttribute('disabled', '')
-        document.getElementById("id_ta_use").setAttribute('disabled', '')
-        document.getElementById("id_ye_use").setAttribute('disabled', '')
-        document.getElementById("id_ta_aph_yield").setAttribute('disabled', '')
-    }
-
 
   })();
 </script>

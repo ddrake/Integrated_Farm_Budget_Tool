@@ -1,124 +1,108 @@
 {% extends 'main/base.html' %}
+{% load static %}
+{% load main_extra %}
 {% block title %}
 <title>Farm crops</title>
 {% endblock title %}
+{% block script %}
+ <script src="{% static 'main/scripts/farmcrops_for_farmyear.js' %}"></script>
+{% endblock script %}
 {% block content %}
-{% load main_extra %}
 <div class="flex flex-col">
-<div class="p-4 mx-auto bg-white rounded-xl shadow-lg flex items-center space-x-2">
-  {% for farmcrop in farmcrop_list %}
-  <div class="shrink-0">
-    <p>{{prod_types.0}}
-    <h1 id="farmcrop" class="text-xl">{{farmcrop}}</h1>
-    <dl class="grid grid-cols-[repeat(2,auto)] gap-x-4 w-max">
-      <dt>Planted acres</dt>
-      <dd class="text-right">{{farmcrop.planted_acres|floatformat:"1g"}}</dd>
-      <dt class="font-semibold">Farm Crop Insurance Info</dt><dd></dd>
-      <dt>Rate yield</dt>
-      <dd class="text-right">{{farmcrop.rate_yield}}</dd>
-      <dt>Adjusted yield</dt>
-      <dd class="text-right">{{farmcrop.adj_yield}}</dd>
-      <dt>Risk class</dt>
-      <dd class="text-right">{{farmcrop.subcounty|default:"None"}}</dd>
-      <dt>Use trend adjustment (TA)</dt>
-      <dd class="text-right">{{farmcrop.ta_use|yesno:"Yes,No"}}</dd>
-      <dt>Use yield exclusion (YE)</dt>
-      <dd class="text-right">{{farmcrop.ye_use|yesno:"Yes,No"}}</dd>
-      <dt>Approved yield</dt>
-      <dd class="text-right">{{farmcrop.ta_aph_yield}}</dd>
-      <dt class="font-semibold">Farm Crop Insurance Choices</dt><dd></dd>
-      <dt>Coverage type</dt>
-      <dd class="text-right">{{farmcrop.coverage_type_name|default:"None"}}</dd>
-      <dt>Product type</dt>
-      <dd class="text-right">{{farmcrop.product_type_name|default:"None"}}</dd>
-      <dt>Base coverage level</dt>
-      <dd class="text-right">{{farmcrop.base_coverage_level|pct|default:"None"}}</dd>
-      <dt>Use SCO</dt>
-      <dd class="text-right">{{farmcrop.sco_use|yesno:"Yes,No"}}</dd>
-      <dt>ECO level</dt>
-      <dd class="text-right">{{farmcrop.eco_level|default:"None"}}</dd>
-      <dt>Selected payment factor</dt>
-      <dd class="text-right">{{farmcrop.prot_factor|pct|default:"None"}}</dd>
-      <dt class="font-semibold">County Specific Insurance Info</dt><dd></dd>
-      <dt>County benchmark yield</dt>
-      <dd class="text-right">{{farmcrop.indem_price_yield_data.ey.0|floatformat:"1g"}}</dd>
-      <dt>Discovered projected price
-        {% if not farmcrop.indem_price_yield_data.pp.1 %}(est){% endif %}</dt>
-      <dd class="text-right">${{farmcrop.indem_price_yield_data.pp.0|floatformat:"2g"}}</dd>
-      <dt>Volatility factor
-        {% if not farmcrop.indem_price_yield_data.pv.1 %}(est){% endif %}</dt>
-      <dd class="text-right">{{farmcrop.indem_price_yield_data.pv.0|default:"None"}}</dd>
-      <dt>Discovered harvest price
-        {% if not farmcrop.indem_price_yield_data.hp.1 %}(est){% endif %}</dt>
-      <dd class="text-right">${{farmcrop.indem_price_yield_data.hp.0|floatformat:"2g"}}</dd>
-    </dl>
-    <div class="my-2">
-      <a class="text-lg text-indigo-800 hover:text-indigo-600"
-         href="{% url 'farmcrop_update' pk=farmcrop.pk %}">Edit</a>
+  <div class="p-4 mx-auto bg-white rounded-xl shadow-lg flex items-center space-x-2">
+    {% for farmcrop in farmcrop_list %}
+    <div class="shrink-0">
+      <p>{{prod_types.0}}
+      <h1 id="farmcrop" class="text-xl">{{farmcrop}}</h1>
+      <dl class="grid grid-cols-[repeat(2,auto)] gap-x-4 w-max">
+        <dt>Planted acres</dt>
+        <dd class="text-right">{{farmcrop.planted_acres|floatformat:"1g"}}</dd>
+        <dt class="font-semibold">Farm Crop Insurance Info</dt><dd></dd>
+        <dt>Rate yield</dt>
+        <dd class="text-right">{{farmcrop.rate_yield}}</dd>
+        <dt>Adjusted yield</dt>
+        <dd class="text-right">{{farmcrop.adj_yield}}</dd>
+        <dt>Risk class</dt>
+        <dd class="text-right">{{farmcrop.subcounty|default:"None"}}</dd>
+        <dt>Use trend adjustment (TA)</dt>
+        <dd class="text-right">{{farmcrop.ta_use|yesno:"Yes,No"}}</dd>
+        <dt>Use yield exclusion (YE)</dt>
+        <dd class="text-right">{{farmcrop.ye_use|yesno:"Yes,No"}}</dd>
+        <dt>Approved yield</dt>
+        <dd class="text-right">{{farmcrop.ta_aph_yield}}</dd>
+        <dt class="font-semibold">Farm Crop Insurance Choices</dt><dd></dd>
+        <dt>Coverage type</dt>
+        <dd class="text-right">{{farmcrop.coverage_type_name|default:"None"}}</dd>
+        <dt>Product type</dt>
+        <dd class="text-right">{{farmcrop.product_type_name|default:"None"}}</dd>
+        <dt>Base coverage level</dt>
+        <dd class="text-right">{{farmcrop.base_coverage_level|pct|default:"None"}}</dd>
+        <dt>Use SCO</dt>
+        <dd class="text-right">{{farmcrop.sco_use|yesno:"Yes,No"}}</dd>
+        <dt>ECO level</dt>
+        <dd class="text-right">{{farmcrop.eco_level|default:"None"}}</dd>
+        <dt>Selected payment factor</dt>
+        <dd class="text-right">{{farmcrop.prot_factor|pct|default:"None"}}</dd>
+        <dt class="font-semibold">County Specific Insurance Info</dt><dd></dd>
+        <dt>County benchmark yield</dt>
+        <dd class="text-right">{{farmcrop.indem_price_yield_data.ey.0|floatformat:"1g"}}</dd>
+        <dt>Discovered projected price
+          {% if not farmcrop.indem_price_yield_data.pp.1 %}(est){% endif %}</dt>
+        <dd class="text-right">${{farmcrop.indem_price_yield_data.pp.0|floatformat:"2g"}}</dd>
+        <dt>Volatility factor
+          {% if not farmcrop.indem_price_yield_data.pv.1 %}(est){% endif %}</dt>
+        <dd class="text-right">{{farmcrop.indem_price_yield_data.pv.0|default:"None"}}</dd>
+        <dt>Discovered harvest price
+          {% if not farmcrop.indem_price_yield_data.hp.1 %}(est){% endif %}</dt>
+        <dd class="text-right">${{farmcrop.indem_price_yield_data.hp.0|floatformat:"2g"}}</dd>
+      </dl>
+      <div class="my-2">
+        <a class="text-lg text-indigo-800 hover:text-indigo-600"
+           href="{% url 'farmcrop_update' pk=farmcrop.pk %}">Edit</a>
+      </div>
+        <form action=""> 
+          {% csrf_token %}
+          <label class="block text-gray-700 font-bold mb-2"
+            for="budgets-{{farmcrop.pk}}"><strong>Selected Budget</strong></label>
+          <select 
+            class="bg-white focus:outline-none border border-gray-300 rounded-lg py-2 px-4 block w-full appearance-none text-xs leading-normal text-gray-700" 
+            name="budgets-{{farmcrop.pk}}" id="budgets-{{farmcrop.pk}}"
+            data-hasbudget-{{farmcrop.pk}}="{{farmcrop.has_budget}}" >
+            <option value="">-------</option>
+            {% for bcid, bcname in farmcrop.get_budget_crops %}
+            <option value="{{bcid}}">{{bcname}}</option>
+            {% endfor %}
+          </select>
+          <small id="budget-info-{{farmcrop.pk}}" class="text-gray-600 mb-px">
+          Set irrigation status before adding.</small>
+        </form> 
     </div>
-      <form action=""> 
-        {% csrf_token %}
-        <label class="block text-gray-700 font-bold mb-2"
-          for="budgets-{{farmcrop.pk}}"><strong>Selected Budget</strong></label>
-        <select 
-          class="bg-white focus:outline-none border border-gray-300 rounded-lg py-2 px-4 block w-full appearance-none text-xs leading-normal text-gray-700" 
-          name="budgets-{{farmcrop.pk}}" id="budgets-{{farmcrop.pk}}"
-          data-hasbudget-{{farmcrop.pk}}="{{farmcrop.has_budget}}" >
-          <option value="">-------</option>
-          {% for bcid, bcname in farmcrop.get_budget_crops %}
-          <option value="{{bcid}}">{{bcname}}</option>
-          {% endfor %}
-        </select>
-        <small id="budget-info-{{farmcrop.pk}}" class="text-gray-600 mb-px">
-        Set irrigation status before adding.</small>
-      </form> 
-  </div>
-  <!-- The script MUST be in the LOOP! -->
-  <script>
-    (() => {
-      document.addEventListener('DOMContentLoaded', (event) => {
-        let budgetsel = document.querySelector("#budgets-{{farmcrop.pk}}")
-        const hasbudget = budgetsel.getAttribute("data-hasbudget-{{farmcrop.pk}}")
-        setinfo(hasbudget === 'True');
-        budgetsel.value = "{{ farmcrop.farmbudgetcrop.budget_crop_id }}"
-      });
+    <!-- The script MUST be in the LOOP! We need multiple scripts. -->
+    <script>
+      (() => {
+        const farmcrop_pk = "{{farmcrop.pk}}"
+        const budget_crop_id = "{{ farmcrop.farmbudgetcrop.budget_crop_id }}"
 
-      document
-        .querySelector("#budgets-{{farmcrop.pk}}")
-           .addEventListener("change", (event) => {
-               submitFormData()
-           });
+        document.addEventListener('DOMContentLoaded', (event) => {
+          let budgetsel = document.querySelector(`#budgets-${farmcrop_pk}`)
+          const hasbudget = budgetsel.getAttribute(`data-hasbudget-${farmcrop.pk}`)
+          setinfo(hasbudget === 'True', farmcrop_pk);
+          budgetsel.value = `${budget_crop_id}`
+        });
 
-      function setinfo(hasbudget) {
-        let info = document.querySelector("#budget-info-{{farmcrop.pk}}")
-        info.innerHTML = hasbudget ? "Budget set; any custom budget item values<br>will be lost if this selection is later changed."
-          : "Before adding a budget, please ensure that the<br>irrigation status is set correctly.";
-      }
+        document
+          .querySelector(`#budgets-${farmcrop_pk}`)
+             .addEventListener("change", (event) => {
+                 submitFormData(farmcrop_pk)
+             });
 
-      function submitFormData() {
-        let xhr = new XMLHttpRequest();
-        const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
-        const farmcropid = "{{farmcrop.pk}}";
-        const budgetid = document.querySelector("#budgets-{{farmcrop.pk}}").value;
-        const url = budgetid ==="" ? "deletebudget/" : "addbudget/";
-        const data = JSON.stringify({budget: budgetid, farmcrop: farmcropid});
-        xhr.open("POST", url, true);
-        xhr.setRequestHeader('Content-Type', 'application/json'); 
-        xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest'); 
-        xhr.setRequestHeader('X-CSRFToken', csrftoken); 
-        xhr.send(data);
-        xhr.onload = function() {
-          setinfo(budgetid !== "");
-          /* alert("Budget was added"); */
-        }
-      }
-    })();
-  </script>
+      })();
+    </script>
   {% endfor %}
-</div>
-<div class="mt-2">
-  <a class="text-lg text-indigo-800 hover:text-indigo-600"
-     href="{% url 'dashboard' pk=farmcrop_list.0.farm_year.pk %}">Back to Dashboard</a>
-</div>
+  </div>
+  <div class="mt-2">
+    <a class="text-lg text-indigo-800 hover:text-indigo-600"
+       href="{% url 'dashboard' pk=farmcrop_list.0.farm_year.pk %}">Back to Dashboard</a>
+  </div>
 </div>
 {% endblock %}
