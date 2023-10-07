@@ -143,22 +143,7 @@
         ['revenue', 'cashflow'].includes(type) ? 'flex' : 'none'
     }
     function managevisibility() {
-      diffcb = document.querySelector("#diff")
-      let diff = (diffcb ? document.querySelector("#diff").checked : false)
-      let type = document.querySelector("#type-sel").value
-      let crop = document.querySelector("#crop-sel").value
-      let basistype = ['revenue', 'cashflow'].includes(type)
-      let tblid = ''
-      if (basis_incr === 0 || !basistype) {
-        tblid = type + (diff ? '_diff' : '') + `_${crop}`
-      }
-      else {
-        let btnSel = document.querySelectorAll('#btnBar .selected')
-        console.log(btnSel)
-        let table_num = btnSel[0].id[3]
-        console.log(table_num, 'again')
-        tblid = `${type}_${table_num}` + (diff ? '_diff' : '') + `_${crop}`
-      }
+      tblid = getTblId()
       const matches = document.querySelectorAll(".stbl");
       matches.forEach((tbl) => {
         if (tbl.id !== tblid) {
@@ -168,6 +153,25 @@
           tbl.style.display = 'block';
         }
       })
+    }
+    function getTblId() {
+      let tblid = ''
+      diffcb = document.querySelector("#diff")
+      let diff = (diffcb ? document.querySelector("#diff").checked : false)
+      let type = document.querySelector("#type-sel").value
+      let crop = document.querySelector("#crop-sel").value
+      let basistype = ['revenue', 'cashflow'].includes(type)
+      if (basis_incr === 0 || !basistype) {
+        tblid = type + (diff ? '_diff' : '') + `_${crop}`
+      }
+      else {
+        let btnSel = document.querySelectorAll('#btnBar .selected')
+        console.log(btnSel)
+        let table_num = btnSel[0].id[3]
+        console.log(table_num, 'again')
+        tblid = `${type}` + (diff ? '_diff' : '') + `_${table_num}_${crop}`
+      }
+      return tblid
     }
 
     document
@@ -195,11 +199,12 @@
     document
       .querySelector("#print")
         .addEventListener("click", (event) => {
-          let diff = (diffcb ? document.querySelector("#diff").checked : false)
-          let type = document.querySelector("#type-sel").value
-          let crop = document.querySelector("#crop-sel").value
-          let tblid = type + (diff ? '_diff' : '') + "_" + crop;
-          location.href = "{% url 'downloadsens' farmyear=farmyear_id %}" + `?tag=${tblid}`
+          let tblid = getTblId()
+          location.href = "{% url 'downloadsens' farmyear=farmyear_id %}" +
+            `?tag=${tblid}` + `&ni=${nincr}` + `&bi=${basis_incr}` 
+
+    //const nincr = {{info.nincr}}
+    //const basis_incr = {{info.basis_incr}}
           event.preventDefault();
         });
   })();

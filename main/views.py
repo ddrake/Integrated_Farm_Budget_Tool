@@ -489,7 +489,7 @@ class SensitivityPdfView(UserPassesTestMixin, View):
         farm_year = get_object_or_404(FarmYear, pk=kwargs.get('farmyear', None))
         senstype = request.GET.get('tag', 0)
         buffer = SensPdf(farm_year, senstype).create()
-        filename = f"Sensitivity_{senstype}.pdf"
+        filename = get_sens_filename(request.GET)
         return FileResponse(buffer, as_attachment=True, filename=filename)
 
 
@@ -548,3 +548,29 @@ class ReplicateView(UserPassesTestMixin, View):
             "Content-Disposition": 'attachment; filename="replica.sql"',
         })
         return response
+
+
+def get_sens_filename(get_obj):
+    """ get title info for sensitivity table pdf"""
+    # Sensitivity_diff_basis_offset_0_01_fs_beans
+    senstype = get_obj.get('tag', 0)
+    nincr = int(get_obj.get('ni', 0))
+    basis_incr = float(get_obj.get('bi', 0))
+    print(f'{basis_incr=}')
+    parts = senstype.split('_')
+    diff = parts[1] == 'diff'
+    print(f'{parts=}')
+    try:
+        idx = int(parts[2] if diff else parts[1])
+        nst = (nincr - 1)/2
+        tot_basis_incr = f'basis_increment_{basis_incr * (-nst + idx):.2f}'
+        info = (f'{parts[0]}_' + (f'{parts[1]}_' if diff else '') +
+                f'{tot_basis_incr}_' +
+                ('_'.join(parts[3:]) if diff else '_'.join(parts[2:])))
+    except ValueError:
+        idx = None
+        info = (f'{parts[0]}_' + (f'{parts[1]}_' if diff else '') +
+                ('_'.join(parts[2:]) if diff else '_'.join(parts[1:])))
+
+    print(f'{info=}')
+    return f"Sensitivity_{info}.pdf"
