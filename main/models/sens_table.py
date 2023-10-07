@@ -235,9 +235,8 @@ class SensTableGroup(object):
                          'crops': zip(tags, names),
                          'hasdiff': self.farm_year.sensitivity_data is not None,
                          }
-            if self.bfrange is not None:
-                self.info['nincr'] = self.nincr
-                self.info['basis_incr'] = self.basis_incr
+            self.info['nincr'] = 0 if self.bfrange is None else self.nincr
+            self.info['basis_incr'] = 0 if self.bfrange is None else self.basis_incr
         return self.info
 
     # ----------------
