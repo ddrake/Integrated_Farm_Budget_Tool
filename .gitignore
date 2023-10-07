@@ -132,7 +132,6 @@ dmypy.json
 *.xlsx
 bestcases.txt
 data
-scripts
 settings_local.py
 staticfiles
 digitalocean

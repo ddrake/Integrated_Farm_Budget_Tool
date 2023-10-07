@@ -101,6 +101,7 @@ class SensTableGroup(object):
         self.cty_yields = np.array([fc.cty_expected_yield(self.yfrange)
                                     for fc in self.fsa_crops])
 
+        self.has_diffs = None
         self.info = None
         self.set_gov_pmts()
 
@@ -120,7 +121,11 @@ class SensTableGroup(object):
                 np.array(v) for v in self.farm_year.sensitivity_data)
             # if the array shapes have changed, e.g. by setting a crop's acres to zero
             # we can't provide a diff.
-            if revenue_p.shape == self.revenue_values.shape:
+            self.has_diffs = (revenue_p.shape == self.revenue_values.shape)
+            print(f'{revenue_p.shape=}')
+            print(f'{self.revenue_values.shape=}')
+            print(f'{self.has_diffs=}')
+            if self.has_diffs:
                 self.get_tables(rslt, arrays=(revenue_p, title_p, indem_p,
                                               cost_p, cashflow_p))
         self.save_sens_data(rslt)
@@ -228,12 +233,13 @@ class SensTableGroup(object):
         if len(self.farm_crops) == 0:
             return {'farmyear': self.farm_year.pk}
         if self.info is None:
+            print(f'in get_info: {self.has_diffs=}')
             names = (['Farm'] + self.croptypenames[:] +
                      (['Wheat/DC Beans'] if self.wheatdc else []))
             tags = [n.lower().replace(' ', '_').replace('/', '_') for n in names]
             self.info = {'farmyear': self.farm_year.pk,
                          'crops': zip(tags, names),
-                         'hasdiff': self.farm_year.sensitivity_data is not None,
+                         'hasdiff': self.has_diffs,
                          }
             self.info['nincr'] = 0 if self.bfrange is None else self.nincr
             self.info['basis_incr'] = 0 if self.bfrange is None else self.basis_incr

@@ -484,8 +484,8 @@ class SensitivityTableView(UserPassesTestMixin, TemplateView):
         context = super().get_context_data(**kwargs)
         farm_year = get_object_or_404(FarmYear, pk=kwargs.get('farmyear', None))
         st = SensTableGroup(farm_year)
-        context['info'] = st.get_info()
         context['tables'] = st.get_all_tables()
+        context['info'] = st.get_info()
         context['farmyear_id'] = farm_year.pk
         context['has_farm_years'] = True
         return context
