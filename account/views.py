@@ -9,6 +9,7 @@ from django.utils.http import urlsafe_base64_decode
 from django.utils.encoding import force_str  # force_text on older versions of Django
 
 from .forms import RegistrationForm, token_generator, user_model
+from main.models.util import has_farm_years
 
 
 class RegistrationView(CreateView):
@@ -20,12 +21,19 @@ class RegistrationView(CreateView):
         to_return = super().form_valid(form)
 
         user = form.save()
-        user.is_active = False  # Turns the user status to inactive
+        user.is_active = False
         user.save()
 
         form.send_activation_email(self.request, user)
 
         return to_return
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        user = context['view'].request.user
+        hasfarmyears = has_farm_years(user)
+        context['has_farm_years'] = hasfarmyears
+        return context
 
 
 class ActivateView(RedirectView):
@@ -57,7 +65,10 @@ class DeleteAccountView(View):
     template_name = "account/confirm_delete.html"
 
     def get(self, request, *args, **kwargs):
-        return render(request, self.template_name)
+        print(f'{request.user=}')
+        print(f'{has_farm_years(request.user)=}')
+        return render(request, self.template_name,
+                      {'has_farm_years': has_farm_years(request.user)})
 
     def post(self, request, *args, **kwargs):
         request.user.delete()

@@ -19,14 +19,153 @@
     <meta name="msapplication-TileColor" content="#da532c">
     <meta name="theme-color" content="#ffffff">
 		{% tailwind_css %}
+    {% block style %}
+    {% endblock style %}
 	</head>
 
-	<body class="bg-gray-50 font-serif leading-normal tracking-normal">
-		<div class="container mx-auto">
-			<section class="flex items-center justify-center h-screen">
+	<body class="bg-gray-50 font-sans leading-normal tracking-normal">
+    <div class="flex flex-col h-screen">
+		 <!-- NAVBAR COMPONENT -->
+    <nav class="flex items-center justify-between flex-wrap bg-gray-800 py-2 px-4 font-serif">
+      <div class="flex items-center flex-shrink-0 text-white mr-6">
+        <a href="{% url 'index' %}" class="font-bold text-xl hover:text-slate-300">
+          Integrated Farm Budget Tool</a>
+      </div>
+
+      <div class="w-full block flex-grow sm:flex sm:items-center sm:w-auto">
+        <div class="text-sm sm:flex-grow">
+          {% if user.is_authenticated %}
+            <a
+              href="{% url 'farmyears' %}"
+              class="block mt-4 sm:inline-block sm:mt-0 text-teal-200 hover:text-white text-lg mr-4"
+            >
+              My Farm Years
+            </a>
+            {% if farmyear_id %}
+            <div class="inline-block w-56 group relative cursor-pointer">
+              <div class="flex items-center space-x-1 bg-gray-800 px-0">
+                <a
+                  href="{% url 'dashboard' pk=farmyear_id %}"
+                  class="menu-hover my-0 text-lg font-medium text-teal-200  hover:text-white mx-1"
+                >
+                  Dashboard
+                </a>
+                <span>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke-width="1.5"
+                    stroke="white"
+                    class="h-5 w-5"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      d="M19.5 8.25l-7.5 7.5-7.5-7.5"
+                    />
+                  </svg>
+                </span>
+              </div>
+              <div
+                class="invisible absolute z-50 flex w-full flex-col bg-gray-800 py-1 px-2 text-gray-100 shadow-xl group-hover:visible"
+              >
+                <span
+                  class="my-1.5 block border-b border-gray-800 py-0 font-normal text-gray-300  mx-0.5 leading-tight"
+                  >Inputs</span >
+                <a
+                  href="{% url 'farmyear_detail' pk=farmyear_id %}"
+                  class="my-1.5 block border-b border-gray-800 py-0 font-normal text-teal-200  hover:text-white mx-0.5 leading-tight"
+                  >Farm Specific Data</a>
+                <a
+                  href="{% url 'farmcrop_list' farmyear=farmyear_id %}"
+                  class="my-1.5 block border-b border-gray-800 py-0 font-normal text-teal-200  hover:text-white mx-0.5 leading-tight"
+                  >Crop Acreage / Crop Insurance</a>
+                <a
+                  href="{% url 'farmbudgetcrop_list' farmyear=farmyear_id %}"
+                  class="my-1.5 block border-b border-gray-800 py-0 font-normal text-teal-200  hover:text-white mx-0.5 leading-tight"
+                  >Yield and Expense Budgets</a>
+                <a
+                  href="{% url 'marketcrop_list' farmyear=farmyear_id %}"
+                  class="my-1.5 block border-b border-gray-800 py-0 font-normal text-teal-200  hover:text-white mx-0.5 leading-tight"
+                  >Grain Marketing</a>
+                <a
+                  href="{% url 'fsacrop_list' farmyear=farmyear_id %}"
+                  class="my-1.5 block border-b border-gray-800 py-0 font-normal text-teal-200  hover:text-white mx-0.5 leading-tight"
+                  >Title Elections</a>
+                <span
+                  class="my-1.5 block border-b border-gray-800 py-0 font-normal text-gray-300  mx-0.5 leading-tight"
+                  >Outputs</span>
+                <a
+                  href="{% url 'detailedbudget' farmyear=farmyear_id %}"
+                  class="my-1.5 block border-b border-gray-800 py-0 font-normal text-teal-200  hover:text-white mx-0.5 leading-tight"
+                  >Detailed Budget</a>
+                <a
+                  href="{% url 'sensitivity' farmyear=farmyear_id %}"
+                  class="mt-1.5 mb-0 block border-b border-gray-800 pt-0 pb-3 font-normal text-teal-200  hover:text-white mx-0.5 leading-tight"
+                  >Sensitivity Tables</a>
+              </div>
+            </div>
+            {% endif %}
+            <a
+              href="https://www.youtube.com/playlist?list=PLtK9WRr4peUo7E8guq2992McdADixAh1U"
+              target="_blank"
+              class="block mt-4 sm:inline-block sm:mt-0 text-teal-200 hover:text-white ml-4"
+              >
+              Video Tutorials</a>
+            <a
+              href="https://github.com/ddrake/Integrated_Farm_Budget_Tool/wiki"
+              target="_blank"
+              class="block mt-4 sm:inline-block sm:mt-0 text-teal-200 hover:text-white ml-4"
+              >
+              Info</a>
+            <a
+              href="https://github.com/ddrake/Integrated_Farm_Budget_Tool/discussions"
+              target="_blank"
+              class="block mt-4 sm:inline-block sm:mt-0 text-teal-200 hover:text-white ml-4"
+              >
+              Help
+            </a>
+          {% endif %}
+        </div>
+        <div>
+          {% if user.is_authenticated %}
+            <span class="mt-4 text-white">User: {{user}}</span>
+            <a
+              href="{% url 'logout' %}"
+              class="block mt-4 sm:inline-block sm:mt-0 text-teal-200 hover:text-white ml-4"
+              >Log out</a
+            >
+            <a
+              href="{% url 'password_change' %}"
+              class="block mt-4 sm:inline-block sm:mt-0 text-teal-200 hover:text-white ml-4"
+              >Change Password</a
+            >
+            {% if not has_farm_years %}
+            <a
+              href="{% url 'delete_account' %}"
+              class="block mt-4 sm:inline-block sm:mt-0 text-teal-200 hover:text-white ml-4"
+              >Delete Account</a
+            >
+            {% endif %}
+          {% endif %}
+        </div>
+      </div>
+    </nav>
+    <!--<div class="container mx-auto h-full py-10">-->
+		<div class="container mx-auto mb-auto overflow-y-auto py-10">
+			<section class="flex items-center justify-center">
 				{% block content %}
 				{% endblock %}
 			</section>
 		</div>
+    <footer class="px-4 py-2 bg-gray-800 text-xs text-left text-white">
+      <span class="mx-4">Copyright &copy; {% now 'Y' %} Integrated Farm Budget Tool Team.</span>
+      <a href="{% url 'privacy' %}"
+        class="tracking-wider text-teal-200 hover:text-white mx-4">PRIVACY</a> |
+      <a href="{% url 'terms' %}"
+        class="tracking-wider text-teal-200 hover:text-white mx-4">TERMS &amp; CONDITIONS</a>
+    </footer>
+    </div>
 	</body>
 </html>

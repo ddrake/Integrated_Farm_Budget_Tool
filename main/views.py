@@ -87,6 +87,13 @@ class FarmYearCreateView(LoginRequiredMixin, CreateView):
     def get_initial(self):
         return {'user': self.request.user}
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        user = context['view'].request.user
+        hasfarmyears = has_farm_years(user)
+        context['has_farm_years'] = hasfarmyears
+        return context
+
 
 class FarmYearDeleteView(UserPassesTestMixin, DeleteView):
     model = FarmYear
@@ -95,6 +102,13 @@ class FarmYearDeleteView(UserPassesTestMixin, DeleteView):
     def test_func(self):
         obj = self.get_object()
         return self.request.user == obj.user
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        user = context['view'].request.user
+        hasfarmyears = has_farm_years(user)
+        context['has_farm_years'] = hasfarmyears
+        return context
 
 
 class FarmYearUpdateView(UserPassesTestMixin, UpdateView):
