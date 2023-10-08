@@ -46,7 +46,6 @@ class FarmCrop(models.Model):
 
     @classmethod
     def delete_farm_budget_crop(cls, farm_crop_id):
-        from .farm_budget_crop import FarmBudgetCrop
         FarmBudgetCrop.objects.filter(
             farm_crop=farm_crop_id)[0].delete()
 
