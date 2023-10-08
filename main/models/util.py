@@ -32,3 +32,13 @@ def has_farm_years(user):
     if not isinstance(user, int):
         user = user.pk
     return FarmYear.objects.filter(user=user).exists()
+
+
+def notify_user_of_bugfix(username):
+    from django.contrib.auth.models import User
+    user = User.objects.get(username=username)
+    user.email_user(
+        "Bug Fixed!",
+        (f"Hi {username}." + "  We noticed you bumped into an Application Error."
+         "Sorry about that, but thanks for your patience.  "
+         "We just wanted to let you know that it should be fixed now."))
