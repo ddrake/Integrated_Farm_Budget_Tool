@@ -1,0 +1,20 @@
+{% extends 'main/base.html' %}
+{% block title %}
+<title>Edit {{contract.market_crop}} Contract</title>
+{% endblock title %}
+{% load tailwind_filters crispy_forms_tags %}
+{% block content %}
+<div class="flex flex-col gap-y-4">
+  <div class="p-6 max-w-med mx-auto bg-white rounded-xl shadow-lg flex items-center space-x-4">
+    <div>
+        {% crispy form %}
+    </div>
+  </div>
+  <div>
+     <a class="text-lg text-indigo-800 hover:text-indigo-600"
+        href="{% url 'contract_list' market_crop=contract.market_crop.pk %}">
+        Back to Manage Contracts</a>
+  </div>
+</div
+{% endblock content %}
+

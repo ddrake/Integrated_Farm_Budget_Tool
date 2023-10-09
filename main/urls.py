@@ -13,6 +13,7 @@ from .views import (
     DetailedBudgetView, BudgetPdfView,
     SensitivityTableView, SensitivityPdfView,
     ContractCreateView, ContractUpdateView, ContractDeleteView,
+    MarketCropContractListView,
     ContractPdfView, ContractCsvView, PrivacyView, TermsView, ReplicateView)
 
 urlpatterns = [
@@ -62,8 +63,12 @@ urlpatterns = [
          name='deletebudget'),
 
     # contract related views
+    path('contracts/<int:market_crop>',
+         MarketCropContractListView.as_view(), name='contract_list'),
+
     path('contract/create/<int:market_crop>',
          ContractCreateView.as_view(), name='contract_create'),
+
     path('contract/update/<int:pk>',
          ContractUpdateView.as_view(), name='contract_update'),
     path('contract/delete/<int:pk>',

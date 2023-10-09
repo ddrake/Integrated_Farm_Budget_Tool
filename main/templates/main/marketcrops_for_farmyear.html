@@ -49,6 +49,10 @@
     <div class="mt-2">
     <a class="text-lg text-indigo-800 hover:text-indigo-600"
        href="{% url 'marketcrop_update' pk=d.marketcrop.pk %}">Edit</a>
+       &nbsp;&nbsp;|&nbsp;&nbsp;
+    <a class="text-lg text-indigo-800 hover:text-indigo-600"
+       href="{% url 'contract_list' market_crop=d.marketcrop.pk %}">Manage Contracts</a>
+
     </div>
   </div>
   {% endfor %}
@@ -57,11 +61,11 @@
   <a class="text-lg text-indigo-800 hover:text-indigo-600"
      href="{% url 'dashboard' pk=marketcrop_list.0.farm_year.pk %}"
      >Back to Dashboard</a>
-  &nbsp;&nbsp;|&nbsp;&nbsp;
+     &nbsp;&nbsp;|&nbsp;&nbsp;
   <a class="text-lg text-indigo-800 hover:text-indigo-600"
      href="{% url 'downloadcontracts' farmyear=marketcrop_list.0.farm_year.pk %}"
      >Print Contracts PDF</a>
-  &nbsp;&nbsp;|&nbsp;&nbsp;
+     &nbsp;&nbsp;|&nbsp;&nbsp;
   <a class="text-lg text-indigo-800 hover:text-indigo-600"
      href="{% url 'downloadcontracts_csv' farmyear=marketcrop_list.0.farm_year.pk %}"
      >Download Contracts CSV</a>

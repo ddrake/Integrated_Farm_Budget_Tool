@@ -116,12 +116,20 @@ class FarmYearUpdateView(UserPassesTestMixin, UpdateView):
     model = FarmYear
     template_name = 'main/farmyear_update_form.html'
 
+    def get(self, request, *args, **kwargs):
+        fy = self.get_object()
+        FarmYearUpdateView.success_url = (
+            reverse_lazy('fsacrop_list', args=[fy.pk])
+            if request.GET.get('next', None) == '1' else
+            reverse_lazy('farmyear_detail', args=[fy.pk]))
+        return super().get(request, *args, **kwargs)
+
     def test_func(self):
         obj = self.get_object()
         return self.request.user == obj.user
 
-    def get_success_url(self):
-        return reverse_lazy('farmyear_detail', args=[self.get_object().pk])
+    # def get_success_url(self):
+    #     return reverse_lazy('farmyear_detail', args=[self.get_object().pk])
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -336,10 +344,31 @@ class FarmCropDeleteBudgetView(LoginRequiredMixin, View):
 # ----------------------
 # Contract related views
 # ----------------------
+class MarketCropContractListView(UserPassesTestMixin, ListView):
+    template_name = 'main/contracts_for_marketcrop.html'
+
+    def test_func(self):
+        mc = get_object_or_404(MarketCrop, pk=self.kwargs.get('market_crop', None))
+        return self.request.user == mc.farm_year.user
+
+    def get_queryset(self):
+        mc = get_object_or_404(MarketCrop, pk=self.kwargs.get('market_crop', None))
+        contracts = mc.get_contracts()
+        return contracts
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        mc = get_object_or_404(MarketCrop, pk=self.kwargs.get('market_crop', None))
+        context['marketcrop'] = mc
+        context['farmyear_id'] = mc.farm_year_id
+        context['has_farm_years'] = True
+        return context
+
+
 class ContractCreateView(UserPassesTestMixin, CreateView):
     model = Contract
     form_class = ContractCreateForm
-    template_name = 'main/contract_form.html'
+    template_name = 'main/contract_create_form.html'
 
     def test_func(self):
         mc = get_object_or_404(MarketCrop, pk=self.kwargs.get('market_crop'))
@@ -355,12 +384,13 @@ class ContractCreateView(UserPassesTestMixin, CreateView):
 
     def get_success_url(self):
         mc_id = self.kwargs.get('market_crop', None)
-        return reverse('marketcrop_update', args=[mc_id])
+        return reverse('contract_list', args=[mc_id])
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         mc_id = self.kwargs.get('market_crop', None)
         mc = get_object_or_404(MarketCrop, pk=mc_id)
+        context['market_crop'] = mc
         context['farmyear_id'] = mc.farm_year_id
         context['has_farm_years'] = True
         return context
@@ -369,14 +399,14 @@ class ContractCreateView(UserPassesTestMixin, CreateView):
 class ContractUpdateView(UserPassesTestMixin, UpdateView):
     model = Contract
     form_class = ContractUpdateForm
-    template_name = "main/contract_form.html"
+    template_name = "main/contract_update_form.html"
 
     def test_func(self):
         user = self.get_object().market_crop.farm_year.user
         return self.request.user == user
 
     def get_success_url(self):
-        return reverse('marketcrop_update',
+        return reverse('contract_list',
                        args=[self.get_object().market_crop_id])
 
     def get_context_data(self, **kwargs):
@@ -396,7 +426,7 @@ class ContractDeleteView(UserPassesTestMixin, DeleteView):
         return self.request.user == user
 
     def get_success_url(self):
-        return reverse('marketcrop_update',
+        return reverse('contract_list',
                        args=[self.get_object().market_crop_id])
 
     def get_context_data(self, **kwargs):
@@ -570,10 +600,8 @@ def get_sens_filename(get_obj):
     senstype = get_obj.get('tag', 0)
     nincr = int(get_obj.get('ni', 0))
     basis_incr = float(get_obj.get('bi', 0))
-    print(f'{basis_incr=}')
     parts = senstype.split('_')
     diff = parts[1] == 'diff'
-    print(f'{parts=}')
     try:
         idx = int(parts[2] if diff else parts[1])
         nst = (nincr - 1)/2
@@ -586,5 +614,4 @@ def get_sens_filename(get_obj):
         info = (f'{parts[0]}_' + (f'{parts[1]}_' if diff else '') +
                 ('_'.join(parts[2:]) if diff else '_'.join(parts[1:])))
 
-    print(f'{info=}')
     return f"Sensitivity_{info}.pdf"

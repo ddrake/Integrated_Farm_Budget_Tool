@@ -8,11 +8,19 @@
 <script src="{% static 'main/scripts/farmcrop_form.js' %}"></script>
 {% endblock script %}
 {% block content %}
-<div class="p-6 max-w-med mx-auto bg-white rounded-xl shadow-lg flex items-center space-x-4">
+
+<div class="flex flex-col gap-y-4">
+  <div class="p-6 max-w-med mx-auto bg-white rounded-xl shadow-lg flex items-center space-x-4">
     <div>
         <h1 class="block text-xl mb-2">Edit Farm Crop {{ farmcrop }}</h1>
         {% crispy form %}
     </div>
+  </div>
+  <div>
+     <a class="text-lg text-indigo-800 hover:text-indigo-600"
+        href="{% url 'farmcrop_list' farmyear=farmcrop.farm_year_id %}">
+        Back to Crop Acreage / Crop Insurance</a>
+  </div>
 </div>
 <script>
  (() => {

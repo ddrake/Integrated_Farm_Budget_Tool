@@ -4,7 +4,8 @@
 {% endblock title %}
 {% load tailwind_filters %}
 {% block content %}
-<div class="p-6 max-w-med mx-auto bg-white rounded-xl shadow-lg flex items-center space-x-4">
+<div class="flex flex-col gap-y-4">
+  <div class="p-6 max-w-med mx-auto bg-white rounded-xl shadow-lg flex items-center space-x-4">
     <div>
       <h1 class="block text-xl mb-2">Edit FSA crop {{ fsacrop }}</h1>
         <form action="" method="post">
@@ -13,6 +14,12 @@
             <button type="submit" class="btn-primary">Update</button>
         </form>
     </div>
+  </div>
+  <div>
+     <a class="text-lg text-indigo-800 hover:text-indigo-600"
+        href="{% url 'fsacrop_list' farmyear=fsacrop.farm_year_id %}">
+        Back to Title Elections</a>
+  </div>
 </div>
 {% endblock content %}
 
