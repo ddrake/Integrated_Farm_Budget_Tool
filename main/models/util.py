@@ -43,5 +43,5 @@ def notify_user_of_bugfix(username):
          "Sorry about that, but thanks for your patience.  "
          "We just wanted to let you know that it should be fixed now.\n\n" +
          "Please don't reply to this email address; it has no inbox.  " +
-         "If you're still seeing an issue, please click the help link at ifbt.farm " +
-         "and let us know the details."))
+         "If you're still seeing an issue, please click the 'Help' link at ifbt.farm " +
+         "and post a message letting us know the details."))
