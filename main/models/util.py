@@ -41,4 +41,8 @@ def notify_user_of_bugfix(username):
         "Bug Fixed!",
         (f"Hi {username}." + "  We noticed you bumped into an Application Error.  "
          "Sorry about that, but thanks for your patience.  "
-         "We just wanted to let you know that it should be fixed now."))
+         "We just wanted to let you know that it should be fixed now.\n\n" +
+         "Please don't reply to this email address; it has no inbox.  " +
+         "If you're still seeing an issue, please post about it here: " +
+         "https://github.com/ddrake/Integrated_Farm_Budget_Tool/discussions/" +
+         "/categories/general"))
