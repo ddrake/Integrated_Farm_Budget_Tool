@@ -133,6 +133,7 @@ class FarmYearUpdateView(UserPassesTestMixin, UpdateView):
 
 class FarmYearUpdateViewFromTitle(FarmYearUpdateView):
     form_class = FarmYearUpdateFormForTitle
+    template_name = 'main/farmyear_update_form_ft.html'
 
     def get_success_url(self):
         return reverse_lazy('fsacrop_list', args=[self.get_object().pk])

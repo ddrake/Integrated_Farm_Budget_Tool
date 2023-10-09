@@ -1,6 +1,6 @@
 {% extends 'main/base.html' %}
 {% block title %}
-<title>Update farm year</title>
+<title>Update farm year title settings</title>
 {% endblock title %}
 {% load tailwind_filters crispy_forms_tags %}
 {% block content %}
@@ -15,8 +15,8 @@
     </div>
   </div>
   <div>
-     <a class="text-lg text-indigo-800 hover:text-indigo-600"
-        href="{% url 'farmyear_detail' pk=object.pk %}"> Back to Farm Specific Data</a>
+      <a class="text-xl text-indigo-800 hover:text-indigo-600"
+         href="{% url 'fsacrop_list' farmyear=object.pk %}">Back to Title Elections</a>
   </div>
 </div>
 <script>
