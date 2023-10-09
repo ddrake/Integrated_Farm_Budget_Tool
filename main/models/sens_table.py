@@ -103,6 +103,7 @@ class SensTableGroup(object):
 
         self.has_diffs = None
         self.info = None
+        self.alldata = None
         self.set_gov_pmts()
 
     def get_all_tables(self):
@@ -115,6 +116,7 @@ class SensTableGroup(object):
         if len(self.farm_crops) == 0:
             return None
 
+        self.get_current_data()
         self.get_tables(rslt)
         if self.farm_year.sensitivity_data is not None:
             revenue_p, title_p, indem_p, cost_p, cashflow_p = (
@@ -122,6 +124,8 @@ class SensTableGroup(object):
             # if the array shapes have changed, e.g. by setting a crop's acres to zero
             # we can't provide a diff.
             self.has_diffs = (revenue_p.shape == self.revenue_values.shape)
+            print(f'{revenue_p.shape=}')
+            print(f'{self.revenue_values.shape=}')
             if self.has_diffs:
                 self.get_tables(rslt, arrays=(revenue_p, title_p, indem_p,
                                               cost_p, cashflow_p))
@@ -151,21 +155,20 @@ class SensTableGroup(object):
             items = [
                 [f"revenue{'_diff' if diff else ''}",
                  ((self.revenue_values - revenue_p) if diff else
-                  self.get_revenue_values()),
+                  self.revenue_values),
                  'REVENUE SENSITIVITY ($000)',
                  'Revenue before Indemnity and Title payments'],
                 [f"title{'_diff' if diff else ''}",
-                 (self.title_values - title_p) if diff else self.get_title_values(),
+                 (self.title_values - title_p) if diff else self.title_values,
                  'TITLE PAYMENT SENSITIVITY ($000)', ''],
                 [f"indem{'_diff' if diff else ''}",
-                 (self.indem_values - indem_p) if diff else self.get_indem_values(),
+                 (self.indem_values - indem_p) if diff else self.indem_values,
                  'INSURANCE PAYMENT SENSITIVITY ($000)', ''],
                 [f"cost{'_diff' if diff else ''}",
-                 (self.cost_values - cost_p) if diff else self.get_cost_values(),
+                 (self.cost_values - cost_p) if diff else self.cost_values,
                  'COST SENSITIVITY ($000)', ''],
                 [f"cashflow{'_diff' if diff else ''}",
-                 (self.cashflow_values - cashflow_p) if diff else
-                 self.get_cashflow_values(),
+                 (self.cashflow_values - cashflow_p) if diff else self.cashflow_values,
                  'PROFIT SENSITIVITY ($000)', 'Pre-Tax Cash Flow']]
         else:
             items = []
@@ -173,35 +176,36 @@ class SensTableGroup(object):
                 items.append(
                     [f"revenue{'_diff' if diff else ''}_{i}",
                      ((self.revenue_values[..., i] - revenue_p[..., i]) if diff else
-                      self.get_revenue_values()[..., i]),
+                      self.revenue_values[..., i]),
                      'REVENUE SENSITIVITY ($000)',
                      'Revenue before Indemnity and Title payments'])
             items.append(
                 [f"title{'_diff' if diff else ''}",
                  ((self.title_values[..., 0] - title_p[..., 0]) if diff else
-                  self.get_title_values()[..., 0]),
+                  self.title_values[..., 0]),
                  'TITLE PAYMENT SENSITIVITY ($000)', ''])
             items.append(
                 [f"indem{'_diff' if diff else ''}",
                  ((self.indem_values[..., 0] - indem_p[..., 0]) if diff else
-                  self.get_indem_values()[..., 0]),
+                  self.indem_values[..., 0]),
                  'INSURANCE PAYMENT SENSITIVITY ($000)', ''])
             items.append(
                 [f"cost{'_diff' if diff else ''}",
                  ((self.cost_values[..., 0] - cost_p[..., 0]) if diff else
-                  self.get_cost_values()[..., 0]),
+                  self.cost_values[..., 0]),
                  'COST SENSITIVITY ($000)', ''])
             for i, _ in enumerate(self.bfrange):
                 items.append(
                     [f"cashflow{'_diff' if diff else ''}_{i}",
                      ((self.cashflow_values[..., i] - cashflow_p[..., i]) if diff else
-                      self.get_cashflow_values()[..., i]),
+                      self.cashflow_values[..., i]),
                      'PROFIT SENSITIVITY ($000)', 'Pre-Tax Cash Flow'])
 
         for var in items:
             self.get_tables_var(rslt, var)
 
     def get_tables_var(self, rslt, var):
+        """ get the set of tables for a specific item """
         tag, values, title, subtitle = var
         cs = ({'crop': SensTableTitle, 'farm': SensTableTitle,
                'wheatdc': SensTableTitle} if tag[:5] == 'title' else
@@ -252,45 +256,53 @@ class SensTableGroup(object):
         self.gov_pmts = np.array([totgovpmt * ac / self.total_acres
                                   for ac in self.acres])
 
+    def get_current_data(self, save=False):
+        """
+        Get all the data needed into a nested list which can optionally be saved here
+        We only want to save if testing.
+        """
+        self.revenue_values = self.get_revenue_values()
+        self.title_values = self.get_title_values()
+        self.indem_values = self.get_indem_values()
+        self.cost_values = self.get_cost_values()
+        self.cashflow_values = self.get_cashflow_values()
+        self.alldata = [ar.tolist() for ar in
+                        [self.revenue_values, self.title_values, self.indem_values,
+                         self.cost_values, self.cashflow_values]]
+        if save:
+            self.farm_year.sensitivity_data = self.alldata
+            self.farm_year.save()
+
     def save_sens_data(self, rslt):
+        """ Save the text tables and the numerical data in the database """
         self.farm_year.sensitivity_text = rslt
-        alldata = [ar.tolist() for ar in
-                   [self.revenue_values, self.title_values, self.indem_values,
-                    self.cost_values, self.cashflow_values]]
-        self.farm_year.sensitivity_data = alldata
+        self.farm_year.sensitivity_data = self.alldata
         self.farm_year.save()
 
     # -----------------------------------------------------------------------
     # return cached value or compute a 3D numpy array of values in kilodollars
     # array(nc+, np, ny) or array(nc+, np, ny, nb)
     def get_revenue_values(self):
-        if self.revenue_values is None:
-            other_rev = self.farm_year.other_nongrain_income
-            self.revenue_values = self.get_values_array('revenue',
-                                                        noncrop=other_rev)
+        other_rev = self.farm_year.other_nongrain_income
+        self.revenue_values = self.get_values_array('revenue', noncrop=other_rev)
         return self.revenue_values
 
     def get_title_values(self):
-        if self.title_values is None:
-            self.title_values = self.get_values_array('gov_pmt')
+        self.title_values = self.get_values_array('gov_pmt')
         return self.title_values
 
     def get_indem_values(self):
-        if self.indem_values is None:
-            self.indem_values = self.get_values_array('indemnity')
+        self.indem_values = self.get_values_array('indemnity')
         return self.indem_values
 
     def get_cost_values(self):
-        if self.cost_values is None:
-            other_cost = self.farm_year.other_nongrain_expense
-            self.cost_values = self.get_values_array('cost', noncrop=other_cost)
+        other_cost = self.farm_year.other_nongrain_expense
+        self.cost_values = self.get_values_array('cost', noncrop=other_cost)
         return self.cost_values
 
     def get_cashflow_values(self):
-        if self.cashflow_values is None:
-            self.cashflow_values = (self.get_revenue_values() +
-                                    self.get_title_values() +
-                                    self.get_indem_values() - self.get_cost_values())
+        self.cashflow_values = (self.revenue_values + self.title_values +
+                                self.indem_values - self.cost_values)
         return self.cashflow_values
 
     def get_values_array(self, name, noncrop=0, kwargs={}):
