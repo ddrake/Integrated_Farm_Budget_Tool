@@ -27,8 +27,10 @@
            <tr class="text-sm">
              <td class="border border-slate-300 px-2">{{ct.contract_date}}</td>
              <td class="border border-slate-300 px-2">{{ct.bushels|floatformat:"0g"}}</td>
-             <td class="border border-slate-300 px-2">{{ct.futures_price|floatformat:"2g"}}</td>
-             <td class="border border-slate-300 px-2">{{ct.basis_price|floatformat:"2g"}}</td>
+             <td class="border border-slate-300 px-2">
+               {{ct.futures_price|floatformat:"2g"|default:"None"}}</td>
+             <td class="border border-slate-300 px-2">
+               {{ct.basis_price|floatformat:"2g"|default:"None"}}</td>
              <td class="border border-slate-300 px-2">{{ct.terminal}}</td>
              <td class="border border-slate-300 px-2">{{ct.contract_number}}</td>
              <td class="border border-slate-300 px-2">{{ct.delivery_start_date}}</td>
