@@ -23,9 +23,10 @@ from .models.sens_pdf import SensPdf
 from .models.contract_pdf import ContractPdf
 from .models.replicate_farmyear import Replicate
 from ext.models import County
-from .forms import (FarmYearCreateForm, FarmYearUpdateForm, FarmCropUpdateForm,
-                    FarmBudgetCropUpdateForm, ZeroAcreFarmBudgetCropUpdateForm,
-                    MarketCropUpdateForm, ContractCreateForm, ContractUpdateForm)
+from .forms import (FarmYearCreateForm, FarmYearUpdateForm, FarmYearUpdateFormForTitle,
+                    FarmCropUpdateForm, FarmBudgetCropUpdateForm,
+                    ZeroAcreFarmBudgetCropUpdateForm, MarketCropUpdateForm,
+                    ContractCreateForm, ContractUpdateForm)
 from .models.util import has_farm_years
 
 
@@ -116,28 +117,25 @@ class FarmYearUpdateView(UserPassesTestMixin, UpdateView):
     model = FarmYear
     template_name = 'main/farmyear_update_form.html'
 
-    def get(self, request, *args, **kwargs):
-        fy = self.get_object()
-        FarmYearUpdateView.success_url = (
-            reverse_lazy('fsacrop_list', args=[fy.pk])
-            if request.GET.get('next', None) == '1' else
-            reverse_lazy('farmyear_detail', args=[fy.pk]))
-        return super().get(request, *args, **kwargs)
-
     def test_func(self):
-        obj = self.get_object()
-        return self.request.user == obj.user
+        fy = self.get_object()
+        return self.request.user == fy.user
 
     def get_success_url(self):
-        return (reverse_lazy('farmyear_detail', args=[self.get_object().pk])
-                if FarmYearUpdateView.success_url is None else
-                FarmYearUpdateView.success_url)
+        return reverse_lazy('farmyear_detail', args=[self.get_object().pk])
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['farmyear_id'] = self.get_object().pk
         context['has_farm_years'] = True
         return context
+
+
+class FarmYearUpdateViewFromTitle(FarmYearUpdateView):
+    form_class = FarmYearUpdateFormForTitle
+
+    def get_success_url(self):
+        return reverse_lazy('fsacrop_list', args=[self.get_object().pk])
 
 
 class FarmYearDetailView(UserPassesTestMixin, DetailView):

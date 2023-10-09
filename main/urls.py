@@ -3,7 +3,8 @@ from django.contrib.auth.decorators import login_required
 
 from .views import (
     IndexView, FarmYearsView, GetCountyView, FarmYearCreateView, FarmYearDashboard,
-    FarmYearDetailView, FarmYearUpdateView, FarmYearDeleteView,
+    FarmYearDetailView, FarmYearUpdateView, FarmYearUpdateViewFromTitle,
+    FarmYearDeleteView,
     FarmYearFarmCropListView, FarmYearMarketCropListView, FarmYearFsaCropListView,
     FarmYearFarmBudgetCropListView,
     FarmCropUpdateView, MarketCropUpdateView, FsaCropUpdateView,
@@ -33,6 +34,8 @@ urlpatterns = [
          name='farmyear_create'),
     path('farmyear/update/<int:pk>', FarmYearUpdateView.as_view(),
          name='farmyear_update'),
+    path('farmyear/update_ft/<int:pk>', FarmYearUpdateViewFromTitle.as_view(),
+         name='farmyear_update_ft'),
     path('farmyear/delete/<int:pk>', FarmYearDeleteView.as_view(),
          name='farmyear_delete'),
     path('farmyear/counties_for_state/<int:state_id>',

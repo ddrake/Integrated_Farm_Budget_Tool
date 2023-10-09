@@ -80,6 +80,22 @@ class FarmYearUpdateForm(ModelForm):
                 is_model_run_date_manual est_sequest_frac basis_increment'''.split()
 
 
+class FarmYearUpdateFormForTitle(ModelForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.helper = FormHelper()
+        self.helper.add_input(Submit('submit', 'Update'))
+        self.helper.form_id = 'farmyearform'
+        self.helper.layout = Layout(
+            Fieldset('Farm Level Title Settings', 'eligible_persons_for_cap',
+                     Field('est_sequest_frac', css_class="percent")),
+        )
+
+    class Meta:
+        model = FarmYear
+        fields = '''eligible_persons_for_cap est_sequest_frac'''.split()
+
+
 class FarmCropUpdateForm(ModelForm):
 
     def __init__(self, *args, **kwargs):
