@@ -128,8 +128,10 @@ class FarmYearUpdateView(UserPassesTestMixin, UpdateView):
         obj = self.get_object()
         return self.request.user == obj.user
 
-    # def get_success_url(self):
-    #     return reverse_lazy('farmyear_detail', args=[self.get_object().pk])
+    def get_success_url(self):
+        return (reverse_lazy('farmyear_detail', args=[self.get_object().pk])
+                if FarmYearUpdateView.success_url is None else
+                FarmYearUpdateView.success_url)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
