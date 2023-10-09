@@ -109,7 +109,6 @@ class BudgetPdf(object):
             canvas.setLineWidth(5)
             canvas.setFont('Helvetica-Bold', 14)
             canvas.drawCentredString(page_height/2, page_width-(.5*inch+14), title)
-            # print(f'{page_height-(.5*inch+14)=}')
             # canvas.drawCentredString(page_height/2, (.5*inch+14), title)
             canvas.setFont('Helvetica', 12)
             canvas.drawCentredString(page_height/2, page_width-(.5*inch+28), subtitle)

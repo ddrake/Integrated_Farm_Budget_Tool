@@ -205,7 +205,6 @@ class Contract(models.Model):
         ordering = ['contract_date']
 
     def clean(self):
-        print(f'{self.futures_price=}, {self.basis_price=}')
         if self.futures_price is None and self.basis_price is None:
             raise ValidationError(
                 {'futures_price': 'A futures price, a basis, or both must be set',

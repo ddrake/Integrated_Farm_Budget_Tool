@@ -56,7 +56,6 @@ class SensPdf(object):
 
         doc_template.build(objects_to_draw, onFirstPage=self.first_page_header())
         buffer.seek(0)
-        # print(f'With {ALL=}, {perf_counter()-start}')
         return buffer
 
     def get_table(self):
