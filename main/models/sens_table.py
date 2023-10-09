@@ -122,9 +122,6 @@ class SensTableGroup(object):
             # if the array shapes have changed, e.g. by setting a crop's acres to zero
             # we can't provide a diff.
             self.has_diffs = (revenue_p.shape == self.revenue_values.shape)
-            print(f'{revenue_p.shape=}')
-            print(f'{self.revenue_values.shape=}')
-            print(f'{self.has_diffs=}')
             if self.has_diffs:
                 self.get_tables(rslt, arrays=(revenue_p, title_p, indem_p,
                                               cost_p, cashflow_p))
@@ -233,7 +230,6 @@ class SensTableGroup(object):
         if len(self.farm_crops) == 0:
             return {'farmyear': self.farm_year.pk}
         if self.info is None:
-            print(f'in get_info: {self.has_diffs=}')
             names = (['Farm'] + self.croptypenames[:] +
                      (['Wheat/DC Beans'] if self.wheatdc else []))
             tags = [n.lower().replace(' ', '_').replace('/', '_') for n in names]
