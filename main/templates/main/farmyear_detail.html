@@ -4,7 +4,7 @@
 {% endblock title %}
 {% block content %}
 {% load main_extra %}
-<div class="p-6 max-w-med mx-auto bg-white rounded-xl shadow-lg flex items-center space-x-4">
+<div class="p-6 max-w-med mx-auto bg-white rounded-xl shadow-lg flex items-center space-x-4 print:shadow-none">
   <div class="shrink-0">
   <h1 class="text-xl">{{farmyear}}</h1>
   <h1 class="text-lg">{{farmyear.location}}</h1>
@@ -66,7 +66,7 @@
     <dd class="text-right">{{farmyear.get_model_run_date}}</dd>
     <dt>Basis increment for sensitivity</dt>
     <dd class="text-right">${{farmyear.basis_increment|floatformat:"2g"}}</dd>
-  <div>
+  <div class="print:hidden">
   <a class="text-xl text-indigo-800 hover:text-indigo-600"
      href="{% url 'farmyear_update' pk=farmyear.pk %}">Edit</a>&nbsp; | &nbsp;
   <a class="text-xl text-indigo-800 hover:text-indigo-600"

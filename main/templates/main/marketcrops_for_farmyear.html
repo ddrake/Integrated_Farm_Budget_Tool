@@ -5,7 +5,7 @@
 {% block content %}
 {% load main_extra %}
 <div class="flex flex-col">
-<div class="p-6 max-w-med mx-auto bg-white rounded-xl shadow-lg flex items-center space-x-4">
+<div class="p-6 max-w-med mx-auto bg-white rounded-xl shadow-lg flex items-center space-x-4 print:shadow-none">
   {% for d in mc_priceinfo_list %}
   <div class="shrink-0">
     <h1 class="text-xl">{{d.marketcrop}}</h1>
@@ -46,7 +46,7 @@
        href="https://www.barchart.com/futures/quotes/{{d.priceinfo.ticker}}/interactive-chart"
        target="_blank">
         {{d.marketcrop}}, {{d.priceinfo.futures_month}} Interactive Chart - Barchart.com</a>
-    <div class="mt-2">
+    <div class="mt-2 print:hidden">
     <a class="text-lg text-indigo-800 hover:text-indigo-600"
        href="{% url 'marketcrop_update' pk=d.marketcrop.pk %}">Edit</a>
        &nbsp;&nbsp;|&nbsp;&nbsp;
@@ -57,7 +57,7 @@
   </div>
   {% endfor %}
 </div>
-<div class="mt-2">
+<div class="mt-2 print:hidden">
   <a class="text-lg text-indigo-800 hover:text-indigo-600"
      href="{% url 'dashboard' pk=marketcrop_list.0.farm_year.pk %}"
      >Back to Dashboard</a>

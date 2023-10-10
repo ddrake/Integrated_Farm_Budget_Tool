@@ -28,7 +28,7 @@
 	<body class="bg-gray-50 font-sans leading-normal tracking-normal">
     <div class="flex flex-col h-screen">
 		 <!-- NAVBAR COMPONENT -->
-    <nav class="flex items-center justify-between flex-wrap bg-gray-800 py-2 px-4 font-serif">
+    <nav class="flex items-center justify-between flex-wrap bg-gray-800 py-2 px-4 font-serif print:hidden">
       <div class="flex items-center flex-shrink-0 text-white mr-6">
         <a href="{% url 'index' %}" class="font-bold text-xl hover:text-slate-300">
           Integrated Farm Budget Tool</a>
@@ -155,13 +155,13 @@
       </div>
     </nav>
     <!--<div class="container mx-auto h-full py-10">-->
-		<div class="container mx-auto mb-auto overflow-y-auto py-10">
-			<section class="flex items-center justify-center">
+		<div class="container mx-auto mb-auto overflow-y-auto py-10 print:py-0">
+			<section class="flex items-center justify-center print:items-left print:justify-left">
 				{% block content %}
 				{% endblock %}
 			</section>
 		</div>
-    <footer class="px-4 py-2 bg-gray-800 text-xs text-left text-white">
+    <footer class="px-4 py-2 bg-gray-800 text-xs text-left text-white print:hidden">
       <span class="mx-4">Copyright &copy; {% now 'Y' %} Integrated Farm Budget Tool Team.</span>
       <a href="{% url 'privacy' %}"
         class="tracking-wider text-teal-200 hover:text-white mx-4">PRIVACY</a> |
@@ -172,4 +172,4 @@
     </footer>
     </div>
 	</body>
-</html>
+</html

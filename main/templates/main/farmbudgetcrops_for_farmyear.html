@@ -7,7 +7,7 @@
 
 {% block content %}
 <div class="flex flex-col">
-<div class="p-6 max-w-med mx-auto bg-white rounded-xl shadow-lg flex content-start items-start space-x-4">
+<div class="p-6 max-w-med mx-auto bg-white rounded-xl shadow-lg flex content-start items-start space-x-4 print:shadow-none print:items-left">
   {% if farmbudgetcrop_list.count == 0 %}
     <p class="text-lg">No budget data exists.<br>
       Add budgets using the 'Crop Acreage/Crop Insurance' form.<p>
@@ -106,7 +106,7 @@
       <dd class="text-right">{{farmbudgetcrop.are_costs_final|yesno:"Yes,No"}}</dd>
       {% endif %}
     </dl>
-    <div class="my-2">
+    <div class="my-2 print:hidden">
       <a class="text-lg text-indigo-800 hover:text-indigo-600"
          href="{% url 'farmbudgetcrop_update' pk=farmbudgetcrop.pk %}">Edit</a>
     </div>
@@ -114,7 +114,7 @@
   {% endfor %}
   {% endif %}
 </div>
-<div class="mt-2">
+<div class="mt-2 print:hidden">
   <a class="text-lg text-indigo-800 hover:text-indigo-600"
      href="{% url 'dashboard' pk=farmyear %}">Back to Dashboard</a>
 </div>

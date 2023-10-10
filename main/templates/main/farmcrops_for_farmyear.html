@@ -9,7 +9,7 @@
 {% endblock script %}
 {% block content %}
 <div class="flex flex-col">
-  <div class="p-4 mx-auto bg-white rounded-xl shadow-lg flex items-center space-x-2">
+  <div class="p-4 mx-auto bg-white rounded-xl shadow-lg flex items-center space-x-2 print:shadow-none print:items-left">
     {% for farmcrop in farmcrop_list %}
     <div class="shrink-0">
       <p>{{prod_types.0}}
@@ -56,11 +56,11 @@
           {% if not farmcrop.indem_price_yield_data.hp.1 %}(est){% endif %}</dt>
         <dd class="text-right">${{farmcrop.indem_price_yield_data.hp.0|floatformat:"2g"}}</dd>
       </dl>
-      <div class="my-2">
+      <div class="my-2 print:hidden">
         <a class="text-lg text-indigo-800 hover:text-indigo-600"
            href="{% url 'farmcrop_update' pk=farmcrop.pk %}">Edit</a>
       </div>
-        <form action=""> 
+        <form action="" class="print:hidden"> 
           {% csrf_token %}
           <label class="block text-gray-700 font-bold mb-2"
             for="budgets-{{farmcrop.pk}}"><strong>Selected Budget</strong></label>
@@ -100,7 +100,7 @@
     </script>
   {% endfor %}
   </div>
-  <div class="mt-2">
+  <div class="mt-2 print:hidden">
     <a class="text-lg text-indigo-800 hover:text-indigo-600"
        href="{% url 'dashboard' pk=farmcrop_list.0.farm_year.pk %}">Back to Dashboard</a>
   </div>

@@ -8,7 +8,7 @@
 {% block content %}
 <div class="flex flex-col">
   <div class="width-full text-center text-xl mb-2">Farm Specific Title Information</div>
-  <div class="p-6 max-w-med mx-auto bg-white rounded-xl shadow-lg flex items-center space-x-4">
+  <div class="p-6 max-w-med mx-auto bg-white rounded-xl shadow-lg flex items-center space-x-4 print:shadow-none">
     {% for fsacrop in fsacrop_list %}
     <div class="shrink-0">
       <h1 class="text-xl">{{fsacrop}}</h1>
@@ -22,13 +22,13 @@
         <dt>County expected yield:</dt>
         <dd class="text-right">{{fsacrop.cty_expected_yield|floatformat:"1g"}}</dd>
       </dl>
-      <a class="text-xl text-indigo-800 hover:text-indigo-600"
+      <a class="text-xl text-indigo-800 hover:text-indigo-600 print:hidden"
          href="{% url 'fsacrop_update' pk=fsacrop.pk %}">Edit</a>
     </div>
     {% endfor %}
   </div>
   <div class="width-full text-center text-xl mt-4 mb-2">Program Specific Title Information</div>
-  <div class="p-6 max-w-med mx-auto bg-white rounded-xl shadow-lg flex items-center space-x-4">
+  <div class="p-6 max-w-med mx-auto bg-white rounded-xl shadow-lg flex items-center space-x-4 print:shadow-none">
     {% for fsacrop in fsacrop_list %}
     <div class="shrink-0">
       <h1 class="text-xl">{{fsacrop}}</h1>
@@ -49,19 +49,19 @@
     </div>
     {% endfor %}
   </div>
-  <div class="p-6 max-w-med mt-4 mx-auto bg-white rounded-xl shadow-lg flex items-center space-x-4">
+  <div class="p-6 max-w-med mt-4 mx-auto bg-white rounded-xl shadow-lg flex items-center space-x-4 print:shadow-none">
     <div class="shrink-0">
       <dl class="grid grid-cols-[repeat(2,auto)] gap-x-4 w-max">
         <dt>Eligible entities for title cap:</dt>
         <dd class="text-right">{{fsacrop_list.0.farm_year.eligible_persons_for_cap}}</dd>
         <dt>Estimated Sequestration Percent:</dt>
         <dd class="text-right">{{fsacrop_list.0.farm_year.est_sequest_frac|pct:"2"}}</dd>
-        <a class="text-xl text-indigo-800 hover:text-indigo-600"
+        <a class="text-xl text-indigo-800 hover:text-indigo-600 print:hidden"
            href="{% url 'farmyear_update_ft' pk=fsacrop_list.0.farm_year.pk %}">Edit</a>
       </dl>
     </div>
   </div>
-  <a class="text-xl text-indigo-800 hover:text-indigo-600"
+  <a class="text-xl text-indigo-800 hover:text-indigo-600 print:hidden"
      href="{% url 'dashboard' pk=fsacrop_list.0.farm_year.pk %}">Back to Dashboard</a>
 </div>
 {% endblock %}
