@@ -1,6 +1,6 @@
 # Integrated Farm Budget Tool (IFBT)
 
-An integrated tool at [ifbt.farm](https://ifbt.farm) allowing midwest grain farmers to budget farm profitability and readily visualize outcomes sensitized to price and yield.
+An integrated tool at [ifbt.farm](https://ifbt.farm) helping grain farmers budget farm profitability and readily visualize outcomes sensitized to price and yield.
 
 Based on farm-specific inputs, this tool assists an operator in 
 
