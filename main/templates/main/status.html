@@ -1,0 +1,65 @@
+{% extends 'main/base.html' %}
+{% block title %}
+<title>2024 Crop Year Status</title>
+{% endblock title %}
+{% block content %}
+{% load main_extra %}
+<div class="p-6 w-1/2 mx-auto bg-white rounded-xl shadow-lg flex items-center space-x-4">
+  <div class="">
+    <h1 class="text-xl">2024 Crop Year Status Updates</h1>
+    <p class="text-base my-2">
+      <em>Updates on the status of integration of outside data for the 2024 crop year
+        will be announced in this section as they occur.</em>
+    </p>
+    <h1 class="text-xl">General 2024 Crop Year Status Information</h1>
+    <p class="text-base my-2">
+      To produce accurate estimates for 33 U.S. states,
+      the Integrated Farm Budget Tool relies on several outside data sources
+      <ul class="list-disc list-inside mb-2">
+        <li>RMA Crop insurance premiums and indemnities</li>
+        <li>ARC-CO and PLC Title Program payments</li>
+        <li>Yield and cost budget amounts</li>
+      </ul>
+      These data sources are released at different times during the crop year.
+      Each release allows us to improve the accuracy of our 2024 estimates.
+    </p>
+    <h2 class="text-lg mt-2">Crop Insurance</h2>
+    <p class="text-base my-2">
+      Before we can compute estimates of crop insurance premiums and indemnities
+      for 2024 crop year spring-planted crops, we need the actuarial data from the USDA Risk
+      Management Agency, which will be released in late November, 2023.
+      With this, we can compute premium and indemnity estimates using price volatility
+      factors from 2023 and the current futures price as placeholders for the final
+      price volatility factors and projected price values which are released by the
+      RMA at the end of each price discovery period.  There are different price discovery
+      periods for different states and counties, with the earliest period beginning
+      December 15, 2023 and ending January 15, 2024.
+    </p>
+    <h2 class="text-lg mt-2">ARC-CO and PLC Title</h2>
+    <p class="text-base my-2">
+     To compute ARC-CO and PLC Title estimates for 2024, we need the 2024 Effective Reference
+     Price, National Loan Rate, and the table of Benchmark Revenue Values which should be
+     released by the USDA in early January, 2024.  We will use 2023 values as placeholders
+     for these for the period from January 1, 2024 to the date of the USDA release.
+     The only other external data set required to compute title is the MYA price for each
+     crop.  Our application generates estimates of this price using a combination of
+     futures prices and WASDE Projected Average Farm Prices.  The WASDE reports for the
+     2024 crop year will be released monthly beginning around May 10, 2024.
+    </p>
+    <h2 class="text-lg mt-2">Yield and cost budget amounts</h2>
+    <p class="text-base my-2">
+     We gather budget cost and yield information from various respected public sources
+     and process them into a consistent format.  We expect 2024 budget data to begin to be
+     released in December, 2023, with more releases occurring at various times 
+     through March, 2024.  As budgets are collected and processed, they will be imported
+     into the application to be available for users.  If you select budgets for your
+     farm's crops on January 1, 2024, you may find that the options are limited, and it
+     may be difficult to find a budget that relates well to your county.  If your
+     main objective is to get comfortable working with the application so you can use it
+     to guide your decisions on crop insurance and title, you might wish
+     to leave those budgets in place to get started, then switch them out later as
+     more pertinent budgets become available.
+    </p>
+  </div>
+</div>
+{% endblock %}

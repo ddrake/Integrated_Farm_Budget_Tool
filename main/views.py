@@ -48,6 +48,12 @@ class TermsView(View):
                       {'has_farm_years': has_farm_years(request.user)})
 
 
+class StatusView(View):
+    def get(self, request, *args, **kwargs):
+        return render(request, 'main/status.html',
+                      {'has_farm_years': has_farm_years(request.user)})
+
+
 # -----------------------
 # Farm Year related views
 # -----------------------
