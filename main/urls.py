@@ -28,7 +28,7 @@ urlpatterns = [
     path('status/', StatusView.as_view(), name='status'),
     path('budgetsources/<int:farmyear>', BudgetSourcesView.as_view(),
          name='budgetsources'),
-    path('replicate/<int:farmyear>', ReplicateView.as_view(),
+    path('replicate/<int:farmyear>/<int:user>', ReplicateView.as_view(),
          name='replicate'),
 
     # farm year related urls

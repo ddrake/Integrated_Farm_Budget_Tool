@@ -608,7 +608,10 @@ class ReplicateView(UserPassesTestMixin, View):
 
     def get(self, request, *args, **kwargs):
         farm_year = get_object_or_404(FarmYear, pk=kwargs.get('farmyear', None))
-        r = Replicate(farm_year)
+        user_id = kwargs.get('user', None)
+        live_to_loc = request.GET.get('live_to_loc', False)
+        live_to_loc = True if live_to_loc == '' else False
+        r = Replicate(farm_year, user_id, live_to_loc)
         sql = r.replicate()
         response = HttpResponse(sql, headers={
             "Content-Type": "text/plain",

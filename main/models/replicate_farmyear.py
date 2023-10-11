@@ -1,10 +1,3 @@
-# User id for the replica
-USER_ID = 1
-
-# Set true if porting a farm year from the live database to the local one
-LIVE_TO_LOC = True
-
-
 def nz(val, offset=0):
     """ number """
     return 'NULL' if val is None else f"{val + offset}"
@@ -33,9 +26,11 @@ def astr(val):
 
 class Replicate:
     """ Given a farm year, return a str of SQL which can reproduce it. """
-    def __init__(self, fy):
+    def __init__(self, fy, user_id, live_to_loc):
         self.fy = fy
-        self.fy_dict = get_fy_dict(fy)
+        self.user_id = user_id
+        self.live_to_loc = live_to_loc
+        self.fy_dict = get_fy_dict(fy, user_id, live_to_loc)
 
     def replicate(self):
         sql = f"""
@@ -264,7 +259,7 @@ select * FROM insertedfbcs LIMIT 1;
         return ',\n'.join(vals)
 
 
-def get_fy_dict(fy):
+def get_fy_dict(fy, user_id, live_to_loc):
     fy_dict = {
         'values': [
             qt(fy.farm_name), nz(fy.county_code), nz(fy.crop_year),
@@ -272,7 +267,7 @@ def get_fy_dict(fy):
             nz(fy.cash_rented_acres), nz(fy.var_rent_cap_floor_frac),
             nz(fy.annual_land_int_expense), nz(fy.annual_land_principal_pmt),
             nz(fy.property_taxes), nz(fy.land_repairs),
-            nz(fy.eligible_persons_for_cap), nz(fy.state_id), nz(USER_ID),
+            nz(fy.eligible_persons_for_cap), nz(fy.state_id), nz(user_id),
             bstr(fy.is_model_run_date_manual), nz(fy.other_nongrain_expense),
             nz(fy.other_nongrain_income), dstr(fy.manual_model_run_date),
             nz(fy.basis_increment), nz(fy.est_sequest_frac)
@@ -334,10 +329,10 @@ def get_fy_dict(fy):
                             nz(bc.building_depr), nz(bc.insurance),
                             nz(bc.misc_overhead_costs), nz(bc.interest_nonland),
                             nz(bc.other_overhead_costs), nz(bc.rented_land_costs),
-                            nz(bc.budget_id, offset=(3 if LIVE_TO_LOC else 0)),
+                            nz(bc.budget_id, offset=(3 if live_to_loc else 0)),
                             qt(bc.description), nz(bc.state_id),
                             nz(bc.farm_crop_type_id), bstr(bc.is_irr), bstr(bc.is_rot),
-                            nz(bc.budget_crop_id, offset=(63 if LIVE_TO_LOC else 0)),
+                            nz(bc.budget_crop_id, offset=(63 if live_to_loc else 0)),
                             dstr(bc.budget_date), nz(bc.baseline_yield_for_var_rent),
                             bstr(bc.is_farm_yield_final), nz(bc.yield_factor),
                             bstr(bc.are_costs_final)]}
