@@ -159,10 +159,10 @@ class BudgetPdf(object):
         for r in bolddata:
             revsty.append(('FONT', (1, r+3), (-1, r+3), self.fontbold, FS, FS))
         for r in overline:
-            revsty.append(('LINEBELOW', (1, r+3), (cropcols, r+3), UL, BK))
-            revsty.append(('BOTTOMPADDING', (1, r+3), (cropcols, r+3), ULBP))
-            revsty.append(('LINEBELOW', (cropcols+2, r+3), (cropcols+2, r+3), UL, BK))
-            revsty.append(('BOTTOMPADDING', (cropcols+2, r+3), (cropcols+2, r+3), ULBP))
+            revsty.append(('LINEABOVE', (1, r+3), (cropcols, r+3), UL, BK))
+            revsty.append(('LINEABOVE', (cropcols+2, r+3), (cropcols+2, r+3), UL, BK))
+            revsty.append(('BOTTOMPADDING', (1, r+2), (cropcols, r+2), ULBP))
+            revsty.append(('BOTTOMPADDING', (cropcols+2, r+2), (cropcols+2, r+2), ULBP))
         return revsty
 
     def get_rev_rowheights(self):
