@@ -1,10 +1,10 @@
 {% extends 'main/base.html' %}
 {% block title %}
-<title>Privacy</title>
+<title>Budget Sources</title>
 {% endblock title %}
 {% block content %}
 {% load main_extra %}
-<div class="p-6 w-2/3 mx-auto bg-white rounded-xl shadow-lg flex items-center space-x-4 print:shadow-none print:w-full">
+<div class="p-6 w-5/6 mx-auto bg-white rounded-xl shadow-lg flex items-center space-x-4 print:shadow-none print:w-full">
   <div class="">
     <h1 class="text-xl">Yield and Expense Budget Sources</h1>
     <p class="text-base my-2">
@@ -12,39 +12,46 @@
     </p>
     <p class="text-lg my-2">
       The "Yield and Expense Budgets" available for selection at the bottom of the
-      "Crop Acreage/Crop Insurance" page are derived from publicly-available budgets
-      published by a number of universities
-      in the U.S.&nbsp;  We're grateful to the faculty and staff of these universities
-      for their efforts in assembling budgets from contributors in their states, and hope that
-      the inclusion of yield and expense budgets in this application is beneficial
-      to our users.
+      "Crop Acreage/Crop Insurance" page are derived from publicly available budgets
+      published by a number of universities in the U.S.&nbsp; We're grateful to the
+      faculty and staff of these universities for their efforts in assembling budgets
+      from contributors in their states, and hope that the inclusion of these
+      benchmark yield and expense budgets in this application provides a useful
+      budgeting starting point for our users.
     </p>
     <p class="text-lg my-2">
       In most cases, in order to display a standard set of cost items,
-      it's necessary to re-categorize the some of the cost items of the original
-      university budget.  Also, note that the budget data used in 'Yield and Expense Budgets'
-      is not necessarily derived from the <em>latest</em> university budget
-      released for the crop year.
+      it's necessary to re-categorize some of the cost items of the original
+      university budget. Certain items including market prices, assumed basis
+      and crop insurance premiums are removed from the university budgets and
+      replaced based upon user selections and current harvest prices.
+      In certain instances, university budgets are incomplete (such as lacking land rent).
+      In these cases, we incorporate reasonable USDA based data. Also, note that
+      the budget data used in 'Yield and Expense Budgets' is derived from
+      winter/spring university publications and not necessarily derived from
+      the <em>latest</em> university budget released for the crop year.
     </p>
     <p class="text-lg my-2">
-      Listed below are all the budget sources for the current year.  The higlighed entry
-      corresponds to the crop for which you clicked "Budget Source".
+      Listed below are all the budget sources for the current year.
+      The highlighted entry corresponds to the crop for which you clicked "Budget Source".
     </p>
     <table class="table-fixed text-base">
       <thead>
         <tr>
-          <th class="w-2/3">Institution</th>
+          <th class="w-1/2">Institution</th>
           <th>Authors</th>
+          <th class="w-36">Published</th>
       </thead>
       <tbody>
         {% for bd in budget_list %}
           <tr id="{{bd.id}}" class="target:bg-yellow-50">
-            <td>
+            <td class="px-1">
               <a href="{{bd.source_url}}"
                    class="text-indigo-800 hover:text-indigo-600"
                 >{{bd.institution|default:None}}</a>
             </td>
-            <td>{{bd.authors|default:None}}</td>
+            <td class="px-1">{{bd.authors|default:None}}</td>
+            <td class="px-1">{{bd.created_on}}</td>
           </tr>
         {% endfor %}
       </tbody>
