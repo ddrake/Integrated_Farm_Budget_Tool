@@ -469,6 +469,7 @@ class Budget(models.Model):
 
     class Meta:
         managed = False
+        ordering = ['institution']
 
 
 class Price(models.Model):

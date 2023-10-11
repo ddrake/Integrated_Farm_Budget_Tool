@@ -163,12 +163,21 @@
 		</div>
     <footer class="px-4 py-2 bg-gray-800 text-xs text-left text-white print:hidden">
       <span class="mx-4">Copyright &copy; {% now 'Y' %} Integrated Farm Budget Tool Team.</span>
-      <a href="{% url 'privacy' %}"
-        class="tracking-wider text-teal-200 hover:text-white mx-4">PRIVACY</a> |
-      <a href="{% url 'terms' %}"
-        class="tracking-wider text-teal-200 hover:text-white mx-4">TERMS &amp; CONDITIONS</a> |
-      <a href="{% url 'status' %}"
-        class="tracking-wider text-teal-200 hover:text-white mx-4">2024 CROP YEAR STATUS</a>
+      {% if farmyear_id %}
+        <a href="{% url 'privacy' farmyear=farmyear_id %}"
+          class="tracking-wider text-teal-200 hover:text-white mx-4">PRIVACY</a> |
+        <a href="{% url 'terms' farmyear=farmyear_id %}"
+          class="tracking-wider text-teal-200 hover:text-white mx-4">TERMS &amp; CONDITIONS</a> |
+        <a href="{% url 'status' farmyear=farmyear_id %}"
+          class="tracking-wider text-teal-200 hover:text-white mx-4">2024 CROP YEAR STATUS</a>
+      {% else %}
+        <a href="{% url 'privacy' %}"
+          class="tracking-wider text-teal-200 hover:text-white mx-4">PRIVACY</a> |
+        <a href="{% url 'terms' %}"
+          class="tracking-wider text-teal-200 hover:text-white mx-4">TERMS &amp; CONDITIONS</a> |
+        <a href="{% url 'status' %}"
+          class="tracking-wider text-teal-200 hover:text-white mx-4">2024 CROP YEAR STATUS</a>
+      {% endif %}
     </footer>
     </div>
 	</body>

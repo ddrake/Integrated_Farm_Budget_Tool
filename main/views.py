@@ -22,12 +22,12 @@ from .models.sens_table import SensTableGroup
 from .models.sens_pdf import SensPdf
 from .models.contract_pdf import ContractPdf
 from .models.replicate_farmyear import Replicate
-from ext.models import County
+from ext.models import County, Budget
 from .forms import (FarmYearCreateForm, FarmYearUpdateForm, FarmYearUpdateFormForTitle,
                     FarmCropUpdateForm, FarmBudgetCropUpdateForm,
                     ZeroAcreFarmBudgetCropUpdateForm, MarketCropUpdateForm,
                     ContractCreateForm, ContractUpdateForm)
-from .models.util import has_farm_years
+from .models.util import has_farm_years, get_current_year
 
 
 class IndexView(View):
@@ -39,19 +39,35 @@ class IndexView(View):
 class PrivacyView(View):
     def get(self, request, *args, **kwargs):
         return render(request, 'main/privacy.html',
-                      {'has_farm_years': has_farm_years(request.user)})
+                      {'has_farm_years': has_farm_years(request.user),
+                       'farmyear_id': kwargs.get('farmyear', '')})
 
 
 class TermsView(View):
     def get(self, request, *args, **kwargs):
         return render(request, 'main/terms.html',
-                      {'has_farm_years': has_farm_years(request.user)})
+                      {'has_farm_years': has_farm_years(request.user),
+                       'farmyear_id': kwargs.get('farmyear', '')})
 
 
 class StatusView(View):
     def get(self, request, *args, **kwargs):
         return render(request, 'main/status.html',
-                      {'has_farm_years': has_farm_years(request.user)})
+                      {'has_farm_years': has_farm_years(request.user),
+                       'farmyear_id': kwargs.get('farmyear', '')})
+
+
+class BudgetSourcesView(ListView):
+    template_name = 'main/budget_sources.html'
+
+    def get_queryset(self):
+        return Budget.objects.filter(crop_year=get_current_year())
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['has_farm_years'] = True
+        context['farmyear_id'] = context['view'].kwargs['farmyear']
+        return context
 
 
 # -----------------------

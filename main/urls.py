@@ -15,13 +15,19 @@ from .views import (
     SensitivityTableView, SensitivityPdfView,
     ContractCreateView, ContractUpdateView, ContractDeleteView,
     MarketCropContractListView,
-    ContractPdfView, ContractCsvView, PrivacyView, TermsView, StatusView, ReplicateView)
+    ContractPdfView, ContractCsvView, PrivacyView, TermsView, StatusView,
+    BudgetSourcesView, ReplicateView)
 
 urlpatterns = [
     path('', IndexView.as_view(), name='index'),
+    path('privacy/<int:farmyear>', PrivacyView.as_view(), name='privacy'),
     path('privacy/', PrivacyView.as_view(), name='privacy'),
+    path('terms/<int:farmyear>', TermsView.as_view(), name='terms'),
     path('terms/', TermsView.as_view(), name='terms'),
+    path('status/<int:farmyear>', StatusView.as_view(), name='status'),
     path('status/', StatusView.as_view(), name='status'),
+    path('budgetsources/<int:farmyear>', BudgetSourcesView.as_view(),
+         name='budgetsources'),
     path('replicate/<int:farmyear>', ReplicateView.as_view(),
          name='replicate'),
 

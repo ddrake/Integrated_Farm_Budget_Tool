@@ -80,13 +80,18 @@
     <!-- The script MUST be in the LOOP! We need multiple scripts. -->
     <script>
       (() => {
+        const farmyear = "{{farmyear_id}}"
         const farmcrop_pk = "{{farmcrop.pk}}"
         const budget_crop_id = "{{ farmcrop.farmbudgetcrop.budget_crop_id }}"
+        const budget_id = "{{ farmcrop.farmbudgetcrop.budget_id }}"
 
         document.addEventListener('DOMContentLoaded', (event) => {
           let budgetsel = document.querySelector(`#budgets-${farmcrop_pk}`)
-          const hasbudget = budgetsel.getAttribute(`data-hasbudget-${farmcrop.pk}`)
+          const hasbudget = budgetsel.getAttribute(`data-hasbudget-${farmcrop_pk}`)
           setinfo(hasbudget === 'True', farmcrop_pk);
+          if (hasbudget === 'True' && budget_id) {
+            addBudgetLink(farmyear, farmcrop_pk, budget_id);
+          }
           budgetsel.value = `${budget_crop_id}`
         });
 

@@ -21,3 +21,13 @@ function submitFormData(farmcrop_pk) {
     setinfo(budgetid !== "");
   }
 }
+
+function addBudgetLink(farmyear_pk, farmcrop_pk, budget_id) {
+  const info = document.querySelector(`#budget-info-${farmcrop_pk}`)
+  const budgetLink = document.createElement("a");
+  const linkText = document.createTextNode('Budget Source')
+  budgetLink.appendChild(linkText)
+  budgetLink.setAttribute('href', `/budgetsources/${farmyear_pk}#${budget_id}`)
+  budgetLink.setAttribute('class', 'block mt-2 text-sm text-indigo-800 hover:text-indigo-600')
+  info.after(budgetLink);
+}

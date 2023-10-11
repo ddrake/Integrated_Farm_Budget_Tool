@@ -124,8 +124,6 @@ class SensTableGroup(object):
             # if the array shapes have changed, e.g. by setting a crop's acres to zero
             # we can't provide a diff.
             self.has_diffs = (revenue_p.shape == self.revenue_values.shape)
-            print(f'{revenue_p.shape=}')
-            print(f'{self.revenue_values.shape=}')
             if self.has_diffs:
                 self.get_tables(rslt, arrays=(revenue_p, title_p, indem_p,
                                               cost_p, cashflow_p))
