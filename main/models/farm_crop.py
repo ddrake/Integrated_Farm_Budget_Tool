@@ -565,18 +565,15 @@ class FarmCrop(models.Model):
         if yf is None:
             yf = self.farmbudgetcrop.yield_factor
         fbc = self.farmbudgetcrop
-        yldfinal = fbc.is_farm_yield_final
+        farm_yield = self.sens_farm_expected_yield(yf=yf)
+        eff_yf = farm_yield / fbc.baseline_yield_for_var_rent
         costfinal = fbc.are_costs_final
         if scal(yf):
             return (0 if costfinal else
-                    fbc.yield_variability *
-                    ((fbc.farm_yield/fbc.baseline_yield_for_var_rent if yldfinal
-                     else yf) - 1))
+                    fbc.yield_variability * (eff_yf - 1))
         else:
             return (np.zeros_like(yf) if costfinal else
-                    fbc.yield_variability *
-                    ((fbc.farm_yield/fbc.baseline_yield_for_var_rent * np.ones_like(yf)
-                      if yldfinal else yf) - 1))
+                    fbc.yield_variability * (eff_yf - 1))
 
     def revenue_based_adj_to_land_rent(self, pf=None, yf=None):
         """
