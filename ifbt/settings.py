@@ -134,5 +134,8 @@ IMPERSONATE = {
 # Disabled unless DEBUG is True
 DJANGO_CPROFILE_MIDDLEWARE_REQUIRE_STAFF = False
 
+FORMAT_MODULE_PATH = [
+    "ifbt.formats",
+]
 
 from .settings_local import *  # noqa

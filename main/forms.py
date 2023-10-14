@@ -217,6 +217,7 @@ class ContractCreateForm(ModelForm):
         self.helper = FormHelper()
         self.helper.add_input(Submit('submit', 'Create'))
         self.helper.form_id = 'contractform'
+        self.helper.attrs = {"novalidate": ''}
         self.helper.layout = Layout(
             HTML(f"""<h1 class="block text-xl mb-2">Add {cropname} Contract</h1>"""),
             Fieldset('Contract Information',
@@ -232,6 +233,10 @@ class ContractCreateForm(ModelForm):
         fields = '''contract_date bushels futures_price basis_price
                     terminal contract_number delivery_start_date
                     delivery_end_date market_crop'''.split()
+        widgets = {
+            'bushels': forms.NumberInput(
+                attrs={'step': 1000, 'min': 0, 'max': 1000000}),
+        }
 
 
 class ContractUpdateForm(ModelForm):
