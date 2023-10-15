@@ -8,47 +8,100 @@
 <div class="flex flex-col gap-y-4">
   <div class="p-6 max-w-med mx-auto bg-white rounded-xl shadow-lg flex flex-col items-center">
     <h2 class="text-xl pb-2">{{ marketcrop | title }} Contracts</h2>
-    {% if contract_list %}
-      <table>
-        <tbody class="class=border-collapse border border-slate-400">
-          <tr class="text-sm font-bold">
-            <td class="border border-slate-300 px-2">Contract Date</td>
-             <td class="border border-slate-300 px-2">Bushels</td>
-             <td class="border border-slate-300 px-2">Futures</td>
-             <td class="border border-slate-300 px-2">Basis</td>
-             <td class="border border-slate-300 px-2">Terminal</td>
-             <td class="border border-slate-300 px-2">Contract #</td>
-             <td class="border border-slate-300 px-2">Delivery Start</td>
-             <td class="border border-slate-300 px-2">Delivery End</td>
-             <td class="border border-slate-300 px-2">Edit</td>
-             <td class="border border-slate-300 px-2">Delete</td>
-           </tr>
-           {% for ct in contract_list %}
-           <tr class="text-sm">
-             <td class="border border-slate-300 px-2">{{ct.contract_date}}</td>
-             <td class="border border-slate-300 px-2">{{ct.bushels|floatformat:"0g"}}</td>
-             <td class="border border-slate-300 px-2">
-               {{ct.futures_price|floatformat:"2g"|default:"None"}}</td>
-             <td class="border border-slate-300 px-2">
-               {{ct.basis_price|floatformat:"2g"|default:"None"}}</td>
-             <td class="border border-slate-300 px-2">{{ct.terminal}}</td>
-             <td class="border border-slate-300 px-2">{{ct.contract_number}}</td>
-             <td class="border border-slate-300 px-2">{{ct.delivery_start_date}}</td>
-             <td class="border border-slate-300 px-2">{{ct.delivery_end_date}}</td>
-             <td class="border border-slate-300 px-2">
-               <a
-                 class="contractEdit text-indigo-800 hover:text-indigo-600"
-                 href="{% url 'contract_update' pk=ct.pk %}">Edit</a>
-             </td>
-             <td class="border border-slate-300 px-2">
-               <a
-                 class="contractDelete text-red-800 hover:text-red-600"
-                 href="{% url 'contract_delete' pk=ct.pk %}">Delete</a>
-             </td>
-           </tr>
-           {% endfor %}
-        </tbody>
-      </table>
+    {% if contract_list or planned_contracts %}
+      {% if contract_list %}
+        <h3 class="text-lg pb-2">Current Contracts</h2>
+        <table>
+          <tbody class="class=border-collapse border border-slate-400">
+            <tr class="text-sm font-bold">
+              <td class="border border-slate-300 px-2">Contract Date</td>
+               <td class="border border-slate-300 px-2">Bushels</td>
+               <td class="border border-slate-300 px-2">Futures</td>
+               <td class="border border-slate-300 px-2">Basis</td>
+               <td class="border border-slate-300 px-2">Terminal</td>
+               <td class="border border-slate-300 px-2">Contract #</td>
+               <td class="border border-slate-300 px-2">Delivery Start</td>
+               <td class="border border-slate-300 px-2">Delivery End</td>
+               <td class="border border-slate-300 px-2">Edit</td>
+               <td class="border border-slate-300 px-2">Delete</td>
+             </tr>
+             {% for ct in contract_list %}
+             <tr class="text-sm">
+               <td class="border border-slate-300 px-2">{{ct.contract_date}}</td>
+               <td class="border border-slate-300 px-2">{{ct.bushels|floatformat:"0g"}}</td>
+               {% if ct.futures_price == None and ct.basis_price == None %}
+                 <td class="border border-slate-300 px-2 bg-red-100">
+                   {{ct.futures_price|floatformat:"2g"|default:"None"}}</td>
+                 <td class="border border-slate-300 px-2 bg-red-100">
+                   {{ct.basis_price|floatformat:"2g"|default:"None"}}</td>
+               {% else %}
+                 <td class="border border-slate-300 px-2">
+                   {{ct.futures_price|floatformat:"2g"|default:"None"}}</td>
+                 <td class="border border-slate-300 px-2">
+                   {{ct.basis_price|floatformat:"2g"|default:"None"}}</td>
+               {% endif %}
+               <td class="border border-slate-300 px-2">{{ct.terminal}}</td>
+               <td class="border border-slate-300 px-2">{{ct.contract_number}}</td>
+               <td class="border border-slate-300 px-2">{{ct.delivery_start_date}}</td>
+               <td class="border border-slate-300 px-2">{{ct.delivery_end_date}}</td>
+               <td class="border border-slate-300 px-2">
+                 <a
+                   class="contractEdit text-indigo-800 hover:text-indigo-600"
+                   href="{% url 'contract_update' pk=ct.pk %}">Edit</a>
+               </td>
+               <td class="border border-slate-300 px-2">
+                 <a
+                   class="contractDelete text-red-800 hover:text-red-600"
+                   href="{% url 'contract_delete' pk=ct.pk %}">Delete</a>
+               </td>
+             </tr>
+             {% endfor %}
+          </tbody>
+        </table>
+      {% endif %}
+      {% if planned_contracts %}
+        <h3 class="text-lg pb-2 mt-4">Planned Contracts</h2>
+        <table>
+          <tbody class="class=border-collapse border border-slate-400">
+            <tr class="text-sm font-bold">
+              <td class="border border-slate-300 px-2">Contract Date</td>
+               <td class="border border-slate-300 px-2">Bushels</td>
+               <td class="border border-slate-300 px-2">Futures</td>
+               <td class="border border-slate-300 px-2">Basis</td>
+               <td class="border border-slate-300 px-2">Terminal</td>
+               <td class="border border-slate-300 px-2">Contract #</td>
+               <td class="border border-slate-300 px-2">Delivery Start</td>
+               <td class="border border-slate-300 px-2">Delivery End</td>
+               <td class="border border-slate-300 px-2">Edit</td>
+               <td class="border border-slate-300 px-2">Delete</td>
+             </tr>
+             {% for ct in planned_contracts %}
+             <tr class="text-sm">
+               <td class="border border-slate-300 px-2">{{ct.contract_date}}</td>
+               <td class="border border-slate-300 px-2">{{ct.bushels|floatformat:"0g"}}</td>
+               <td class="border border-slate-300 px-2">
+                 {{ct.futures_price|floatformat:"2g"|default:"None"}}</td>
+               <td class="border border-slate-300 px-2">
+                 {{ct.basis_price|floatformat:"2g"|default:"None"}}</td>
+               <td class="border border-slate-300 px-2">{{ct.terminal}}</td>
+               <td class="border border-slate-300 px-2">{{ct.contract_number}}</td>
+               <td class="border border-slate-300 px-2">{{ct.delivery_start_date}}</td>
+               <td class="border border-slate-300 px-2">{{ct.delivery_end_date}}</td>
+               <td class="border border-slate-300 px-2">
+                 <a
+                   class="contractEdit text-indigo-800 hover:text-indigo-600"
+                   href="{% url 'contract_update' pk=ct.pk %}">Edit</a>
+               </td>
+               <td class="border border-slate-300 px-2">
+                 <a
+                   class="contractDelete text-red-800 hover:text-red-600"
+                   href="{% url 'contract_delete' pk=ct.pk %}">Delete</a>
+               </td>
+             </tr>
+             {% endfor %}
+          </tbody>
+        </table>
+      {% endif %}
     {% else %}
       <p class="text-base">No Contracts have been entered yet</p>
     {% endif %}

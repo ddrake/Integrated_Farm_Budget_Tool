@@ -82,6 +82,10 @@ class MarketCrop(models.Model):
         model_run_date = self.farm_year.get_model_run_date()
         return self.contracts.filter(contract_date__lte=model_run_date)
 
+    def get_planned_contracts(self):
+        model_run_date = self.farm_year.get_model_run_date()
+        return self.contracts.filter(contract_date__gt=model_run_date)
+
     def harvest_price(self):
         return self.harvest_futures_price_info(price_only=True)
 
@@ -205,10 +209,6 @@ class Contract(models.Model):
         ordering = ['contract_date']
 
     def clean(self):
-        if self.futures_price is None and self.basis_price is None:
-            raise ValidationError(
-                {'futures_price': 'A futures price, a basis, or both must be set',
-                 'basis_price': 'A futures price, a basis, or both must be set'})
         if self.futures_price is not None and self.futures_price < 1:
             raise ValidationError(
                 {'futures_price': 'Futures price must be at least $1.00'})

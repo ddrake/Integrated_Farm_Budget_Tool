@@ -385,6 +385,7 @@ class MarketCropContractListView(UserPassesTestMixin, ListView):
         context['marketcrop'] = mc
         context['farmyear_id'] = mc.farm_year_id
         context['has_farm_years'] = True
+        context['planned_contracts'] = mc.get_planned_contracts()
         return context
 
 
