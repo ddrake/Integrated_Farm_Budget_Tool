@@ -7,7 +7,8 @@
 
 <div class="flex flex-col gap-y-4">
   <div class="p-6 max-w-med mx-auto bg-white rounded-xl shadow-lg flex flex-col items-center">
-    <h2 class="text-xl pb-2">{{ marketcrop | title }} Contracts</h2>
+    <h2 class="text-xl pb-1">{{ marketcrop | title }} Contracts</h2>
+    <hr class="bg-slate-300 h-0.5 my-2 w-full">
     {% if contract_list or planned_contracts %}
       {% if contract_list %}
         <h3 class="text-lg pb-2">Current Contracts</h2>
@@ -60,7 +61,7 @@
         </table>
       {% endif %}
       {% if planned_contracts %}
-        <h3 class="text-lg pb-2 mt-4">Planned Contracts</h2>
+        <h3 class="text-lg pb-2 mt-3">Planned Contracts</h2>
         <table>
           <tbody class="class=border-collapse border border-slate-400">
             <tr class="text-sm font-bold">
