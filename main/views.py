@@ -26,7 +26,7 @@ from ext.models import County, Budget
 from .forms import (FarmYearCreateForm, FarmYearUpdateForm, FarmYearUpdateFormForTitle,
                     FarmCropUpdateForm, FarmBudgetCropUpdateForm,
                     ZeroAcreFarmBudgetCropUpdateForm, MarketCropUpdateForm,
-                    ContractCreateForm, ContractUpdateForm)
+                    FsaCropUpdateForm, ContractCreateForm, ContractUpdateForm)
 from .models.util import has_farm_years, get_current_year
 
 
@@ -325,8 +325,8 @@ class MarketCropUpdateView(UserPassesTestMixin, UpdateView):
 
 class FsaCropUpdateView(UserPassesTestMixin, UpdateView):
     model = FsaCrop
+    form_class = FsaCropUpdateForm
     template_name_suffix = "_update_form"
-    fields = ['plc_base_acres', 'arcco_base_acres', 'plc_yield', ]
 
     def test_func(self):
         user = self.get_object().farm_year.user

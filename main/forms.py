@@ -9,6 +9,7 @@ from crispy_forms.layout import Layout, Field, Submit, Fieldset, HTML
 from .models.farm_year import FarmYear
 from .models.farm_crop import FarmCrop, FarmBudgetCrop
 from .models.market_crop import MarketCrop, Contract
+from .models.fsa_crop import FsaCrop
 
 
 class AjaxChoiceIntField(forms.ChoiceField):
@@ -22,6 +23,7 @@ class FarmYearCreateForm(ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.helper = FormHelper()
+        self.helper.attrs = {"novalidate": ''}
         self.helper.add_input(Submit('submit', 'Create'))
         self.helper.layout = Layout(
             Fieldset('Farm Information',
@@ -50,6 +52,7 @@ class FarmYearUpdateForm(ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.helper = FormHelper()
+        self.helper.attrs = {"novalidate": ''}
         self.helper.add_input(Submit('submit', 'Update'))
         self.helper.form_id = 'farmyearform'
         self.helper.layout = Layout(
@@ -78,12 +81,41 @@ class FarmYearUpdateForm(ModelForm):
                 eligible_persons_for_cap other_nongrain_income
                 other_nongrain_expense manual_model_run_date
                 is_model_run_date_manual est_sequest_frac basis_increment'''.split()
+        widgets = {
+            'cropland_acres_owned': forms.NumberInput(
+                attrs={'step': 100, 'min': 0, 'max': 100000}),
+            'variable_rented_acres': forms.NumberInput(
+                attrs={'step': 100, 'min': 0, 'max': 100000}),
+            'cash_rented_acres': forms.NumberInput(
+                attrs={'step': 100, 'min': 0, 'max': 100000}),
+            'var_rent_cap_floor_frac': forms.NumberInput(
+                attrs={'step': 1, 'min': 0, 'max': 100}),
+            'annual_land_int_expense': forms.NumberInput(
+                attrs={'step': 1000, 'min': 0, 'max': 1000000}),
+            'annual_land_principal_pmt': forms.NumberInput(
+                attrs={'step': 1000, 'min': 0, 'max': 1000000}),
+            'property_taxes': forms.NumberInput(
+                attrs={'step': 1000, 'min': 0, 'max': 1000000}),
+            'land_repairs': forms.NumberInput(
+                attrs={'step': 1000, 'min': 0, 'max': 1000000}),
+            'eligible_persons_for_cap': forms.NumberInput(
+                attrs={'step': 1, 'min': 0, 'max': 10}),
+            'other_nongrain_income': forms.NumberInput(
+                attrs={'step': 1000, 'min': 0, 'max': 1000000}),
+            'other_nongrain_expense': forms.NumberInput(
+                attrs={'step': 1000, 'min': 0, 'max': 1000000}),
+            'basis_increment': forms.NumberInput(
+                attrs={'step': 0.1, 'min': 0, 'max': 0.5}),
+            'est_sequest_frac': forms.NumberInput(
+                attrs={'step': 0.1, 'min': 0, 'max': 10}),
+        }
 
 
 class FarmYearUpdateFormForTitle(ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.helper = FormHelper()
+        self.helper.attrs = {"novalidate": ''}
         self.helper.add_input(Submit('submit', 'Update'))
         self.helper.form_id = 'farmyearform'
         self.helper.layout = Layout(
@@ -94,6 +126,12 @@ class FarmYearUpdateFormForTitle(ModelForm):
     class Meta:
         model = FarmYear
         fields = '''eligible_persons_for_cap est_sequest_frac'''.split()
+        widgets = {
+            'eligible_persons_for_cap': forms.NumberInput(
+                attrs={'step': 1, 'min': 0, 'max': 10}),
+            'est_sequest_frac': forms.NumberInput(
+                attrs={'step': 0.1, 'min': 0, 'max': 10}),
+        }
 
 
 class FarmCropUpdateForm(ModelForm):
@@ -104,6 +142,7 @@ class FarmCropUpdateForm(ModelForm):
         self.fields['ins_practice'].choices = self.instance.allowed_practices()
         self.fields['coverage_type'].choices = self.instance.allowed_coverage_types()
         self.helper = FormHelper()
+        self.helper.attrs = {"novalidate": ''}
         self.helper.add_input(Submit('submit', 'Update'))
         self.helper.form_id = 'id-farmcropform'
         self.helper.layout = Layout(
@@ -122,6 +161,16 @@ class FarmCropUpdateForm(ModelForm):
         fields = '''planted_acres ins_practice rate_yield adj_yield ta_aph_yield
         ta_use ye_use subcounty coverage_type product_type base_coverage_level
         sco_use eco_level prot_factor'''.split()
+        widgets = {
+            'planted_acres': forms.NumberInput(
+                attrs={'step': 100, 'min': 0, 'max': 100000}),
+            'ta_aph_yield': forms.NumberInput(
+                attrs={'step': 1, 'min': 0, 'max': 400}),
+            'adj_yield': forms.NumberInput(
+                attrs={'step': 1, 'min': 0, 'max': 400}),
+            'rate_yield': forms.NumberInput(
+                attrs={'step': 1, 'min': 0, 'max': 400}),
+        }
 
 
 class FarmBudgetCropUpdateForm(ModelForm):
@@ -129,6 +178,7 @@ class FarmBudgetCropUpdateForm(ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.helper = FormHelper()
+        self.helper.attrs = {"novalidate": ''}
         self.helper.add_input(Submit('submit', 'Update'))
         self.helper.form_id = 'farmbudgetform'
         self.helper.layout = Layout(
@@ -164,6 +214,10 @@ class FarmBudgetCropUpdateForm(ModelForm):
               building_depr insurance misc_overhead_costs interest_nonland
               other_overhead_costs rented_land_costs yield_variability
               is_farm_yield_final are_costs_final yield_factor'''.split()
+        widgets = {
+            'yield_factor': forms.NumberInput(
+                attrs={'step': 10, 'min': 0, 'max': 200}),
+        }
 
 
 class ZeroAcreFarmBudgetCropUpdateForm(ModelForm):
@@ -171,6 +225,7 @@ class ZeroAcreFarmBudgetCropUpdateForm(ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.helper = FormHelper()
+        self.helper.attrs = {"novalidate": ''}
         self.helper.add_input(Submit('submit', 'Update'))
         self.helper.form_id = 'farmbudgetform'
         self.helper.layout = Layout(
@@ -182,6 +237,10 @@ class ZeroAcreFarmBudgetCropUpdateForm(ModelForm):
     class Meta:
         model = FarmBudgetCrop
         fields = '''county_yield is_farm_yield_final yield_factor'''.split()
+        widgets = {
+            'yield_factor': forms.NumberInput(
+                attrs={'step': 10, 'min': 0, 'max': 200}),
+        }
 
 
 class MarketCropUpdateForm(ModelForm):
@@ -189,6 +248,7 @@ class MarketCropUpdateForm(ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.helper = FormHelper()
+        self.helper.attrs = {"novalidate": ''}
         self.helper.add_input(Submit('submit', 'Update'))
         self.helper.form_id = 'marketcropform'
         self.helper.layout = Layout(
@@ -201,6 +261,34 @@ class MarketCropUpdateForm(ModelForm):
         model = MarketCrop
         fields = '''assumed_basis_for_new
                     price_factor'''.split()
+        widgets = {
+            'assumed_basis_for_new': forms.NumberInput(
+                attrs={'step': 0.01, 'min': -2, 'max': 2}),
+            'price_factor': forms.NumberInput(
+                attrs={'step': 10, 'min': 0, 'max': 1000}),
+        }
+
+
+class FsaCropUpdateForm(ModelForm):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.helper = FormHelper()
+        self.helper.attrs = {"novalidate": ''}
+        self.helper.add_input(Submit('submit', 'Update'))
+        self.helper.form_id = 'fsacropform'
+
+    class Meta:
+        model = FsaCrop
+        fields = '''plc_base_acres arcco_base_acres plc_yield'''.split()
+        widgets = {
+            'plc_base_acres': forms.NumberInput(
+                attrs={'step': 100, 'min': 0, 'max': 100000}),
+            'arcco_base_acres': forms.NumberInput(
+                attrs={'step': 100, 'min': 0, 'max': 100000}),
+            'plc_yield': forms.NumberInput(
+                attrs={'step': 1, 'min': 0, 'max': 400}),
+        }
 
 
 class ContractCreateForm(ModelForm):
@@ -215,9 +303,9 @@ class ContractCreateForm(ModelForm):
 
         cropname = str(MarketCrop.objects.get(pk=mcid))
         self.helper = FormHelper()
+        self.helper.attrs = {"novalidate": ''}
         self.helper.add_input(Submit('submit', 'Create'))
         self.helper.form_id = 'contractform'
-        self.helper.attrs = {"novalidate": ''}
         self.helper.layout = Layout(
             HTML(f"""<h1 class="block text-xl mb-2">Add {cropname} Contract</h1>"""),
             Fieldset('Contract Information',
@@ -236,6 +324,10 @@ class ContractCreateForm(ModelForm):
         widgets = {
             'bushels': forms.NumberInput(
                 attrs={'step': 1000, 'min': 0, 'max': 1000000}),
+            'futures_price': forms.NumberInput(
+                attrs={'step': 0.01, 'min': 1, 'max': 25}),
+            'basis_price': forms.NumberInput(
+                attrs={'step': 0.01, 'min': -2, 'max': 2}),
         }
 
 
@@ -244,6 +336,7 @@ class ContractUpdateForm(ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.helper = FormHelper()
+        self.helper.attrs = {"novalidate": ''}
         self.helper.add_input(Submit('submit', 'Update'))
         self.helper.form_id = 'contractform'
         self.helper.layout = Layout(
@@ -261,3 +354,11 @@ class ContractUpdateForm(ModelForm):
         fields = '''contract_date bushels futures_price basis_price
                     terminal contract_number delivery_start_date
                     delivery_end_date market_crop'''.split()
+        widgets = {
+            'bushels': forms.NumberInput(
+                attrs={'step': 1000, 'min': 0, 'max': 1000000}),
+            'futures_price': forms.NumberInput(
+                attrs={'step': 0.01, 'min': 1, 'max': 25}),
+            'basis_price': forms.NumberInput(
+                attrs={'step': 0.01, 'min': -2, 'max': 2}),
+        }
