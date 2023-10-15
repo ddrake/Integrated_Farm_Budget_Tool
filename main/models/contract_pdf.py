@@ -69,7 +69,9 @@ class ContractPdf(object):
         self.farm_year = farm_year
         self.market_crops = [mc for mc in farm_year.market_crops.all()
                              if mc.planted_acres() > 0]
-        self.contracts = [(i, list(mc.get_contracts()))
+        self.contracts = [(i, [c for c in mc.get_contracts()
+                               if c.futures_price is not None
+                               or c.basis_price is not None])
                           for i, mc in enumerate(self.market_crops)]
         self.tables = []
 
