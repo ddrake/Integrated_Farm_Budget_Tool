@@ -436,17 +436,23 @@ class BudgetCrop(models.Model):
     is_irr = models.BooleanField(default=False)
 
     def __str__(self):
-        rotstr = (' Rot,' if self.is_rot
-                  else '' if self.is_rot is None else ' Cont,')
-        descr = '' if self.description == '' else f' {self.description},'
-        yldstr = f' {int(self.farm_yield)} bpa,'
-        rentstr = f' Rent: ${int(self.rented_land_costs)}/ac'
-        return (f'{self.state.abbr},{descr}{rotstr}{yldstr}{rentstr}')
+        return get_budget_crop_description(
+            self.is_rot, self.description, self.farm_yield, self.rented_land_costs,
+            self.state.abbr)
 
     class Meta:
         managed = False
         ordering = ['state__abbr', 'description', 'is_rot',
                     'farm_yield', 'rented_land_costs']
+
+
+def get_budget_crop_description(is_rot, description, farm_yield,
+                                rented_land_costs, stateabbr):
+    rotstr = (' Rot,' if is_rot else '' if is_rot is None else ' Cont,')
+    descr = '' if description == '' else f' {description},'
+    yldstr = f' {int(farm_yield)} bpa,'
+    rentstr = f' Rent: ${int(rented_land_costs)}/ac'
+    return (f'{stateabbr},{descr}{rotstr}{yldstr}{rentstr}')
 
 
 class Budget(models.Model):

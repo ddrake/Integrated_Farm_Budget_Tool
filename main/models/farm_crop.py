@@ -7,7 +7,8 @@ from django.db import models
 from django.contrib.postgres.fields import ArrayField
 from django.utils.translation import gettext_lazy as _
 from ext.models import (Subcounty, SubcountyAvail, FarmCropType, InsCropType,
-                        PriceYield, AreaRate, State, Budget, BudgetCrop)
+                        PriceYield, AreaRate, State, Budget, BudgetCrop,
+                        get_budget_crop_description)
 from core.models.premium import Premium
 from core.models.indemnity import Indemnity
 from .farm_year import FarmYear
@@ -652,9 +653,15 @@ class FarmCrop(models.Model):
     # Budget methods
     # --------------
     def get_budget_crops(self):
-        return [(it.id, str(it)) for it in
-                BudgetCrop.objects.filter(farm_crop_type_id=self.farm_crop_type,
-                                          is_irr=self.is_irrigated())]
+        return [
+            (it.id, get_budget_crop_description(
+                it.is_rot, it.description, it.farm_yield, it.rented_land_costs,
+                it.state.abbr))
+            for it in BudgetCrop.objects.filter(
+                farm_crop_type_id=self.farm_crop_type, is_irr=self.is_irrigated(),
+                budget__crop_year=self.farm_year.crop_year).only(
+                    "id", "is_rot", "description", "farm_yield",
+                    "rented_land_costs", "state__abbr")]
 
     def has_budget(self):
         if self.has_budget_mem is None:
@@ -797,7 +804,9 @@ class FarmBudgetCrop(models.Model):
         rotstr = (' Rotating' if self.is_rot
                   else '' if self.is_rot is None else ' Continuous,')
         descr = '' if self.description == '' else f' {self.description},'
-        return (f'{self.state.abbr},{descr}{rotstr}')
+        result = (f'{self.state.abbr},{descr}{rotstr}')
+        print(f'{result=}')
+        return result
 
     class Meta:
         ordering = ['farm_crop_type_id']
