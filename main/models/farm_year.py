@@ -83,6 +83,7 @@ class FarmYear(models.Model):
     is_model_run_date_manual = models.BooleanField(
         default=False,
         help_text='Use the manually-set model run date (advanced).')
+    first_date = models.DateField(default=util.default_start_date)
     basis_increment = models.FloatField(
         default=0.1, validators=[MinVal(0), MaxVal(0.5)],
         help_text=_('increment to noncontract basis for basis sensitivity<br>' +
@@ -243,11 +244,13 @@ class FarmYear(models.Model):
 
     def clean(self):
         mmrd = self.manual_model_run_date
-        first_date = datetime(self.crop_year, 1, 11).date()
+        fd = (self.first_date.date() if hasattr(self.first_date, 'date') else
+              self.first_date)
+        # self.first_date = datetime(self.crop_year, 1, 11).date()
         last_date = (datetime.now() + timedelta(days=1)).date()
         isdatetime = hasattr(mmrd, 'date')
         model_run_date = mmrd.date() if isdatetime else mmrd
-        if model_run_date < first_date:
+        if model_run_date < fd:
             raise ValidationError({'manual_model_run_date': _(
                 "The earliest a model run date can be set " +
                 "is Jan 11 of the crop year.")})

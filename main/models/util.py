@@ -45,3 +45,9 @@ def notify_user_of_bugfix(username):
          "Please don't reply to this email address; it has no inbox.  " +
          "If you're still seeing an issue, please click the 'Help' link at ifbt.farm " +
          "and post a message letting us know the details."))
+
+
+def default_start_date():
+    """ For remainder of 2023, use Jan, 11, but after that, change to Jan 1. """
+    year = get_current_year()
+    return datetime(year, 1, 11)
