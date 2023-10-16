@@ -1,7 +1,7 @@
 asgiref==3.7.2
 -e git+https://github.com/LewisFletcher/crispy-tailwind.git@7cd37dc356ae9153813183fdcb8c7c295c5317d6#egg=crispy_tailwind
 Django==4.2.6
-django-browser-reload==1.11.0
+django-browser-reload==1.12.0
 -e git+https://github.com/ddrake/django-cprofile-middleware.git@791fbfe57f95b22edfcee9db284aad644a308d62#egg=django_cprofile_middleware
 django-crispy-forms==2.0
 django-impersonate==1.9.1
