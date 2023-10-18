@@ -4,7 +4,7 @@ import sys
 import numpy as np
 
 from django.contrib.auth.models import User
-from django.test import TestCase
+from django.test import TestCase, Client
 from django.urls import reverse
 
 from .models.farm_year import FarmYear
@@ -4557,126 +4557,99 @@ class Madison2023FarmYearTestCase(TestCase):
 # ----------
 # VIEW TESTS
 # ----------
-class Madison2023FarmYearViewTests(TestCase):
-    # Note: I haven't been able to get tests to work if the user is created in the
-    # setup method. Logging in doesn't seem to work then.
-    # Also, these tests are quite slow (2.1 seconds to test 8 views)!
-    def test_farmyears_logged_in(self):
-        self.user = User.objects.create_user(username='testuser', password='12345')
+class NewViewTests(TestCase):
+    def setUp(self):
+        self.client = Client()
+        self.user1 = User.objects.create_user(username='testuser1', password='12345')
+        self.user2 = User.objects.create_user(username='testuser2', password='12345')
         self.farm_year = FarmYear.objects.create(
-            user=self.user, farm_name="Madison Farm", state_id=17, county_code=119)
-        self.client.login(username='testuser', password='12345')
-        response = self.client.get(reverse('farmyears'))
+            user=self.user1, farm_name="Madison Farm", state_id=17, county_code=119)
+
+    def test_dashboard_logged_in_user1(self):
+        self.client.login(username='testuser1', password='12345')
+        response = self.client.get(reverse('dashboard', args=[self.farm_year.pk]))
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'Farms')
+        self.assertContains(response, 'Dashboard')
+
+    def test_dashboard_logged_in_wrong_user(self):
+        self.client.login(username='testuser2', password='12345')
+        response = self.client.get(reverse('dashboard', args=[self.farm_year.pk]))
+        self.assertEqual(response.status_code, 403)
+
+    def test_dashboard_not_logged_in(self):
+        response = self.client.get(reverse('dashboard', args=[self.farm_year.pk]))
+        self.assertEqual(response.status_code, 302)
 
     def test_farmyears_not_logged_in(self):
         response = self.client.get(reverse('farmyears'))
         self.assertEqual(response.status_code, 302)
 
-    def test_dashboard_logged_in(self):
-        self.user = User.objects.create_user(username='testuser', password='12345')
-        self.farm_year = FarmYear.objects.create(
-            user=self.user, farm_name="Madison Farm", state_id=17, county_code=119)
-        self.client.login(username='testuser', password='12345')
-        response = self.client.get(reverse('dashboard', args=[self.farm_year.pk]))
+    def test_farmyears_logged_in(self):
+        self.client.login(username='testuser1', password='12345')
+        response = self.client.get(reverse('farmyears'))
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'Dashboard')
-
-    def test_dashboard_wrong_user(self):
-        self.user1 = User.objects.create_user(username='user1', password='12345')
-        self.user2 = User.objects.create_user(username='user2', password='12345')
-        self.farm_year = FarmYear.objects.create(
-            user=self.user1, farm_name="Madison Farm", state_id=17, county_code=119)
-        self.client.login(username='user2', password='12345')
-        response = self.client.get(reverse('dashboard', args=[self.farm_year.pk]))
-        self.assertEqual(response.status_code, 403)
-
-    def test_dashboard_not_logged_in(self):
-        self.user = User.objects.create_user(username='testuser', password='12345')
-        self.farm_year = FarmYear.objects.create(
-            user=self.user, farm_name="Madison Farm", state_id=17, county_code=119)
-        response = self.client.get(reverse('dashboard', args=[self.farm_year.pk]))
-        self.assertEqual(response.status_code, 302)
+        self.assertContains(response, 'Farms')
 
     def test_farmyear_detail_logged_in(self):
-        self.user = User.objects.create_user(username='testuser', password='12345')
-        self.farm_year = FarmYear.objects.create(
-            user=self.user, farm_name="Madison Farm", state_id=17, county_code=119)
-        self.client.login(username='testuser', password='12345')
+        self.client.login(username='testuser1', password='12345')
         response = self.client.get(reverse('farmyear_detail', args=[self.farm_year.pk]))
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'Dashboard')
+        self.assertContains(response, 'Madison Farm')
 
     def test_farmyear_update_logged_in(self):
-        self.user = User.objects.create_user(username='testuser', password='12345')
-        self.farm_year = FarmYear.objects.create(
-            user=self.user, farm_name="Madison Farm", state_id=17, county_code=119)
-        self.client.login(username='testuser', password='12345')
+        self.client.login(username='testuser1', password='12345')
         response = self.client.get(reverse('farmyear_update', args=[self.farm_year.pk]))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Update Farm Year')
-        # The post will have a lot of items, test post for a different model for now.
 
     def test_farmyear_delete_logged_in(self):
-        self.user = User.objects.create_user(username='testuser', password='12345')
-        self.farm_year = FarmYear.objects.create(
-            user=self.user, farm_name="Madison Farm", state_id=17, county_code=119)
-        self.client.login(username='testuser', password='12345')
+        self.client.login(username='testuser1', password='12345')
         response = self.client.get(reverse('farmyear_delete',
                                            args=[self.farm_year.pk]))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Are you sure you want to delete')
         response = self.client.post(reverse('farmyear_delete',
                                             args=[self.farm_year.pk]), {})
-        self.assertEqual(response.status_code, 302)
-        self.assertEqual(response.url, reverse('farmyears'))
+        self.assertRedirects(
+            response, reverse('farmyears'),
+            status_code=302, target_status_code=200, fetch_redirect_response=True)
 
-    # Not sure what's wrong with this test.  The view is not redirecting properly.
-    # The view should be setting the user to the request.user...
-    # def test_farmyear_create_logged_in(self):
-    #     self.user = User.objects.create_user(username='testuser', password='12345')
-    #     self.client.login(username='testuser', password='12345')
-    #     response = self.client.post(reverse('farmyear_create'),
-    #                                 {"farm_name": "A Farm",
-    #                                  "state_id": "17", "county_code": "119"})
-    #     print(response.content)
-    #     self.assertEqual(response.status_code, 200)
+    def test_farmyear_create_logged_in(self):
+        # if we try removing "user" from the post, we get AttributeError:
+        # module main.models has no attribute 'util'
+        self.client.login(username='testuser1', password='12345')
+        response = self.client.post(reverse('farmyear_create'),
+                                    {"farm_name": "A New Farm",
+                                     "state": "17", "county_code": "119",
+                                     "user": str(self.user1.id)})
+        self.assertRedirects(
+            response, reverse('farmyears'),
+            status_code=302, target_status_code=200, fetch_redirect_response=True)
+        response = self.client.get(reverse('farmyears'))
+        self.assertContains(response, 'A New Farm')
 
     def test_farmcrops_for_farmyear_list_logged_in(self):
-        self.user = User.objects.create_user(username='testuser', password='12345')
-        self.farm_year = FarmYear.objects.create(
-            user=self.user, farm_name="Madison Farm", state_id=17, county_code=119)
-        self.client.login(username='testuser', password='12345')
+        self.client.login(username='testuser1', password='12345')
         response = self.client.get(reverse('farmcrop_list', args=[self.farm_year.pk]))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Corn, Non-irrigated')
 
     def test_marketcrops_for_farmyear_list_logged_in(self):
-        self.user = User.objects.create_user(username='testuser', password='12345')
-        self.farm_year = FarmYear.objects.create(
-            user=self.user, farm_name="Madison Farm", state_id=17, county_code=119)
-        self.client.login(username='testuser', password='12345')
+        self.client.login(username='testuser1', password='12345')
         response = self.client.get(reverse('marketcrop_list', args=[self.farm_year.pk]))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Market Crop Information')
 
     def test_fsacrops_for_farmyear_list_logged_in(self):
-        self.user = User.objects.create_user(username='testuser', password='12345')
-        self.farm_year = FarmYear.objects.create(
-            user=self.user, farm_name="Madison Farm", state_id=17, county_code=119)
-        self.client.login(username='testuser', password='12345')
+        self.client.login(username='testuser1', password='12345')
         response = self.client.get(reverse('fsacrop_list', args=[self.farm_year.pk]))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Farm Specific Title Information')
 
     def test_farmbudgetcrops_for_farmyear_list_logged_in(self):
-        self.user = User.objects.create_user(username='testuser', password='12345')
-        self.farm_year = FarmYear.objects.create(
-            user=self.user, farm_name="Madison Farm", state_id=17, county_code=119)
         fc = self.farm_year.farm_crops.filter(farm_crop_type_id=1)[0]
         FarmCrop.add_farm_budget_crop(fc.pk, 69)
-        self.client.login(username='testuser', password='12345')
+        self.client.login(username='testuser1', password='12345')
         response = self.client.get(reverse('farmbudgetcrop_list',
                                            args=[self.farm_year.pk]))
         self.assertEqual(response.status_code, 200)
