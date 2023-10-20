@@ -21,6 +21,9 @@ class BudgetManager(object):
         # data common to at least two of budget, revenue, keydata
         self.farm_crops = [fc for fc in self.farm_year.farm_crops.all()
                            if fc.has_budget() and fc.planted_acres > 0]
+        self.ci_info = [fc.get_selected_premiums() for fc in self.farm_crops]
+        self.total_premiums = [fc.get_total_premiums(sel) for sel, fc in
+                               zip(self.ci_info, self.farm_crops)]
 
     def update_budget_text(self):
         """
@@ -148,6 +151,7 @@ class BudgetTable(object):
             self.revenue_details.set_data()
 
         self.farm_crops = mgr.farm_crops
+        self.total_premiums = mgr.total_premiums
 
         self.row_labels = [
             'Crop Revenue', 'ARC/PLC',
@@ -218,10 +222,6 @@ class BudgetTable(object):
             ('owned_land_cost_per_owned_ac', 0, False, True),
         ]
         self.rowdict = {r[0]: r[1] for r in self.ROWS}
-
-        for fc in self.farm_crops:
-            fc.get_crop_ins_prems()
-
         self.bushels = [fc.sens_production_bu() for fc in self.farm_crops]
         self.acres = [fc.planted_acres for fc in self.farm_crops]
         self.farm_crop_types = [fc.farm_crop_type for fc in self.farm_crops]
@@ -409,8 +409,7 @@ class BudgetTable(object):
                                      for fc in self.farm_crops), self.acres)]
         self.data['crop_ins_prems'] = [
             (0 if p is None else p * ac)
-            for p, ac in zip((fc.get_total_premiums()
-                              for fc in self.farm_crops), self.acres)]
+            for p, ac in zip(self.total_premiums, self.acres)]
         self.data['other_direct_costs'] = [
             odc * ac for odc, ac in zip((fc.farmbudgetcrop.other_direct_costs
                                          for fc in self.farm_crops), self.acres)]
@@ -695,6 +694,7 @@ class KeyData(object):
         self.farm_year = farm_year
         self.model_run = self.farm_year.get_model_run_date()
         self.farm_crops = mgr.farm_crops
+        self.ci_info = mgr.ci_info
         self.market_crops_all = [mc for mc in self.farm_year.market_crops.all()]
         self.market_crops = [mc for mc in self.market_crops_all if mc.pk in
                              [fc.market_crop_id for fc in self.farm_crops]]
@@ -816,7 +816,7 @@ class KeyData(object):
             (fc.coverage_type, fc.product_type, fc.base_coverage_level)
             for fc in self.farm_crops]
         options = [(fc.sco_use, fc.eco_level) for fc in self.farm_crops]
-        ci_info = [fc.get_selected_premiums() for fc in self.farm_crops]
+        ci_info = self.ci_info
         baselabels = []
         scolabels = []
         ecolabels = []
