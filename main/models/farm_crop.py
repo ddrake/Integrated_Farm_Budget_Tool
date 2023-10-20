@@ -8,7 +8,8 @@ from django.contrib.postgres.fields import ArrayField
 from django.utils.translation import gettext_lazy as _
 from ext.models import (Subcounty, SubcountyAvail, FarmCropType, InsCropType,
                         PriceYield, AreaRate, State, Budget, BudgetCrop,
-                        get_budget_crop_description)
+                        get_budget_crop_description, ProjDiscoveryPrices,
+                        HarvDiscoveryPrices)
 from core.models.premium import Premium
 from core.models.indemnity import Indemnity
 from .farm_year import FarmYear
@@ -112,7 +113,9 @@ class FarmCrop(models.Model):
     prems_computed_for = models.DateField(null=True)
 
     # RMA dates computed when the farm crop is created, never changed.
+    proj_price_disc_start = models.DateField(null=True)
     proj_price_disc_end = models.DateField(null=True)
+    harv_price_disc_start = models.DateField(null=True)
     harv_price_disc_end = models.DateField(null=True)
     cty_yield_final = models.DateField(null=True)
 
@@ -266,7 +269,8 @@ class FarmCrop(models.Model):
             self.crop_ins_prems = None
             return
 
-        price_vol, projected_price, expected_yield = self.prem_price_yield_data()
+        d = self.indem_price_yield_data()
+        price_vol, projected_price, expected_yield = d['pv'][0], d['pp'][0], d['ey'][0]
         p = Premium()
         prems = p.compute_prems(
             state=self.farm_year.state_id,
@@ -308,39 +312,65 @@ class FarmCrop(models.Model):
         Used by budget, sensitivity, listview
         """
         # if self.indem_price_yield_data_mem is None:
-        mrd = self.farm_year.get_model_run_date()
-        pre_discov = mrd <= self.proj_price_disc_end
-        pre_harv = mrd <= self.harv_price_disc_end
-        harv_price = self.harvest_price()
-        sens_harv_price = self.sens_harvest_price(pf)
+        crop_year = self.farm_year.crop_year
+        state_id = self.farm_year.state_id
+        county_code = self.farm_year.county_code
+        crop_id = self.farm_crop_type.ins_crop_id
+        crop_type_id = self.ins_crop_type_id
+        practice = self.ins_practice
+        market_crop_type_id = self.market_crop.market_crop_type_id
         py = PriceYield.objects.get(
-            crop_year=self.farm_year.crop_year, state_id=self.farm_year.state_id,
-            county_code=self.farm_year.county_code,
-            crop_id=self.farm_crop_type.ins_crop_id,
-            crop_type_id=self.ins_crop_type_id,
-            practice=self.ins_practice)
+            crop_year=crop_year, state_id=state_id, county_code=county_code,
+            crop_id=crop_id, crop_type_id=crop_type_id, practice=practice)
+        mrd = self.farm_year.get_model_run_date()
+
+        # projected price discovery
+        pre_proj_discov = mrd <= self.proj_price_disc_start
+        post_proj_discov = (py.projected_price is not None and
+                            mrd >= self.proj_price_disc_end)
+
+        # harvest price discovery
+        pre_harv_discov = mrd <= self.harv_price_disc_start
+        post_harv_discov = (py.harvest_price is not None and
+                            mrd >= self.harv_price_disc_end)
+
+        proj_price_final, harvest_price_final = False, False
+        if pre_proj_discov:
+            proj_price = self.harvest_price()
+            price_vol = py.price_volatility_factor_prevyr
+        elif post_proj_discov:
+            proj_price = py.projected_price
+            price_vol = py.price_volatility_factor
+            proj_price_final = True
+        else:
+            proj_price = ProjDiscoveryPrices.avg_proj_price(
+                crop_year, state_id, county_code, market_crop_type_id,
+                min(mrd, self.proj_price_disc_end))
+            price_vol = py.price_volatility_factor_prevyr
+
+        if pre_harv_discov:
+            harvest_price = self.sens_harvest_price(pf)
+        elif post_harv_discov:
+            harvest_price = py.harvest_price
+            harvest_price_final = True
+        else:
+            harvest_price = HarvDiscoveryPrices.avg_harv_price(
+                crop_year, state_id, county_code, market_crop_type_id,
+                min(mrd, self.harv_price_disc_end))
+            print(f'{str(self)}, {harvest_price}')
+        if not scal(pf) and scal(harvest_price):
+            harvest_price *= np.ones_like(pf)
+
         exp_yield = py.expected_yield
         # scalar or 1d array
         sens_cty_exp_yield = (self.market_crop.county_bean_yield(yf)
                               if self.farm_crop_type_id in (2, 5)
                               else self.sens_cty_expected_yield(yf))
-        proj_price_final = not pre_discov and py.projected_price is not None
-        proj_price = (py.projected_price if proj_price_final else harv_price)
-        # price_vol not needed for indemnity, but shown on farm_crop detail view
-        price_vol_final = not pre_discov and py.price_volatility_factor is not None
-        price_vol = (py.price_volatility_factor if price_vol_final else
-                     py.price_volatility_factor_prevyr)
-        harvest_price_final = not pre_harv and py.harvest_price is not None
-        # scalar or 1d array
-        harvest_price = (py.harvest_price
-                         if scal(pf) and harvest_price_final else
-                         py.harvest_price * np.ones_like(pf)
-                         if harvest_price_final else
-                         sens_harv_price)
         # self.indem_price_yield_data_mem = (
         result = (
-            {'ey': [exp_yield, True], 'pp': [proj_price, proj_price_final],
-             'pv': [price_vol, price_vol_final],
+            {'ey': [exp_yield, True],
+             'pp': [proj_price, proj_price_final],
+             'pv': [price_vol, proj_price_final],
              'hp': [harvest_price, harvest_price_final],
              'cy': [sens_cty_exp_yield]})
 
@@ -635,9 +665,10 @@ class FarmCrop(models.Model):
 
     def sens_harvest_price(self, pf=None):
         """ cached scalar or array(pf) used by budget and sensitivity """
-        if self.sens_harvest_price_mem is None:
-            self.sens_harvest_price_mem = self.market_crop.sens_harvest_price(pf=pf)
-        return self.sens_harvest_price_mem
+        # if self.sens_harvest_price_mem is None:
+        #     self.sens_harvest_price_mem = self.market_crop.sens_harvest_price(pf=pf)
+        # return self.sens_harvest_price_mem
+        return self.market_crop.sens_harvest_price(pf=pf)
 
     def avg_futures_contract_price(self):
         return self.market_crop.avg_futures_contract_price()
@@ -805,7 +836,6 @@ class FarmBudgetCrop(models.Model):
                   else '' if self.is_rot is None else ' Continuous,')
         descr = '' if self.description == '' else f' {self.description},'
         result = (f'{self.state.abbr},{descr}{rotstr}')
-        print(f'{result=}')
         return result
 
     class Meta:

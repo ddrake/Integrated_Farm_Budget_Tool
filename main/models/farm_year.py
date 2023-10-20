@@ -201,15 +201,16 @@ class FarmYear(models.Model):
             insdt = InsuranceDates.objects.get(
                 state_id=self.state_id, county_code=self.county_code,
                 market_crop_type_id=mktct.id, crop_year=self.crop_year)
-            proj_price_disc_end = insdt.proj_price_disc_end
-            harv_price_disc_end = insdt.harv_price_disc_mth_end
             cty_yield_final = datetime(self.crop_year+1,
                                        (4 if mktct.id in (3, 4) else 6), 16).date()
             FarmCrop.objects.create(
                 farm_year=self, ins_crop_type_id=row.crop_type_id,
                 farm_crop_type=fct, market_crop=mkt, ins_practices=row.practices,
-                ins_practice=row.practices[0], proj_price_disc_end=proj_price_disc_end,
-                harv_price_disc_end=harv_price_disc_end,
+                ins_practice=row.practices[0],
+                proj_price_disc_start=insdt.proj_price_disc_start,
+                proj_price_disc_end=insdt.proj_price_disc_end,
+                harv_price_disc_start=insdt.harv_price_disc_mth_start,
+                harv_price_disc_end=insdt.harv_price_disc_mth_end,
                 cty_yield_final=cty_yield_final)
 
     def calc_gov_pmt(self, is_per_acre=False, mya_prices=None, cty_yields=None):

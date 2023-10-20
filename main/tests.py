@@ -4564,6 +4564,9 @@ class NewViewTests(TestCase):
         self.user2 = User.objects.create_user(username='testuser2', password='12345')
         self.farm_year = FarmYear.objects.create(
             user=self.user1, farm_name="Madison Farm", state_id=17, county_code=119)
+        self.farm_year.manual_model_run_date = datetime(2023, 10, 20)
+        self.farm_year.is_model_run_date_manual = True
+        self.farm_year.save()
 
     def test_dashboard_logged_in_user1(self):
         self.client.login(username='testuser1', password='12345')
