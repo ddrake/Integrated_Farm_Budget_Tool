@@ -380,11 +380,6 @@ class HarvDiscoveryPrices(models.Model):
     @classmethod
     def avg_harv_price(cls, crop_year, state_id, county_code,
                        market_crop_type_id, mrd):
-        prices = cls.objects.filter(
-              crop_year=crop_year, state_id=state_id, county_code=county_code,
-              market_crop_type_id=market_crop_type_id,
-              priced_on__lte=mrd).values_list('price')
-        print(f'{list(prices)=}')
         return cls.objects.filter(
             crop_year=crop_year, state_id=state_id, county_code=county_code,
             market_crop_type_id=market_crop_type_id,
