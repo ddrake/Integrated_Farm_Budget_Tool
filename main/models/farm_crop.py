@@ -120,11 +120,17 @@ class FarmCrop(models.Model):
     cty_yield_final = models.DateField(null=True)
 
     def __init__(self, *args, **kwargs):
-        # cache results of expensive functions during request
-        # sensitized farm and county yields not cached (called with different yfs)
+        """
+        Cache results of expensive functions during request which have a single
+        return point.
+        The method indem_price_yield_data_scal() is called by both
+        premium (pf=None, yf=None) and
+        indemnity (pf=array, yf=array) in the context of sensitivity tables
+        so we must cache vector and scalar results separately.
+        """
         self.has_budget_mem = None
-        self.sens_harvest_price_mem = None
-        self.indem_price_yield_data_mem = None
+        self.indem_price_yield_data_scal_mem = None
+        self.indem_price_yield_data_vec_mem = None
 
         super().__init__(*args, **kwargs)
 
@@ -227,6 +233,15 @@ class FarmCrop(models.Model):
     def old_farm_year(self):
         return self.farm_year.crop_year < datetime.now().year
 
+    def get_total_premiums(self, selected_prems=None):
+        if selected_prems is None:
+            selected_prems = self.get_selected_premiums()
+        return (0 if selected_prems is None else
+                sum((v for v in selected_prems.values() if v is not None)))
+
+    def get_selected_premiums(self):
+        return self.get_selected_ins_items(self.get_crop_ins_prems())
+
     def get_crop_ins_prems(self):
         """
         Compute and save premiums; return computed value.
@@ -238,26 +253,6 @@ class FarmCrop(models.Model):
             self.prems_computed_for = self.farm_year.get_model_run_date()
             self.save(no_check=True)
         return {k: np.array(v) for k, v in self.crop_ins_prems.items()}
-
-    def prem_price_yield_data(self):
-        """
-        If model run is before price_discovery_end, we use the previous year's
-        price volatility factor and the current futures price as projected price
-        """
-        post_discov = self.farm_year.get_model_run_date() > self.proj_price_disc_end
-        py = PriceYield.objects.get(
-            crop_year=self.farm_year.crop_year, state_id=self.farm_year.state_id,
-            county_code=self.farm_year.county_code,
-            crop_id=self.farm_crop_type.ins_crop_id, crop_type_id=self.ins_crop_type_id,
-            practice=self.ins_practice)
-        exp_yield = py.expected_yield
-        proj_price = (py.projected_price if post_discov
-                      and py.projected_price is not None else
-                      self.harvest_price())
-        price_vol = (py.price_volatility_factor if post_discov
-                     and py.price_volatility_factor is not None else
-                     py.price_volatility_factor_prevyr)
-        return price_vol, proj_price, exp_yield
 
     def set_prems(self):
         """
@@ -293,14 +288,25 @@ class FarmCrop(models.Model):
             self.crop_ins_prems = {key: None if ar is None else ar.tolist()
                                    for key, ar in zip(names, prems[:4])}
 
-    def get_selected_premiums(self):
-        prems = self.get_crop_ins_prems()
-        return None if prems is None else self.get_selected_ins_items(prems)
-
-    def get_total_premiums(self):
-        prems = self.get_selected_premiums()
-        return (0 if prems is None else
-                sum((v for v in prems.values() if v is not None)))
+    def prem_price_yield_data(self):
+        """
+        If model run is before price_discovery_end, we use the previous year's
+        price volatility factor and the current futures price as projected price
+        """
+        post_discov = self.farm_year.get_model_run_date() > self.proj_price_disc_end
+        py = PriceYield.objects.get(
+            crop_year=self.farm_year.crop_year, state_id=self.farm_year.state_id,
+            county_code=self.farm_year.county_code,
+            crop_id=self.farm_crop_type.ins_crop_id, crop_type_id=self.ins_crop_type_id,
+            practice=self.ins_practice)
+        exp_yield = py.expected_yield
+        proj_price = (py.projected_price if post_discov
+                      and py.projected_price is not None else
+                      self.harvest_price())
+        price_vol = (py.price_volatility_factor if post_discov
+                     and py.price_volatility_factor is not None else
+                     py.price_volatility_factor_prevyr)
+        return price_vol, proj_price, exp_yield
 
     # ----------------------------------
     # Crop Ins Indemnity-related methods
@@ -310,76 +316,84 @@ class FarmCrop(models.Model):
         """
         Returns a dict where some values may be scalar or array(np, ny)
         Used by budget, sensitivity, listview
+        Since this method is called with pf=None, yf=None for crop_ins
+        for sensitivity tables, then called with pf, yf arrays for indemnity,
+        we cache scalar and vector values separately.
         """
-        # if self.indem_price_yield_data_mem is None:
-        crop_year = self.farm_year.crop_year
-        state_id = self.farm_year.state_id
-        county_code = self.farm_year.county_code
-        crop_id = self.farm_crop_type.ins_crop_id
-        crop_type_id = self.ins_crop_type_id
-        practice = self.ins_practice
-        market_crop_type_id = self.market_crop.market_crop_type_id
-        py = PriceYield.objects.get(
-            crop_year=crop_year, state_id=state_id, county_code=county_code,
-            crop_id=crop_id, crop_type_id=crop_type_id, practice=practice)
-        mrd = self.farm_year.get_model_run_date()
-
-        # projected price discovery
-        pre_proj_discov = mrd <= self.proj_price_disc_start
-        post_proj_discov = (py.projected_price is not None and
-                            mrd >= self.proj_price_disc_end)
-
-        # harvest price discovery
-        pre_harv_discov = mrd <= self.harv_price_disc_start
-        post_harv_discov = (py.harvest_price is not None and
-                            mrd >= self.harv_price_disc_end)
-
-        proj_price_final, harvest_price_final = False, False
-        if pre_proj_discov:
-            proj_price = self.harvest_price()
-            price_vol = py.price_volatility_factor_prevyr
-        elif post_proj_discov:
-            proj_price = py.projected_price
-            price_vol = py.price_volatility_factor
-            proj_price_final = True
+        if (scal(pf) and self.indem_price_yield_data_scal_mem is not None):
+            return self.indem_price_yield_data_scal_mem
+        elif (not scal(pf) and self.indem_price_yield_data_vec_mem is not None):
+            return self.indem_price_yield_data_vec_mem
         else:
-            proj_price = ProjDiscoveryPrices.avg_proj_price(
-                crop_year, state_id, county_code, market_crop_type_id,
-                min(mrd, self.proj_price_disc_end))
-            price_vol = py.price_volatility_factor_prevyr
+            crop_year = self.farm_year.crop_year
+            state_id = self.farm_year.state_id
+            county_code = self.farm_year.county_code
+            crop_id = self.farm_crop_type.ins_crop_id
+            crop_type_id = self.ins_crop_type_id
+            practice = self.ins_practice
+            market_crop_type_id = self.market_crop.market_crop_type_id
+            py = PriceYield.objects.get(
+                crop_year=crop_year, state_id=state_id, county_code=county_code,
+                crop_id=crop_id, crop_type_id=crop_type_id, practice=practice)
+            mrd = self.farm_year.get_model_run_date()
 
-        if pre_harv_discov:
-            harvest_price = self.sens_harvest_price(pf)
-        elif post_harv_discov:
-            harvest_price = py.harvest_price
-            harvest_price_final = True
-        else:
-            harvest_price = HarvDiscoveryPrices.avg_harv_price(
-                crop_year, state_id, county_code, market_crop_type_id,
-                min(mrd, self.harv_price_disc_end))
-            print(f'{str(self)}, {harvest_price}')
-        if not scal(pf) and scal(harvest_price):
-            harvest_price *= np.ones_like(pf)
+            # projected price discovery
+            pre_proj_discov = mrd <= self.proj_price_disc_start
+            post_proj_discov = (py.projected_price is not None and
+                                mrd >= self.proj_price_disc_end)
 
-        exp_yield = py.expected_yield
-        # scalar or 1d array
-        sens_cty_exp_yield = (self.market_crop.county_bean_yield(yf)
-                              if self.farm_crop_type_id in (2, 5)
-                              else self.sens_cty_expected_yield(yf))
-        # self.indem_price_yield_data_mem = (
-        result = (
-            {'ey': [exp_yield, True],
-             'pp': [proj_price, proj_price_final],
-             'pv': [price_vol, proj_price_final],
-             'hp': [harvest_price, harvest_price_final],
-             'cy': [sens_cty_exp_yield]})
+            # harvest price discovery
+            pre_harv_discov = mrd <= self.harv_price_disc_start
+            post_harv_discov = (py.harvest_price is not None and
+                                mrd >= self.harv_price_disc_end)
 
-        # return self.indem_price_yield_data_mem
+            proj_price_final, harvest_price_final = False, False
+            if pre_proj_discov:
+                proj_price = self.harvest_price()
+                price_vol = py.price_volatility_factor_prevyr
+            elif post_proj_discov:
+                proj_price = py.projected_price
+                price_vol = py.price_volatility_factor
+                proj_price_final = True
+            else:
+                proj_price = ProjDiscoveryPrices.avg_proj_price(
+                    crop_year, state_id, county_code, market_crop_type_id,
+                    min(mrd, self.proj_price_disc_end))
+                price_vol = py.price_volatility_factor_prevyr
+
+            if pre_harv_discov:
+                harvest_price = self.sens_harvest_price(pf)
+            elif post_harv_discov:
+                harvest_price = py.harvest_price
+                harvest_price_final = True
+            else:
+                harvest_price = HarvDiscoveryPrices.avg_harv_price(
+                    crop_year, state_id, county_code, market_crop_type_id,
+                    min(mrd, self.harv_price_disc_end))
+            if not scal(pf) and scal(harvest_price):
+                harvest_price *= np.ones_like(pf)
+
+            exp_yield = py.expected_yield
+            # scalar or 1d array
+            sens_cty_exp_yield = (self.market_crop.county_bean_yield(yf)
+                                  if self.farm_crop_type_id in (2, 5)
+                                  else self.sens_cty_expected_yield(yf))
+            result = (
+                {'ey': [exp_yield, True],
+                 'pp': [proj_price, proj_price_final],
+                 'pv': [price_vol, proj_price_final],
+                 'hp': [harvest_price, harvest_price_final],
+                 'cy': [sens_cty_exp_yield]})
+
+            if scal(pf):
+                self.indem_price_yield_data_scal_mem = result
+            else:
+                self.indem_price_yield_data_vec_mem = result
         return result
 
     def get_indemnities(self, pf=None, yf=None):
         """ scalar or 2d array """
-        data = self.indem_price_yield_data(pf, yf)
+        data = self.indem_price_yield_data(pf=pf, yf=yf)
         indem = Indemnity(
             tayield=self.ta_aph_yield,
             projected_price=data['pp'][0],
@@ -533,7 +547,7 @@ class FarmCrop(models.Model):
         scalar or array(np, ny) fraction revenue excess or (shortfall)
         used by both budget and sensitivity.
         """
-        data = self.indem_price_yield_data(pf=pf)
+        data = self.indem_price_yield_data(pf=pf, yf=yf)
         base_rev = (self.planted_acres *
                     self.farmbudgetcrop.baseline_yield_for_var_rent * data['pp'][0])
         if scal(pf):
@@ -665,9 +679,6 @@ class FarmCrop(models.Model):
 
     def sens_harvest_price(self, pf=None):
         """ cached scalar or array(pf) used by budget and sensitivity """
-        # if self.sens_harvest_price_mem is None:
-        #     self.sens_harvest_price_mem = self.market_crop.sens_harvest_price(pf=pf)
-        # return self.sens_harvest_price_mem
         return self.market_crop.sens_harvest_price(pf=pf)
 
     def avg_futures_contract_price(self):
