@@ -51,10 +51,6 @@ class SensTableGroup(object):
         self.mktcropnames = [str(mc).replace('Winter', 'W').replace('Spring', 'S')
                              for mc in self.market_crops]
 
-        # update premiums (if crop year is current)
-        for fc in self.farm_crops:
-            fc.get_crop_ins_prems()
-
         self.acres = [fc.planted_acres for fc in self.farm_crops]
         self.total_acres = sum(self.acres)
 
@@ -136,9 +132,6 @@ class SensTableGroup(object):
                   SensTableStdWheatDC if k[-14:] == 'wheat_dc_beans' else
                   SensTableStdCrop)
             cs(self).delete_spanned_cols(v)
-
-        with open('test.txt', 'w') as f:
-            f.write(', '.join(rslt.keys()))
         return rslt
 
     def get_tables(self, rslt, arrays=None):
