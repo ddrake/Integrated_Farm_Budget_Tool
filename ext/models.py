@@ -253,26 +253,9 @@ class MyaPost(models.Model):
     wheat_pct_locked = models.FloatField(null=True)
 
     @classmethod
-    def get_mya_post_estimates(cls, crop_year, for_date, pf=None):
-        """
-        Get the sensitized MYA prices for each FSA crop type for the crop year
-        and the given date.
-        """
-        if pf is None:
-            pf = [1, 1, 1]
-        row = (MyaPost.objects
-               .filter(wasde_release_date__lte=for_date, crop_year=crop_year)
-               .order_by("-wasde_release_date")[0])
-        prices = [row.corn_price, row.beans_price, row.wheat_price]
-        pct_locked = [row.corn_pct_locked, row.beans_pct_locked, row.wheat_pct_locked]
-        mya_prices = [pr * (plk + pff * (1 - plk))
-                      for pff, pr, plk in zip(pf, prices, pct_locked)]
-        return mya_prices
-
-    @classmethod
     def get_mya_post_estimate(cls, crop_year, for_date, fsa_crop_type_id, pf=1):
         """
-        Get the sensitized MYA prices for each FSA crop type for the crop year
+        Get the sensitized MYA prices for one FSA crop type for the crop year
         and the given date.
         """
         row = (MyaPost.objects
