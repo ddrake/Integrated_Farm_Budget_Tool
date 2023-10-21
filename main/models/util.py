@@ -1,6 +1,7 @@
 """ Module util -- utility functions for main model """
 import numbers
 from datetime import datetime
+import numpy as np
 
 
 def scal(factor):
@@ -51,3 +52,11 @@ def default_start_date():
     """ For remainder of 2023, use Jan, 11, but after that, change to Jan 1. """
     year = get_current_year()
     return datetime(year, 1, 11)
+
+
+def one_like(var):
+    return 1 if scal(var) else np.ones_like(var)
+
+
+def zero_like(var):
+    return 0 if scal(var) else np.zeros_like(var)
