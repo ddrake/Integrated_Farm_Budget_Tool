@@ -10,7 +10,7 @@
 <div class="flex flex-col">
   <div class="p-6 max-w-med mx-auto bg-white rounded-xl shadow-lg flex items-center space-x-4">
     <div class="shrink-0">
-      {% if tables == None %}
+      {% if table == None %}
         <p class="text-xl">
           Sensitivity tables cannot be generated for the specified farm year.<br>
           Please ensure that at least one crop has non-zero acres and has had a budget added.
@@ -23,7 +23,9 @@
           <label class="block text-gray-700 text-sm font-bold mb-px"
             for="diff">Differences</label>
           <input type="checkbox" id="diff">
-          <small class="block text-gray-600 mb-2">Show differences between the current and previous sets of sensitized values</small>
+          <small class="block text-gray-600 mb-2">
+            Show differences between the current and previous sets of sensitized values
+          </small>
         {% endif %}
           <label class="block text-gray-700 text-sm font-bold mb-2"
             for="type-sel">Type</label>
@@ -53,10 +55,9 @@
         </div>
         </div>
       </form> 
-      {% for sensitem in tables.items %}
-        <table class="text-sm table-auto border border-indigo-800 border-2 stbl" id="{{sensitem.0}}">
+      <table class="text-sm table-auto border border-indigo-800 border-2 stbl" id="senstable">
         <tbody>
-        {% for row in sensitem.1 %}
+        {% for row in table %}
           <tr>
             {% for col in row %}
             <td {% if col.1 %} colspan="{{col.1}}" {% endif %} class="px-1 py-0 {{col.2}}">
@@ -67,7 +68,6 @@
         {% endfor %}
         </tbody>
       </table>
-      {% endfor %}
       {% endif %}
     </div>
   </div> <!-- end sensitivity table -->
@@ -79,41 +79,45 @@
 </div>
 <script>
   (() => {
-    // set these like nincr = {{info.nincr}}
+    let xhr;
     const nincr = {{info.nincr}}
+    const farmyear = {{info.farmyear}}
     const basis_incr = {{info.basis_incr}}
-
 
     document
       .addEventListener('DOMContentLoaded', (event) => {
-          createButtonBar(nincr, basis_incr)
-          managevisibility(basis_incr)
+          createButtonBar(nincr, basis_incr, farmyear)
       });
 
     document
       .querySelector("#type-sel")
          .addEventListener("change", (event) => {
-             managevisibility(basis_incr)
+             makeRequest(farmyear, basis_incr)
              manageButtonbarVisibility(basis_incr)
          });
+
     document
       .querySelector("#crop-sel")
          .addEventListener("change", (event) => {
-             managevisibility(basis_incr)
+             makeRequest(farmyear, basis_incr)
          });
-    document
-      .querySelector("#diff")
-         .addEventListener("change", (event) => {
-             managevisibility(basis_incr)
-         });
+
+    const diff = document.querySelector("#diff")
+    if (diff) {
+      diff.addEventListener("change", (event) => {
+             makeRequest(farmyear, basis_incr)
+      })
+    };
     document
       .querySelector("#print")
         .addEventListener("click", (event) => {
-          let tblid = getTblId(basis_incr)
+          let ti = getTblInfo(basis_incr)
           location.href = "{% url 'downloadsens' farmyear=farmyear_id %}" +
-            `?tag=${tblid}` + `&ni=${nincr}` + `&bi=${basis_incr}` 
+            `?tbltype=${ti.tbltype}&crop=${ti.crop}&tblnum=${ti.tblnum}&isdiff=${ti.isdiff}` +
+            `&ni=${nincr}&bi=${basis_incr}` 
           event.preventDefault();
         });
+
   })();
 </script>
 {% endblock %}

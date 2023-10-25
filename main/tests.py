@@ -497,7 +497,7 @@ class Madison2023FarmYearTestCase(TestCase):
 
     def test_sens_data(self):
         sgrp = SensTableGroup(self.farm_year)
-        sgrp.get_current_data(save=True)
+        sgrp.compute_current_data(save=True)
         data = np.array(self.farm_year.sensitivity_data)
         expected = np.array(
             [[[[[832.710938,   856.085938,   879.460938,   902.835938, 926.210938],

@@ -538,11 +538,25 @@ class SensitivityTableView(UserPassesTestMixin, TemplateView):
         context = super().get_context_data(**kwargs)
         farm_year = get_object_or_404(FarmYear, pk=kwargs.get('farmyear', None))
         st = SensTableGroup(farm_year)
-        context['tables'] = st.get_all_tables()
+        context['table'] = st.get_cashflow_farm()
         context['info'] = st.get_info()
         context['farmyear_id'] = farm_year.pk
         context['has_farm_years'] = True
         return context
+
+
+class GetSensTableView(View):
+    def get(self, request, *args, **kwargs):
+        farm_year = get_object_or_404(FarmYear, pk=kwargs.get('farmyear', None))
+        st = SensTableGroup(farm_year)
+        tbltype = request.GET.get('tbltype', None)
+        crop = request.GET.get('crop', None)
+        tblnum = request.GET.get('tblnum', '')
+        tblnum = None if tblnum == '' else int(tblnum)
+        isdiff = True if request.GET.get('isdiff', 'false') == 'true' else False
+        print(f'{tbltype=}, {crop=}, {tblnum=}, {isdiff=}')
+        table = st.get_selected_table(tbltype, crop, tblnum, isdiff)
+        return JsonResponse({'data': table})
 
 
 class SensitivityPdfView(UserPassesTestMixin, View):
@@ -554,10 +568,15 @@ class SensitivityPdfView(UserPassesTestMixin, View):
         return self.request.user == farm_year.user
 
     def get(self, request, *args, **kwargs):
+        tbltype = request.GET.get('tbltype', None)
+        crop = request.GET.get('crop', None)
+        tblnum = int(request.GET.get('tblnum', 0))
+        isdiff = True if request.GET.get('isdiff', 'false') == 'true' else False
+        nincr = int(request.GET.get('ni', 1))
+        basis_incr = float(request.GET.get('bi', 0))
         farm_year = get_object_or_404(FarmYear, pk=kwargs.get('farmyear', None))
-        senstype = request.GET.get('tag', 0)
-        buffer = SensPdf(farm_year, senstype).create()
-        filename = get_sens_filename(request.GET)
+        buffer = SensPdf(farm_year, isdiff).create()
+        filename = get_sens_filename(tbltype, crop, tblnum, isdiff, nincr, basis_incr)
         return FileResponse(buffer, as_attachment=True, filename=filename)
 
 
@@ -621,24 +640,12 @@ class ReplicateView(UserPassesTestMixin, View):
         return response
 
 
-def get_sens_filename(get_obj):
+def get_sens_filename(tbltype, crop, tblnum, isdiff, nincr, basis_incr):
     """ get title info for sensitivity table pdf"""
-    # Sensitivity_diff_basis_offset_0_01_fs_beans
-    senstype = get_obj.get('tag', 0)
-    nincr = int(get_obj.get('ni', 0))
-    basis_incr = float(get_obj.get('bi', 0))
-    parts = senstype.split('_')
-    diff = parts[1] == 'diff'
-    try:
-        idx = int(parts[2] if diff else parts[1])
-        nst = (nincr - 1)/2
-        tot_basis_incr = f'basis_increment_{basis_incr * (-nst + idx):.2f}'
-        info = (f'{parts[0]}_' + (f'{parts[1]}_' if diff else '') +
-                f'{tot_basis_incr}_' +
-                ('_'.join(parts[3:]) if diff else '_'.join(parts[2:])))
-    except ValueError:
-        idx = None
-        info = (f'{parts[0]}_' + (f'{parts[1]}_' if diff else '') +
-                ('_'.join(parts[2:]) if diff else '_'.join(parts[1:])))
-
+    # Sensitivity_revenue_diff_basis_offset_0_01_fs_beans
+    nst = (nincr - 1)/2
+    tot_basis_incr = (basis_incr * (-nst + tblnum) if basis_incr != 0 else None)
+    basis_incr_str = ('' if tot_basis_incr is None else
+                      f'basis_increment_{tot_basis_incr:.2f}_')
+    info = (f'{tbltype}_' + ('diff_' if isdiff else '') + basis_incr_str + crop)
     return f"Sensitivity_{info}.pdf"

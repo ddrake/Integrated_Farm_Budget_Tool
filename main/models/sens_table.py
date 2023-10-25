@@ -3,7 +3,7 @@ Module sens_table
 
 Generates sensitivity tables with respect to a range of prices and a range of yields
 for a given farm year, for a given variable in {pretax, revenue, cost, title, indem}
-and "crops" in {corn, fsbeans, wwheat, swheat, dcbeans, farm, wheatdc}.
+and "crops" in {corn, fsbeans, wwheat, swheat, dcbeans, farm, wheatdcbeans}.
 depending on farm_crops specified
 """
 import numpy as np
@@ -31,8 +31,10 @@ class SensTableGroup(object):
         self.croptypenames = [str(fc.farm_crop_type)
                               .replace('Winter', 'W').replace('Spring', 'S')
                               for fc in self.farm_crops]
-        self.croptypetags = [name.lower().replace(' ', '-')
+        self.croptypetags = [name.lower().replace(' ', '')
                              for name in self.croptypenames]
+        self.crop_indices = {name: i for i, name in enumerate(self.croptypetags)}
+
         self.nfcs = len(self.farm_crops)
 
         # wheat/dc special case
@@ -61,7 +63,7 @@ class SensTableGroup(object):
 
         self.nincr = 5  # the number of increments (should be odd)
         self.basis_incr = self.farm_year.basis_increment
-        self.nst = (self.nincr - 1)/2
+        self.nst = (self.nincr - 1)//2
         self.bfrange = (None if self.basis_incr == 0 else
                         np.arange(-self.nst, self.nst+1) * self.basis_incr)
 
@@ -99,124 +101,98 @@ class SensTableGroup(object):
 
         self.has_diffs = None
         self.info = None
-        self.alldata = None
-        self.set_gov_pmts()
 
-    def get_all_tables(self):
+    def get_farm_crop_idx(self, crop):
+        return self.crop_indices[crop]
+
+    def get_crop_idx(self, crop):
+        return (-2 if crop == 'farm' and self.wheatdc else
+                -1 if crop == 'farm' else
+                -1 if crop == 'wheatdcbeans' else
+                self.get_farm_crop_idx(crop))
+
+    def get_cashflow_farm(self):
         """
-        Main method
-        return a dict with keys like pretax_corn, revenue_farm, title_wheatdc
-        and with values nested lists of strings to be rendered as html tables.
+        This is the new 'main' non-ajax method.
+        It computes current data and diff and stores both in the database.
+        It also generates the cashflow table, stores its text
+        in the database for sens_pdf and returns its text.
         """
-        rslt = {}
-        if len(self.farm_crops) == 0:
-            return None
+        self.set_all_data()
+        return self.get_selected_table(
+            'cashflow', 'farm', (None if self.basis_incr == 0 else self.nst))
 
-        self.get_current_data()
-        self.get_tables(rslt)
-        if self.farm_year.sensitivity_data is not None:
-            revenue_p, title_p, indem_p, cost_p, cashflow_p = (
-                np.array(v) for v in self.farm_year.sensitivity_data)
-            # if the array shapes have changed, e.g. by setting a crop's acres to zero
-            # we can't provide a diff.
-            self.has_diffs = (revenue_p.shape == self.revenue_values.shape)
-            if self.has_diffs:
-                self.get_tables(rslt, arrays=(revenue_p, title_p, indem_p,
-                                              cost_p, cashflow_p))
-        self.save_sens_data(rslt)
-
-        # delete spanned columns for html
-        for k, v in rslt.items():
-            cs = (SensTableTitle if k[:5] == 'title' else
-                  SensTableStdFarm if k[-4:] == 'farm' else
-                  SensTableStdWheatDC if k[-14:] == 'wheat_dc_beans' else
-                  SensTableStdCrop)
-            cs(self).delete_spanned_cols(v)
-        return rslt
-
-    def get_tables(self, rslt, arrays=None):
+    def get_selected_table(self, tbltype, crop, tblnum, isdiff=False):
         """
-        Gets all formatted text tables.  If arrays is provided, diffs are generated
-        """
-        diff = (arrays is not None)
-        if diff:
-            revenue_p, title_p, indem_p, cost_p, cashflow_p = arrays
+        Generate a specific table by the user's selections.
 
-        if self.bfrange is None:
-            items = [
-                [f"revenue{'_diff' if diff else ''}",
-                 ((self.revenue_values - revenue_p) if diff else
-                  self.revenue_values),
-                 'REVENUE SENSITIVITY ($000)',
-                 'Revenue before Indemnity and Title payments'],
-                [f"title{'_diff' if diff else ''}",
-                 (self.title_values - title_p) if diff else self.title_values,
-                 'TITLE PAYMENT SENSITIVITY ($000)', ''],
-                [f"indem{'_diff' if diff else ''}",
-                 (self.indem_values - indem_p) if diff else self.indem_values,
-                 'INSURANCE PAYMENT SENSITIVITY ($000)', ''],
-                [f"cost{'_diff' if diff else ''}",
-                 (self.cost_values - cost_p) if diff else self.cost_values,
-                 'COST SENSITIVITY ($000)', ''],
-                [f"cashflow{'_diff' if diff else ''}",
-                 (self.cashflow_values - cashflow_p) if diff else self.cashflow_values,
-                 'PROFIT SENSITIVITY ($000)', 'Pre-Tax Cash Flow']]
+        tbltype is in {'cashflow', 'revenue', 'title', 'indem', 'cost'},
+        isdiff is a boolean
+        crop is enumerated in self.croptype_tag and is
+          in {'farm', 'corn', 'fsbeans', 'dcbeans', 'wwheat', 'swheat','wheatdcbeans'}
+        tblnum is None or a zero based integer 0..nincr
+
+        It computes no data.  If it's a diff table, it uses the stored diff data.
+        Otherwise it uses the stored current data.
+
+        It saves its sensitivity text for sens_pdf
+        """
+        crop = crop.replace('_', '')
+        revenue, title, indem, cost, cashflow = (
+            np.array(v) for v in (
+                self.farm_year.sensitivity_diff if isdiff else
+                self.farm_year.sensitivity_data))
+        data = (revenue if tbltype == 'revenue' else cost if tbltype == 'cost' else
+                title if tbltype == 'title' else indem if tbltype == 'indem' else
+                cashflow)
+        table = self.get_table(data, tbltype, crop, tblnum, isdiff)
+
+        self.save_sens_text(table)
+
+        # delete spanned columns for html, but not for pdf
+        cs = self.get_class(tbltype, crop)
+        cs(self).delete_spanned_cols(table)
+
+        return table
+
+    def get_class(self, tbltype, crop):
+        return (SensTableTitle if tbltype == 'title' else
+                SensTableStdFarm if crop == 'farm' else
+                SensTableStdWheatDC if crop == 'wheatdcbeans' else
+                SensTableStdCrop)
+
+    def get_table(self, data, tbltype, crop, tblnum, isdiff):
+        """
+        Get the table with specified data
+        """
+        dt = (data[...] if self.basis_incr == 0 else
+              data[..., tblnum] if self.basis_incr > 0 and
+              tbltype in ['revenue', 'cashflow'] else
+              data[..., 0])
+        if tbltype == 'revenue':
+            info = [dt, 'REVENUE SENSITIVITY ($000)',
+                    'Revenue before Indemnity and Title payments']
+        elif tbltype == 'title':
+            info = [dt, 'TITLE PAYMENT SENSITIVITY ($000)', '']
+        elif tbltype == 'indem':
+            info = [dt, 'INSURANCE PAYMENT SENSITIVITY ($000)', '']
+        elif tbltype == 'cost':
+            info = [dt, 'COST SENSITIVITY ($000)', '']
         else:
-            items = []
-            for i, _ in enumerate(self.bfrange):
-                items.append(
-                    [f"revenue{'_diff' if diff else ''}_{i}",
-                     ((self.revenue_values[..., i] - revenue_p[..., i]) if diff else
-                      self.revenue_values[..., i]),
-                     'REVENUE SENSITIVITY ($000)',
-                     'Revenue before Indemnity and Title payments'])
-            items.append(
-                [f"title{'_diff' if diff else ''}",
-                 ((self.title_values[..., 0] - title_p[..., 0]) if diff else
-                  self.title_values[..., 0]),
-                 'TITLE PAYMENT SENSITIVITY ($000)', ''])
-            items.append(
-                [f"indem{'_diff' if diff else ''}",
-                 ((self.indem_values[..., 0] - indem_p[..., 0]) if diff else
-                  self.indem_values[..., 0]),
-                 'INSURANCE PAYMENT SENSITIVITY ($000)', ''])
-            items.append(
-                [f"cost{'_diff' if diff else ''}",
-                 ((self.cost_values[..., 0] - cost_p[..., 0]) if diff else
-                  self.cost_values[..., 0]),
-                 'COST SENSITIVITY ($000)', ''])
-            for i, _ in enumerate(self.bfrange):
-                items.append(
-                    [f"cashflow{'_diff' if diff else ''}_{i}",
-                     ((self.cashflow_values[..., i] - cashflow_p[..., i]) if diff else
-                      self.cashflow_values[..., i]),
-                     'PROFIT SENSITIVITY ($000)', 'Pre-Tax Cash Flow'])
+            info = [dt, 'PROFIT SENSITIVITY ($000)', 'Pre-Tax Cash Flow']
 
-        for var in items:
-            self.get_tables_var(rslt, var)
+        return self.get_table_for_info(info, tbltype, crop)
 
-    def get_tables_var(self, rslt, var):
+    def get_table_for_info(self, info, tbltype, crop):
         """ get the set of tables for a specific item """
-        tag, values, title, subtitle = var
-        cs = ({'crop': SensTableTitle, 'farm': SensTableTitle,
-               'wheatdc': SensTableTitle} if tag[:5] == 'title' else
-              {'crop': SensTableStdCrop, 'farm': SensTableStdFarm,
-               'wheatdc': SensTableStdWheatDC})
-
-        tags = [f"{tag}_{n.lower().replace(' ', '_').replace('/', '_')}"
-                for n in self.croptypenames]
-
-        ix = -2 if self.wheatdc else -1
-        stc = cs['crop'](self)
-        rslt.update(stc.get_all_formatted(tags, values[:ix, ...], title, subtitle,
-                                          self.croptypenames))
-        stf = cs['farm'](self)
-        rslt.update(stf.get_formatted(f"{tag}_farm", values[ix, ...],
-                                      f'FARM {title}', subtitle))
-        if self.wheatdc:
-            stw = cs['wheatdc'](self)
-            rslt.update(stw.get_formatted(f'{tag}_wheat_dc_beans', values[-1, ...],
-                                          f'WHEAT/DC BEANS {title}', subtitle))
+        data, title, subtitle = info
+        cs = self.get_class(tbltype, crop)
+        ix = self.get_crop_idx(crop)
+        titlecrop = ('WHEAT/DC BEANS' if crop == 'wheatdcbeans' else
+                     'FARM' if crop == 'farm' else self.croptypenames[ix].upper())
+        title = (f"{titlecrop} {title}")
+        st = cs(self)
+        return st.get_formatted(data[ix], crop, title, subtitle)
 
     def get_info(self):
         """
@@ -227,7 +203,7 @@ class SensTableGroup(object):
         if self.info is None:
             names = (['Farm'] + self.croptypenames[:] +
                      (['Wheat/DC Beans'] if self.wheatdc else []))
-            tags = [n.lower().replace(' ', '_').replace('/', '_') for n in names]
+            tags = [n.lower().replace(' ', '').replace('/', '') for n in names]
             self.info = {'farmyear': self.farm_year.pk,
                          'crops': zip(tags, names),
                          'hasdiff': self.has_diffs,
@@ -239,36 +215,69 @@ class SensTableGroup(object):
     # ----------------
     # DATA COMPUTATION
     # ----------------
-    def set_gov_pmts(self):
-        """ set apportioned gov pmt in dollars (optimization) """
-        # array(np, ny)
-        totgovpmt = self.farm_year.calc_gov_pmt(mya_prices=self.mya_prices,
-                                                cty_yields=self.cty_yields)
-        self.gov_pmts = np.array([totgovpmt * ac / self.total_acres
-                                  for ac in self.acres])
+    def set_all_data(self):
+        """
+        Compute current data and diffs if possible, saving both current data and
+        diff data to the database.
+        """
+        alldata = self.compute_current_data()
+        if self.farm_year.sensitivity_data is not None:
+            self.farm_year.sensitivity_diff = self.compute_diff_data()
+        self.farm_year.sensitivity_data = alldata
+        self.farm_year.save()
 
-    def get_current_data(self, save=False):
+    def compute_current_data(self, save=False):
         """
-        Get all the data needed into a nested list which can optionally be saved here
-        We only want to save if testing.
+        Compute all the data needed into a nested list which can optionally
+        be saved here.   We only want to save if testing.
         """
+        self.set_gov_pmts()
         self.revenue_values = self.get_revenue_values()
         self.title_values = self.get_title_values()
         self.indem_values = self.get_indem_values()
         self.cost_values = self.get_cost_values()
         self.cashflow_values = self.get_cashflow_values()
-        self.alldata = [ar.tolist() for ar in
-                        [self.revenue_values, self.title_values, self.indem_values,
-                         self.cost_values, self.cashflow_values]]
+        alldata = [ar.tolist() for ar in
+                   [self.revenue_values, self.title_values, self.indem_values,
+                    self.cost_values, self.cashflow_values]]
         if save:
-            self.farm_year.sensitivity_data = self.alldata
+            self.farm_year.sensitivity_data = alldata
             self.farm_year.save()
+        return alldata
 
-    def save_sens_data(self, rslt):
-        """ Save the text tables and the numerical data in the database """
+    def compute_diff_data(self):
+        """
+        Collect all the diffs
+        """
+        revenue_p, title_p, indem_p, cost_p, cashflow_p = (
+            np.array(v) for v in self.farm_year.sensitivity_data)
+
+        if revenue_p.shape == self.revenue_values.shape:
+            self.has_diffs = True
+            revenue_d = self.revenue_values - revenue_p
+            title_d = self.title_values - title_p
+            indem_d = self.indem_values - indem_p
+            cost_d = self.cost_values - cost_p
+            cashflow_d = self.cashflow_values - cashflow_p
+            return [ar.tolist() for ar in
+                    [revenue_d, title_d, indem_d, cost_d, cashflow_d]]
+        else:
+            self.has_diffs = False
+            return None
+
+    def save_sens_text(self, rslt):
+        """ Save the the currently selected text table to the database """
         self.farm_year.sensitivity_text = rslt
-        self.farm_year.sensitivity_data = self.alldata
         self.farm_year.save()
+
+    def set_gov_pmts(self):
+        """ set apportioned gov pmt in dollars (optimization)
+            array(np, ny)
+        """
+        totgovpmt = self.farm_year.calc_gov_pmt(mya_prices=self.mya_prices,
+                                                cty_yields=self.cty_yields)
+        self.gov_pmts = np.array([totgovpmt * ac / self.total_acres
+                                  for ac in self.acres])
 
     # -----------------------------------------------------------------------
     # return cached value or compute a 3D numpy array of values in kilodollars
@@ -365,6 +374,7 @@ class SensTable(object):
         self.croptypeids = grp.croptypeids
         self.croptypenames = grp.croptypenames
         self.croptypetags = grp.croptypetags
+        self.crop_indices = grp.crop_indices
         # wheat/dc special case
         self.wheatdcixs = grp.wheatdcixs
         self.wheatdc = grp.wheatdc
@@ -396,6 +406,9 @@ class SensTable(object):
         # for selecting price column based on crop
         self.mcidx_for_fc = [self.market_crops.index(fc.market_crop)
                              for fc in self.farm_crops]
+
+    def get_farm_crop_idx(self, crop):
+        return self.crop_indices[crop]
 
     def add_styles(self, table):
         """
@@ -497,32 +510,29 @@ class SensTableStdCrop(SensTable):
         self.yld1 = self.nmcs + self.nyfs - 2
         self.prc1 = self.nfcs + self.npfs - 4
 
-    def get_all_formatted(self, tags, values, title, subtitle, names):
+    def get_formatted(self, data, crop, title, subtitle):
         """
-        Main Method for Crops subtypes
+        Main Method
         """
-        rslt = {}
-        for i, n in enumerate(names):
-            mcidx = self.mcidx_for_fc[i]
-            yield_row = self.yields[i, :]
-            price_col = self.mprices[:, mcidx]
-            fctname = self.croptypenames[i]
-            mctname = self.mktcropnames[mcidx]
-            maintitle = f'{n.upper()} {title}'
-            full = self.full_block(values[i, ...], maintitle, subtitle, yield_row,
-                                   price_col, fctname, mctname)
-            self.add_spans(full)
-            self.add_styles(full)
-            full = full.tolist()
-            # at this point, full is a triply nested list such that full[row, col]
-            # is a list with three elements: value as str, colspan as str, styles as str
-            rslt[tags[i]] = full
-        return rslt
+        fcidx = self.get_farm_crop_idx(crop)
+        mcidx = self.mcidx_for_fc[fcidx]
+        yield_row = self.yields[fcidx, :]
+        price_col = self.mprices[:, mcidx]
+        fctname = self.croptypenames[fcidx]
+        mctname = self.mktcropnames[mcidx]
+        full = self.full_block(data, title, subtitle, yield_row,
+                               price_col, fctname, mctname)
+        self.add_spans(full)
+        self.add_styles(full)
+        full = full.tolist()
+        # at this point, full is a triply nested list such that full[row, col]
+        # is a list with three elements: value as str, colspan as str, styles as str
+        return full
 
     # --------------------------------------------
     # Construction of table blocks (string arrays)
     # --------------------------------------------
-    def full_block(self, values, title, subtitle, yield_row, price_col,
+    def full_block(self, data, title, subtitle, yield_row, price_col,
                    fctname, mctname):
         """
         string array representing the full table
@@ -532,7 +542,7 @@ class SensTableStdCrop(SensTable):
         block[:3, :, 0] = self.title_block(title, subtitle)
         block[3:self.nfcs+3, self.nmcs:, 0] = self.yields_block(yield_row, fctname)
         block[self.nfcs+3:, :self.nmcs, 0] = self.prices_block(price_col, mctname)
-        block[self.nfcs+3:, self.nmcs:, 0] = self.sens_block(values)
+        block[self.nfcs+3:, self.nmcs:, 0] = self.sens_block(data)
         return block
 
     def title_block(self, title, subtitle):
@@ -557,11 +567,11 @@ class SensTableStdCrop(SensTable):
                                 ).reshape(self.npfs, 1)
         return block
 
-    def sens_block(self, values):
+    def sens_block(self, data):
         block = np.full((self.npfs+2, self.nyfs+1), '', dtype=object)
         block[1, 1:] = list(map('{:.0%}'.format, self.yfrange))
         block[2:, 0] = list(map('{:.0%}'.format, self.pfrange))
-        lst = values.tolist()
+        lst = data.tolist()
         block[2:, 1:] = [list(map('{:,.0f}'.format, ll)) for ll in lst]
         return block
 
@@ -595,22 +605,22 @@ class SensTableStdFarm(SensTable):
         self.yld1 = self.nmcs + self.nyfs - 2
         self.prc1 = self.nfcs + self.npfs - 4
 
-    def get_formatted(self, tag, values, title, subtitle):
+    def get_formatted(self, data, crop, title, subtitle):
         """
-        Main Method for Farm and WheatDC subtypes
+        Main Method
         """
-        full = self.full_block(values, title, subtitle)
+        full = self.full_block(data, title, subtitle)
         self.add_spans(full)
         self.add_styles(full)
         full = full.tolist()
         # at this point, full is a triply nested list such that full[row, col]
         # is a list with three elements: value as str, colspan as str, styles as str
-        return {tag: full}
+        return full
 
     # --------------------------------------------
     # Construction of table blocks (string arrays)
     # --------------------------------------------
-    def full_block(self, values, title, subtitle):
+    def full_block(self, data, title, subtitle):
         """
         string array representing the full table
         with third dimension: [value, span, style]
@@ -619,7 +629,7 @@ class SensTableStdFarm(SensTable):
         block[:3, :, 0] = self.title_block(title, subtitle)
         block[3:self.nfcs+3, self.nmcs:, 0] = self.yields_block()
         block[self.nfcs+3:, :self.nmcs, 0] = self.prices_block()
-        block[self.nfcs+3:, self.nmcs:, 0] = self.sens_block(values)
+        block[self.nfcs+3:, self.nmcs:, 0] = self.sens_block(data)
         return block
 
     def title_block(self, title, subtitle):
@@ -646,11 +656,11 @@ class SensTableStdFarm(SensTable):
         self.pricesblock = block
         return block
 
-    def sens_block(self, values):
+    def sens_block(self, data):
         block = np.full((self.npfs+2, self.nyfs+1), '', dtype=object)
         block[1, 1:] = list(map('{:.0%}'.format, self.yfrange))
         block[2:, 0] = list(map('{:.0%}'.format, self.pfrange))
-        lst = values.tolist()
+        lst = data.tolist()
         block[2:, 1:] = [list(map('{:,.0f}'.format, ll)) for ll in lst]
         return block
 
@@ -682,28 +692,28 @@ class SensTableStdWheatDC(SensTable):
         self.yld1 = self.nmcs + self.nyfs - 2
         self.prc1 = self.nfcs + self.npfs - 4
 
-    def get_formatted(self, tag, values, title, subtitle):
+    def get_formatted(self, data, crop, title, subtitle):
         """
-        Main Method for Farm and WheatDC subtypes
+        Main Method
         """
         mcidxs = [self.mcidx_for_fc[i] for i in self.wheatdcixs]
         yield_rows = self.yields[self.wheatdcixs, :]
         price_cols = self.mprices[:, mcidxs]
         fctnames = [self.croptypenames[i] for i in self.wheatdcixs]
         mctnames = [self.mktcropnames[mcidx] for mcidx in mcidxs]
-        full = self.full_block(values, title, subtitle, yield_rows, price_cols,
+        full = self.full_block(data, title, subtitle, yield_rows, price_cols,
                                fctnames, mctnames)
         self.add_spans(full)
         self.add_styles(full)
         full = full.tolist()
         # at this point, full is a triply nested list such that full[row, col]
         # is a list with three elements: value as str, colspan as str, styles as str
-        return {tag: full}
+        return full
 
     # --------------------------------------------
     # Construction of table blocks (string arrays)
     # --------------------------------------------
-    def full_block(self, values, title, subtitle, yield_rows, price_cols,
+    def full_block(self, data, title, subtitle, yield_rows, price_cols,
                    fctnames, mctnames):
         """
         string array representing the full table
@@ -713,7 +723,7 @@ class SensTableStdWheatDC(SensTable):
         block[:3, :, 0] = self.title_block(title, subtitle)
         block[3:self.nfcs+3, self.nmcs:, 0] = self.yields_block(yield_rows, fctnames)
         block[self.nfcs+3:, :self.nmcs, 0] = self.prices_block(price_cols, mctnames)
-        block[self.nfcs+3:, self.nmcs:, 0] = self.sens_block(values)
+        block[self.nfcs+3:, self.nmcs:, 0] = self.sens_block(data)
         return block
 
     def title_block(self, title, subtitle):
@@ -739,11 +749,11 @@ class SensTableStdWheatDC(SensTable):
                         for ll in price_cols.tolist()]
         return block
 
-    def sens_block(self, values):
+    def sens_block(self, data):
         block = np.full((self.npfs+2, self.nyfs+1), '', dtype=object)
         block[1, 1:] = list(map('{:.0%}'.format, self.yfrange))
         block[2:, 0] = list(map('{:.0%}'.format, self.pfrange))
-        lst = values.tolist()
+        lst = data.tolist()
         block[2:, 1:] = [list(map('{:,.0f}'.format, ll)) for ll in lst]
         return block
 
@@ -765,8 +775,6 @@ class SensTableTitle(SensTable):
         super().__init__(*args, **kwargs)
         # show all fsa crops for both yield and price blocks
         self.fsa_crops = list(self.farm_year.fsa_crops.all())
-        # TODO: we need the MYA prices for the range of market prices set
-        # probably in the base class init.
         # lengths for layout
         self.nfsacs = len(self.fsa_crops)
         self.npfs = len(self.pfrange)
@@ -776,38 +784,22 @@ class SensTableTitle(SensTable):
         self.yld1 = self.nfsacs*2 + self.nyfs - 2
         self.prc1 = self.nfsacs + self.npfs - 4
 
-    def get_formatted(self, tag, values, title, subtitle):
+    def get_formatted(self, data, crop, title, subtitle):
         """
         Main Method for Farm and WheatDC cases
         """
-        full = self.full_block(values, title, subtitle)
+        full = self.full_block(data, title, subtitle)
+        # at this point, full is a triply nested list such that full[row, col]
+        # is a list with three elements: value as str, colspan as str, styles as str
         self.add_spans(full)
         self.add_styles(full)
         full = full.tolist()
-        # at this point, full is a triply nested list such that full[row, col]
-        # is a list with three elements: value as str, colspan as str, styles as str
-        return {tag: full}
-
-    def get_all_formatted(self, tags, values, title, subtitle, names):
-        """
-        Main Method for Crops cases
-        """
-        rslt = {}
-        for i, n in enumerate(names):
-            maintitle = f'{n} {title}'
-            full = self.full_block(values[i, ...], maintitle, subtitle)
-            self.add_spans(full)
-            self.add_styles(full)
-            full = full.tolist()
-            # at this point, full is a triply nested list such that full[row, col]
-            # is a list with three elements: value as str, colspan as str, styles as str
-            rslt[tags[i]] = full
-        return rslt
+        return full
 
     # --------------------------------------------
     # Construction of table blocks (string arrays)
     # --------------------------------------------
-    def full_block(self, values, title, subtitle):
+    def full_block(self, data, title, subtitle):
         """
         string array representing the full table
         with third dimension: [value, span, style]
@@ -816,7 +808,7 @@ class SensTableTitle(SensTable):
         block[:3, :, 0] = self.title_block(title, subtitle)
         block[3:self.nfsacs+3, self.nfsacs*2:, 0] = self.yields_block()
         block[self.nfsacs+3:, :self.nfsacs*2, 0] = self.prices_block()
-        block[self.nfsacs+3:, self.nfsacs*2:, 0] = self.sens_block(values)
+        block[self.nfsacs+3:, self.nfsacs*2:, 0] = self.sens_block(data)
         return block
 
     def title_block(self, title, subtitle):
@@ -844,11 +836,11 @@ class SensTableTitle(SensTable):
                            for ll in self.mya_pcts.tolist()]
         return block
 
-    def sens_block(self, values):
+    def sens_block(self, data):
         block = np.full((self.npfs+2, self.nyfs+1), '', dtype=object)
         block[1, 1:] = list(map('{:.0%}'.format, self.yfrange))
         block[2:, 0] = list(map('{:.0%}'.format, self.pfrange))
-        lst = values.tolist()
+        lst = data.tolist()
         block[2:, 1:] = [list(map('{:,.0f}'.format, ll)) for ll in lst]
         return block
 

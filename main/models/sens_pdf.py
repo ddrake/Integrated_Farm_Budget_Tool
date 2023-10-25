@@ -35,10 +35,10 @@ ALL = True
 
 
 class SensPdf(object):
-    def __init__(self, farm_year, senstag):
+    def __init__(self, farm_year, isdiff):
         self.farm_year = farm_year
-        self.senstag = senstag
-        self.sens_text = np.array(self.farm_year.sensitivity_text[senstag])
+        self.isdiff = isdiff
+        self.sens_text = np.array(self.farm_year.sensitivity_text)
         self.rows = self.sens_text[..., 0].tolist()
         self.spans = self.sens_text[..., 1].tolist()
         self.styles = self.sens_text[..., 2].tolist()
@@ -191,7 +191,7 @@ class SensPdf(object):
         return [NRM] * 34
 
     def get_title(self):
-        return 'Sensitivity Table' + (' Differences' if 'diff' in self.senstag else '')
+        return 'Sensitivity Table' + (' Differences' if self.isdiff else '')
 
     def first_page_header(self):
         farm_name = self.farm_year.farm_name

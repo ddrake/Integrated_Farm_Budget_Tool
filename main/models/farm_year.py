@@ -89,6 +89,7 @@ class FarmYear(models.Model):
         help_text=_('increment to noncontract basis for basis sensitivity<br>' +
                     'Set to zero to turn off basis sensitivity.'))
     sensitivity_data = models.JSONField(null=True, blank=True)
+    sensitivity_diff = models.JSONField(null=True, blank=True)
     sensitivity_text = models.JSONField(null=True, blank=True)
     est_sequest_frac = models.FloatField(
         default=0.062, validators=[
