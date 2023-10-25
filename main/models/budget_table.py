@@ -25,53 +25,128 @@ class BudgetManager(object):
         self.total_premiums = [fc.get_total_premiums(sel) for sel, fc in
                                zip(self.ci_info, self.farm_crops)]
 
-    def update_budget_text(self):
+    def calc_current_budget(self):
         """
-        Modify the dict of dicts, 'cur' for current budget,
-        and possibly 'var' for variance, save it and return it to the view.
-        'base' for baseline remains unchanged
+        Main non-AJAX method.  Generates and stores data for current budget.
+        Generates and stores the current budget into budget text.
+        Returns the current budget.
         """
-        if self.farm_year.budget_text is None:
-            self.farm_year.budget_text = {}
-
         cur_budget = self.build_current_budget()
-        self.farm_year.budget_text['cur'] = (None if cur_budget['tables'] is None
-                                             else cur_budget)
-
-        if self.farm_year.baseline_budget_data is not None:
-            var_budget = self.build_variance_budget()
-            self.farm_year.budget_text['var'] = (
-                None if var_budget is None or var_budget['tables'] is None else
-                var_budget)
-            if self.farm_year.budget_text['var'] is None:
-                # baseline budget must be invalid
-                self.farm_year.budget_text['base'] = None
-                self.farm_year.baseline_budget_data = None
-        else:
-            self.farm_year.budget_text['var'] = None
-            self.farm_year.budget_text['base'] = None
+        valid_baseline = self.has_valid_baseline()
+        cur_budget['info']['has_valid_baseline'] = valid_baseline
+        self.farm_year.budget_text = (None if cur_budget['tables'] is None
+                                      else cur_budget)
+        if not valid_baseline:
+            self.farm_year.baseline_budget_data = None
         self.farm_year.save()
         return self.farm_year.budget_text
 
-    def build_current_budget(self):
+    def get_current_budget(self):
+        """
+        Called by AJAX view.  Generates and stores current budget into budget text.
+        Returns formatted numbers to be inserted into the rendered budget tables.
+        """
+        cur_budget = self.build_current_budget(from_db=True)
+        cur_budget['info']['has_valid_baseline'] = self.has_valid_baseline()
+        self.farm_year.budget_text = (None if cur_budget['tables'] is None
+                                      else cur_budget)
+        self.farm_year.save()
+        return self.farm_year.budget_text
+
+    def get_baseline_budget(self):
+        """
+        Called by AJAX view.  Generates and stores baseline budget into budget text.
+        Returns formatted numbers to be inserted into the rendered budget tables.
+        """
+        if self.farm_year.baseline_budget_data is not None:
+            bl_budget = self.build_baseline_budget()
+            self.farm_year.budget_text = (None if bl_budget['tables'] is None
+                                          else bl_budget)
+        else:
+            self.farm_year.budget_text = None
+        self.farm_year.save()
+        return self.farm_year.budget_text
+
+    def get_variance_budget(self):
+        """
+        Called by AJAX view.  Generates and stores variance budget into budget text.
+        Returns formatted numbers to be inserted into the rendered budget tables.
+        """
+        if self.farm_year.baseline_budget_data is not None:
+            var_budget = self.build_variance_budget()
+            self.farm_year.budget_text = (
+                None if var_budget is None or var_budget['tables'] is None else
+                var_budget)
+        else:
+            self.farm_year.budget_text = None
+        self.farm_year.save()
+        return self.farm_year.budget_text
+
+    def has_valid_baseline(self):
+        """
+        Since we're only returning the current budget via the regular request,
+        we need some way to let the template logic know whether there is a vailid
+        baseline and variance.  The stored data are in nested dicts of lists.
+        """
+        cur = self.farm_year.current_budget_data
+        base = self.farm_year.baseline_budget_data
+        if base is None:
+            return False
+        for k, vcur in cur.items():
+            vbase = base[k]
+            for k1, vcur1 in vcur.items():
+                vbase1 = vbase[k1]
+                if len(vcur1) != len(vbase1):
+                    return False
+        return True
+
+    def build_current_budget(self, from_db=False):
         """
         Collect all text and format data needed for the current budget
-        Also construct the values dict and save in farmyear.current_budget_data
+        Also construct the current_budget_data dict and
+        save in farmyear.current_budget_data
         """
-        cur_budget = {}
-        bt = BudgetTable(self.farm_year, self)
+        if from_db:
+            current = self.farm_year.current_budget_data
+            br = current['revenue']
+            bb = current['budget']
+            bt = BudgetTable(self.farm_year, self, revenue_data=br, budget_data=bb)
+        else:
+            bt = BudgetTable(self.farm_year, self)
         rd = bt.revenue_details
         kd = KeyData(self.farm_year, self)
 
+        cur_budget = {}
         cur_budget['rev'] = rd.get_rows()
         cur_budget['revfmt'] = rd.get_formats()
         cur_budget['info'] = bt.get_info()
         cur_budget['tables'] = bt.get_tables()
         cur_budget['keydata'] = kd.get_tables()
 
-        # Set current data for possible use as baseline data later
-        self.farm_year.current_budget_data = {'revenue': rd.data, 'budget': bt.data}
+        if not from_db:
+            # Set current data for possible use as baseline data later
+            self.farm_year.current_budget_data = {'revenue': rd.data, 'budget': bt.data}
         return cur_budget
+
+    def build_baseline_budget(self):
+        """
+        Collect all text and format data needed for the baseline budget
+        """
+        baseline = self.farm_year.baseline_budget_data
+        br = baseline['revenue']
+        bb = baseline['budget']
+        bt = BudgetTable(self.farm_year, self, revenue_data=br, budget_data=bb)
+        rd = bt.revenue_details
+        kd = KeyData(self.farm_year, self)
+
+        baseline_budget = {}
+        baseline_budget['rev'] = rd.get_rows()
+        baseline_budget['revfmt'] = rd.get_formats()
+        baseline_budget['info'] = bt.get_info()
+        baseline_budget['tables'] = bt.get_tables()
+        baseline_budget['keydata'] = kd.get_tables()
+
+        return baseline_budget
 
     def build_variance_budget(self):
         """
@@ -90,18 +165,8 @@ class BudgetManager(object):
             except KeyError:
                 return None
 
-        # compare text headers to ensure that the crops match
-        bt = self.farm_year.budget_text
-        try:
-            cur_headers = bt['cur']['tables']['pa'][0]
-            cur_headers = set(zip(*cur_headers))
-            base_headers = bt['base']['tables']['pa'][0]
-            base_headers = set(zip(*base_headers))
-            if (cur_headers != base_headers):
-                return None
-        except Exception:
+        if not self.has_valid_baseline():
             return None
-
         # Now use
         baseline = self.farm_year.baseline_budget_data
         br = baseline['revenue']
@@ -137,7 +202,7 @@ class BudgetTable(object):
 
     def __init__(self, farm_year, mgr, revenue_data=None, budget_data=None):
         """
-        Optional revenue_data and budget_data for computing variance
+        Optional revenue_data and budget_data for baseline or variance
         Get a queryset of all farm crops with budgets for the farm year
           ordered by farm_crop_type.  If no farm crops have budgets, return None.
           The view should check for None, and show a message about adding budgets.
@@ -243,6 +308,7 @@ class BudgetTable(object):
 
     def get_info(self):
         return {'farmyear': self.farm_year.pk,
+                'has_valid_baseline': None,
                 'bh': [1, 7, 16, 24, 33, 35, 36, 37, 39, 41, 42, 43, 44, 46, 48, 50],
                 'bd': [1, 5, 7, 14, 16, 24, 33, 37, 39, 43, 46, 48, 50],
                 'ol': [7, 16, 24, 33, 37, 43],

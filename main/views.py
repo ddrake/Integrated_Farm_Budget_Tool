@@ -476,13 +476,27 @@ class DetailedBudgetView(UserPassesTestMixin, TemplateView):
         context = super().get_context_data(**kwargs)
         farm_year = get_object_or_404(FarmYear, pk=kwargs.get('farmyear', None))
         bm = BudgetManager(farm_year)
-        budgets = bm.update_budget_text()
-        context['cur'] = budgets['cur']
-        context['base'] = budgets['base']
-        context['var'] = budgets['var']
+        budget = bm.calc_current_budget()
+        context['rev'] = budget['rev']
+        context['revfmt'] = budget['revfmt']
+        context['info'] = budget['info']
+        context['tables'] = budget['tables']
+        context['keydata'] = budget['keydata']
         context['farmyear_id'] = farm_year.pk
         context['has_farm_years'] = True
         return context
+
+
+class GetAjaxBudgetView(View):
+    def get(self, request, *args, **kwargs):
+        farm_year = get_object_or_404(FarmYear, pk=kwargs.get('farmyear', None))
+        bm = BudgetManager(farm_year)
+        bdgtype = request.GET.get('bdgtype', None)
+        budget = (bm.get_baseline_budget() if bdgtype == 'base' else
+                  bm.get_variance_budget() if bdgtype == 'var' else
+                  bm.get_current_budget())
+        return JsonResponse({'data': {'rev': budget['rev'],
+                                      'tables': budget['tables']}})
 
 
 class BudgetPdfView(UserPassesTestMixin, View):

@@ -114,12 +114,10 @@ class FarmYear(models.Model):
         return mmrd.date() if hasattr(mmrd, 'date') else mmrd
 
     def has_budget(self):
-        return (self.budget_text is not None and
-                self.budget_text['cur'] is not None)
+        return self.current_budget_data is not None
 
     def has_baseline_budget(self):
-        return (self.budget_text is not None and
-                self.budget_text['base'] is not None)
+        return self.baseline_budget_data is not None
 
     def update_baseline(self):
         """
@@ -127,7 +125,6 @@ class FarmYear(models.Model):
         Update the budget_text dict setting 'base' to 'cur'.
         """
         self.baseline_budget_data = self.current_budget_data
-        self.budget_text['base'] = self.budget_text['cur']
         self.save()
 
     def wasde_first_mya_release_on(self):

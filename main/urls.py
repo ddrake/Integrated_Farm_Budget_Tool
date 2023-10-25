@@ -11,7 +11,7 @@ from .views import (
     FarmBudgetCropUpdateView,
     FarmCropAddBudgetView, FarmCropDeleteBudgetView,
     FarmYearUpdateBaselineView, FarmYearConfirmBaselineUpdate,
-    DetailedBudgetView, BudgetPdfView,
+    DetailedBudgetView, GetAjaxBudgetView, BudgetPdfView,
     SensitivityTableView, GetSensTableView, SensitivityPdfView,
     ContractCreateView, ContractUpdateView, ContractDeleteView,
     MarketCropContractListView,
@@ -87,6 +87,8 @@ urlpatterns = [
     # detailed budget related views
     path('detailedbudget/<int:farmyear>',
          DetailedBudgetView.as_view(), name='detailedbudget'),
+    path('detailedbudget/table/<int:farmyear>',
+         GetAjaxBudgetView.as_view(), name='ajaxbudget'),
     path('downloadbudget/<int:farmyear>',
          BudgetPdfView.as_view(), name='downloadbudget'),
     path('updatebaseline/',

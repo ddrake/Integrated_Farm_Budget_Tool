@@ -30,7 +30,7 @@ class BudgetPdf(object):
         self.farm_year = farm_year
         self.budget_type = budget_type
 
-        budget_text = self.farm_year.budget_text[budget_type]
+        budget_text = self.farm_year.budget_text
 
         self.rev_table = budget_text['rev']
         self.rev_format = budget_text['revfmt']
