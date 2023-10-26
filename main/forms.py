@@ -64,7 +64,7 @@ class FarmYearUpdateForm(ModelForm):
             Fieldset('Rented Land Information',
                      'cash_rented_acres', 'variable_rented_acres',
                      Field('var_rent_cap_floor_frac', css_class="percent")),
-            Fieldset('Non-grain income and expense',
+            Fieldset('Non-grain revenue and expense',
                      'other_nongrain_income', 'other_nongrain_expense'),
             Fieldset('Farm Level Title Settings', 'eligible_persons_for_cap',
                      Field('est_sequest_frac', css_class="percent")),
