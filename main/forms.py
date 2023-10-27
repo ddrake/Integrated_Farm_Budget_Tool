@@ -44,6 +44,10 @@ class FarmYearCreateForm(ModelForm):
         return farmname
 
     class Meta:
+        # Note: The label defined in the model as verbose_name is ignored, probably
+        # because of replacing the widget.  I tried adding the label explicitly here
+        # labels = {'county_code': 'Primary county'}
+        # but it had no effect. Hacked in Javascript for now.
         model = FarmYear
         fields = ['farm_name', 'state', 'county_code', 'user']
 

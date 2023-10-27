@@ -289,26 +289,6 @@ class FarmCrop(models.Model):
             self.crop_ins_prems = {key: None if ar is None else ar.tolist()
                                    for key, ar in zip(names, prems[:4])}
 
-    def prem_price_yield_data(self):
-        """
-        If model run is before price_discovery_end, we use the previous year's
-        price volatility factor and the current futures price as projected price
-        """
-        post_discov = self.farm_year.get_model_run_date() > self.proj_price_disc_end
-        py = PriceYield.objects.get(
-            crop_year=self.farm_year.crop_year, state_id=self.farm_year.state_id,
-            county_code=self.farm_year.county_code,
-            crop_id=self.farm_crop_type.ins_crop_id, crop_type_id=self.ins_crop_type_id,
-            practice=self.ins_practice)
-        exp_yield = py.expected_yield
-        proj_price = (py.projected_price if post_discov
-                      and py.projected_price is not None else
-                      self.harvest_price())
-        price_vol = (py.price_volatility_factor if post_discov
-                     and py.price_volatility_factor is not None else
-                     py.price_volatility_factor_prevyr)
-        return price_vol, proj_price, exp_yield
-
     # ----------------------------------
     # Crop Ins Indemnity-related methods
     # values in $/acre
@@ -337,7 +317,6 @@ class FarmCrop(models.Model):
                 crop_year=crop_year, state_id=state_id, county_code=county_code,
                 crop_id=crop_id, crop_type_id=crop_type_id, practice=practice)
             mrd = self.farm_year.get_model_run_date()
-
             # projected price discovery
             pre_proj_discov = mrd <= self.proj_price_disc_start
             post_proj_discov = (py.projected_price is not None and

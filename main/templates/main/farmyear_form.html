@@ -31,6 +31,9 @@
       if (state) {
         makeRequest(state)
       }
+      // hack to get the correct label to display
+      const lbl = document.querySelector('#div_id_county_code label')
+      lbl.firstChild.nodeValue="Primary county"
     });
 
     document

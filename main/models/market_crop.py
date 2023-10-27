@@ -119,12 +119,16 @@ class MarketCrop(models.Model):
                 ORDER BY priced_on desc limit 1
                 """
 
-            rec = FuturesPrice.objects.raw(
-                sql, params=[self.farm_year.crop_year, self.farm_year.state_id,
-                             self.farm_year.county_code, self.market_crop_type_id,
-                             priced_on, priced_on])[0]
+            try:
+                rec = FuturesPrice.objects.raw(
+                    sql, params=[self.farm_year.crop_year, self.farm_year.state_id,
+                                 self.farm_year.county_code, self.market_crop_type_id,
+                                 priced_on, priced_on])[0]
+            except IndexError:
+                # Added so we can test 2024 crop years in 2023
+                rec = None
 
-            self.harvest_futures_price_info_mem = rec.price
+            self.harvest_futures_price_info_mem = None if rec is None else rec.price
         return self.harvest_futures_price_info_mem if price_only else rec
 
     def planted_acres(self):
