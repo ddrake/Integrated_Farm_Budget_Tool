@@ -677,13 +677,13 @@ class FarmCrop(models.Model):
     # --------------
     def get_budget_crops(self):
         return [
-            (it.id, get_budget_crop_description(
+            (it, get_budget_crop_description(
                 it.is_rot, it.description, it.farm_yield, it.rented_land_costs,
                 it.state.abbr))
             for it in BudgetCrop.objects.filter(
                 farm_crop_type_id=self.farm_crop_type, is_irr=self.is_irrigated(),
                 budget__crop_year=self.farm_year.crop_year).only(
-                    "id", "is_rot", "description", "farm_yield",
+                    "id", "budget_id", "is_rot", "description", "farm_yield",
                     "rented_land_costs", "state__abbr")]
 
     def has_budget(self):
