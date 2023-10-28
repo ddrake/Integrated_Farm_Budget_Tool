@@ -1,12 +1,26 @@
-function setinfo(hasbudget, farmcrop_pk) {
-  let info = document.querySelector(`#budget-info-${farmcrop_pk}`)
-  info.innerHTML = hasbudget ? ("Budget set; any custom budget item values<br>" +
-    "will be lost if this selection is later changed.")
-    : ("Before adding a budget, please ensure that the<br>" +
-       "irrigation status is set correctly.");
+function setinfo(farmcrop_pk, farmyear_pk) {
+  // manage info and budget source link
+  const budgetsel = document.querySelector(`#budgets-${farmcrop_pk}`)
+  const info = document.querySelector(`#budget-info-${farmcrop_pk}`)
+  const link = document.querySelector(`#budgetsource-${farmcrop_pk}`)
+  let budget_id = budgetsel.value;
+  let hasbudget = budget_id != ""
+  let selopt = budgetsel.selectedOptions[0]
+  let budgetsource = selopt.dataset[`budget-${farmcrop_pk}`]
+  if (hasbudget) {
+    info.innerHTML = "Budget set; any custom budget item values<br>" +
+                     "will be lost if this selection is later changed."
+    link.href = `/budgetsources/${farmyear_pk}/#${budgetsource}`
+    link.classList.remove("invisible")
+  } else {
+    info.innerHTML = "Before adding a budget, please ensure that the<br>" +
+                     "irrigation status is set correctly."
+    link.href = '#'
+    link.classList.add("invisible")
+  }
 }
 
-function submitFormData(farmcrop_pk) {
+function submitFormData(farmcrop_pk, farmyear_pk) {
   let xhr = new XMLHttpRequest();
   const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
   const budgetid = document.querySelector(`#budgets-${farmcrop_pk}`).value;
@@ -18,16 +32,6 @@ function submitFormData(farmcrop_pk) {
   xhr.setRequestHeader('X-CSRFToken', csrftoken); 
   xhr.send(data);
   xhr.onload = function() {
-    setinfo(budgetid !== "");
+    setinfo(farmcrop_pk, farmyear_pk);
   }
-}
-
-function addBudgetLink(farmyear_pk, farmcrop_pk, budget_id) {
-  const info = document.querySelector(`#budget-info-${farmcrop_pk}`)
-  const budgetLink = document.createElement("a");
-  const linkText = document.createTextNode('Budget Source')
-  budgetLink.appendChild(linkText)
-  budgetLink.setAttribute('href', `/budgetsources/${farmyear_pk}#${budget_id}`)
-  budgetLink.setAttribute('class', 'block mt-2 text-sm text-indigo-800 hover:text-indigo-600')
-  info.after(budgetLink);
 }

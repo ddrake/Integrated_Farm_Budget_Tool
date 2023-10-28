@@ -67,38 +67,40 @@
           <select 
             class="bg-white focus:outline-none border border-gray-300 rounded-lg py-2 px-4 block w-full appearance-none text-xs leading-normal text-gray-700" 
             name="budgets-{{farmcrop.pk}}" id="budgets-{{farmcrop.pk}}"
-            data-hasbudget-{{farmcrop.pk}}="{{farmcrop.has_budget}}" >
+             >
             <option value="">-------</option>
-            {% for bcid, bcname in farmcrop.get_budget_crops %}
-            <option value="{{bcid}}">{{bcname}}</option>
+            {% for bc, bcname in farmcrop.get_budget_crops %}
+            <option
+              value="{{bc.id}}"
+              data-budget-{{farmcrop.pk}}="{{bc.budget_id}}"
+             >{{bcname}}</option>
             {% endfor %}
           </select>
           <small id="budget-info-{{farmcrop.pk}}" class="text-gray-600 mb-px">
           Set irrigation status before adding.</small>
+          <a href="#" id="budgetsource-{{farmcrop.pk}}"
+             class="invisible block mt-2 text-sm text-indigo-800 hover:text-indigo-600"
+             >Budget Source</a>
         </form> 
     </div>
     <!-- The script MUST be in the LOOP! We need multiple scripts. -->
     <script>
       (() => {
-        const farmyear = "{{farmyear_id}}"
+        const farmyear_pk = "{{farmyear_id}}"
         const farmcrop_pk = "{{farmcrop.pk}}"
         const budget_crop_id = "{{ farmcrop.farmbudgetcrop.budget_crop_id }}"
         const budget_id = "{{ farmcrop.farmbudgetcrop.budget_id }}"
 
         document.addEventListener('DOMContentLoaded', (event) => {
-          let budgetsel = document.querySelector(`#budgets-${farmcrop_pk}`)
-          const hasbudget = budgetsel.getAttribute(`data-hasbudget-${farmcrop_pk}`)
-          setinfo(hasbudget === 'True', farmcrop_pk);
-          if (hasbudget === 'True' && budget_id) {
-            addBudgetLink(farmyear, farmcrop_pk, budget_id);
-          }
+          const budgetsel = document.querySelector(`#budgets-${farmcrop_pk}`)
           budgetsel.value = `${budget_crop_id}`
+          setinfo(farmcrop_pk, farmyear_pk);
         });
 
         document
           .querySelector(`#budgets-${farmcrop_pk}`)
              .addEventListener("change", (event) => {
-                 submitFormData(farmcrop_pk)
+                 submitFormData(farmcrop_pk, farmyear_pk)
              });
 
       })();
