@@ -116,13 +116,13 @@
               >
               Video Tutorials</a>
             <a
-              href="https://github.com/ddrake/Integrated_Farm_Budget_Tool/wiki/Users-Guide"
+              href="https://github.com/ddrake/Integrated_Farm_Budget_Tool/wiki/Users-Guide/"
               target="_blank"
               class="block mt-4 sm:inline-block sm:mt-0 text-teal-200 hover:text-white ml-4"
               >
               User Guide</a>
             <a
-              href="https://github.com/ddrake/Integrated_Farm_Budget_Tool/discussions"
+              href="https://github.com/ddrake/Integrated_Farm_Budget_Tool/discussions/"
               target="_blank"
               class="block mt-4 sm:inline-block sm:mt-0 text-teal-200 hover:text-white ml-4"
               >
@@ -144,12 +144,23 @@
               >Change Password</a
             >
             {% if not has_farm_years %}
-            <a
-              href="{% url 'delete_account' %}"
-              class="block mt-4 sm:inline-block sm:mt-0 text-teal-200 hover:text-white ml-4"
-              >Delete Account</a
-            >
+              <a
+                href="{% url 'delete_account' %}"
+                class="block mt-4 sm:inline-block sm:mt-0 text-teal-200 hover:text-white ml-4"
+                >Delete Account</a
+              >
             {% endif %}
+          {% else %}
+            <a
+              href="{% url 'login' %}"
+              class="block mt-4 sm:inline-block sm:mt-0 text-teal-200 hover:text-white ml-4"
+              >Log in</a
+            >
+            <a
+              href="{% url 'register' %}"
+              class="block mt-4 sm:inline-block sm:mt-0 text-teal-200 hover:text-white ml-4"
+              >Register</a
+            >
           {% endif %}
         </div>
       </div>
