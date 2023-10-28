@@ -6,7 +6,7 @@ function makeRequest(state_id) {
     return false;
   }
   xhr.onreadystatechange = updateCounties;
-  const url = `counties_for_state/${state_id}`
+  const url = `counties_for_state/${state_id}/`
   xhr.open("GET", url);
   xhr.send();
 }

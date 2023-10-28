@@ -45,7 +45,7 @@ urlpatterns = [
          name='farmyear_update_ft'),
     path('farmyear/delete/<int:pk>/', FarmYearDeleteView.as_view(),
          name='farmyear_delete'),
-    path('farmyear/counties_for_state/<int:state_id>/',
+    path('farmyear/create/counties_for_state/<int:state_id>/',
          login_required(GetCountyView.as_view())),
     # list views for farm year
     path('farmcrops/<int:farmyear>/', FarmYearFarmCropListView.as_view(),
