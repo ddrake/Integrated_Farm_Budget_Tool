@@ -6,7 +6,7 @@ function makeRequest(budgettype, farmyear) {
     return false;
   }
   xhr.onreadystatechange = updateBudget;
-  const url = `table/${farmyear}?bdgtype=${budgettype}`
+  const url = `table/?bdgtype=${budgettype}`
 
   xhr.open("GET", url);
   xhr.send();

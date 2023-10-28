@@ -73,7 +73,6 @@ function getTblInfo(basis_incr) {
   let tblnum = ''
   if (basis_incr !== 0 && basistype) {
     let btnSel = document.querySelectorAll('#btnBar .selected')
-    console.log(btnSel)
     tblnum = btnSel[0].id[3]
   }
   return {'tbltype': type, 'crop': crop, 'tblnum': tblnum, 'isdiff': diff}
@@ -88,7 +87,7 @@ function makeRequest(farmyear, basis_incr) {
     return false;
   }
   xhr.onreadystatechange = replaceTable;
-  const url = `sens_table/${farmyear}` +
+  const url = `sens_table/` +
     `?tbltype=${ti.tbltype}&crop=${ti.crop}&tblnum=${ti.tblnum}&isdiff=${ti.isdiff}`
 
   xhr.open("GET", url);
