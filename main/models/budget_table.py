@@ -826,7 +826,7 @@ class KeyData(object):
         Show yield factor, actual yields
         """
         info = [(fc.farmbudgetcrop.yield_factor, fc.farm_expected_yield(),
-                 fc.sens_farm_expected_yield(), fc.sens_cty_expected_yield())
+                 fc.sens_farm_expected_yield(), fc.sens_cty_expected_yield()[0])
                 for fc in self.farm_crops]
 
         yfs, yields, sensyields, senscty = zip(*info)

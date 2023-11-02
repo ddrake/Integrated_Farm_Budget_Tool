@@ -354,16 +354,17 @@ class FarmCrop(models.Model):
                 harvest_price *= np.ones_like(pf)
 
             exp_yield = py.expected_yield
-            # scalar or 1d array
-            sens_cty_exp_yield = (self.market_crop.county_bean_yield(yf)
-                                  if self.farm_crop_type_id in (2, 5)
-                                  else self.sens_cty_expected_yield(yf))
+            # scalar or 1d array, bool
+            sens_cty, is_rma_final = self.sens_cty_expected_yield(yf)
+            sens_cty_exp_yield = (
+                self.market_crop.county_bean_yield(yf)
+                if self.farm_crop_type_id in (2, 5) and not is_rma_final else sens_cty)
             result = (
                 {'ey': [exp_yield, True],
                  'pp': [proj_price, proj_price_final],
                  'pv': [price_vol, proj_price_final],
                  'hp': [harvest_price, harvest_price_final],
-                 'cy': [sens_cty_exp_yield]})
+                 'cy': [sens_cty_exp_yield, is_rma_final]})
 
             if scal(pf):
                 self.indem_price_yield_data_scal_mem = result
@@ -430,11 +431,17 @@ class FarmCrop(models.Model):
         if self.sens_cty_expected_yield_mem is not None:
             return self.sens_cty_expected_yield_mem
         else:
+            is_rma_final = False
             if not self.has_budget():
                 result = zero_like(yf)
             else:
                 if yf is None:
                     yf = self.farmbudgetcrop.yield_factor
+                # we need this result as a fallback in case we're after the
+                # release date, but the data hasn't been integrated yet.
+                yieldfinal = self.farmbudgetcrop.is_farm_yield_final
+                ctyyield = self.farmbudgetcrop.county_yield
+                result = ctyyield * (one_like(yf) if yieldfinal else yf)
                 if self.farm_year.get_model_run_date() > self.cty_yield_final:
                     py = PriceYield.objects.get(
                         crop_year=self.farm_year.crop_year,
@@ -443,13 +450,11 @@ class FarmCrop(models.Model):
                         crop_id=self.farm_crop_type.ins_crop_id,
                         crop_type_id=self.ins_crop_type_id,
                         practice=self.ins_practice)
-                    result = py.final_yield * one_like(yf)
-                else:
-                    yieldfinal = self.farmbudgetcrop.is_farm_yield_final
-                    ctyyield = self.farmbudgetcrop.county_yield
-                    result = ctyyield * (one_like(yf) if yieldfinal else yf)
-            self.sens_cty_expected_yield_mem = result
-            return result
+                    if py.final_yield is not None:
+                        result = py.final_yield
+                        is_rma_final = True
+            self.sens_cty_expected_yield_mem = result, is_rma_final
+            return result, is_rma_final
 
     def sens_production_bu(self, yf=None):
         """ scalar or 1d array """

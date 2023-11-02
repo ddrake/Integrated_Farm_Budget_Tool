@@ -19,8 +19,9 @@
         <dd class="text-right">{{fsacrop.arcco_base_acres|floatformat:"1g"}}</dd>
         <dt>PLC yield:</dt>
         <dd class="text-right">{{fsacrop.plc_yield}}</dd>
-        <dt>County expected yield:</dt>
-        <dd class="text-right">{{fsacrop.cty_expected_yield|floatformat:"1g"}}</dd>
+        <dt>RMA final county yield
+        {% if not fsacrop.cty_expected_yield.1 %}(est){% endif %}:</dt>
+        <dd class="text-right">{{fsacrop.cty_expected_yield.0|floatformat:"1g"}}</dd>
       </dl>
       <a class="text-xl text-indigo-800 hover:text-indigo-600 print:hidden"
          href="{% url 'fsacrop_update' pk=fsacrop.pk %}">Edit</a>

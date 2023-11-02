@@ -96,7 +96,7 @@ class SensTableGroup(object):
         self.yields = np.array([fc.sens_farm_expected_yield(self.yfrange)
                                 for fc in self.farm_crops])
 
-        self.cty_yields = np.array([fc.cty_expected_yield(self.yfrange)
+        self.cty_yields = np.array([fc.cty_expected_yield(self.yfrange)[0]
                                     for fc in self.fsa_crops])
 
         self.has_diffs = None

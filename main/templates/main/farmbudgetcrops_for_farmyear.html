@@ -26,8 +26,13 @@
       <dt>Farm yield</dt>
       <dd class="text-right">{{farmbudgetcrop.farm_yield}}</dd>
       {% endif %}
+      {% if farmbudgetcrop.farm_crop.sens_cty_expected_yield.1 %}
+      <dt>County yield (not used)</dt>
+      <dd class="text-right text-slate-400">{{farmbudgetcrop.county_yield}}</dd>
+      {% else %}
       <dt>County yield</dt>
       <dd class="text-right">{{farmbudgetcrop.county_yield}}</dd>
+      {% endif %}
       <dt>Yield sensitivity factor</dt>
       <dd class="text-right">{{farmbudgetcrop.yield_factor|pct}}</dd>
       <dt>Yields Final?</dt>

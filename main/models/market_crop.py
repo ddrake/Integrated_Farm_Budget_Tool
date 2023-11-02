@@ -139,13 +139,13 @@ class MarketCrop(models.Model):
 
     def county_bean_yield(self, yf=None):
         """
-        for indemnity calculations
+        for indemnity calculations (only called when final RMA yield is not known)
         1d array or scalar
         """
         ac = self.planted_acres()
         return (0 if scal(yf) and (self.market_crop_type_id != 2 or ac == 0) else
                 np.zeros_like(yf) if self.market_crop_type_id != 2 or ac == 0 else
-                sum((fc.sens_cty_expected_yield(yf) * fc.planted_acres
+                sum((fc.sens_cty_expected_yield(yf)[0] * fc.planted_acres
                      for fc in self.farm_crops.all())) / ac)
 
     def expected_total_bushels(self, yf=None):

@@ -55,6 +55,9 @@
         <dt>Discovered harvest price
           {% if not farmcrop.indem_price_yield_data.hp.1 %}(est){% endif %}</dt>
         <dd class="text-right">${{farmcrop.indem_price_yield_data.hp.0|floatformat:"2g"}}</dd>
+        <dt>RMA final county yield
+          {% if not farmcrop.indem_price_yield_data.cy.1 %}(est){% endif %}</dt>
+        <dd class="text-right">{{farmcrop.indem_price_yield_data.cy.0|floatformat:"1g"}}</dd>
       </dl>
       <div class="my-2 print:hidden">
         <a class="text-lg text-indigo-800 hover:text-indigo-600"

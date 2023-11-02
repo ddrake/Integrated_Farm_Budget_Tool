@@ -59,30 +59,35 @@ class FsaCrop(models.Model):
 
     def cty_expected_yield(self, yf=None):
         """
-        Get weighted average of farm crop county yields
-        Note: fc.sens_cty_expected_yield(yf) now considers RMA final yields
+        Get weighted average of farm crop county yields, along with final status
+        Note: fc.sens_cty_expected_yield(yf) considers RMA final yields
         """
         if yf is None:
             yf = self.yield_factor()
         if len(self.farm_crops()) == 0:
             return (0 if scal(yf) else np.zeros_like(yf))
-        pairs = [(fc.planted_acres, fc.sens_cty_expected_yield(yf))
-                 for fc in self.farm_crops()]
+        yield_info = [fc.sens_cty_expected_yield(yf) for fc in self.farm_crops()]
+        is_rma_final = len(yield_info) > 0 and all((yi[1] for yi in yield_info))
+        if is_rma_final:
+            return yield_info[0][0], is_rma_final
+
+        acres = [fc.planted_acres for fc in self.farm_crops()]
+        pairs = list(zip(acres, [yi[0] for yi in yield_info]))
         if scal(yf):
             pairs = [p for p in pairs if p != (0, 0)]
         else:
             pairs = [p for p in pairs if p[0] != 0 or not np.all(p[1]) == 0]
         if len(pairs) == 0:
-            return (0 if scal(yf) else np.zeros_like(yf))
+            return (0 if scal(yf) else np.zeros_like(yf)), is_rma_final
         if len(pairs) == 1:
-            return pairs[0][1]
+            return pairs[0][1], is_rma_final
         acres, weight = zip(*((ac, ac*yld) for ac, yld in pairs))
         totacres = sum(acres)
         if scal(yf):
-            return 0 if totacres == 0 else sum(weight) / totacres
+            return (0 if totacres == 0 else sum(weight) / totacres), is_rma_final
         else:
             return (np.zeros_like(yf) if totacres == 0 else
-                    sum(weight) / totacres)
+                    sum(weight) / totacres), is_rma_final
 
     def is_irrigated(self):
         pairs = [(fc.is_irrigated(), fc.planted_acres) for fc in self.farm_crops()]
@@ -115,7 +120,7 @@ class FsaCrop(models.Model):
         if sens_mya_price is None:
             sens_mya_price = self.sens_mya_price()
         if cty_yield is None:
-            cty_yield = self.cty_expected_yield()
+            cty_yield = self.cty_expected_yield()[0]
         gp = GovPmt(plc_base_acres=self.plc_base_acres,
                     arcco_base_acres=self.arcco_base_acres, plc_yield=self.plc_yield,
                     estimated_county_yield=cty_yield,
@@ -129,7 +134,8 @@ class FsaCrop(models.Model):
         if self.arcco_base_acres > 0 and field_crop_sco_use:
             raise ValidationError({'arcco_base_acres': _(
                 "ARC-CO base acres must be zero if SCO is set for related farm crop")})
-        if self.arcco_base_acres > 0 and self.cty_expected_yield() == 0:
+        if (self.arcco_base_acres > 0 and
+                not any((fc.has_budget() for fc in self.farm_crops))):
             raise ValidationError({'arcco_base_acres': _(
                 "County yield required. ARC-CO Base acres can be set only " +
                 "after selecting a budget in the 'Crop Acreage' form.")})
