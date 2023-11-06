@@ -221,19 +221,19 @@ select * FROM insertedfbcs LIMIT 1;
         return sql
 
     def get_fy_vals(self):
-        return f"({', '.join(self.fy_dict['values'])})"
+        return ', '.join(str(v) for v in self.fy_dict['values'])
 
     def get_fsc_vals(self):
         vals = []
         for d in self.fy_dict['fsa_crops']:
-            vals.append('(' + ', '.join(d['values']) + ')')
+            vals.append('(' + ', '.join(str(v) for v in d['values']) + ')')
         return ',\n'.join(vals)
 
     def get_mc_vals(self):
         vals = []
         for d0 in self.fy_dict['fsa_crops']:
             for d in d0['market_crops']:
-                vals.append('(' + ', '.join(d['values']) + ')')
+                vals.append('(' + ', '.join(str(v) for v in d['values']) + ')')
         return ',\n'.join(vals)
 
     def get_ct_vals(self):
@@ -241,7 +241,7 @@ select * FROM insertedfbcs LIMIT 1;
         for d0 in self.fy_dict['fsa_crops']:
             for d1 in d0['market_crops']:
                 for d in d1['contracts']:
-                    vals.append('(' + ', '.join(d['values']) + ')')
+                    vals.append('(' + ', '.join(str(v) for v in d['values']) + ')')
         return ',\n'.join(vals)
 
     def get_fc_vals(self):
@@ -249,7 +249,7 @@ select * FROM insertedfbcs LIMIT 1;
         for d0 in self.fy_dict['fsa_crops']:
             for d1 in d0['market_crops']:
                 for d in d1['farm_crops']:
-                    vals.append('(' + ', '.join(d['values']) + ')')
+                    vals.append('(' + ', '.join(str(v) for v in d['values']) + ')')
         return ',\n'.join(vals)
 
     def get_fbc_vals(self):
@@ -258,7 +258,7 @@ select * FROM insertedfbcs LIMIT 1;
             for d1 in d0['market_crops']:
                 for d2 in d1['farm_crops']:
                     for d in d2['fbcs']:
-                        vals.append('(' + ', '.join(d['values']) + ')')
+                        vals.append('(' + ', '.join(str(v) for v in d['values']) + ')')
         return ',\n'.join(vals)
 
 
