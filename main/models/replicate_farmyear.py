@@ -139,7 +139,8 @@ newfarmcrops (
   eco_level, prot_factor, ins_practice, ins_practices,
   farm_crop_type_id, ins_crop_type_id,
   cty_yield_final, harv_price_disc_end,
-  proj_price_disc_end
+  proj_price_disc_end, harv_price_disc_start,
+  proj_price_disc_start
 ) AS (
   VALUES
   {self.get_fc_vals()}
@@ -154,7 +155,8 @@ insertedfarmcrops (
   eco_level, prot_factor, ins_practice, ins_practices,
   farm_crop_type_id, ins_crop_type_id,
   cty_yield_final, harv_price_disc_end,
-  proj_price_disc_end)
+  proj_price_disc_end, harv_price_disc_start,
+  proj_price_disc_start)
   SELECT
   imc.market_crop_id, imc.farm_year_id, n4.planted_acres, n4.ta_aph_yield,
   n4.adj_yield, n4.rate_yield, n4.ye_use, n4.ta_use, n4.subcounty,
@@ -163,7 +165,8 @@ insertedfarmcrops (
   n4.eco_level::double precision, n4.prot_factor, n4.ins_practice,
   n4.ins_practices::smallint[], n4.farm_crop_type_id, n4.ins_crop_type_id,
   n4.cty_yield_final::date, n4.harv_price_disc_end::date,
-  n4.proj_price_disc_end::date
+  n4.proj_price_disc_end::date, n4.harv_price_disc_start::date,
+  n4.proj_price_disc_start::date
   FROM newfarmcrops n4 inner join insertedmarketcrops imc
   ON n4.market_crop_type_id = imc.market_crop_type_id
   RETURNING farm_year_id, id as farm_crop_id, farm_crop_type_id
@@ -313,7 +316,9 @@ def get_fy_dict(fy, user_id, live_to_loc):
                         nz(fc.eco_level), fc.prot_factor, fc.ins_practice,
                         astr(fc.ins_practices), fc.farm_crop_type_id,
                         fc.ins_crop_type_id, dstr(fc.cty_yield_final),
-                        dstr(fc.harv_price_disc_end), dstr(fc.proj_price_disc_end)],
+                        dstr(fc.harv_price_disc_end), dstr(fc.proj_price_disc_end),
+                        dstr(fc.harv_price_disc_start), dstr(fc.proj_price_disc_start),
+                    ],
                     'fbcs': []}
 
                 if fc.has_budget():
