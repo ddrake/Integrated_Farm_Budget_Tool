@@ -41,7 +41,7 @@ WITH newfarmyear (
   land_repairs, eligible_persons_for_cap, state_id, user_id,
   is_model_run_date_manual, other_nongrain_expense,
   other_nongrain_income, manual_model_run_date,
-  basis_increment, est_sequest_frac
+  basis_increment, est_sequest_frac, first_date
 ) AS (
   VALUES
   {self.get_fy_vals()}
@@ -56,7 +56,7 @@ insertedfarmyear (
   land_repairs, eligible_persons_for_cap, state_id, user_id,
   is_model_run_date_manual, other_nongrain_expense,
   other_nongrain_income, manual_model_run_date,
-  basis_increment, est_sequest_frac)
+  basis_increment, est_sequest_frac, first_date)
   SELECT
   farm_name, county_code, crop_year, cropland_acres_owned,
   variable_rented_acres, cash_rented_acres, var_rent_cap_floor_frac,
@@ -64,7 +64,7 @@ insertedfarmyear (
   land_repairs, eligible_persons_for_cap, state_id, user_id,
   is_model_run_date_manual, other_nongrain_expense,
   other_nongrain_income, manual_model_run_date,
-  basis_increment, est_sequest_frac
+  basis_increment, est_sequest_frac, first_date
   FROM newfarmyear
   RETURNING id as farm_year_id
 ),
@@ -221,7 +221,7 @@ select * FROM insertedfbcs LIMIT 1;
         return sql
 
     def get_fy_vals(self):
-        return ', '.join(str(v) for v in self.fy_dict['values'])
+        return '(' + ', '.join(str(v) for v in self.fy_dict['values']) + ')'
 
     def get_fsc_vals(self):
         vals = []
