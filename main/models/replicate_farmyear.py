@@ -273,7 +273,7 @@ def get_fy_dict(fy, user_id, live_to_loc):
             fy.eligible_persons_for_cap, fy.state_id, user_id,
             bstr(fy.is_model_run_date_manual), fy.other_nongrain_expense,
             fy.other_nongrain_income, dstr(fy.manual_model_run_date),
-            fy.basis_increment, fy.est_sequest_frac, fy.start_date
+            fy.basis_increment, fy.est_sequest_frac, dstr(fy.start_date)
         ],
         'fsa_crops': []
     }
