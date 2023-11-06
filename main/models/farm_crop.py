@@ -188,6 +188,7 @@ class FarmCrop(models.Model):
                 return ar[lvl, pt]
             else:
                 # prems or indemnities for array(pf, yf, lvl, pt)
+                #    or array(pf, yf, bf, lvl, pt)
                 return ar[..., lvl, pt]
 
         if ins_list is None:
@@ -197,15 +198,16 @@ class FarmCrop(models.Model):
         ecolvl, eco = self.eco_level, ins_list['ECO']
         covtype, basearray = (('County', county * self.prot_factor) if ct == 0 else
                               ('Farm', farm) if ct == 1 else (None, None))
-        base = (0 if ct is None or bcl is None or pt is None or
+        farm0 = farm[..., 0, 0]  # just used to size zero arrays
+        base = (zero_like(farm0) if ct is None or bcl is None or pt is None or
                 ct == 0 and county is None or ct == 1 and farm is None else
                 get_item(basearray,
                          int(round((bcl - (.5 if covtype == 'Farm' else .7))/.05)),
                          pt))
-        sco = (0 if ct is None or bcl is None or pt is None or
+        sco = (zero_like(farm0) if ct is None or bcl is None or pt is None or
                ct == 1 and sco is None or not self.sco_use else
                get_item(sco, int(round((bcl - .5)/.05)), pt))
-        eco = (0 if ct is None or bcl is None or pt is None or
+        eco = (zero_like(farm0) if ct is None or bcl is None or pt is None or
                ecolvl is None or eco is None else
                get_item(eco, int(round((ecolvl - .9)/.05)), pt))
         return {'base': base, 'sco': sco, 'eco': eco}
