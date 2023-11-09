@@ -18,6 +18,14 @@ from django.contrib import admin
 from django.urls import include, path
 from django.conf.urls.static import static
 from django.conf import settings
+from django.contrib.sitemaps.views import sitemap
+from blog.sitemap import BlogSitemap
+from main.sitemap import StaticViewSitemap
+
+sitemaps = {
+    'blog': BlogSitemap,
+    'static': StaticViewSitemap,
+}
 
 urlpatterns = [
     path('', include('main.urls')),
@@ -28,6 +36,8 @@ urlpatterns = [
     path('__reload__/', include('django_browser_reload.urls')),
     path('ckeditor/', include('ckeditor_uploader.urls')),
     path('', include('blog.urls')),
+    path("sitemap.xml", sitemap, {"sitemaps": sitemaps},
+         name="django.contrib.sitemaps.views.sitemap",),
 ]
 if settings.DEBUG:
     # We need these to be able to see ckeditor uploaded images
