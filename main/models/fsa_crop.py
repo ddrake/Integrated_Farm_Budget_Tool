@@ -135,7 +135,7 @@ class FsaCrop(models.Model):
             raise ValidationError({'arcco_base_acres': _(
                 "ARC-CO base acres must be zero if SCO is set for related farm crop")})
         if (self.arcco_base_acres > 0 and
-                not any((fc.has_budget() for fc in self.farm_crops))):
+                not any((fc.has_budget() for fc in self.farm_crops()))):
             raise ValidationError({'arcco_base_acres': _(
                 "County yield required. ARC-CO Base acres can be set only " +
                 "after selecting a budget in the 'Crop Acreage' form.")})
