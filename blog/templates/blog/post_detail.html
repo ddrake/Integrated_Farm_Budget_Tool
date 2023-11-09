@@ -8,7 +8,7 @@
 {% endblock style %}
 {% block content %}
 <div class="p-6 font-serif mx-auto bg-white grid grid-flow-row xl:grid-flow-col justify-start">
-  <div class="px-4 w-[800px] mb-10">
+  <div class="px-4 w-[800px] mb-4">
     <h1 class="text-2xl text-center mb-6"
         >{% if object.published %}
            {{object.title}}
@@ -22,7 +22,7 @@
       {% endautoescape %}
     </div>
   </div>
-  <div class="pl-4 pr-2 w-[380px] xl:border-l xl:border-l-slate-400 print:hidden">
+  <div class="pl-4 pr-2 w-[380px] mb-4 xl:border-l xl:border-l-slate-400 print:hidden">
     <h1 class="text-2xl text-center mb-6">More Posts</h1>
     <ul class="list-disc list-inside">
     {% for post in posts %}
