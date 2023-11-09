@@ -1,0 +1,109 @@
+#ck {
+	font-family: serif;
+}
+#ck a {
+  outline: none;
+}
+
+#ck a:link,#ck a:visited {
+  color: #3730a3;
+}
+
+#ck a:focus,#ck a:hover,#ck a:active {
+  text-decoration: none;
+	color: #4940d9;
+}
+
+#ck h1,#ck h2,#ck h3,#ck h4,#ck h5,#ck h6, #ck p
+{
+	font-weight: normal;
+	line-height: 1.2;
+}
+
+#ck h1
+{
+  font-size: 15pt;	
+	margin-bottom: 3pt;
+}
+#ck h2
+{
+  font-size: 14pt;	
+	margin-bottom: 3pt;
+}
+#ck h3
+{
+  font-size: 13pt;	
+	margin-bottom: 2pt;
+}
+#ck h4
+{
+  font-size: 12pt;	
+	margin-bottom: 2pt;
+}
+#ck h5
+{
+  font-size: 11.5pt;	
+	margin-bottom: 2pt;
+}
+#ck p 
+{
+  font-size: 11pt;	
+	text-indent: 1em;
+	margin-bottom: 2pt;
+}
+#ck table
+{
+	margin: 10px 0 10px 0;
+}
+#ck td, #ck th
+{
+  font-size: 11pt;	
+	border: 1px solid #bbb;
+}
+#ck hr
+{
+	border: 0px;
+	border-top: 1px solid #ccc;
+}
+#ck ul
+{
+   list-style-type: disc;
+   list-style-position: inside;
+	 font-size: 11pt;
+}
+#ck ol
+{
+   list-style-type: decimal;
+   list-style-position: inside;
+	 font-size: 11pt;
+}
+#ck ul
+{
+	list-style: disc;
+	list-style: inside;
+}
+
+#ck img
+{
+	border: 1px solid #ccc;
+	float: left;
+	margin-right: 15px;
+	padding: 5px;
+}
+
+#ck a > img {
+	padding: 1px;
+	margin: 1px;
+	border: none;
+	outline: 1px solid #0782C1;
+}
+#ck blockquote {
+	margin-left: 2em;
+	border-left: 8px solid #ccc;
+	font-style: italic;
+	font-size: 11pt;
+	color: #888;
+}
+#ck blockquote p {
+	padding: 10px 3px 10px 3px;
+}

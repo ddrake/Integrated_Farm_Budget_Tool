@@ -1,0 +1,45 @@
+{% extends 'main/base.html' %}
+{% load static %}
+{% block title %}
+<title>Blog Posts</title>
+{% endblock title %}
+{% block content %}
+<div class="flex flex-col">
+  <div class="p-4 mx-auto bg-white rounded-xl shadow-lg flex items-center space-x-2 print:shadow-none print:items-left">
+    <div class="shrink-0">
+    {% if not blogpost_list %}
+      <h2 class="text-lg">No posts were found</h2>
+    {% else %}
+      <h2 class="text-xl text-center pb-4">{{blogpost_list.0.blog.title}}</h2>
+      <table>
+        <thead>
+          <tr>
+            <th class="px-4">Title</th>
+            <th class="px-4">Author</th>
+            <th class="px-4">Published</th>
+        </thead>
+        <tbody>
+        {% for post in blogpost_list %}
+          {% if post.published or user.is_staff %}
+            <tr>
+              <td class="px-4">
+                <a class="text-indigo-800 hover:text-indigo-600"
+                   href="{% url 'post' pk=post.pk slug=post.slug %}">{{post.title}}</a>
+              </td>
+              <td class="px-4">
+                {{post.author.first_name}} {{post.author.last_name}}
+              </td>
+              <td class="px-4">
+                {% if post.published %}
+                  {{post.published|date:"F j, Y"}}
+                {% else %}
+                  Draft
+                {% endif %}
+              </td>
+            </tr>
+          {% endif %}
+        {% endfor %}
+        </tbody>
+      </table>
+    {% endif %}
+{% endblock %}

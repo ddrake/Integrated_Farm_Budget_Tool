@@ -1,0 +1,47 @@
+{% extends 'main/base.html' %}
+{% load static %}
+{% block title %}
+<title>Blog Post</title>
+{% endblock title %}
+{% block style %}
+<link rel="stylesheet" href="{% static 'blog/css/contents.css' %}" />
+{% endblock style %}
+{% block content %}
+<div class="p-6 font-serif mx-auto bg-white grid grid-flow-row xl:grid-flow-col justify-start">
+  <div class="px-4 w-[800px] mb-10">
+    <h1 class="text-2xl text-center mb-6"
+        >{% if object.published %}
+           {{object.title}}
+         {% else %}
+           {{object.title}} (Draft)
+         {% endif %}
+    </h1>
+    <div id="ck" class="text-slate-800 print:text-black">
+      {% autoescape off %}
+        {{object.content|safe}}
+      {% endautoescape %}
+    </div>
+  </div>
+  <div class="pl-4 pr-2 w-[380px] xl:border-l xl:border-l-slate-400 print:hidden">
+    <h1 class="text-2xl text-center mb-6">More Posts</h1>
+    <ul class="list-disc list-inside">
+    {% for post in posts %}
+      {% if post.pk != object.pk %}
+        {% if post.published or user.is_staff %}
+        <li>
+            <a class="text-md text-indigo-800 hover:text-indigo-600"
+               href="{% url 'post' pk=post.pk slug=post.slug %}"
+               >{{post.title}}</a>
+          {% if post.published %}
+            ({{post.published|date:"M, y"}})
+          {% else %}
+            (Draft)
+          {% endif %}
+        </li>
+        {% endif %}
+      {% endif %}
+    {% endfor %}
+    </ul>
+  </div>
+</div>
+{% endblock %}
