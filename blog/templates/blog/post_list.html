@@ -42,4 +42,15 @@
         </tbody>
       </table>
     {% endif %}
+    </div>
+  </div>
+  {% if user.is_staff %}
+  <div class="mt-4">
+    <a
+      href="{% url 'admin:index' %}"
+      class="text-lg text-indigo-800 hover:text-indigo-600">Manage Posts
+    </a>
+  </div>
+  {% endif %}
+</div>
 {% endblock %}
