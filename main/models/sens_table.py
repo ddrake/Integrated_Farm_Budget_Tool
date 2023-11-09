@@ -118,6 +118,8 @@ class SensTableGroup(object):
         It also generates the cashflow table, stores its text
         in the database for sens_pdf and returns its text.
         """
+        if len(self.farm_crops) == 0:
+            return None
         self.set_all_data()
         return self.get_selected_table(
             'cashflow', 'farm', (None if self.basis_incr == 0 else self.nst))

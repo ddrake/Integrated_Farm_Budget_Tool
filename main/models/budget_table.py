@@ -32,6 +32,8 @@ class BudgetManager(object):
         Returns the current budget.
         """
         cur_budget = self.build_current_budget()
+        if cur_budget['tables'] is None:
+            return cur_budget
         valid_baseline = self.has_valid_baseline()
         cur_budget['info']['has_valid_baseline'] = valid_baseline
         self.farm_year.budget_text = (None if cur_budget['tables'] is None
@@ -112,6 +114,9 @@ class BudgetManager(object):
             bb = current['budget']
             bt = BudgetTable(self.farm_year, self, revenue_data=br, budget_data=bb)
         else:
+            if len(self.farm_crops) == 0:
+                return {'rev': None, 'revfmt': None, 'info': None,
+                        'tables': None, 'keydata': None}
             bt = BudgetTable(self.farm_year, self)
         rd = bt.revenue_details
         kd = KeyData(self.farm_year, self)
@@ -315,8 +320,6 @@ class BudgetTable(object):
                 }
 
     def get_tables(self):
-        if len(self.farm_crops) == 0:
-            return None
         # Calculate overall gov pmt
         self.farmyear_gov_pmt = self.farm_year.calc_gov_pmt()
         if self.data is None:
