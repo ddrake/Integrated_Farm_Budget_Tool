@@ -113,7 +113,7 @@ insertedmarketcrops (
 """
 
         if self.get_ct_vals() != '':
-            sql += """
+            sql += f"""
 newcontracts (
   market_crop_type_id, contract_date, bushels, terminal, contract_number,
   delivery_start_date, delivery_end_date, basis_price, futures_price
@@ -138,7 +138,7 @@ insertedcontracts (
 ),
 """
 
-        sql += """
+        sql += f"""
 newfarmcrops (
   market_crop_type_id, planted_acres, ta_aph_yield, adj_yield,
   rate_yield, ye_use, ta_use, subcounty, coverage_type,
@@ -180,7 +180,7 @@ insertedfarmcrops (
 ),
 """
         if self.get_fbc_vals() != '':
-            sql += """
+            sql += f"""
 newfbcs (
   farm_yield, county_yield,
   yield_variability, other_gov_pmts,
