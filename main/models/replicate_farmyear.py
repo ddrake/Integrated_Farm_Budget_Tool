@@ -110,6 +110,10 @@ insertedmarketcrops (
   ON n2.fsa_crop_type_id = ifsc.fsa_crop_type_id
   RETURNING id as market_crop_id, farm_year_id, market_crop_type_id
 ),
+"""
+
+        if self.get_ct_vals() != '':
+            sql += """
 newcontracts (
   market_crop_type_id, contract_date, bushels, terminal, contract_number,
   delivery_start_date, delivery_end_date, basis_price, futures_price
@@ -132,6 +136,9 @@ insertedcontracts (
   ON n3.market_crop_type_id = imc.market_crop_type_id
   RETURNING id
 ),
+"""
+
+        sql += """
 newfarmcrops (
   market_crop_type_id, planted_acres, ta_aph_yield, adj_yield,
   rate_yield, ye_use, ta_use, subcounty, coverage_type,
@@ -171,6 +178,9 @@ insertedfarmcrops (
   ON n4.market_crop_type_id = imc.market_crop_type_id
   RETURNING farm_year_id, id as farm_crop_id, farm_crop_type_id
 ),
+"""
+        if self.get_fbc_vals() != '':
+            sql += """
 newfbcs (
   farm_yield, county_yield,
   yield_variability, other_gov_pmts,
@@ -219,6 +229,8 @@ insertedfbcs AS (
   ON n5.farm_crop_type_id = ifc.farm_crop_type_id
   RETURNING *
 )
+"""
+        sql += """
 select * FROM insertedfbcs LIMIT 1;
 """
         return sql
@@ -260,8 +272,10 @@ select * FROM insertedfbcs LIMIT 1;
         for d0 in self.fy_dict['fsa_crops']:
             for d1 in d0['market_crops']:
                 for d2 in d1['farm_crops']:
-                    for d in d2['fbcs']:
-                        vals.append('(' + ', '.join(str(v) for v in d['values']) + ')')
+                    if 'fbcs' in d2:
+                        for d in d2['fbcs']:
+                            vals.append('(' + ', '.join(str(v) for v in
+                                                        d['values']) + ')')
         return ',\n'.join(vals)
 
 
