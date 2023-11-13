@@ -10,7 +10,7 @@ class IndemnityTestCase(TestCase):
     def setUp(self):
         # Somthing like Grandview corn
         self.indemnity = Indemnity(
-            tayield=164, projected_price=5.91, harvest_futures_price=5.3475,
+            appryield=164, projected_price=5.91, harvest_futures_price=5.3475,
             rma_cty_expected_yield=191.9, farm_expected_yield=210,
             cty_expected_yield=192.139658)
 

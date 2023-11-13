@@ -15,14 +15,14 @@ class Indemnity():
     LOSS_LIMIT_FACTOR = 0.18
     SCO_TOP_LEVEL = 86
 
-    def __init__(self, tayield=165, projected_price=5.5, harvest_futures_price=5.25,
+    def __init__(self, appryield=165, projected_price=5.5, harvest_futures_price=5.25,
                  rma_cty_expected_yield=None, farm_expected_yield=210,
                  cty_expected_yield=192):
         """
         Initialize the class, setting some useful attributes.
         """
-        # RMA Rate Yield (TA/YE adjusted APH yield)
-        self.tayield = tayield
+        # RMA Approved Yield (TA/YE adjusted APH yield)
+        self.appryield = appryield
         # RMA Projected Price set after discovery period
         self.projected_price = projected_price
         # The sensitized current futures harvest price or RMA final price for the crop
@@ -148,7 +148,7 @@ class Indemnity():
         """ array(8)
         Government Crop Insurance J40: Yield trigger.
         """
-        return self.tayield * self.cover / 100
+        return self.appryield * self.cover / 100
 
     def rev_trigger_condition(self):
         """ scalar or array(np)
@@ -380,13 +380,13 @@ class Indemnity():
         """
         if self.scal:
             farm_crop_val = ones((len(diff), 3))
-            farm_crop_val *= self.tayield
+            farm_crop_val *= self.appryield
             farm_crop_val *= diff.reshape(len(diff), 1)
             farm_crop_val[:, 0] *= max(self.ins_harvest_price(), self.projected_price)
             farm_crop_val[:, 1:] *= self.projected_price
         else:
             farm_crop_val = ones((self.np, self.ny, len(diff), 3))
-            farm_crop_val *= self.tayield
+            farm_crop_val *= self.appryield
             farm_crop_val *= diff.reshape(1, 1, len(diff), 1)
             farm_crop_val[..., 0] *= np.maximum(
                 self.ins_harvest_price(),

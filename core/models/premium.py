@@ -56,9 +56,9 @@ class Premium:
         self.rateyield = None
         # Adjusted yield (RMA adjusted yield)
         self.adjyield = None
-        # user-specified Trend-Adjusted APY yield (RMA 'approved yield')
-        self.tayield = None
-        self.tayield_adj = None  # possibly modified tayield
+        # user-specified RMA approved yield
+        self.appryield = None
+        self.appryield_adj = None  # possibly modified approved yield
 
         # External data
         # -------------
@@ -103,7 +103,7 @@ class Premium:
         self.adjstdqty = None
         # interpolated lookup used to set RP, RP-HPE premium rates
         self.disenter = None
-        # effective cover: coverage level times ratio of tayield/rateyield
+        # effective cover: coverage level times ratio of appryield/rateyield
         # used in intepolation and several other calculations.
         self.effcov = None
         self.sizeidx = None  # index based on acres
@@ -111,7 +111,7 @@ class Premium:
         self.liab = None
         # dollar amount used in county options (SCO, ECO)
         self.aliab = None
-        # revised yield: tayield if tause else adjyield
+        # revised yield: appryield if tause else adjyield
         self.revyield = None
         # log(aphprice) - pvol**2/2, used to compute harvest price in loss simulation.
         self.lnmean = None
@@ -153,7 +153,7 @@ class Premium:
     # -----------------------------
     # MAIN METHOD: COMPUTE PREMIUMS
     # -----------------------------
-    def compute_prems(self, rateyield=180, adjyield=180, tayield=190, acres=100,
+    def compute_prems(self, rateyield=180, adjyield=180, appryield=190, acres=100,
                       hailfire=0, prevplant=0, tause=1, yieldexcl=0,
                       state=17, county=19, crop=41, croptype=16, practice=3,
                       projected_price=None, price_volatility_factor=None,
@@ -166,7 +166,7 @@ class Premium:
           price_volatility_factor and projected_price will simply be ignored.
         """
         self.store_user_settings(
-            rateyield, adjyield, tayield, acres, hailfire, prevplant, tause,
+            rateyield, adjyield, appryield, acres, hailfire, prevplant, tause,
             yieldexcl, state, county, crop, croptype, practice,
             projected_price, price_volatility_factor, subcounty, expected_yield)
 
@@ -265,10 +265,12 @@ class Premium:
 
     def set_effcov(self):
         """
-        Set the effective coverage level (Note: depends on tayield regardless of tause)
+        Set the effective coverage level
+        Note: depends on appryield regardless of tause
         (Section 13, p. 44)
         """
-        self.effcov = (0.0001 + self.cover * self.tayield_adj / self.adjyield).round(2)
+        self.effcov = (0.0001 +
+                       self.cover * self.appryield_adj / self.adjyield).round(2)
 
     def set_factors(self):
         """
@@ -353,8 +355,8 @@ class Premium:
         Set the revised yield, the revised cover and the liability (~ p. 1-4)
         """
         # Per page 1, I think this should be:
-        #   self.revyield = max(self.tayield, self.adjyield)
-        self.revyield = self.tayield_adj if self.tause else self.adjyield
+        #   self.revyield = max(self.appryield, self.adjyield)
+        self.revyield = self.appryield_adj if self.tause else self.adjyield
         self.liab = ((self.revyield * self.cover + 0.001).round(1) *
                      self.projected_price * self.acres).round(0)
         # liab matches step 1.04
@@ -394,7 +396,7 @@ class Premium:
     def limit_base_prem_rates(self):
         """
         Limit base premium rates min of cur and 1.2*prior (unpacking vectors)
-        (bottom p. 15. 3.1 of worksheet)
+        (bottom p. 15. 3.07 of worksheet)
         """
         bpr = self.basepremrate
         bpr[:, :, 0] = np.where(bpr[:, :, 0] > bpr[:, :, 1] * 1.2,
@@ -405,7 +407,7 @@ class Premium:
 
     def limit_baserate(self):
         """
-        Limit base rate based on previous (unpacking vectors) (bottom p. 15)
+        Limit base rate based on previous (unpacking vectors) (bottom p. 15, 3.08)
         """
         if self.baserate[0] > self.baserate[1] * 1.2:
             self.baserate[0] = round(self.baserate[1] * 1.2, 8)
@@ -416,7 +418,7 @@ class Premium:
         bottom p. 5.)
         """
         cov65idx = 3
-        revenue_lookup_rate = round(min(self.baserate[0], 0.9999), 4)
+        revenue_lookup_rate = round(min(self.baserate[0], 0.9999), 4)  # 3.08
         rev_look_key = int(
            revenue_lookup_rate *
            10000 * self.enterprise_discount_factor[cov65idx, self.sizeidx] + 0.5)
@@ -547,13 +549,13 @@ class Premium:
         return self.prem_eco
 
     def make_aliab(self):
-        arevyield = self.tayield if self.tause else self.rateyield
+        arevyield = self.appryield if self.tause else self.rateyield
         self.aliab = arevyield * self.projected_price
 
     # -------------------
     # STORE USER SETTINGS
     # -------------------
-    def store_user_settings(self, rateyield, adjyield, tayield, acres, hailfire,
+    def store_user_settings(self, rateyield, adjyield, appryield, acres, hailfire,
                             prevplant, tause, yieldexcl, state, county,
                             crop, croptype, practice, projected_price,
                             price_volatility_factor, subcounty, expected_yield):
@@ -563,7 +565,7 @@ class Premium:
         """
         self.rateyield = rateyield
         self.adjyield = adjyield
-        self.tayield = tayield
+        self.appryield = appryield
         self.acres = acres
         self.hailfire = hailfire
         self.prevplant = prevplant
@@ -579,7 +581,7 @@ class Premium:
         self.price_volatility_factor = price_volatility_factor
         self.expected_yield = expected_yield
 
-        self.tayield_adj = max(self.tayield,  self.rateyield)
+        self.appryield_adj = max(self.appryield,  self.rateyield)
 
         # Set index based on acreage
         self.sizeidx = (0 if self.acres < 50 else 1 if self.acres < 100 else

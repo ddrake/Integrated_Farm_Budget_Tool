@@ -53,7 +53,7 @@ class FarmCrop(models.Model):
 
     planted_acres = models.FloatField(
         default=0, validators=[MinVal(0), MaxVal(99999)],)
-    ta_aph_yield = models.FloatField(
+    appr_yield = models.FloatField(
         default=0, validators=[MinVal(0), MaxVal(400)], verbose_name="Approved yield",
         help_text="Approved yield provided by insurer, based on selections of YE/TA.")
     adj_yield = models.FloatField(
@@ -263,7 +263,7 @@ class FarmCrop(models.Model):
         by compute_prems if is_post_discovery=True
         """
         if (self.planted_acres == 0 or self.rate_yield == 0 or self.adj_yield == 0 or
-                self.ta_aph_yield == 0):
+                self.appr_yield == 0):
             self.crop_ins_prems = None
             return
 
@@ -278,7 +278,7 @@ class FarmCrop(models.Model):
             practice=self.ins_practice,
             rateyield=self.rate_yield,
             adjyield=self.adj_yield,
-            tayield=self.ta_aph_yield,
+            appryield=self.appr_yield,
             acres=self.planted_acres,
             tause=self.ta_use,
             yieldexcl=self.ye_use,
@@ -378,7 +378,7 @@ class FarmCrop(models.Model):
         """ scalar or 2d array """
         data = self.indem_price_yield_data(pf=pf, yf=yf)
         indem = Indemnity(
-            tayield=self.ta_aph_yield,
+            appryield=self.appr_yield,
             projected_price=data['pp'][0],
             # sensitized harvest price (scalar or 1d array)
             harvest_futures_price=data['hp'][0],

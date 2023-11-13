@@ -48,19 +48,19 @@ class Madison2023FarmYearTestCase(TestCase):
         self.farm_year = FarmYear.objects.get(pk=self.farm_year.pk)
         # update the farm crops
         self.farm_year.farm_crops.filter(farm_crop_type_id=1).update(
-            planted_acres=2500, ta_aph_yield=205, adj_yield=195, rate_yield=195,
+            planted_acres=2500, appr_yield=205, adj_yield=195, rate_yield=195,
             ye_use=True, ta_use=True, coverage_type=1, product_type=0,
             base_coverage_level=.8)
         self.farm_year.farm_crops.filter(farm_crop_type_id=2).update(
-            planted_acres=2500, ta_aph_yield=75, adj_yield=69, rate_yield=69,
+            planted_acres=2500, appr_yield=75, adj_yield=69, rate_yield=69,
             ye_use=True, ta_use=True, coverage_type=1, product_type=0,
             base_coverage_level=.8)
         self.farm_year.farm_crops.filter(farm_crop_type_id=3).update(
-            planted_acres=400, ta_aph_yield=88, adj_yield=82, rate_yield=82,
+            planted_acres=400, appr_yield=88, adj_yield=82, rate_yield=82,
             ye_use=True, ta_use=True, coverage_type=1, product_type=0,
             base_coverage_level=.8)
         self.farm_year.farm_crops.filter(farm_crop_type_id=5).update(
-            planted_acres=400, ta_aph_yield=55, adj_yield=50, rate_yield=50,
+            planted_acres=400, appr_yield=55, adj_yield=50, rate_yield=50,
             ye_use=True, ta_use=True, coverage_type=1, product_type=0,
             base_coverage_level=.8)
         corn = self.farm_year.farm_crops.get(farm_crop_type_id=1)

@@ -56,7 +56,7 @@ class PremiumTestCase(TestCase):
         settings = {
             'rateyield': 180,
             'adjyield': 180,
-            'tayield': 190,
+            'appryield': 190,
             'acres': 3000,
             'hailfire': 0,
             'prevplant': 0,
@@ -97,7 +97,7 @@ class PremiumTestCase(TestCase):
         settings = {
             'rateyield': 58,
             'adjyield': 58,
-            'tayield': 60,
+            'appryield': 60,
             'acres': 3000,
             'hailfire': 0,
             'prevplant': 0,
@@ -139,7 +139,7 @@ class PremiumTestCase(TestCase):
         settings = {
             'rateyield': 39,
             'adjyield': 39,
-            'tayield': 38.5,
+            'appryield': 38.5,
             'acres': 300,
             'hailfire': 0,
             'prevplant': 0,
@@ -180,7 +180,7 @@ class PremiumTestCase(TestCase):
         settings = {
             'rateyield': 154,
             'adjyield': 154,
-            'tayield': 164,
+            'appryield': 164,
             'acres': 100,
             'hailfire': 0,
             'prevplant': 0,
@@ -221,7 +221,7 @@ class PremiumTestCase(TestCase):
         settings = {
             'rateyield': 47,
             'adjyield': 47,
-            'tayield': 50,
+            'appryield': 50,
             'acres': 3000,
             'hailfire': 0,
             'prevplant': 0,
@@ -262,7 +262,7 @@ class PremiumTestCase(TestCase):
         settings = {
             'rateyield': 58,
             'adjyield': 58,
-            'tayield': 61,
+            'appryield': 61,
             'acres': 300,
             'hailfire': 0,
             'prevplant': 0,
@@ -303,7 +303,7 @@ class PremiumTestCase(TestCase):
         settings = {
             'rateyield': 47,
             'adjyield': 47,
-            'tayield': 49,
+            'appryield': 49,
             'acres': 300,
             'hailfire': 0,
             'prevplant': 0,
@@ -345,7 +345,7 @@ class PremiumTestCase(TestCase):
         settings = {
             'rateyield': 147,
             'adjyield': 147,
-            'tayield': 156,
+            'appryield': 156,
             'acres': 100,
             'hailfire': 0,
             'prevplant': 0,
@@ -387,7 +387,7 @@ class PremiumTestCase(TestCase):
         settings = {
             'rateyield': 154,
             'adjyield': 154,
-            'tayield': 164,
+            'appryield': 164,
             'acres': 100,
             'hailfire': 0,
             'prevplant': 0,
@@ -427,7 +427,7 @@ class PremiumTestCase(TestCase):
         settings = {
             'rateyield': 65,
             'adjyield': 65,
-            'tayield': 70,
+            'appryield': 70,
             'acres': 300,
             'hailfire': 0,
             'prevplant': 0,
