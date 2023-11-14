@@ -3,7 +3,7 @@ import numpy as np
 
 from core.models.util import Crop, call_postgres_func, get_postgres_row
 
-np.set_printoptions(precision=6)
+np.set_printoptions(precision=8)
 np.set_printoptions(suppress=True)
 
 
@@ -101,13 +101,14 @@ class Premium:
         # (revlook and # discountentr[cov65idx, sizeidx]).  Used in loss simulation
         self.adjmeanqty = None
         self.adjstdqty = None
+        # Unit Structure Discount Factor
         # interpolated lookup used to set RP, RP-HPE premium rates
         self.disenter = None
         # effective cover: coverage level times ratio of appryield/rateyield
         # used in intepolation and several other calculations.
         self.effcov = None
         self.sizeidx = None  # index based on acres
-        # dollar amount based on revyield, aphprice, acres and cover.
+        # liability dollar amount based on revyield, aphprice, acres and cover.
         self.liab = None
         # dollar amount used in county options (SCO, ECO)
         self.aliab = None
@@ -133,12 +134,13 @@ class Premium:
 
         # (cur, prior) pairs
         self.baserate = None          # Continuous rating base rate
-        # Interpolated from enterprise_discount_factor_r,
+        # Interpolated from enterprise_discount_factor_y,
         # used to compute basepremrate for YP
         self.efactor_y = None
         # Interpolated from enterprise_discount_factor_r,
         # used to compute basepremrate for RP, RP-HPE
         self.efactor_r = None
+        # Current and Prior Year Rate Differential Factor
         self.ratediff_fac = None
 
         # Array sized (2, 8, 2) ('YP', 'RP/RP-HPE') by levels by (cur, prior)
@@ -177,19 +179,14 @@ class Premium:
 
         for name, val in data:
             setattr(self, name, val)
-            # print(f'self.{name} = {val}')
 
         if self.projected_price is None:
-            # print("Projected Price is missing.",
-            #       "Can't compute any premiums.")
             self.prem_ent = self.prem_arc = self.prem_sco = self.prem_eco = None
         else:
             self.compute_prems_ent()
             if (self.arp_base_rate is None
                     or self.arphpe_base_rate is None
                     or self.ayp_base_rate is None):
-                # print("Expected Yield is not available for county/crop",
-                #       "Can't compute Area premiums")
                 self.prem_arc = None
             else:
                 self.compute_prems_arc()
@@ -197,16 +194,12 @@ class Premium:
             if (self.scorp_base_rate is None
                     or self.scorphpe_base_rate is None
                     or self.scoyp_base_rate is None):
-                # print("SCO Base rates are not available for county/crop",
-                #       "Can't compute SCO premiums")
                 self.prem_sco = None
             else:
                 self.compute_prems_sco()
             if (self.ecorp_base_rate is None
                     or self.ecorphpe_base_rate is None
                     or self.ecoyp_base_rate is None):
-                # print("ECO Base rates are not available for county/crop",
-                #       "Can't compute ECO premiums")
                 self.prem_eco = None
             else:
                 self.compute_prems_eco()
@@ -267,15 +260,15 @@ class Premium:
         """
         Set the effective coverage level
         Note: depends on appryield regardless of tause
-        (Section 13, p. 44)
+        (Section 13, p. 44) (1.01 in TA/YE case)
         """
-        self.effcov = (0.0001 +
-                       self.cover * self.appryield_adj / self.adjyield).round(2)
+        self.effcov = (self.cover * self.appryield_adj / self.adjyield).round(2)
 
     def set_factors(self):
         """
         Interpolate current and previous rate differential, enterprise residual, and
         enterprise discount factors based on effective coverage. (section 15, p. 65-75)
+
         """
         varpairs = [
             (self.rate_differential_factor[:, 0], 9, 'rdf'),
@@ -286,10 +279,10 @@ class Premium:
             (self.enterprise_residual_factor_r[:, 1], 3, 'erfrp'),
             (self.enterprise_discount_factor[:, self.sizeidx], 4, 'edf'), ]
         rslts = self.interp(varpairs)
-        self.ratediff_fac[:] = array(rslts[:2]).T
+        self.ratediff_fac[:] = array(rslts[:2]).T  # 3.04
         self.efactor_y[:] = array(rslts[2:4]).T
-        self.efactor_r[:] = array(rslts[4:6]).T
-        self.disenter[:] = rslts[6]
+        self.efactor_r[:] = array(rslts[4:6]).T    # 3.05
+        self.disenter[:] = rslts[6]                # 2.01
         # ratediff_fac, efactor_r matching steps 3.04, 3.05 (answer 1)
 
     def interp(self, varpairs):
@@ -334,6 +327,7 @@ class Premium:
     def make_ye_adj(self):
         """
         Adjust factors for YE (vectorized) (section 19, p. 74)
+        Note: this only affects efactor_y
         """
         jjhigh = 5 if self.rate_differential_factor[6, 0] == 0 else 7
         yeadj = np.where(np.logical_and(self.effcov > 0.85, self.yieldexcl == 1),
@@ -352,23 +346,23 @@ class Premium:
 
     def make_rev_liab(self):
         """
-        Set the revised yield, the revised cover and the liability (~ p. 1-4)
+        We assume the Guarantee Adjustment Factor and Insured Share Pct are 1
+        Set the revised yield and the liability amount  (~ p. 1-4)
+        (step 1.04/1.07)
         """
-        # Per page 1, I think this should be:
-        #   self.revyield = max(self.appryield, self.adjyield)
+        # not sure revyield is necessary, think we could use appryield_adj in all cases
         self.revyield = self.appryield_adj if self.tause else self.adjyield
-        self.liab = ((self.revyield * self.cover + 0.001).round(1) *
+        self.liab = ((self.revyield * self.cover).round(1) *
                      self.projected_price * self.acres).round(0)
-        # liab matches step 1.04
 
     def set_base_rates(self):
         """
         Set and limit vector (current/prior) base rates from RMA data (~ p. 10-12)
         """
-        self.baserate = np.minimum(np.maximum(
-            (self.rateyield / self.refyield).round(2), 0.5), 1.5)
-        self.baserate = (self.baserate ** self.exponent).round(8)
-        term = self.baserate * self.refrate + self.fixedrate
+        yieldratio = np.minimum(np.maximum(
+            (self.rateyield / self.refyield).round(2), 0.5), 1.5)  # 3.01
+        ratemultiplier = (yieldratio ** self.exponent).round(8)    # 3.02
+        term = ratemultiplier * self.refrate + self.fixedrate      # 3.03
         if self.subcounty_rate is not None:
             if self.rate_method_id == 'F':    # Not used in 2023 data
                 self.baserate[:] = self.subcounty_rate
@@ -385,13 +379,17 @@ class Premium:
         Set vector adjusted base premium rates (p. 13)
         """
         prod = self.baserate * self.ratediff_fac
-        # The minimum below was missing (step 3.05), resulting in about 4% higher prem
-        # TODO: check if we need to do the minimum thing for efactor_y as well
-        self.basepremrate = array(
-            (prod * np.minimum(self.efactor_y,
-                               self.enterprise_residual_factor_y),
-             prod * np.minimum(self.efactor_r,
-                               self.enterprise_residual_factor_r))).round(8)
+        # In the case: cover = 85%, the minimum below was missing (step 3.05),
+        #    resulting in about 4% higher prem.
+        # The minimization step is not prescribed when cover is < 85%
+        efactors = array((self.efactor_y, self.efactor_r))
+        mins = array(
+            (np.minimum(self.efactor_y,
+                        self.enterprise_residual_factor_y),
+             np.minimum(self.efactor_r,
+                        self.enterprise_residual_factor_r)))
+        self.basepremrate = (prod * np.where(self.cover.reshape(1, 8, 1) == .85,
+                                             mins, efactors)).round(8)
 
     def limit_base_prem_rates(self):
         """
