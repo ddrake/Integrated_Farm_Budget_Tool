@@ -168,7 +168,7 @@ class FarmCropUpdateForm(ModelForm):
         widgets = {
             'planted_acres': forms.NumberInput(
                 attrs={'step': 100, 'min': 0, 'max': 100000}),
-            'ta_aph_yield': forms.NumberInput(
+            'appr_yield': forms.NumberInput(
                 attrs={'step': 1, 'min': 0, 'max': 400}),
             'adj_yield': forms.NumberInput(
                 attrs={'step': 1, 'min': 0, 'max': 400}),

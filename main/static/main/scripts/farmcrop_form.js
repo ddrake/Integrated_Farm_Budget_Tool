@@ -49,5 +49,5 @@
         document.getElementById("subcounty").setAttribute('disabled', '')
         document.getElementById("id_ta_use").setAttribute('disabled', '')
         document.getElementById("id_ye_use").setAttribute('disabled', '')
-        document.getElementById("id_ta_aph_yield").setAttribute('disabled', '')
+        document.getElementById("id_appr_yield").setAttribute('disabled', '')
     }
