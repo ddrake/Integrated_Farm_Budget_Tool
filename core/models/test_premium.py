@@ -3,9 +3,14 @@ from django.test import TestCase
 
 from core.models.premium import Premium
 
-# Note: 'expected' arrays marked 'verified' have been checked against excel
-# Note: When verifying against the Excel file, note that the APH Yield and
-#       Rate Yield are reversed on the premiums tab.
+# Note: We initially 'verified' against Excel, but there are too many errors there.
+# All future verifications will be against RMA worksheets.
+# Verification is critical for the farm-based premiums.  For other premiums, the
+#     code is simple and well-tested.
+
+# A question regarding the 85% coverage level for Champaign is pending a response.
+#     No verification will be done on that County until a response is received.
+
 # Abbreviations
 # 'hailfire'      # hail and fire protection
 # 'prevplant'     # prevent plant factor: std=0, Plus5%=1, Plus10%=2
@@ -14,50 +19,20 @@ from core.models.premium import Premium
 # 'yieldexcl': 0, # 1 to use yield-exclusion 0 else
 #
 # Note: None is returned if premiums cannot be computed for a product
-# Note: arc premiums use the 120% protection factor to match an Excel column.
-# Note: If price_volatility_factor is specified, it must be an integer value.
+# Note: price_volatility_factor must be specified as an integer value.
 
 
 class PremiumTestCase(TestCase):
     def setUp(self):
         self.premium = Premium()
 
-    def test_with_default_values(self):
-        # Premiums for Default settings;
-        # originally using prot_factor 1.2 to match UI (verified) but changed
-        # to 1.0 when prot_factor was factored out of premium and indemnity logic
-        # except for ECO YP (UI uses incorrect subsidy)
-        prem = self.premium.compute_prems(
-            projected_price=5.91, price_volatility_factor=18,
-            expected_yield=221.9)
-
-        expected = (
-            np.array(
-                [[0.9 ,  1.28,  1.79,  2.62,  3.79,  6.38, 12.72 , 27.98],
-                 [0.71,  0.87,  1.01,  1.36,  1.91,  3.12,  6.39, 15.14],
-                 [0.73,  0.99,  1.37,  1.96,  2.69,  4.22,  7.90, 13.16]]).T,
-            np.array(
-                [[4.46,  8.14, 15.7,  29.09, 49.06],
-                 [3.92,  6.32, 11.8,  20.73, 33.27],
-                 [3.82,  5.22,  9.38, 13.28, 19.98]]).T,
-            np.array(
-                [[12.66, 12.65, 12.59, 11.94, 11.01,  9.61,  6.36,  1.39],
-                 [08.9 ,  8.88,  8.83,  8.19,  7.45,  6.54,  4.21,  0.92],
-                 [06.34,  6.32,  6.26,  5.64,  4.92,  4.2 ,  2.64,  0.61]]).T,
-            np.array(
-                [[11.28,  7.55,  4.59],
-                 [30.7 , 20.66, 13.29]]))
-
-        for prm, exp in zip(prem[:4], expected):
-            self.assertTrue(np.allclose(prm, exp))
-
-    def test_3000_acres_corn_in_champaign(self):
-        # Premiums for 3000 acres corn (verified)
+    def test_800_acres_corn_in_champaign_ta_no_ye(self):
+        # farm-based verified with RMA worksheets
         settings = {
-            'rateyield': 180,
-            'adjyield': 180,
-            'appryield': 190,
-            'acres': 3000,
+            'rateyield': 220,
+            'adjyield': 220,
+            'appryield': 230,
+            'acres': 800,
             'hailfire': 0,
             'prevplant': 0,
             'tause': 1,
@@ -74,26 +49,152 @@ class PremiumTestCase(TestCase):
         prem = self.premium.compute_prems(**settings)
         expected = (
             np.array(
-                [[0.83,  1.16,  1.62,  2.4 ,  3.5 ,  5.95, 11.99, 26.58],
-                 [0.67,  0.81,  0.94,  1.22,  1.74,  2.85,  5.87, 14.01],
-                 [0.68,  0.9 ,  1.23,  1.76,  2.42,  3.81,  7.15, 11.95]]).T,
+                [[0.84,  1.22,  1.75,  2.47,  3.59,  6.16, 13.43, 27.64],
+                 [0.71,  0.88,  1.03,  1.23,  1.74,  2.88,  6.32, 13.42],
+                 [0.69,  0.95,  1.29,  1.78,  2.44,  3.84,  7.54, 14.19]]).T,
             np.array(
                 [[4.46,  8.14, 15.7,  29.09, 49.06],
                  [3.92,  6.32, 11.8,  20.73, 33.27],
                  [3.82,  5.22,  9.38, 13.28, 19.98]]).T,
             np.array(
-                [[12.66, 12.65, 12.59, 11.94, 11.01,  9.61,  6.36,  1.39],
-                 [8.9 ,  8.88,  8.83,  8.19,  7.45,  6.54,  4.21,  0.92],
-                 [6.34,  6.32,  6.26,  5.64,  4.92,  4.2 ,  2.64,  0.61]]).T,
+                [[15.33, 15.31, 15.24, 14.46, 13.33, 11.63,  7.7,   1.68],
+                 [10.77, 10.75, 10.69,  9.91,  9.02,  7.91,  5.1,   1.11],
+                 [7.67,  7.65,  7.58,  6.82,  5.96,  5.08,  3.19,  0.73]]).T,
             np.array(
-                [[11.28,  7.55,  4.59],
-                 [30.7 , 20.66, 13.29]]))
+                [[13.66,  9.14,  5.55],
+                 [37.17, 25.01, 16.08]])
+        )
+
+        for prm, exp in zip(prem[:4], expected):
+            self.assertTrue(np.allclose(prm, exp))
+
+    def test_800_acres_corn_in_champaign_ye_no_ta(self):
+        # farm-based verified with RMA worksheets
+        settings = {
+            'rateyield': 220,
+            'adjyield': 220,
+            'appryield': 230,
+            'acres': 800,
+            'hailfire': 0,
+            'prevplant': 0,
+            'tause': 0,
+            'yieldexcl': 1,
+            'state': 17,
+            'county': 19,
+            'crop': 41,
+            'croptype': 16,
+            'practice': 3,
+            'projected_price': 5.91,
+            'price_volatility_factor': 18,
+            'expected_yield': 221.9,
+        }
+        prem = self.premium.compute_prems(**settings)
+        expected = (
+            np.array(
+                [[0.84,  1.22,  1.75,  2.47,  3.59,  6.16, 13.43, 27.65],
+                 [0.71,  0.88,  1.03,  1.23,  1.74,  2.88,  6.32, 13.43],
+                 [0.69,  0.95,  1.29,  1.78,  2.44,  3.84,  7.54, 14.2]]).T,
+            np.array(
+                [[4.46,  8.14, 15.7,  29.09, 49.06],
+                 [3.92,  6.32, 11.8,  20.73, 33.27],
+                 [3.82,  5.22,  9.38, 13.28, 19.98]]).T,
+            np.array(
+                [[14.66, 14.64, 14.58, 13.83, 12.75, 11.12,  7.36,  1.61],
+                 [10.3,  10.28, 10.22,  9.48,  8.63,  7.57,  4.88,  1.06],
+                 [7.34,  7.32,  7.25,  6.53,  5.7,   4.86,  3.05,  0.7]]).T,
+            np.array(
+                [[13.06,  8.74,  5.31],
+                 [35.55, 23.93, 15.38]])
+        )
+
+        for prm, exp in zip(prem[:4], expected):
+            self.assertTrue(np.allclose(prm, exp))
+
+    def test_800_acres_corn_in_champaign_ta_ya(self):
+        # farm-based verified with RMA worksheets
+        settings = {
+            'rateyield': 220,
+            'adjyield': 220,
+            'appryield': 230,
+            'acres': 800,
+            'hailfire': 0,
+            'prevplant': 0,
+            'tause': 1,
+            'yieldexcl': 1,
+            'state': 17,
+            'county': 19,
+            'crop': 41,
+            'croptype': 16,
+            'practice': 3,
+            'projected_price': 5.91,
+            'price_volatility_factor': 18,
+            'expected_yield': 221.9,
+        }
+        prem = self.premium.compute_prems(**settings)
+        expected = (
+            np.array(
+                [[0.84,  1.22,  1.75,  2.47,  3.59,  6.16, 13.43, 27.65],
+                 [0.71,  0.88,  1.03,  1.23,  1.74,  2.88,  6.32, 13.43],
+                 [0.69,  0.95,  1.29,  1.78,  2.44,  3.84,  7.54, 14.2]]).T,
+            np.array(
+                [[4.46,  8.14, 15.7,  29.09, 49.06],
+                 [3.92,  6.32, 11.8,  20.73, 33.27],
+                 [3.82,  5.22,  9.38, 13.28, 19.98]]).T,
+            np.array(
+                [[15.33, 15.31, 15.24, 14.46, 13.33, 11.63,  7.7,   1.68],
+                 [10.77, 10.75, 10.69,  9.91,  9.02,  7.91,  5.1,   1.11],
+                 [7.67,  7.65,  7.58,  6.82,  5.96,  5.08,  3.19,  0.73]]).T,
+            np.array(
+                [[13.66,  9.14,  5.55],
+                 [37.17, 25.01, 16.08]])
+        )
+
+        for prm, exp in zip(prem[:4], expected):
+            self.assertTrue(np.allclose(prm, exp))
+
+    def test_800_acres_corn_in_champaign_no_ta_no_ye(self):
+        # farm-based verified with RMA worksheets
+        settings = {
+            'rateyield': 220,
+            'adjyield': 220,
+            'appryield': 220,
+            'acres': 800,
+            'hailfire': 0,
+            'prevplant': 0,
+            'tause': 0,
+            'yieldexcl': 0,
+            'state': 17,
+            'county': 19,
+            'crop': 41,
+            'croptype': 16,
+            'practice': 3,
+            'projected_price': 5.91,
+            'price_volatility_factor': 18,
+            'expected_yield': 221.9,
+        }
+        prem = self.premium.compute_prems(**settings)
+        expected = (
+            np.array(
+                [[0.74,  1.01,  1.42,  1.99,  2.85,  4.8,   9.97, 21.25],
+                 [0.66,  0.79,  0.95,  1.07,  1.38,  2.29,  4.6,  10.04],
+                 [0.62,  0.8,   1.07,  1.47,  2.,    3.15,  5.97, 11.76]]).T,
+            np.array(
+                [[4.46,  8.14, 15.7,  29.09, 49.06],
+                 [3.92,  6.32, 11.8,  20.73, 33.27],
+                 [3.82,  5.22,  9.38, 13.28, 19.98]]).T,
+            np.array(
+                [[14.66, 14.64, 14.58, 13.83, 12.75, 11.12,  7.36,  1.61],
+                 [10.3,  10.28, 10.22,  9.48,  8.63,  7.57,  4.88,  1.06],
+                 [7.34,  7.32,  7.25,  6.53,  5.7,   4.86,  3.05,  0.7]]).T,
+            np.array(
+                [[13.06,  8.74,  5.31],
+                 [35.55, 23.93, 15.38]])
+        )
 
         for prm, exp in zip(prem[:4], expected):
             self.assertTrue(np.allclose(prm, exp))
 
     def test_3000_acres_champaign_full_soy(self):
-        # Premiums for 3000 acres full season soybeans in Champaign (verified)
         settings = {
             'rateyield': 58,
             'adjyield': 58,
@@ -134,8 +235,7 @@ class PremiumTestCase(TestCase):
             self.assertTrue(np.allclose(prm, exp))
 
     def test_300_acres_wheat_champaign(self):
-        # Premiums for 300 acres wheat in Champaign (verified)
-        # NOTE: The ARP premiums are not available for this case.
+        # NOTE: The county premiums are not available for this case.
         settings = {
             'rateyield': 39,
             'adjyield': 39,
@@ -176,7 +276,6 @@ class PremiumTestCase(TestCase):
                 self.assertTrue(np.allclose(prm, exp))
 
     def test_100_acres_madison_corn(self):
-        # Premiums for Madison County corn (verified)
         settings = {
             'rateyield': 154,
             'adjyield': 154,
@@ -217,7 +316,6 @@ class PremiumTestCase(TestCase):
             self.assertTrue(np.allclose(prm, exp))
 
     def test_3000_acres_full_soybeans_madison(self):
-        # Premiums for 3000 acres full season soybeans in Madison (verified)
         settings = {
             'rateyield': 47,
             'adjyield': 47,
@@ -258,7 +356,6 @@ class PremiumTestCase(TestCase):
             self.assertTrue(np.allclose(prm, exp))
 
     def test_300_acres_wheat_madison(self):
-        # Premiums for 300 acres wheat in Madison (verified)
         settings = {
             'rateyield': 58,
             'adjyield': 58,
@@ -299,7 +396,6 @@ class PremiumTestCase(TestCase):
             self.assertTrue(np.allclose(prm, exp))
 
     def test_300_acres_fac_soy_madison(self):
-        # Premiums for 300 acres Fac soybeans in Madison (verified)
         settings = {
             'rateyield': 47,
             'adjyield': 47,
@@ -340,8 +436,8 @@ class PremiumTestCase(TestCase):
         for prm, exp in zip(prem[:4], expected):
             self.assertTrue(np.allclose(prm, exp))
 
-    def test_100_acres_corn_st_charles_mo_risk_BBB(self):
-        # Premiums for 100 acres corn in St. Charles, MO (verified)
+    def test_100_acres_corn_st_charles_mo_risk_BBB_ta_noye(self):
+        # farm-based verified with RMA worksheets
         settings = {
             'rateyield': 147,
             'adjyield': 147,
@@ -383,7 +479,6 @@ class PremiumTestCase(TestCase):
             self.assertTrue(np.allclose(prm, exp))
 
     def test_100_acres_madison_corn_NO_TA(self):
-        # Premiums for Madison County corn without trend adjustment (verified)
         settings = {
             'rateyield': 154,
             'adjyield': 154,
@@ -458,6 +553,193 @@ class PremiumTestCase(TestCase):
                 [[07.5 ,  5.89,  2.90],
                  [18.6 , 14.48,  7.84]]))
 
+        for prm, exp in zip(prem[:4], expected):
+            if prm is None:
+                self.assertTrue(exp is None)
+            else:
+                self.assertTrue(np.allclose(prm, exp))
+
+    def test_800_acres_madison_cty_corn_ta_ye(self):
+        # farm-based verified with RMA worksheets
+        settings = {
+            'rateyield': 190,
+            'adjyield': 190,
+            'appryield': 200,
+            'acres': 800,
+            'hailfire': 0,
+            'prevplant': 0,
+            'tause': 1,
+            'yieldexcl': 1,
+            'state': 17,
+            'county': 119,
+            'crop': 41,
+            'croptype': 16,
+            'practice': 3,
+            'projected_price': 5.91,
+            'price_volatility_factor': 18,
+            'expected_yield': 191.9,
+        }
+        prem = self.premium.compute_prems(**settings)
+        expected = (
+            np.array(
+                [[1.89, 2.48, 3.23, 4.29, 6.18, 9.74, 18.3, 34.93],
+                 [1.4, 1.63, 2.02, 2.55, 3.5, 5.55, 10.61, 20.45],
+                 [1.58, 1.97, 2.49, 3.18, 4.27, 6.4, 11.53, 21.06]]).T,
+            np.array(
+                [[15.67, 21.63, 28.17, 41.12, 58.75],
+                 [13.25, 17.25, 21.28, 29.56, 40.84],
+                 [13.34, 15.02, 18.78, 21.53, 28.51]]).T,
+            np.array(
+                [[18.54, 18.08, 17.81, 17.18, 15.81, 13.24,  8.69,  1.71],
+                 [12.48, 12.04, 11.98, 11.69, 10.87,  9.22,  6.1,   1.21],
+                 [9.75,  9.32,  9.16,  8.82,  8.12,  6.85,  4.62,  0.93]]).T,
+            np.array(
+                [[12.85,  9.11,  6.34],
+                 [33.23, 24.2,  16.86]])
+        )
+
+        for prm, exp in zip(prem[:4], expected):
+            if prm is None:
+                self.assertTrue(exp is None)
+            else:
+                self.assertTrue(np.allclose(prm, exp))
+
+    def test_800_acres_madison_cty_corn_nota_noye(self):
+        # farm-based verified with RMA worksheets
+        settings = {
+            'rateyield': 190,
+            'adjyield': 190,
+            'appryield': 200,
+            'acres': 800,
+            'hailfire': 0,
+            'prevplant': 0,
+            'tause': 0,
+            'yieldexcl': 0,
+            'state': 17,
+            'county': 119,
+            'crop': 41,
+            'croptype': 16,
+            'practice': 3,
+            'projected_price': 5.91,
+            'price_volatility_factor': 18,
+            'expected_yield': 191.9,
+        }
+        prem = self.premium.compute_prems(**settings)
+        expected = (
+            np.array(
+                [[1.7,   2.22,  2.89,  3.78,  5.06,  7.99, 15.16, 29.86],
+                 [1.35,  1.56,  1.86,  2.32,  2.95,  4.5,   8.66, 17.39],
+                 [1.48,  1.82,  2.26,  2.86,  3.66,  5.46,  9.86, 18.66]]).T,
+            np.array(
+                [[15.67, 21.63, 28.17, 41.12, 58.75],
+                 [13.25, 17.25, 21.28, 29.56, 40.84],
+                 [13.34, 15.02, 18.78, 21.53, 28.51]]).T,
+            np.array(
+                [[17.62, 17.18, 16.92, 16.32, 15.02, 12.58,  8.25,  1.63],
+                 [11.86, 11.44, 11.38, 11.1,  10.33,  8.76,  5.79,  1.15],
+                 [9.27,  8.86,  8.7,   8.38,  7.71,  6.51,  4.39,  0.89]]).T,
+            np.array(
+                [[12.21,  8.66,  6.02],
+                 [31.57, 22.99, 16.02]]
+                )
+        )
+
+        for prm, exp in zip(prem[:4], expected):
+            if prm is None:
+                self.assertTrue(exp is None)
+            else:
+                self.assertTrue(np.allclose(prm, exp))
+
+    def test_800_acres_madison_cty_corn_nota_ye(self):
+        # farm-based verified with RMA worksheets
+        settings = {
+            'rateyield': 190,
+            'adjyield': 190,
+            'appryield': 200,
+            'acres': 800,
+            'hailfire': 0,
+            'prevplant': 0,
+            'tause': 0,
+            'yieldexcl': 1,
+            'state': 17,
+            'county': 119,
+            'crop': 41,
+            'croptype': 16,
+            'practice': 3,
+            'projected_price': 5.91,
+            'price_volatility_factor': 18,
+            'expected_yield': 191.9,
+        }
+        prem = self.premium.compute_prems(**settings)
+        expected = (
+            np.array(
+                [[1.89,  2.48,  3.23,  4.29,  6.18,  9.74, 18.3,  34.93],
+                 [1.4,   1.63,  2.02,  2.55,  3.5,   5.55, 10.61, 20.45],
+                 [1.58,  1.97,  2.49,  3.18,  4.27,  6.4,  11.53, 21.06]]).T,
+            np.array(
+                [[15.67, 21.63, 28.17, 41.12, 58.75],
+                 [13.25, 17.25, 21.28, 29.56, 40.84],
+                 [13.34, 15.02, 18.78, 21.53, 28.51]]).T,
+            np.array(
+                [[17.62, 17.18, 16.92, 16.32, 15.02, 12.58,  8.25,  1.63],
+                 [11.86, 11.44, 11.38, 11.1,  10.33,  8.76,  5.79,  1.15],
+                 [9.27,  8.86,  8.7,   8.38,  7.71,  6.51,  4.39,  0.89]]).T,
+            np.array(
+                [[12.21,  8.66,  6.02],
+                 [31.57, 22.99, 16.02]]
+                )
+        )
+
+        for prm, exp in zip(prem[:4], expected):
+            if prm is None:
+                self.assertTrue(exp is None)
+            else:
+                self.assertTrue(np.allclose(prm, exp))
+
+    def test_800_acres_madison_cty_corn_ta_noye(self):
+        # farm-based verified with RMA worksheets
+        settings = {
+            'rateyield': 190,
+            'adjyield': 190,
+            'appryield': 200,
+            'acres': 800,
+            'hailfire': 0,
+            'prevplant': 0,
+            'tause': 1,
+            'yieldexcl': 0,
+            'state': 17,
+            'county': 119,
+            'crop': 41,
+            'croptype': 16,
+            'practice': 3,
+            'projected_price': 5.91,
+            'price_volatility_factor': 18,
+            'expected_yield': 191.9,
+        }
+        prem = self.premium.compute_prems(**settings)
+        expected = (
+            np.array(
+                [[1.89,  2.48,  3.23,  4.29,  6.18,  9.74, 18.3,  34.91],
+                 [1.4,   1.63,  2.02,  2.55,  3.5,   5.55, 10.61, 20.43],
+                 [1.58,  1.97,  2.49,  3.18,  4.27,  6.4,  11.53, 21.04]]).T,
+            np.array(
+                [[15.67, 21.63, 28.17, 41.12, 58.75],
+                 [13.25, 17.25, 21.28, 29.56, 40.84],
+                 [13.34, 15.02, 18.78, 21.53, 28.51]]).T,
+            np.array(
+                [[18.54, 18.08, 17.81, 17.18, 15.81, 13.24,  8.69,  1.71],
+                 [12.48, 12.04, 11.98, 11.69, 10.87,  9.22,  6.1,   1.21],
+                 [9.75,  9.32,  9.16,  8.82,  8.12,  6.85,  4.62,  0.93]]).T,
+            np.array(
+                [[12.85,  9.11,  6.34],
+                 [33.23, 24.2,  16.86]]
+                )
+        )
+
+        # print(prem[0].T)
+        # print(prem[1].T)
+        # print(prem[2].T)
+        # print(prem[3])
         for prm, exp in zip(prem[:4], expected):
             if prm is None:
                 self.assertTrue(exp is None)

@@ -263,10 +263,12 @@ class Premium:
 
     def clamp_maxcov(self, interpolated, base):
         """
-        Step 3.05 in worksheet for 85 coverage level case.
+        Step 3.05 in worksheet.  If the interpolated value exceeds the maximum of the
+        corresponding set of base enterprise unit residual factors, we clamp it to that
+        maxiumum
         """
-        interpolated[-1, :] = np.where(interpolated[-1, :] > base[-1, :],
-                                       base[-1, :], interpolated[-1, :])
+        interpolated[:] = np.where(interpolated > np.max(base, axis=0),
+                                   base, interpolated)
 
     def adjust_cy_ratediff_fac(self):
         covmax = self.cover[-1]
@@ -298,12 +300,13 @@ class Premium:
         self.efactor_r[:] = array(rslts[4:6]).T    # 3.05
         if self.yieldexcl or self.tause:
             self.clamp_maxcov(self.efactor_y, self.enterprise_residual_factor_y)
+            # print(f'before lim: {self.efactor_r=}')
             self.clamp_maxcov(self.efactor_r, self.enterprise_residual_factor_r)
+            # print(f'after lim: {self.efactor_r=}')
         self.disenter[:] = rslts[6]                # 2.01
         if self.yieldexcl:
-            # print('adjusting ratediff fac')
+            # print('adjusting cy ratediff fac')
             self.adjust_cy_ratediff_fac()
-        # print(f'{self.effcov=}')
         # print(f'{self.ratediff_fac=}')
         # print(f'{self.enterprise_residual_factor_r=}')
         # print(f'{self.efactor_y=}')
@@ -376,30 +379,46 @@ class Premium:
             self.baserate[:] = term.round(8)
         # print(f'{self.baserate=}')
 
-    def get_curyr_base_prem_rate_cov85(self):
+    def get_curyr_base_prem_rate_effcov_gt_85(self, ix):
         """
-        array(2) (r, y)
+        Additional steps in case effcov > cover[-1]
+        array(2, 8-ix) rows: (y, r)
         """
         cybase = self.baserate[0]
-        enterfactor = np.array([self.enterprise_residual_factor_r[-1, 0],
-                                self.enterprise_residual_factor_y[-1, 0]])
-        efactor = np.array([self.efactor_r[-1, 0], self.efactor_y[-1, 0]])
-        ratediff_fac = self.ratediff_fac[-1, 0]
-        unadjliab = ((self.cover[-1] / self.effcov[-1]).round(10) *
-                     self.liab[-1]).round()  # 3.06
+        enterfactor = np.array([self.enterprise_residual_factor_y[-1, 0],
+                                self.enterprise_residual_factor_r[-1, 0]]).reshape(2, 1)
+        rate_differential_factor = self.rate_differential_factor[-1, 0]
+        enterprise_discount_factor = self.enterprise_discount_factor[-1, self.sizeidx]
+
+        efactor = np.array([self.efactor_y[-1, 0], self.efactor_r[-1, 0]]).reshape(2, 1)
+        ratediff_fac = self.ratediff_fac[ix:, 0]
+
+        unadjliab = ((self.cover[ix:] / self.effcov[ix:]).round(10) *
+                     self.liab[ix:]).round()  # 3.06
         ans1 = (1 / cybase).round(8)  # start 3.07
-        ans2 = (unadjliab / (cybase * self.liab[-1])).round(8)
-        ans3 = (self.rate_differential_factor[-1, 0] * enterfactor *
-                self.enterprise_discount_factor[-1, self.sizeidx] *
-                unadjliab).round(8)  # array(2) r, y
-        ans4 = (ans3 / self.liab[-1]).round(8)  # array(2) r, y
-        maxcovlvl_adjfactor = ans1 - ans2 + ans4  # array(2), r, y
+        ans2 = (unadjliab / (cybase * self.liab[ix:])).round(8)  # array(8-ix)
+        ans3 = (rate_differential_factor * enterfactor *
+                enterprise_discount_factor * unadjliab).round(8)  # array(2, 8-ix)
+        ans4 = (ans3 / self.liab[ix:]).round(8)  # array(2, 8-ix) y, r
+        maxcovlvl_adjfactor = ans1 - ans2 + ans4  # array(2, 8-ix), y, r
         marginalrate_adjfactor = (
             maxcovlvl_adjfactor / (ratediff_fac * efactor *
-                                   self.disenter[-1])).round(8)  # array(2) r, y)
+                                   self.disenter[ix:])).round(8)  # array(2, 8-ix) y, r)
         curyr_base_prem_rate = (cybase * ratediff_fac * efactor *
                                 np.where(marginalrate_adjfactor < 1,
                                          marginalrate_adjfactor, 1)).round(8)
+        # print(f'{cybase=}')
+        # print(f'{enterfactor=}')
+        # print(f'{efactor=}')
+        # print(f'{ratediff_fac=}')
+        # print(f'{rate_differential_factor=}')
+        # print(f'{enterprise_discount_factor=}')
+        # print(f'{unadjliab=}')
+        # print(f'{ans1=}')
+        # print(f'{ans2=}')
+        # print(f'{ans3=}')
+        # print(f'{ans4=}')
+        # print(f'{maxcovlvl_adjfactor=}')
         # print(f'{marginalrate_adjfactor=}')
         # print(f'{curyr_base_prem_rate=}')
         return curyr_base_prem_rate
@@ -410,10 +429,14 @@ class Premium:
         """
         prod = (self.baserate * self.ratediff_fac *
                 array((self.efactor_y, self.efactor_r)))
-        if self.tause or self.yieldexcl:
-            prod[:, -1, 0] = self.get_curyr_base_prem_rate_cov85()
+
+        exceeds = self.effcov > self.cover[-1]
+        if (self.tause or self.yieldexcl) and np.any(exceeds):
+            ix = np.argmax(exceeds)  # the smallest index for which effcov > 0.85
+            prod[:, ix:, 0] = self.get_curyr_base_prem_rate_effcov_gt_85(ix)
         self.basepremrate = prod.round(8)
         # print(f'{self.basepremrate=}')
+        # print(f'{self.basepremrate.shape=}')
 
     def limit_base_prem_rates(self):
         """
@@ -520,7 +543,7 @@ class Premium:
         self.prem_ent[:] -= (self.prem_ent[:] *
                              self.subsidy_ent[:].reshape(8, 1)).round(0)
         # print(f'{self.prem_ent}')
-        self.prem_ent[:] = (self.prem_ent[:] / self.acres).round(2)
+        self.prem_ent[:] = normal_round(self.prem_ent[:] / self.acres, 2)
 
     def initialize_arrays(self):
         """
@@ -708,3 +731,7 @@ def get_crop_ins_data(state_id, county_code, commodity_id, commodity_type_id,
                  for it, shp, name in zip(record, shapes, names))
 
     return zip(names, converted)
+
+
+def normal_round(num, places=0):
+    return np.floor(num * 10**places + 0.5) / 10**places
