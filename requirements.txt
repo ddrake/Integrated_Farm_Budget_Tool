@@ -9,7 +9,7 @@ django-impersonate==1.9.1
 django-js-asset==2.1.0
 django-tailwind==3.6.0
 gunicorn==21.2.0
-numpy==1.26.1
+numpy==1.26.2
 packaging==23.2
 Pillow==10.1.0
 psycopg2==2.9.9
