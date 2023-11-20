@@ -58,7 +58,6 @@ class Premium:
         self.adjyield = None
         # user-specified RMA approved yield
         self.appryield = None
-        self.appryield_adj = None  # possibly modified approved yield
 
         # External data
         # -------------
@@ -97,7 +96,7 @@ class Premium:
 
         # scalar variables
         # -------------------------
-        # computed from appryield_adj and mqty, stdqty, which are looked up based on
+        # computed from appryield and mqty, stdqty, which are looked up based on
         # (revlook and # discountentr[cov65idx, sizeidx]).  Used in loss simulation
         self.adjmeanqty = None
         self.adjstdqty = None
@@ -107,7 +106,7 @@ class Premium:
         # effective cover: coverage level times ratio of appryield/rateyield
         # used in intepolation and several other calculations.
         self.sizeidx = None  # index based on acres
-        # liability dollar amount based on appryield_adj, aphprice, acres and cover.
+        # liability dollar amount based on appryield, aphprice, acres and cover.
         # dollar amount used in county options (SCO, ECO)
         self.aliab = None
         # log(aphprice) - pvol**2/2, used to compute harvest price in loss simulation.
@@ -258,7 +257,7 @@ class Premium:
         Note: depends on appryield regardless of tause
         (Section 13, p. 44) (1.01 in TA/YE case)
         """
-        self.effcov = (self.cover * self.appryield_adj / self.adjyield).round(2)
+        self.effcov = (self.cover * self.appryield / self.adjyield).round(2)
         # print(f'{self.effcov=}')
 
     def clamp_maxcov(self, interpolated, base):
@@ -356,7 +355,7 @@ class Premium:
         Set the revised yield and the liability amount  (~ p. 1-4)
         (step 1.04/1.07)
         """
-        self.liab = ((self.appryield_adj * self.cover).round(1) *
+        self.liab = ((self.appryield * self.cover).round(1) *
                      self.projected_price * self.acres).round(0)
         # print(f'{self.liab=}')
 
@@ -471,8 +470,8 @@ class Premium:
            revenue_lookup_rate *
            10000 * self.enterprise_discount_factor[cov65idx, self.sizeidx] + 0.5)
         self.stdqty, self.mqty = get_combo_rev_std_mean(rev_look_key)
-        self.adjmeanqty = round(self.appryield_adj * self.mqty / 100, 8)
-        self.adjstdqty = round(self.appryield_adj * self.stdqty / 100, 8)
+        self.adjmeanqty = round(self.appryield * self.mqty / 100, 8)
+        self.adjstdqty = round(self.appryield * self.stdqty / 100, 8)
         # print(f'{self.adjmeanqty=}')
         # print(f'{self.adjstdqty=}')
 
@@ -488,21 +487,21 @@ class Premium:
         simloss = zeros((500, 8, 3))
         yld = np.maximum(0, self.draw[:, 0] * self.adjstdqty + self.adjmeanqty)
         yld = np.repeat(yld[:, np.newaxis], 8, axis=1)
-        simloss[:, :, 0] = np.maximum(0, self.appryield_adj * revcov - yld)
+        simloss[:, :, 0] = np.maximum(0, self.appryield * revcov - yld)
         harprice = np.minimum(2 * self.projected_price,
                               exp(self.draw[:, 1] *
                                   (self.price_volatility_factor/100) + self.lnmean))
         harprice = np.repeat(harprice[:, np.newaxis], 8, axis=1)
         guarprice = np.maximum(harprice, self.projected_price)
-        simloss[:, :, 1] = np.maximum(0, (self.appryield_adj * guarprice * revcov -
+        simloss[:, :, 1] = np.maximum(0, (self.appryield * guarprice * revcov -
                                           yld * harprice))
-        simloss[:, :, 2] = np.maximum(0, (self.appryield_adj * self.projected_price *
+        simloss[:, :, 2] = np.maximum(0, (self.appryield * self.projected_price *
                                           revcov - yld * harprice))
         self.simloss = simloss.mean(0)
         self.simloss[:, 0] = (self.simloss[:, 0] /
-                              (self.appryield_adj * revcov)).round(8)
+                              (self.appryield * revcov)).round(8)
         self.simloss[:, 1:] = (self.simloss[:, 1:] /
-                               (self.appryield_adj * revcov *
+                               (self.appryield * revcov *
                                 self.projected_price).reshape(8, 1)).round(8)
 
     def set_rates(self):
@@ -636,8 +635,6 @@ class Premium:
         self.projected_price = projected_price
         self.price_volatility_factor = price_volatility_factor
         self.expected_yield = expected_yield
-
-        self.appryield_adj = max(self.appryield,  self.rateyield)
 
         # Set index based on acreage
         self.sizeidx = (0 if self.acres < 50 else 1 if self.acres < 100 else
