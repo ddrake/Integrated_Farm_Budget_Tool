@@ -1,6 +1,7 @@
 """ Module util -- utility functions for main model """
 import numbers
 from datetime import datetime
+from collections import defaultdict
 import numpy as np
 
 
@@ -46,6 +47,33 @@ def notify_user_of_bugfix(username):
          "Please don't reply to this email address; it has no inbox.  " +
          "If you're still seeing an issue, please click the 'Help' link at ifbt.farm " +
          "and post a message letting us know the details."))
+
+
+def notify_users_of_budget_updates(budgetids):
+    from .farm_crop import FarmBudgetCrop
+
+    fbcs = FarmBudgetCrop.objects.filter(budget_crop_id__in=budgetids)
+    user_budget_info = defaultdict(list)
+    for fbc in fbcs:
+        user_budget_info[fbc.farm_year.user_id].append(
+            (fbc.farm_year.user, fbc.farm_year, fbc.farm_crop, fbc.budget_crop))
+    usernames = []
+    for id, lst in user_budget_info.items():
+        user = lst[0][0]
+        body = (f"Hi {user.username}.  One or more of your budgets have new "
+                "versions available to replace placeholder budgets, "
+                "which were obtained by modifying 2023 budgets:\n\n")
+        for _, farmyear, farmcrop, bc in lst:
+            body += f"• {str(farmyear)}: {str(farmcrop)}\n"
+        body += ("\nTo update your budget(s), simply re-select the drop-down lists "
+                 "on the Crop Acreage / Crop Insurance page(s).  "
+                 "Any customizations you may have made will be lost upon update, so "
+                 "you may prefer not to update budgets which have extensive changes.")
+        usernames.append(user.username)
+
+        user.email_user(
+            "Updated Budget(s) Avaialable", body)
+        return usernames
 
 
 def default_start_date():
