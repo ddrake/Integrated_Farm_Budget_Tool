@@ -43,15 +43,20 @@ class Premium:
         self.subcounty = None
         # acres to insure for given county, crop, croptype and practice.
         self.acres = None
-        # 0: standard policy, 1: deduction for hail/fire exclusion
-        self.hailfire = None
-        # 0: standard coverage, 1: premium for 5% prevent plant buyup
-        self.prevplant = None
-        # 0: no trend yield adjustment, 1: use trend-adjusted yields
-        self.tause = None
-        # 0: no yield exclusion, 1: allow certain past year's yield data (e.g. 2012)
-        #     and replaced by an alternative yield.
-        self.yieldexcl = None
+        # 1: deduction for hail/fire exclusion
+        self.hailfire = 0
+        # 1: premium for 5% prevent plant buyup
+        self.prevplant = 0
+        # 1: quality loss
+        self.ql = 0
+        # 1: use trend-adjusted yields
+        self.ta = 0
+        # 1: yield adjustment (60%)
+        self.ya = 0
+        # 1: yield cup
+        self.yc = 0
+        # 1: allow replacement of past year yield data (2012) by an alternative yield.
+        self.ye = 0
         # Rate yield (RMA rate yield)
         self.rateyield = None
         # Adjusted yield (RMA adjusted yield)
@@ -154,7 +159,7 @@ class Premium:
     # MAIN METHOD: COMPUTE PREMIUMS
     # -----------------------------
     def compute_prems(self, rateyield=180, adjyield=180, appryield=190, acres=100,
-                      hailfire=0, prevplant=0, tause=1, yieldexcl=0,
+                      hailfire=0, prevplant=0, ql=0, ta=0, ya=0, yc=0, ye=0,
                       state=17, county=19, crop=41, croptype=16, practice=3,
                       projected_price=None, price_volatility_factor=None,
                       subcounty=None, expected_yield=None):
@@ -166,9 +171,10 @@ class Premium:
           price_volatility_factor and projected_price will simply be ignored.
         """
         self.store_user_settings(
-            rateyield, adjyield, appryield, acres, hailfire, prevplant, tause,
-            yieldexcl, state, county, crop, croptype, practice,
-            projected_price, price_volatility_factor, subcounty, expected_yield)
+            rateyield, adjyield, appryield, acres, hailfire,
+            prevplant, ql, ta, ya, yc, ye, state, county,
+            crop, croptype, practice, projected_price, price_volatility_factor,
+            subcounty, expected_yield)
 
         # pass user-specified estimate of price_volatility_factor
         data = get_crop_ins_data(
@@ -254,7 +260,7 @@ class Premium:
     def set_effcov(self):
         """
         Set the effective coverage level
-        Note: depends on appryield regardless of tause
+        Note: depends on appryield regardless of ta
         (Section 13, p. 44) (1.01 in TA/YE case)
         """
         self.effcov = (self.cover * self.appryield / self.adjyield).round(2)
@@ -297,13 +303,13 @@ class Premium:
         self.ratediff_fac[:] = array(rslts[:2]).T  # 3.04
         self.efactor_y[:] = array(rslts[2:4]).T
         self.efactor_r[:] = array(rslts[4:6]).T    # 3.05
-        if self.yieldexcl or self.tause:
+        if self.ql or self.yc or self.ye or self.ta:
             self.clamp_maxcov(self.efactor_y, self.enterprise_residual_factor_y)
             # print(f'before lim: {self.efactor_r=}')
             self.clamp_maxcov(self.efactor_r, self.enterprise_residual_factor_r)
             # print(f'after lim: {self.efactor_r=}')
         self.disenter[:] = rslts[6]                # 2.01
-        if self.yieldexcl:
+        if self.ql or self.yc or self.ye:
             # print('adjusting cy ratediff fac')
             self.adjust_cy_ratediff_fac()
         # print(f'{self.ratediff_fac=}')
@@ -322,15 +328,15 @@ class Premium:
         js, jps, jms = self.get_indices()
         rslts = []
         for var, ro, name in varpairs:
-            if not self.tause and not self.yieldexcl:
-                rslt = var
-            else:
+            if self.ql or self.ta or self.yc or self.ye:
                 # handle general case with possible extrapolation
                 vdiff = np.where(js < 7,
                                  var[jps] - var[js], var[js] - var[jms])
                 rslt = (var[js] + vdiff * (effcov - cov[js]) / gap).round(ro)
                 # modify result in special case which should never happen.
                 rslt = np.where(effcov < cov[0], round(var[0], ro), rslt)
+            else:
+                rslt = var
             rslts.append(rslt)
         return rslts
 
@@ -420,6 +426,7 @@ class Premium:
         # print(f'{maxcovlvl_adjfactor=}')
         # print(f'{marginalrate_adjfactor=}')
         # print(f'{curyr_base_prem_rate=}')
+
         return curyr_base_prem_rate
 
     def set_base_prem_rates(self):
@@ -430,7 +437,7 @@ class Premium:
                 array((self.efactor_y, self.efactor_r)))
 
         exceeds = self.effcov > self.cover[-1]
-        if (self.tause or self.yieldexcl) and np.any(exceeds):
+        if (self.ql or self.ta or self.yc or self.ye) and np.any(exceeds):
             ix = np.argmax(exceeds)  # the smallest index for which effcov > 0.85
             prod[:, ix:, 0] = self.get_curyr_base_prem_rate_effcov_gt_85(ix)
         self.basepremrate = prod.round(8)
@@ -480,7 +487,8 @@ class Premium:
         Simulate losses for 500 (yield_draw, price_draw) pairs
         for cases (yp, rp, rphpe) (p. 19)
         """
-        revcov = self.effcov if self.tause or self.yieldexcl else self.cover
+        revcov = (self.effcov if self.ql or self.ta or self.yc or self.ye else
+                  self.cover)
         self.lnmean = round(log(self.projected_price) -
                             ((self.price_volatility_factor/100) ** 2 / 2), 8)
         # print(f'{self.lnmean=}')
@@ -604,14 +612,14 @@ class Premium:
         return self.prem_eco
 
     def make_aliab(self):
-        arevyield = self.appryield if self.tause else self.rateyield
+        arevyield = self.appryield if self.ta else self.rateyield
         self.aliab = arevyield * self.projected_price
 
     # -------------------
     # STORE USER SETTINGS
     # -------------------
     def store_user_settings(self, rateyield, adjyield, appryield, acres, hailfire,
-                            prevplant, tause, yieldexcl, state, county,
+                            prevplant, ql, ta, ya, yc, ye, state, county,
                             crop, croptype, practice, projected_price,
                             price_volatility_factor, subcounty, expected_yield):
         """
@@ -619,13 +627,18 @@ class Premium:
         some values derived from them.
         """
         self.rateyield = rateyield
-        self.adjyield = adjyield
+        # override adjyield in cases no option or ya (adjyield not used)
+        self.adjyield = (adjyield if self.ql or self.ta or self.yc or self.ye else
+                         rateyield)
         self.appryield = appryield
         self.acres = acres
         self.hailfire = hailfire
         self.prevplant = prevplant
-        self.tause = tause
-        self.yieldexcl = yieldexcl
+        self.ql = ql
+        self.ta = ta
+        self.ya = ya
+        self.yc = yc
+        self.ye = ye
         self.state = state
         self.county = county
         self.subcounty = subcounty
