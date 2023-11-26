@@ -103,6 +103,8 @@ class Madison2023FarmYearTestCase(TestCase):
         mgr = BudgetManager(self.farm_year)
         mgr.build_current_budget()
         data = self.farm_year.current_budget_data
+        # pp = pprint.PrettyPrinter(indent=1, width=80, compact=True)
+        # pp.pprint(data)
         expected = {
             'budget': {
                 'adj_land_rent_per_rented_ac': [332970.2481669487,
@@ -456,6 +458,8 @@ class Madison2023FarmYearTestCase(TestCase):
         sgrp = SensTableGroup(self.farm_year)
         sgrp.compute_current_data(save=True)
         data = np.array(self.farm_year.sensitivity_data)
+        # pp = pprint.PrettyPrinter(indent=1, width=80, compact=True)
+        # pp.pprint(data)
         expected = np.array(
             [[[[[832.710938,   856.085938,   879.460938,   902.835938, 926.210938],
                 [982.885625,  1011.935625,  1040.985625,  1070.035625, 1099.085625],
