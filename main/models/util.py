@@ -49,7 +49,7 @@ def notify_user_of_bugfix(username):
          "and post a message letting us know the details."))
 
 
-def notify_users_of_budget_updates(budgetids):
+def notify_users_of_budget_updates(budgetids, prevyr=False):
     from .farm_crop import FarmBudgetCrop
 
     fbcs = FarmBudgetCrop.objects.filter(budget_crop_id__in=budgetids)
@@ -61,9 +61,14 @@ def notify_users_of_budget_updates(budgetids):
     for id, lst in user_budget_info.items():
         user = lst[0][0]
         body = (f"Hi {user.username}.  One or more of your budgets have new "
-                "versions available to replace placeholder budgets, "
-                "which were obtained by modifying 2023 budgets:\n\n")
-        for _, farmyear, farmcrop, bc in lst:
+                "versions available to replace ")
+        if prevyr:
+            body += ("placeholder budgets, "
+                     "which were obtained by modifying 2023 budgets:\n\n")
+        else:
+            body += ("previously-published 2024 university-based budgets:\n\n")
+
+        for _, farmyear, farmcrop, bc in sorted(lst, key=lambda x: str(x[1])):
             body += f"• {str(farmyear)}: {str(farmcrop)}\n"
         body += ("\nTo update your budget(s), simply re-select the drop-down lists "
                  "on the Crop Acreage / Crop Insurance page(s).  "
