@@ -44,19 +44,19 @@ class Premium:
         # acres to insure for given county, crop, croptype and practice.
         self.acres = None
         # 1: deduction for hail/fire exclusion
-        self.hailfire = 0
+        self.hailfire = False
         # 1: premium for 5% prevent plant buyup
-        self.prevplant = 0
+        self.prevplant = False
         # 1: quality loss
-        self.ql = 0
+        self.ql = False
         # 1: use trend-adjusted yields
-        self.ta = 0
+        self.ta = False
         # 1: yield adjustment (60%)
-        self.ya = 0
+        self.ya = False
         # 1: yield cup
-        self.yc = 0
+        self.yc = False
         # 1: allow replacement of past year yield data (2012) by an alternative yield.
-        self.ye = 0
+        self.ye = False
         # Rate yield (RMA rate yield)
         self.rateyield = None
         # Adjusted yield (RMA adjusted yield)
@@ -159,9 +159,9 @@ class Premium:
     # MAIN METHOD: COMPUTE PREMIUMS
     # -----------------------------
     def compute_prems(self, rateyield=180, adjyield=180, appryield=190, acres=100,
-                      hailfire=0, prevplant=0, ql=0, ta=0, ya=0, yc=0, ye=0,
-                      state=17, county=19, crop=41, croptype=16, practice=3,
-                      projected_price=None, price_volatility_factor=None,
+                      hailfire=False, prevplant=False, ql=False, ta=False, ya=False,
+                      yc=False, ye=False, state=17, county=19, crop=41, croptype=16,
+                      practice=3, projected_price=None, price_volatility_factor=None,
                       subcounty=None, expected_yield=None):
         """
         With farm-specific inputs, compute premiums for optional, basic and enterprise,
@@ -247,14 +247,14 @@ class Premium:
             hfrate, pfrate = self.option_rate
         elif len(self.option_rate) == 1:
             pfrate = self.option_rate
-            self.hailfire = 0
+            self.hailfire = False
         else:
-            self.hailfire = self.prevplant = 0
+            self.hailfire = self.prevplant = False
 
         self.multfactor = 1
-        if self.hailfire == 1:
+        if self.hailfire:
             self.multfactor *= hfrate
-        if self.prevplant == 1:
+        if self.prevplant:
             self.multfactor *= pfrate
 
     def set_effcov(self):

@@ -62,12 +62,21 @@ class FarmCrop(models.Model):
     rate_yield = models.FloatField(
         default=0, validators=[MinVal(0), MaxVal(400)],
         help_text="Rate yield provided by insurer.")
-    ye_use = models.BooleanField(
+    ye = models.BooleanField(
         default=False, verbose_name='use YE?',
         help_text="Use yield exclusion option? (e.g. exclude 2012 yields)")
-    ta_use = models.BooleanField(
+    ta = models.BooleanField(
         default=False, verbose_name='use TA?',
         help_text="Use trend adjustment option? (apply a trend adjustment to yields).")
+    ql = models.BooleanField(
+        default=False, verbose_name='use QL?',
+        help_text="Apply quality loss option?")
+    ya = models.BooleanField(
+        default=False, verbose_name='use YA?',
+        help_text="Apply yield averaging option?")
+    yc = models.BooleanField(
+        default=False, verbose_name='use YC?',
+        help_text="Apply yield cup option?")
     subcounty = models.CharField(
         max_length=8, blank=True, verbose_name="risk class", default='',
         choices=[(v[0], v[0]) for v in Subcounty.objects.all().values_list('id')],
@@ -280,8 +289,11 @@ class FarmCrop(models.Model):
             adjyield=self.adj_yield,
             appryield=self.appr_yield,
             acres=self.planted_acres,
-            ta=self.ta_use,
-            ye=self.ye_use,
+            ql=self.ql,
+            ta=self.ta,
+            ya=self.ya,
+            yc=self.yc,
+            ye=self.ye,
             price_volatility_factor=int(round(price_vol * 100)),
             projected_price=projected_price,
             expected_yield=expected_yield,
@@ -710,6 +722,9 @@ class FarmCrop(models.Model):
         if self.sco_use and fsa_crop_has_arcco:
             raise ValidationError({'sco_use': _(
                 "ARC-CO base acres must be zero if SCO is set for related farm crop")})
+        if self.is_irrigated() and self.ye:
+            raise ValidationError({'ye': _(
+                "Yield Exclusion (YE) is not available for irrigated crops")})
 
     def save(self, *args, **kwargs):
         no_check = kwargs.pop('no_check', None)

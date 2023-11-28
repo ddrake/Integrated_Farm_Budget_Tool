@@ -24,10 +24,16 @@
         <dd class="text-right">{{farmcrop.adj_yield}}</dd>
         <dt>Risk class</dt>
         <dd class="text-right">{{farmcrop.subcounty|default:"None"}}</dd>
+        <dt>Use quality loss (QL)</dt>
+        <dd class="text-right">{{farmcrop.ql|yesno:"Yes,No"}}</dd>
         <dt>Use trend adjustment (TA)</dt>
-        <dd class="text-right">{{farmcrop.ta_use|yesno:"Yes,No"}}</dd>
+        <dd class="text-right">{{farmcrop.ta|yesno:"Yes,No"}}</dd>
+        <dt>Use yield adjustment (YA)</dt>
+        <dd class="text-right">{{farmcrop.ya|yesno:"Yes,No"}}</dd>
+        <dt>Use yield cup (YC)</dt>
+        <dd class="text-right">{{farmcrop.yc|yesno:"Yes,No"}}</dd>
         <dt>Use yield exclusion (YE)</dt>
-        <dd class="text-right">{{farmcrop.ye_use|yesno:"Yes,No"}}</dd>
+        <dd class="text-right">{{farmcrop.ye|yesno:"Yes,No"}}</dd>
         <dt>Approved yield</dt>
         <dd class="text-right">{{farmcrop.appr_yield}}</dd>
         <dt class="font-semibold">Farm Crop Insurance Choices</dt><dd></dd>

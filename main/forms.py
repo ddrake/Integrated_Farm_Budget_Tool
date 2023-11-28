@@ -153,8 +153,8 @@ class FarmCropUpdateForm(ModelForm):
             Fieldset('Key Values',
                      'planted_acres', 'ins_practice'),
             Fieldset('Crop Insurance Information',
-                     'rate_yield', 'adj_yield', 'subcounty', 'ta_use',
-                     'ye_use', 'appr_yield'),
+                     'rate_yield', 'adj_yield', 'subcounty', 'ql', 'ta',
+                     'ya', 'yc', 'ye', 'appr_yield'),
             Fieldset('Crop Insurance Choices',
                      'coverage_type', 'product_type', 'base_coverage_level', 'sco_use',
                      'eco_level', Field('prot_factor', css_class="percent")),
@@ -163,7 +163,7 @@ class FarmCropUpdateForm(ModelForm):
     class Meta:
         model = FarmCrop
         fields = '''planted_acres ins_practice rate_yield adj_yield appr_yield
-        ta_use ye_use subcounty coverage_type product_type base_coverage_level
+        ql ta ya yc ye subcounty coverage_type product_type base_coverage_level
         sco_use eco_level prot_factor'''.split()
         widgets = {
             'planted_acres': forms.NumberInput(
