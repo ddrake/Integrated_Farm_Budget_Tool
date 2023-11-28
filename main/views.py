@@ -67,6 +67,9 @@ class BudgetSourcesView(ListView):
         context = super().get_context_data(**kwargs)
         context['has_farm_years'] = True
         context['farmyear_id'] = context['view'].kwargs['farmyear']
+        context['has_prevyr_based'] = any(
+            (bd.is_prevyr_based for bd in context['budget_list']))
+        print(f"{context['has_prevyr_based']=}")
         return context
 
 

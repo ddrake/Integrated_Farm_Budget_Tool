@@ -36,7 +36,7 @@
         Listed below are all the budget sources for the current year.
         The highlighted entry corresponds to the crop for which you clicked "Budget Source".
       </p>
-      <table class="table-fixed text-base">
+      <table class="table-fixed text-sm">
         <thead>
           <tr>
             <th class="w-1/2">Institution</th>
@@ -52,9 +52,24 @@
                   >{{bd.institution|default:None}}</a>
               </td>
               <td class="px-1">{{bd.authors|default:None}}</td>
-              <td class="px-1">{{bd.created_on}}</td>
+              <td class="px-1">
+                {{bd.created_on}} {% if bd.is_prevyr_based %}*{% endif %}
+              </td>
             </tr>
           {% endfor %}
+          {% if has_prevyr_based %}
+          <tr>
+            <td colspan="3">&nbsp;</td>
+          </tr>
+          <tr>
+            <td colspan="3">* A budget for the current crop year has not yet released
+              by the university's authors. This budget reflects the authors' prior year
+              budget rolled forward to the current crop year using global average changes
+              derived by IFBT from other current university published budgets.  When the
+              current year budget is published, it will replace this budget estimate.
+            </td>
+          </tr>
+          {% endif %}
         </tbody>
       </table>
     </div>

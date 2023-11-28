@@ -493,6 +493,7 @@ class Budget(models.Model):
     institution = models.CharField(max_length=150, null=True)
     source_url = models.URLField(null=True)
     created_on = models.DateField()
+    is_prevyr_based = models.BooleanField(default=False)
 
     @property
     def fullname(self):
