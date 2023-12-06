@@ -27,7 +27,7 @@ from .forms import (FarmYearCreateForm, FarmYearUpdateForm, FarmYearUpdateFormFo
                     FarmCropUpdateForm, FarmBudgetCropUpdateForm,
                     ZeroAcreFarmBudgetCropUpdateForm, MarketCropUpdateForm,
                     FsaCropUpdateForm, ContractCreateForm, ContractUpdateForm)
-from .models.util import has_farm_years, get_current_year
+from .models.util import has_farm_years
 
 
 class IndexView(View):
@@ -61,7 +61,8 @@ class BudgetSourcesView(ListView):
     template_name = 'main/budget_sources.html'
 
     def get_queryset(self):
-        return Budget.objects.filter(crop_year=get_current_year())
+        farmyear = get_object_or_404(FarmYear, pk=self.kwargs.get('farmyear', None))
+        return Budget.objects.filter(crop_year=farmyear.crop_year)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -69,7 +70,7 @@ class BudgetSourcesView(ListView):
         context['farmyear_id'] = context['view'].kwargs['farmyear']
         context['has_prevyr_based'] = any(
             (bd.is_prevyr_based for bd in context['budget_list']))
-        print(f"{context['has_prevyr_based']=}")
+        print(f"{context['has_prevyr_based']}")
         return context
 
 

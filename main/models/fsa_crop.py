@@ -1,5 +1,4 @@
 import numpy as np
-from datetime import datetime
 from django.core.exceptions import ValidationError
 from django.core.validators import (MinValueValidator as MinVal,
                                     MaxValueValidator as MaxVal)
@@ -10,10 +9,6 @@ from ext.models import (FsaCropType, MyaPreEstimate, MyaPost,
 from core.models.gov_pmt import GovPmt
 from .farm_year import FarmYear
 from .util import scal
-
-
-def get_current_year():
-    return datetime.today().year
 
 
 class FsaCrop(models.Model):

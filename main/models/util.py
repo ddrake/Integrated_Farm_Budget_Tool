@@ -15,6 +15,12 @@ def scal(factor):
 
 
 def get_current_year():
+    """
+    Because we may want to test a farm year for a future crop year,
+    this utility should be used ONLY to set the defaults for a farm year.
+    It cannot easily be moved to the farm year model because migrations depend on
+    it being defined here.
+    """
     return datetime.today().year
 
 
@@ -82,9 +88,9 @@ def notify_users_of_budget_updates(budgetids, prevyr=False):
 
 
 def default_start_date():
-    """ For remainder of 2023, use Jan, 11, but after that, change to Jan 1. """
+    """ Jan 1 of the current year is hereby the default start date for farm years. """
     year = get_current_year()
-    return datetime(year, 1, 11)
+    return datetime(year, 1, 1)
 
 
 def one_like(var):

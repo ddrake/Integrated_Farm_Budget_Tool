@@ -259,7 +259,7 @@ class FarmYear(models.Model):
 
     def save(self, *args, **kwargs):
         if (self._state.adding and
-            FarmYear.objects.filter(crop_year=util.get_current_year(),
+            FarmYear.objects.filter(crop_year=self.crop_year,
                                     user=self.user).count() >= 10):
             raise PermissionDenied('A user can have at most 10 farms for a crop year')
 
