@@ -163,6 +163,9 @@ class FarmCrop(models.Model):
         return [(prac, FarmYear.IRR_PRACTICE[prac])
                 for prac in self.ins_practices]
 
+    def is_beans(self):
+        return self.farm_crop_type_id in (2, 5)
+
     # ------------------------
     # Crop Ins-related methods
     # ------------------------
@@ -225,7 +228,7 @@ class FarmCrop(models.Model):
         """
         Ensure that fs beans and dc beans have the same settings
         """
-        if self.farm_crop_type_id in (2, 5):
+        if self.is_beans():
             other_bean_crop = (self.farm_year.farm_crops
                                .filter(farm_crop_type_id__in=[2, 5])
                                .exclude(pk=self.pk))
@@ -372,7 +375,7 @@ class FarmCrop(models.Model):
             sens_cty, is_rma_final = self.sens_cty_expected_yield(yf)
             sens_cty_exp_yield = (
                 self.market_crop.county_bean_yield(yf)
-                if self.farm_crop_type_id in (2, 5) and not is_rma_final else sens_cty)
+                if self.is_beans() and not is_rma_final else sens_cty)
             result = (
                 {'ey': [exp_yield, True],
                  'pp': [proj_price, proj_price_final],
@@ -722,9 +725,13 @@ class FarmCrop(models.Model):
         if self.sco_use and fsa_crop_has_arcco:
             raise ValidationError({'sco_use': _(
                 "ARC-CO base acres must be zero if SCO is set for related farm crop")})
-        if self.is_irrigated() and self.ye:
-            raise ValidationError({'ye': _(
-                "Yield Exclusion (YE) is not available for irrigated crops")})
+        # For now, allow users to set options freely.  The rules are not clear.
+        # if self.is_irrigated() and self.ye:
+        #     raise ValidationError({'ye': _(
+        #         "Yield Exclusion (YE) is not available for irrigated crops")})
+        # if self.is_beans() and self.ye:
+        #     raise ValidationError({'ye': _(
+        #         "Yield Exclusion (YE) is not available for soybeans")})
 
     def save(self, *args, **kwargs):
         no_check = kwargs.pop('no_check', None)
