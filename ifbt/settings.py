@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     'ckeditor',
     'ckeditor_uploader',
     'blog',
+    'construction',
 ]
 
 SITE_ID = 1
@@ -70,6 +71,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django_cprofile_middleware.middleware.ProfilerMiddleware',
+    'construction.middleware.MaintenanceMiddleware',
 ]
 
 ROOT_URLCONF = 'ifbt.urls'
