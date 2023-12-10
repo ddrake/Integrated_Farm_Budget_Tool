@@ -1,10 +1,8 @@
 from django.shortcuts import render, redirect
 from django.views.generic import CreateView, TemplateView, RedirectView
 from django.views import View
-from django.urls import reverse
 from django.contrib.auth import login
-
-from django.urls import reverse_lazy
+from django.urls import reverse_lazy, reverse
 from django.utils.http import urlsafe_base64_decode
 from django.utils.encoding import force_str  # force_text on older versions of Django
 
