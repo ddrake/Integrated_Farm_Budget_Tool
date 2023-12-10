@@ -147,11 +147,15 @@
         <div>
           {% if user.is_authenticated %}
             <span class="mt-4 text-white">User: {{user}}</span>
-            <a
-              href="{% url 'logout' %}"
-              class="block mt-4 sm:inline-block sm:mt-0 text-teal-200 hover:text-white ml-4"
-              >Log out</a
-            >
+            <form action="{% url 'logout' %}" method="POST" name="logout" value="logout"
+              class="inline-block">
+              {% csrf_token %}
+              <input
+                type="submit"
+                value="Log out"
+                class="block mt-4 inline-block sm:mt-0 text-teal-200 hover:text-white ml-4"
+               >
+            </form>
             <a
               href="{% url 'password_change' %}"
               class="block mt-4 sm:inline-block sm:mt-0 text-teal-200 hover:text-white ml-4"
