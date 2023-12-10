@@ -94,7 +94,7 @@ TEMPLATES = [
 
 LOGIN_URL = '/login/'
 LOGIN_REDIRECT_URL = '/farmyears/'
-LOGOUT_REDIRECT_URL = '/login/'
+LOGOUT_REDIRECT_URL = '/'
 
 WSGI_APPLICATION = 'ifbt.wsgi.application'
 
