@@ -40,7 +40,7 @@ class BudgetPdf(object):
         self.bt_kd = budget_tables['kd']
         self.bt_pb = budget_tables['pb']
         self.bt_pa = budget_tables['pa']
-        self.bt_wheatdc = budget_tables.get('wheatdc', None)
+        self.bt_wheatdc = budget_tables.get('wheatdc')
         self.budget_format = budget_text['info']
 
         keydata = budget_text['keydata']

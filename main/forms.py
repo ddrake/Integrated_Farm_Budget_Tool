@@ -299,11 +299,11 @@ class ContractCreateForm(ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        mcid = (kwargs.get('initial', None) and
-                kwargs['initial'].get('market_crop', None))
+        mcid = (kwargs.get('initial') and
+                kwargs['initial'].get('market_crop'))
         if mcid is None:
-            mcid = (kwargs.get('data', None) and
-                    kwargs['data'].get('market_crop', None))
+            mcid = (kwargs.get('data') and
+                    kwargs['data'].get('market_crop'))
 
         cropname = str(MarketCrop.objects.get(pk=mcid))
         self.helper = FormHelper()

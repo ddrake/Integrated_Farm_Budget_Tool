@@ -147,7 +147,7 @@ class SensPdf(object):
         for r, row in enumerate(styles):
             for c, col in enumerate(row):
                 for sty in col:
-                    simple = csstags.get(sty, None)
+                    simple = csstags.get(sty)
                     if simple is not None:
                         for sub in simple:
                             # Note: reportlab uses (c, r) like (x, y)

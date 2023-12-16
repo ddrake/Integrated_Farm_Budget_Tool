@@ -40,28 +40,28 @@ class PrivacyView(View):
     def get(self, request, *args, **kwargs):
         return render(request, 'main/privacy.html',
                       {'has_farm_years': has_farm_years(request.user),
-                       'farmyear_id': kwargs.get('farmyear', '')})
+                       'farmyear_id': kwargs.get('farmyear')})
 
 
 class TermsView(View):
     def get(self, request, *args, **kwargs):
         return render(request, 'main/terms.html',
                       {'has_farm_years': has_farm_years(request.user),
-                       'farmyear_id': kwargs.get('farmyear', '')})
+                       'farmyear_id': kwargs.get('farmyear')})
 
 
 class StatusView(View):
     def get(self, request, *args, **kwargs):
         return render(request, 'main/status.html',
                       {'has_farm_years': has_farm_years(request.user),
-                       'farmyear_id': kwargs.get('farmyear', '')})
+                       'farmyear_id': kwargs.get('farmyear')})
 
 
 class BudgetSourcesView(ListView):
     template_name = 'main/budget_sources.html'
 
     def get_queryset(self):
-        farmyear = get_object_or_404(FarmYear, pk=self.kwargs.get('farmyear', None))
+        farmyear = get_object_or_404(FarmYear, pk=self.kwargs.get('farmyear'))
         return Budget.objects.filter(crop_year=farmyear.crop_year)
 
     def get_context_data(self, **kwargs):
@@ -98,7 +98,7 @@ class FarmYearDashboard(UserPassesTestMixin, DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['farmyear_id'] = self.kwargs.get('pk', None)
+        context['farmyear_id'] = self.kwargs.get('pk')
         context['has_farm_years'] = True
         return context
 
@@ -192,12 +192,12 @@ class FarmYearFarmCropListView(UserPassesTestMixin, ListView):
     template_name = 'main/farmcrops_for_farmyear.html'
 
     def test_func(self):
-        farmyear = get_object_or_404(FarmYear, pk=self.kwargs.get('farmyear', None))
+        farmyear = get_object_or_404(FarmYear, pk=self.kwargs.get('farmyear'))
         return self.request.user == farmyear.user
 
     def get_queryset(self):
         return FarmCrop.objects.filter(
-            farm_year=self.kwargs.get('farmyear', None))
+            farm_year=self.kwargs.get('farmyear'))
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -210,16 +210,16 @@ class FarmYearFarmBudgetCropListView(UserPassesTestMixin, ListView):
     template_name = 'main/farmbudgetcrops_for_farmyear.html'
 
     def test_func(self):
-        farmyear = get_object_or_404(FarmYear, pk=self.kwargs.get('farmyear', None))
+        farmyear = get_object_or_404(FarmYear, pk=self.kwargs.get('farmyear'))
         return self.request.user == farmyear.user
 
     def get_queryset(self):
         return FarmBudgetCrop.objects.filter(
-            farm_year=self.kwargs.get('farmyear', None))
+            farm_year=self.kwargs.get('farmyear'))
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['farmyear'] = context['farmyear_id'] = self.kwargs.get('farmyear', None)
+        context['farmyear'] = context['farmyear_id'] = self.kwargs.get('farmyear')
         context['has_farm_years'] = True
         return context
 
@@ -228,11 +228,11 @@ class FarmYearMarketCropListView(UserPassesTestMixin, ListView):
     template_name = 'main/marketcrops_for_farmyear.html'
 
     def test_func(self):
-        farmyear = get_object_or_404(FarmYear, pk=self.kwargs.get('farmyear', None))
+        farmyear = get_object_or_404(FarmYear, pk=self.kwargs.get('farmyear'))
         return self.request.user == farmyear.user
 
     def get_queryset(self):
-        return MarketCrop.objects.filter(farm_year=self.kwargs.get('farmyear', None))
+        return MarketCrop.objects.filter(farm_year=self.kwargs.get('farmyear'))
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -248,16 +248,16 @@ class FarmYearFsaCropListView(UserPassesTestMixin, ListView):
     template_name = 'main/fsacrops_for_farmyear.html'
 
     def test_func(self):
-        farmyear = get_object_or_404(FarmYear, pk=self.kwargs.get('farmyear', None))
+        farmyear = get_object_or_404(FarmYear, pk=self.kwargs.get('farmyear'))
         return self.request.user == farmyear.user
 
     def get_queryset(self):
-        farmyear = get_object_or_404(FarmYear, pk=self.kwargs.get('farmyear', None))
+        farmyear = get_object_or_404(FarmYear, pk=self.kwargs.get('farmyear'))
         return FsaCrop.objects.filter(farm_year=farmyear)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['farmyear_id'] = self.kwargs.get('farmyear', None)
+        context['farmyear_id'] = self.kwargs.get('farmyear')
         context['has_farm_years'] = True
         return context
 
@@ -375,17 +375,17 @@ class MarketCropContractListView(UserPassesTestMixin, ListView):
     template_name = 'main/contracts_for_marketcrop.html'
 
     def test_func(self):
-        mc = get_object_or_404(MarketCrop, pk=self.kwargs.get('market_crop', None))
+        mc = get_object_or_404(MarketCrop, pk=self.kwargs.get('market_crop'))
         return self.request.user == mc.farm_year.user
 
     def get_queryset(self):
-        mc = get_object_or_404(MarketCrop, pk=self.kwargs.get('market_crop', None))
+        mc = get_object_or_404(MarketCrop, pk=self.kwargs.get('market_crop'))
         contracts = mc.get_contracts()
         return contracts
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        mc = get_object_or_404(MarketCrop, pk=self.kwargs.get('market_crop', None))
+        mc = get_object_or_404(MarketCrop, pk=self.kwargs.get('market_crop'))
         context['marketcrop'] = mc
         context['farmyear_id'] = mc.farm_year_id
         context['has_farm_years'] = True
@@ -411,12 +411,12 @@ class ContractCreateView(UserPassesTestMixin, CreateView):
             return {'market_crop': self.extra_context['market_crop']}
 
     def get_success_url(self):
-        mc_id = self.kwargs.get('market_crop', None)
+        mc_id = self.kwargs.get('market_crop')
         return reverse('contract_list', args=[mc_id])
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        mc_id = self.kwargs.get('market_crop', None)
+        mc_id = self.kwargs.get('market_crop')
         mc = get_object_or_404(MarketCrop, pk=mc_id)
         context['market_crop'] = mc
         context['farmyear_id'] = mc.farm_year_id
@@ -473,12 +473,12 @@ class DetailedBudgetView(UserPassesTestMixin, TemplateView):
     template_name = 'main/detailed_budget.html'
 
     def test_func(self):
-        farm_year = get_object_or_404(FarmYear, pk=self.kwargs.get('farmyear', None))
+        farm_year = get_object_or_404(FarmYear, pk=self.kwargs.get('farmyear'))
         return self.request.user == farm_year.user
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        farm_year = get_object_or_404(FarmYear, pk=kwargs.get('farmyear', None))
+        farm_year = get_object_or_404(FarmYear, pk=kwargs.get('farmyear'))
         bm = BudgetManager(farm_year)
         budget = bm.calc_current_budget()
         context['rev'] = budget['rev']
@@ -493,9 +493,9 @@ class DetailedBudgetView(UserPassesTestMixin, TemplateView):
 
 class GetAjaxBudgetView(View):
     def get(self, request, *args, **kwargs):
-        farm_year = get_object_or_404(FarmYear, pk=kwargs.get('farmyear', None))
+        farm_year = get_object_or_404(FarmYear, pk=kwargs.get('farmyear'))
         bm = BudgetManager(farm_year)
-        bdgtype = request.GET.get('bdgtype', None)
+        bdgtype = request.GET.get('bdgtype')
         budget = (bm.get_baseline_budget() if bdgtype == 'base' else
                   bm.get_variance_budget() if bdgtype == 'var' else
                   bm.get_current_budget())
@@ -509,11 +509,11 @@ class BudgetPdfView(UserPassesTestMixin, View):
     (b=0: current budget, b=1: baseline, b=2: variance)
     """
     def test_func(self):
-        farm_year = get_object_or_404(FarmYear, pk=self.kwargs.get('farmyear', None))
+        farm_year = get_object_or_404(FarmYear, pk=self.kwargs.get('farmyear'))
         return self.request.user == farm_year.user
 
     def get(self, request, *args, **kwargs):
-        farm_year = get_object_or_404(FarmYear, pk=kwargs.get('farmyear', None))
+        farm_year = get_object_or_404(FarmYear, pk=kwargs.get('farmyear'))
         budgettype = request.GET.get('b', 0)
         buffer = BudgetPdf(farm_year, budgettype).create()
         return FileResponse(buffer, as_attachment=True, filename="Budget.pdf")
@@ -521,23 +521,22 @@ class BudgetPdfView(UserPassesTestMixin, View):
 
 class FarmYearConfirmBaselineUpdate(UserPassesTestMixin, View):
     def test_func(self):
-        farm_year = get_object_or_404(FarmYear, pk=self.kwargs.get('farmyear', None))
+        farm_year = get_object_or_404(FarmYear, pk=self.kwargs.get('farmyear'))
         return self.request.user == farm_year.user
 
     def get(self, request, *args, **kwargs):
-        farm_year_id = kwargs.get('farmyear', None)
+        farm_year_id = kwargs.get('farmyear')
         return render(request, 'main/farmyear_confirm_baseline_update.html',
                       {'farmyear_id': farm_year_id})
 
 
 class FarmYearUpdateBaselineView(UserPassesTestMixin, View):
     def test_func(self):
-        farm_year = get_object_or_404(FarmYear,
-                                      pk=self.request.POST.get('farmyear', None))
+        farm_year = get_object_or_404(FarmYear, pk=self.request.POST.get('farmyear'))
         return self.request.user == farm_year.user
 
     def post(self, request, *args, **kwargs):
-        farm_year = get_object_or_404(FarmYear, pk=request.POST.get('farmyear', None))
+        farm_year = get_object_or_404(FarmYear, pk=request.POST.get('farmyear'))
         farm_year.update_baseline()
         return redirect(reverse('dashboard', args=[farm_year.pk]))
 
@@ -549,12 +548,12 @@ class SensitivityTableView(UserPassesTestMixin, TemplateView):
     template_name = 'main/sensitivity_table.html'
 
     def test_func(self):
-        farm_year = get_object_or_404(FarmYear, pk=self.kwargs.get('farmyear', None))
+        farm_year = get_object_or_404(FarmYear, pk=self.kwargs.get('farmyear'))
         return self.request.user == farm_year.user
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        farm_year = get_object_or_404(FarmYear, pk=kwargs.get('farmyear', None))
+        farm_year = get_object_or_404(FarmYear, pk=kwargs.get('farmyear'))
         st = SensTableGroup(farm_year)
         context['table'] = st.get_cashflow_farm()
         context['info'] = st.get_info()
@@ -565,10 +564,10 @@ class SensitivityTableView(UserPassesTestMixin, TemplateView):
 
 class GetSensTableView(View):
     def get(self, request, *args, **kwargs):
-        farm_year = get_object_or_404(FarmYear, pk=kwargs.get('farmyear', None))
+        farm_year = get_object_or_404(FarmYear, pk=kwargs.get('farmyear'))
         st = SensTableGroup(farm_year)
-        tbltype = request.GET.get('tbltype', None)
-        crop = request.GET.get('crop', None)
+        tbltype = request.GET.get('tbltype')
+        crop = request.GET.get('crop')
         tblnum = request.GET.get('tblnum', '')
         tblnum = None if tblnum == '' else int(tblnum)
         isdiff = True if request.GET.get('isdiff', 'false') == 'true' else False
@@ -582,17 +581,17 @@ class SensitivityPdfView(UserPassesTestMixin, View):
     Expect URL of the form: downloadsens/23/?tag=revenue_diff_corn
     """
     def test_func(self):
-        farm_year = get_object_or_404(FarmYear, pk=self.kwargs.get('farmyear', None))
+        farm_year = get_object_or_404(FarmYear, pk=self.kwargs.get('farmyear'))
         return self.request.user == farm_year.user
 
     def get(self, request, *args, **kwargs):
-        tbltype = request.GET.get('tbltype', None)
-        crop = request.GET.get('crop', None)
+        tbltype = request.GET.get('tbltype')
+        crop = request.GET.get('crop')
         tblnum = int(request.GET.get('tblnum', 0))
         isdiff = True if request.GET.get('isdiff', 'false') == 'true' else False
         nincr = int(request.GET.get('ni', 1))
         basis_incr = float(request.GET.get('bi', 0))
-        farm_year = get_object_or_404(FarmYear, pk=kwargs.get('farmyear', None))
+        farm_year = get_object_or_404(FarmYear, pk=kwargs.get('farmyear'))
         buffer = SensPdf(farm_year, isdiff).create()
         filename = get_sens_filename(tbltype, crop, tblnum, isdiff, nincr, basis_incr)
         return FileResponse(buffer, as_attachment=True, filename=filename)
@@ -603,11 +602,11 @@ class SensitivityPdfView(UserPassesTestMixin, View):
 # ---------------------
 class ContractPdfView(UserPassesTestMixin, View):
     def test_func(self):
-        farm_year = get_object_or_404(FarmYear, pk=self.kwargs.get('farmyear', None))
+        farm_year = get_object_or_404(FarmYear, pk=self.kwargs.get('farmyear'))
         return self.request.user == farm_year.user
 
     def get(self, request, *args, **kwargs):
-        farm_year = get_object_or_404(FarmYear, pk=kwargs.get('farmyear', None))
+        farm_year = get_object_or_404(FarmYear, pk=kwargs.get('farmyear'))
         buffer = ContractPdf(farm_year).create()
         filename = "Grain Contracts.pdf"
         return FileResponse(buffer, as_attachment=True, filename=filename)
@@ -615,11 +614,11 @@ class ContractPdfView(UserPassesTestMixin, View):
 
 class ContractCsvView(UserPassesTestMixin, View):
     def test_func(self):
-        farm_year = get_object_or_404(FarmYear, pk=self.kwargs.get('farmyear', None))
+        farm_year = get_object_or_404(FarmYear, pk=self.kwargs.get('farmyear'))
         return self.request.user == farm_year.user
 
     def get(self, request, *args, **kwargs):
-        farm_year = get_object_or_404(FarmYear, pk=kwargs.get('farmyear', None))
+        farm_year = get_object_or_404(FarmYear, pk=kwargs.get('farmyear'))
         response = HttpResponse(
             content_type='text/csv',
             headers={'Content-Disposition':
@@ -641,12 +640,12 @@ class ContractCsvView(UserPassesTestMixin, View):
 
 class ReplicateView(UserPassesTestMixin, View):
     def test_func(self):
-        farm_year = get_object_or_404(FarmYear, pk=self.kwargs.get('farmyear', None))
+        farm_year = get_object_or_404(FarmYear, pk=self.kwargs.get('farmyear'))
         return self.request.user == farm_year.user
 
     def get(self, request, *args, **kwargs):
-        farm_year = get_object_or_404(FarmYear, pk=kwargs.get('farmyear', None))
-        user_id = kwargs.get('user', None)
+        farm_year = get_object_or_404(FarmYear, pk=kwargs.get('farmyear'))
+        user_id = kwargs.get('user')
         live_to_loc = request.GET.get('live_to_loc', False)
         live_to_loc = True if live_to_loc == '' else False
         r = Replicate(farm_year, user_id, live_to_loc)
