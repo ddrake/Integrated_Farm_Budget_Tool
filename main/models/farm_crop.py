@@ -32,8 +32,8 @@ class FarmCrop(models.Model):
         (.7, '70%'), (.75, '75%'), (.8, '80%'), (.85, '85%'), (.9, '90%'), ]
     COVERAGE_LEVELS_ECO = [(.9, '90%'), (.95, '95%'), ]
 
-    @classmethod
-    def add_farm_budget_crop(cls, farm_crop_id, budget_crop_id):
+    @staticmethod
+    def add_farm_budget_crop(farm_crop_id, budget_crop_id):
         FarmBudgetCrop.objects.filter(
             farm_crop=farm_crop_id).delete()
         bc = BudgetCrop.objects.get(pk=budget_crop_id)
@@ -46,8 +46,8 @@ class FarmCrop(models.Model):
         d['budget_date'] = bc.budget.created_on
         FarmBudgetCrop.objects.create(**d)
 
-    @classmethod
-    def delete_farm_budget_crop(cls, farm_crop_id):
+    @staticmethod
+    def delete_farm_budget_crop(farm_crop_id):
         FarmBudgetCrop.objects.filter(
             farm_crop=farm_crop_id)[0].delete()
 

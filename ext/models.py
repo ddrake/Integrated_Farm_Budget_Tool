@@ -195,8 +195,8 @@ class MyaPreEstimate(models.Model):
     five_year_avg_weight = models.FloatField()
     fsa_crop_type = models.ForeignKey(FsaCropType, on_delete=models.CASCADE)
 
-    @classmethod
-    def get_mya_pre_estimates(cls, crop_year, for_date, pf=None):
+    @staticmethod
+    def get_mya_pre_estimates(crop_year, for_date, pf=None):
         """
         Get the sensitized MYA prices for each FSA crop type for the crop year
         and the given date.
@@ -214,8 +214,8 @@ class MyaPreEstimate(models.Model):
         return tuple(None if it is None else float(it) * ppf
                      for ppf, it in zip(pf, record))
 
-    @classmethod
-    def get_mya_pre_estimate(cls, crop_year, for_date, fsa_crop_type_id, pf=1):
+    @staticmethod
+    def get_mya_pre_estimate(crop_year, for_date, fsa_crop_type_id, pf=1):
         """
         Get the sensitized MYA price for the specified FSA crop type for the crop year
         and the given date.
@@ -252,8 +252,8 @@ class MyaPost(models.Model):
     beans_pct_locked = models.FloatField(null=True)
     wheat_pct_locked = models.FloatField(null=True)
 
-    @classmethod
-    def get_mya_post_estimate(cls, crop_year, for_date, fsa_crop_type_id, pf=1):
+    @staticmethod
+    def get_mya_post_estimate(crop_year, for_date, fsa_crop_type_id, pf=1):
         """
         Get the sensitized MYA prices for one FSA crop type for the crop year
         and the given date.
