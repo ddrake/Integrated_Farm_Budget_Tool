@@ -53,7 +53,6 @@
 #ck p 
 {
   font-size: 12pt;	
-	text-indent: 2em;
 	margin-bottom: 9pt;
 }
 #ck table
@@ -87,8 +86,8 @@
 #ck img
 {
 	border: 1px solid #ccc;
-	float: left;
 	margin: 5px 15px 15px 0px;
+	float: none;
 }
 
 #ck a > img {
