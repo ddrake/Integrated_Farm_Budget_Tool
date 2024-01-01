@@ -140,7 +140,7 @@ insertedcontracts (
         sql += f"""
 newfarmcrops (
   market_crop_type_id, planted_acres, appr_yield, adj_yield,
-  rate_yield, ye_use, ta_use, subcounty, coverage_type,
+  rate_yield, ql, ta, ya, ye, yc, subcounty, coverage_type,
   product_type, base_coverage_level, sco_use,
   eco_level, prot_factor, ins_practice, ins_practices,
   farm_crop_type_id, ins_crop_type_id,
@@ -156,7 +156,7 @@ insertedfarmcrops (
   ) AS (
   INSERT INTO public.main_farmcrop(
   market_crop_id, farm_year_id, planted_acres, appr_yield, adj_yield,
-  rate_yield, ye_use, ta_use, subcounty, coverage_type,
+  rate_yield, ql, ta, ya, ye, yc, subcounty, coverage_type,
   product_type, base_coverage_level, sco_use,
   eco_level, prot_factor, ins_practice, ins_practices,
   farm_crop_type_id, ins_crop_type_id,
@@ -165,7 +165,7 @@ insertedfarmcrops (
   proj_price_disc_start)
   SELECT
   imc.market_crop_id, imc.farm_year_id, n4.planted_acres, n4.appr_yield,
-  n4.adj_yield, n4.rate_yield, n4.ye_use, n4.ta_use, n4.subcounty,
+  n4.adj_yield, n4.rate_yield, n4.ql, n4.ta, n4.ya, n4.yc, n4.ye, n4.subcounty,
   n4.coverage_type::smallint, n4.product_type::smallint,
   n4.base_coverage_level::double precision, n4.sco_use,
   n4.eco_level::double precision, n4.prot_factor, n4.ins_practice,
@@ -323,7 +323,8 @@ def get_fy_dict(fy, user_id):
                     'values': [
                         mc.market_crop_type_id, fc.planted_acres,
                         fc.appr_yield, fc.adj_yield, fc.rate_yield,
-                        bstr(fc.ye_use), bstr(fc.ta_use), qt(fc.subcounty),
+                        bstr(fc.ql), bstr(fc.ta), bstr(fc.ya), bstr(fc.yc),
+                        bstr(fc.ye), qt(fc.subcounty),
                         nz(fc.coverage_type), nz(fc.product_type),
                         nz(fc.base_coverage_level), bstr(fc.sco_use),
                         nz(fc.eco_level), fc.prot_factor, fc.ins_practice,
