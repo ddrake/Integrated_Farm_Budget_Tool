@@ -26,11 +26,10 @@ def astr(val):
 
 class Replicate:
     """ Given a farm year, return a str of SQL which can reproduce it. """
-    def __init__(self, fy, user_id, live_to_loc):
+    def __init__(self, fy, user_id):
         self.fy = fy
         self.user_id = user_id
-        self.live_to_loc = live_to_loc
-        self.fy_dict = get_fy_dict(fy, user_id, live_to_loc)
+        self.fy_dict = get_fy_dict(fy, user_id)
 
     def replicate(self):
         sql = f"""
@@ -279,7 +278,7 @@ select * FROM insertedfbcs LIMIT 1;
         return ',\n'.join(vals)
 
 
-def get_fy_dict(fy, user_id, live_to_loc):
+def get_fy_dict(fy, user_id):
     fy_dict = {
         'values': [
             qt(fy.farm_name), fy.county_code, fy.crop_year,
