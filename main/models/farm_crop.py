@@ -251,11 +251,12 @@ class FarmCrop(models.Model):
     def get_total_premiums(self, selected_prems=None):
         if selected_prems is None:
             selected_prems = self.get_selected_premiums()
-        return (0 if selected_prems is None else
-                sum((v for v in selected_prems.values() if v is not None)))
+        return sum((v for v in selected_prems.values() if v is not None))
 
     def get_selected_premiums(self):
-        return self.get_selected_ins_items(self.get_crop_ins_prems())
+        prems = self.get_crop_ins_prems()
+        return ({'base': 0, 'sco': 0, 'eco': 0} if prems is None else
+                self.get_selected_ins_items(prems))
 
     def get_crop_ins_prems(self):
         """
@@ -267,7 +268,9 @@ class FarmCrop(models.Model):
             self.set_prems()
             self.prems_computed_for = self.farm_year.get_model_run_date()
             self.save(no_check=True)
-        return {k: np.array(v) for k, v in self.crop_ins_prems.items()}
+        # handle case when premiums can't be computed because key data is missing.
+        return (None if self.crop_ins_prems is None else
+                {k: np.array(v) for k, v in self.crop_ins_prems.items()})
 
     def set_prems(self):
         """
