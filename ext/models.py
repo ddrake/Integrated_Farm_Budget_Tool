@@ -478,8 +478,8 @@ def get_budget_crop_description(is_rot, description, farm_yield,
                                 rented_land_costs, stateabbr):
     rotstr = (' Rot,' if is_rot else '' if is_rot is None else ' Cont,')
     descr = '' if description == '' else f' {description},'
-    yldstr = f' {int(farm_yield)} bpa,'
-    rentstr = f' Rent: ${int(rented_land_costs)}/ac'
+    yldstr = f' {int(round(farm_yield))} bpa,'
+    rentstr = f' Rent: ${int(round(rented_land_costs))}/ac'
     return (f'{stateabbr},{descr}{rotstr}{yldstr}{rentstr}')
 
 
