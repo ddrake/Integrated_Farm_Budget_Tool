@@ -1,6 +1,6 @@
-def nz(val, offset=0):
+def nz(val):
     """ number """
-    return 'NULL' if val is None else f"{val + offset}"
+    return 'NULL' if val is None else f"{val}"
 
 
 def qt(val):
@@ -351,10 +351,10 @@ def get_fy_dict(fy, user_id, live_to_loc):
                             bc.building_depr, bc.insurance,
                             bc.misc_overhead_costs, bc.interest_nonland,
                             bc.other_overhead_costs, bc.rented_land_costs,
-                            nz(bc.budget_id, offset=(3 if live_to_loc else 0)),
+                            nz(bc.budget_id),
                             qt(bc.description), bc.state_id,
                             nz(bc.farm_crop_type_id), bstr(bc.is_irr), bstr(bc.is_rot),
-                            nz(bc.budget_crop_id, offset=(63 if live_to_loc else 0)),
+                            nz(bc.budget_crop_id),
                             dstr(bc.budget_date), bc.baseline_yield_for_var_rent,
                             bstr(bc.is_farm_yield_final), bc.yield_factor,
                             bstr(bc.are_costs_final)]}
