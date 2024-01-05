@@ -21,7 +21,7 @@ class Command(BaseCommand):
         try:
             users = notify_users_of_budget_updates(
                 options['budget_crop_ids'], options['prevyr'])
-            userstr = ', '.join(users)
+            userstr = ', '.join(users) if users else 'None'
             self.stdout.write(
                 self.style.SUCCESS(
                     f'The following users have been notified:\n{userstr}')
