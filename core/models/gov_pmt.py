@@ -26,13 +26,17 @@ class GovPmt():
     CAP_ON_BMK_COUNTY_REV = 0.1
     GUAR_REV_FRAC = 0.86
 
-    def __init__(self, plc_base_acres=4220, arcco_base_acres=0, plc_yield=160,
-                 estimated_county_yield=190, effective_ref_price=3.70,
-                 natl_loan_rate=2.20, sens_mya_price=4.80, benchmark_revenue=801.09):
+    def __init__(self, plc_base_acres, arcco_base_acres, plc_yield,
+                 estimated_county_yield, effective_ref_price,
+                 natl_loan_rate, sens_mya_price, benchmark_revenue=None):
         """
         All inputs are scalars, with the exceptions of estimated_county_yield
-        and sens_mya_price, which may be either scalars or numpy arrays
+        and sens_mya_price, which may be either scalars or numpy arrays.
+        If benchmark_revenue is not available, a zero value forces
+        any ARC-CO payment to zero, though ARC-CO should not be permitted in this case.
         """
+        if benchmark_revenue is None:
+            benchmark_revenue = 0
         self.plc_base_acres = plc_base_acres
         self.arcco_base_acres = arcco_base_acres
         self.plc_yield = (plc_yield if isinstance(estimated_county_yield, float) else
