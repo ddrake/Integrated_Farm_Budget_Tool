@@ -91,12 +91,16 @@ class FsaCrop(models.Model):
                        reverse=True)[0][0])
 
     def benchmark_revenue(self, revenue_only=False):
-        result = BenchmarkRevenue.objects.filter(
+        rs = BenchmarkRevenue.objects.filter(
             state_id=self.farm_year.state_id, county_code=self.farm_year.county_code,
             crop=self.fsa_crop_type_id,
             crop_year=self.farm_year.crop_year,
-            practice__in=([0, 1] if self.is_irrigated() else [0, 2]))[0]
-        return result.benchmark_revenue if revenue_only else result
+            practice__in=([0, 1] if self.is_irrigated() else [0, 2]))
+        try:
+            result = rs[0]
+            return result.benchmark_revenue if revenue_only else result
+        except IndexError:
+            return None
 
     def sens_mya_price(self, pf=None):
         mrd = self.farm_year.get_model_run_date()
@@ -134,6 +138,10 @@ class FsaCrop(models.Model):
             raise ValidationError({'arcco_base_acres': _(
                 "County yield required. ARC-CO Base acres can be set only " +
                 "after selecting a budget in the 'Crop Acreage' form.")})
+        if self.arcco_base_acres > 0 and not self.benchmark_revenue():
+            raise ValidationError({'arcco_base_acres': _(
+                "ARC-CO base acres must be zero since ARC-CO is not " +
+                "available for this crop/county (no benchmark revenue).")})
 
     def __str__(self):
         return f'{self.fsa_crop_type}'
