@@ -76,10 +76,14 @@ def notify_users_of_budget_updates(budgetids, prevyr=False):
 
         for _, farmyear, farmcrop, bc in sorted(lst, key=lambda x: str(x[1])):
             body += f"• {str(farmyear)}: {str(farmcrop)}\n"
-        body += ("\nTo update your budget(s), simply re-select the drop-down lists "
-                 "on the Crop Acreage / Crop Insurance page(s).  "
+        body += ("\nTo update a budget, "
+                 "go to bottom of the Crop Acreage / Crop Insurance page, and "
+                 "first de-select the current selection "
+                 "by clicking the empty budget at the top of the drop-down list, "
+                 "then click on the originally selected item to re-select your budget. "
                  "Any customizations you may have made will be lost upon update, so "
                  "you may prefer not to update budgets which have extensive changes.")
+
         usernames.append(user.username)
 
         user.email_user(
