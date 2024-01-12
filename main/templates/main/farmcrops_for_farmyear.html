@@ -106,11 +106,12 @@
           setinfo(farmcrop_pk, farmyear_pk);
         });
 
-        document
-          .querySelector(`#budgets-${farmcrop_pk}`)
-             .addEventListener("change", (event) => {
+        const opts = document.querySelectorAll(`#budgets-${farmcrop_pk} option`)
+        opts.forEach((opt) => {
+             opt.addEventListener("click", (event) => {
                  submitFormData(farmcrop_pk, farmyear_pk)
              });
+        });
 
       })();
     </script>
