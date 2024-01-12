@@ -84,7 +84,7 @@ def notify_users_of_budget_updates(budgetids, prevyr=False):
 
         user.email_user(
             "Updated Budget(s) Avaialable", body)
-        return usernames
+    return usernames
 
 
 def default_start_date():
