@@ -81,8 +81,9 @@ def notify_users_of_budget_updates(budgetids, prevyr=False):
                  "first de-select the current selection "
                  "by clicking the empty budget at the top of the drop-down list, "
                  "then click on the originally selected item to re-select your budget. "
-                 "Any customizations you may have made will be lost upon update, so "
-                 "you may prefer not to update budgets which have extensive changes.")
+                 "\n\nAny customizations you may have made will be lost upon update, "
+                 "so you may prefer not to update budgets "
+                 "which have extensive changes.")
 
         usernames.append(user.username)
 
