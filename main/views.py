@@ -57,6 +57,13 @@ class StatusView(View):
                        'farmyear_id': kwargs.get('farmyear')})
 
 
+class AboutView(View):
+    def get(self, request, *args, **kwargs):
+        return render(request, 'main/about.html',
+                      {'has_farm_years': has_farm_years(request.user),
+                       'farmyear_id': kwargs.get('farmyear')})
+
+
 class BudgetSourcesView(ListView):
     template_name = 'main/budget_sources.html'
 

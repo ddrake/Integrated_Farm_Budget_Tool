@@ -15,7 +15,7 @@ from .views import (
     SensitivityTableView, GetSensTableView, SensitivityPdfView,
     ContractCreateView, ContractUpdateView, ContractDeleteView,
     MarketCropContractListView,
-    ContractPdfView, ContractCsvView, PrivacyView, TermsView, StatusView,
+    ContractPdfView, ContractCsvView, PrivacyView, TermsView, StatusView, AboutView,
     BudgetSourcesView, ReplicateView)
 
 urlpatterns = [
@@ -26,6 +26,8 @@ urlpatterns = [
     path('terms/', TermsView.as_view(), name='terms'),
     path('status/<int:farmyear>/', StatusView.as_view(), name='status'),
     path('status/', StatusView.as_view(), name='status'),
+    path('about/<int:farmyear>/', AboutView.as_view(), name='about'),
+    path('about/', AboutView.as_view(), name='about'),
     path('budgetsources/<int:farmyear>/', BudgetSourcesView.as_view(),
          name='budgetsources'),
     path('replicate/<int:farmyear>/<int:user>/', ReplicateView.as_view(),

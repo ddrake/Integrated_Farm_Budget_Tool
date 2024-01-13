@@ -1,0 +1,74 @@
+{% extends 'main/base.html' %}
+{% load static %}
+{% block title %}
+<title>2024 Crop Year Status</title>
+{% endblock title %}
+{% block content %}
+<div class="p-6 w-1/2 mx-auto bg-white rounded-xl shadow-lg flex items-center space-x-4 print:shadow-none print:w-full">
+  <div class="">
+    <h1 class="text-xl font-bold">IFBT.Farm</h1>
+    <p class="text-base my-2">IFBT.Farm is a budgeting and risk management tool
+      for corn, soybean and wheat farmers
+      across the U.S. It allows farmers to easily produce benchmark and customized farm budgets
+      for a crop year. It also allows farmers to visualize the financial risks to their farm
+      resulting from deviations in budgets relating to changes in unknown future prices and
+      unknown actual farm crop yields. The application simultaneously integrates and models
+      the impact of the choices that farmers can make to manage and mitigate financial risk.
+      These include crop acreage allocations, crop insurance choices, title selection,
+      grain marketing, land rental arrangements, among others.  Sensitivity analyses provide
+      the farmer a comprehensive view of their financial risk profile entering a crop year
+      and allow the farmer to proactively adjust their decision-making to mitigate and manage
+      financial risk both initially and across the course of the crop year.   The application
+      is free for use and can be accessed at
+      <a class="text-indigo-700 hover:text-indigo-500"
+        href="https://ifbt.farm">www.ifbt.farm</a>.
+    </p>
+    <h2 class="text-lg font-bold">The IFBT Team</h2>
+    <p class="text-base my-2">The core IFBT team currently consists of two brothers,
+      Kelley Drake and Dow Drake.
+      Kelley initiated the project by developing a complex spreadsheet-based system over
+      several years to help guide the business and risk management decisions of an Illinois
+      farm that was built and managed by their father.   Dow led the development of the
+      IFBT.Farm web application to expand and enhance Kelley’s farm specific tool so that it
+      could be used by commercial corn, soybean and wheat farmers across the United States
+      in a robust online, web-based format.   They have worked very closely to refine and
+      enhance the business logic and to develop, implement and test the application.</p>
+
+    <h2 class="text-lg font-bold">Kelley Drake - Co-Founder</h2>
+    <img class="float-left pr-2" src="{% static 'main/images/kelley.jpg' %}">
+    <p class="text-base my-2">Kelley Drake is a retired investment banker now living
+      in Ripon, Wisconsin.   He
+      received his BA in economics at Swarthmore College in 1987 and his MBA from University
+      of Chicago Booth School of Business in 1992.   Prior to his MBA, Kelley was a research
+      analyst performing economic analysis relating to complex litigation matters for
+      consulting firms NERA in White Plains, NY and Putnam Hayes &amp; Bartlett in New York City
+      and London.   After a summer associate position in investment banking with Lehman
+      Brothers in 1991, Kelley joined investment banking firm William Blair &amp; Company in
+      1992.  He had a 20 year career at William Blair &amp; Company in Chicago before retiring
+      from investment banking in 2012.  Over his career he completed over 120 M&amp;A and Equity
+      transactions and formed and led two successful groups (Financial Sponsors and Commercial
+      Services).   After retiring from Blair, Kelley was involved in a variety of consulting
+      and personal investing projects through his firm Marquis Partners.   Prior to
+      co-founding IFBT.Farm in 2023 with his brother Dow, Kelley worked with his father’s
+      farm for three years on a variety of matters including farm budgeting, farm risk
+      management (including crop insurance, title decisions, and grain marketing),
+      refinancing the farm’s debt, and estate planning.</p>
+
+    <h2 class="text-lg font-bold">Dow Drake - Co-Founder</h2>
+    <img class="float-left pr-2" src="{% static 'main/images/dow.jpg' %}">
+    <p class="text-base my-2">Dow Drake is a freelance web developer living
+      in Portland, Oregon.  He has studied
+      mechanical engineering at University of Illinois Urbana-Champaign and more recently,
+      mathematics at Portland State University.</p>
+
+    <p class="text-base my-2">Over the past 20 years, he has built
+      numerous custom applications for web and
+      desktop for various clients as a freelance developer.  He has also been an employee
+      of American Heating, Inc. in Portland, where he performed IT functions and developed
+      custom web and desktop applications.  Before that, he co-managed, with his father,
+      a farm in Illinois.  For more information, see Dow’s<br>
+      <a class="text-indigo-700 hover:text-indigo-500"
+        href="https://www.linkedin.com/in/dow-drake-865a3210/">LinkedIn Profile</a>.
+  </div>
+</div>
+{% endblock %}
