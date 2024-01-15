@@ -594,7 +594,10 @@ class SensitivityPdfView(UserPassesTestMixin, View):
     def get(self, request, *args, **kwargs):
         tbltype = request.GET.get('tbltype')
         crop = request.GET.get('crop')
-        tblnum = int(request.GET.get('tblnum', 0))
+        try:
+            tblnum = int(request.GET.get('tblnum', 0))
+        except ValueError:
+            tblnum = 0
         isdiff = True if request.GET.get('isdiff', 'false') == 'true' else False
         nincr = int(request.GET.get('ni', 1))
         basis_incr = float(request.GET.get('bi', 0))
