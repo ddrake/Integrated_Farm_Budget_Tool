@@ -1,7 +1,7 @@
 import numpy as np
 from datetime import datetime, timedelta
 from django.contrib.auth.models import User
-from django.core.exceptions import PermissionDenied, ValidationError
+from django.core.exceptions import ValidationError
 from django.core.validators import (
     MinValueValidator as MinVal, MaxValueValidator as MaxVal)
 from django.db import models
@@ -256,13 +256,13 @@ class FarmYear(models.Model):
         if model_run_date > last_date:
             raise ValidationError({'manual_model_run_date': _(
                 "The model run date cannot be in the future.")})
-
-    def save(self, *args, **kwargs):
         if (self._state.adding and
             FarmYear.objects.filter(crop_year=self.crop_year,
                                     user=self.user).count() >= 10):
-            raise PermissionDenied('A user can have at most 10 farms for a crop year')
+            raise ValidationError({'farm_name': _(
+                'A user can have at most 10 farms for a crop year')})
 
+    def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
         if self.farm_crops.count() == 0:
             self.add_insurable_farm_crops()
