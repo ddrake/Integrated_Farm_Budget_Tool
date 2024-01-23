@@ -22,7 +22,6 @@ class GovPmt():
     """
 
     BASE_TO_NET_PMT_FRAC = 0.85
-    SEQUEST_FRAC = 0.062
     CAP_ON_BMK_COUNTY_REV = 0.1
     GUAR_REV_FRAC = 0.86
 

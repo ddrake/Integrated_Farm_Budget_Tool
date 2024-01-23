@@ -9,7 +9,6 @@ from django.utils.translation import gettext_lazy as _
 from ext.models import (
     State, County, InsurableCropsForCty, FarmCropType, MarketCropType, FsaCropType,
     InsuranceDates, ReferencePrices)
-from core.models.gov_pmt import GovPmt
 from . import util
 
 
@@ -91,8 +90,9 @@ class FarmYear(models.Model):
     sensitivity_data = models.JSONField(null=True, blank=True)
     sensitivity_diff = models.JSONField(null=True, blank=True)
     sensitivity_text = models.JSONField(null=True, blank=True)
+    # NOTE: the hard-coded default value may change from year to year.
     est_sequest_frac = models.FloatField(
-        default=0.062, validators=[
+        default=0.057, validators=[
             MinVal(0),
             MaxVal(0.1, message="Ensure this value is less than or equal to 10")],
         verbose_name='estimated sequestration percent',
@@ -223,7 +223,7 @@ class FarmYear(models.Model):
                          for i, fc in enumerate(self.fsa_crops.all())))
         total_pmt = np.minimum(FarmYear.FSA_PMT_CAP_PER_PRINCIPAL *
                                self.eligible_persons_for_cap,
-                               total * (1 - GovPmt.SEQUEST_FRAC)).round()
+                               total * (1 - self.est_sequest_frac)).round()
         return total_pmt / self.total_planted_acres() if is_per_acre else total_pmt
 
     # -----------------------
