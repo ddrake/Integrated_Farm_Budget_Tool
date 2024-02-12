@@ -1,6 +1,6 @@
 asgiref==3.7.2
 -e git+https://github.com/LewisFletcher/crispy-tailwind.git@7cd37dc356ae9153813183fdcb8c7c295c5317d6#egg=crispy_tailwind
-Django==5.0.1
+Django==5.0.2
 django-browser-reload==1.12.1
 django-ckeditor==6.7.1
 -e git+https://github.com/ddrake/django-cprofile-middleware.git@791fbfe57f95b22edfcee9db284aad644a308d62#egg=django_cprofile_middleware
