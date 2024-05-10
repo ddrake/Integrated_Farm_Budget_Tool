@@ -128,7 +128,7 @@ class FarmYear(models.Model):
         self.save()
 
     def wasde_first_mya_release_on(self):
-        return datetime(self.crop_year, 5, 10).date()
+        return datetime(self.crop_year, 5, 11).date()
 
     @property
     def full_name(self):
