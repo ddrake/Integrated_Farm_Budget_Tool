@@ -471,7 +471,7 @@ class FarmCrop(models.Model):
                         crop_type_id=self.ins_crop_type_id,
                         practice=self.ins_practice)
                     if py.final_yield is not None:
-                        result = py.final_yield
+                        result = py.final_yield * one_like(yf)
                         is_rma_final = True
             self.sens_cty_expected_yield_mem = result, is_rma_final
             return result, is_rma_final

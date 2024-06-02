@@ -64,7 +64,8 @@ class FsaCrop(models.Model):
         yield_info = [fc.sens_cty_expected_yield(yf) for fc in self.farm_crops()]
         is_rma_final = len(yield_info) > 0 and all((yi[1] for yi in yield_info))
         if is_rma_final:
-            return yield_info[0][0], is_rma_final
+            return ((yf if scal(yf) else np.ones_like(yf)) *
+                    yield_info[0][0], is_rma_final)
 
         acres = [fc.planted_acres for fc in self.farm_crops()]
         pairs = list(zip(acres, [yi[0] for yi in yield_info]))
