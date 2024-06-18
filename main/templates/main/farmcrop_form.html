@@ -34,7 +34,7 @@
         updateBaseCoverageLevels(val); 
         covLevel.value = origval;
         if (old_farm_year === 'True') {
-           lockAllInputs();
+           lockAllInputs(true);
         }
     });
     document
@@ -58,6 +58,9 @@
             console.log(strval)
             formData.set(fld.getAttribute("name"), strval);
         })
+    });
+    form.addEventListener("submit", (e) => {
+       lockAllInputs(false);
     });
 
   })();
