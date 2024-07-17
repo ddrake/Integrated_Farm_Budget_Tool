@@ -77,7 +77,6 @@ class BudgetSourcesView(ListView):
         context['farmyear_id'] = context['view'].kwargs['farmyear']
         context['has_prevyr_based'] = any(
             (bd.is_prevyr_based for bd in context['budget_list']))
-        print(f"{context['has_prevyr_based']}")
         return context
 
 
@@ -578,7 +577,6 @@ class GetSensTableView(View):
         tblnum = request.GET.get('tblnum', '')
         tblnum = None if tblnum == '' else int(tblnum)
         isdiff = True if request.GET.get('isdiff', 'false') == 'true' else False
-        print(f'{tbltype=}, {crop=}, {tblnum=}, {isdiff=}')
         table = st.get_selected_table(tbltype, crop, tblnum, isdiff)
         return JsonResponse({'data': table})
 
