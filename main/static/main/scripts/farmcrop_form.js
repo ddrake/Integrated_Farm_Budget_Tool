@@ -41,13 +41,24 @@
         }
     }
 
-    function lockAllInputs() {
-        document.getElementById("id_planted_acres").setAttribute('disabled', '')
-        document.getElementById("ins_practice").setAttribute('disabled', '')
-        document.getElementById("id_rate_yield").setAttribute('disabled', '')
-        document.getElementById("id_adj_yield").setAttribute('disabled', '')
-        document.getElementById("subcounty").setAttribute('disabled', '')
-        document.getElementById("id_ta_use").setAttribute('disabled', '')
-        document.getElementById("id_ye_use").setAttribute('disabled', '')
-        document.getElementById("id_appr_yield").setAttribute('disabled', '')
+    function lockAllInputs(lock) {
+        if (lock) {
+            document.getElementById("id_planted_acres").setAttribute('disabled', '')
+            document.getElementById("ins_practice").setAttribute('disabled', '')
+            document.getElementById("id_rate_yield").setAttribute('disabled', '')
+            document.getElementById("id_adj_yield").setAttribute('disabled', '')
+            document.getElementById("subcounty").setAttribute('disabled', '')
+            document.getElementById("id_ta_use").setAttribute('disabled', '')
+            document.getElementById("id_ye_use").setAttribute('disabled', '')
+            document.getElementById("id_appr_yield").setAttribute('disabled', '')
+        } else {
+            document.getElementById("id_planted_acres").removeAttribute('disabled')
+            document.getElementById("ins_practice").removeAttribute('disabled')
+            document.getElementById("id_rate_yield").removeAttribute('disabled')
+            document.getElementById("id_adj_yield").removeAttribute('disabled')
+            document.getElementById("subcounty").removeAttribute('disabled')
+            document.getElementById("id_ta_use").removeAttribute('disabled')
+            document.getElementById("id_ye_use").removeAttribute('disabled')
+            document.getElementById("id_appr_yield").removeAttribute('disabled')
+        }
     }
