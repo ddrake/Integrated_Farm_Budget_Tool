@@ -14,5 +14,5 @@ packaging==24.1
 Pillow==11.0.0
 psycopg2==2.9.10
 -e git+https://github.com/ddrake/reportlab-mirror@78616d99260ece93854ba65658afcc810d4d61ec#egg=reportlab
-sqlparse==0.5.1
+sqlparse==0.5.3
 typing_extensions==4.12.2
