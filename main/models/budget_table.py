@@ -460,7 +460,8 @@ class BudgetTable(object):
         self.data['gross_revenue'] = [
             sum(items) for items in zip(
                 self.data['crop_revenue'], self.data['gov_pmt'],
-                self.data['crop_ins_indems'], self.data['other_revenue'])]
+                self.data['crop_ins_indems'], self.data['other_revenue'],
+                self.data['other_gov_pmts'])]
         self.data['fertilizers'] = [
             f * ac for f, ac in zip((fc.farmbudgetcrop.fertilizers
                                      for fc in self.farm_crops), self.acres)]
