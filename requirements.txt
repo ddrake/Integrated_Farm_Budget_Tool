@@ -5,7 +5,7 @@ django-browser-reload==1.18.0
 django-ckeditor==6.7.2
 -e git+https://github.com/ddrake/django-cprofile-middleware.git@791fbfe57f95b22edfcee9db284aad644a308d62#egg=django_cprofile_middleware
 django-impersonate==1.9.5
-django-crispy-forms==2.3
+django-crispy-forms==2.4
 django-js-asset==3.1.2
 django-tailwind==3.8.0
 gunicorn==23.0.0
