@@ -22,9 +22,14 @@
     </div>
     <div class="mt-2 px-8">
       {% if not user.is_authenticated %}
-        <div class="text-center">
+        <div class="text-center mb-2">
           <a class="text-xl text-indigo-700 hover:text-indigo-500"
              href="{% url 'login' %}">Log In</a>
+        </div>
+        <div id="reginfo" class="text-center">
+          <p class="text-base">Note: the self-registration option has been temporarily removed.
+          <br>please contact <span id="contact"></span> to register for this application.
+          </p>
         </div>
       {% endif %}
     </div>
@@ -46,19 +51,28 @@
   </div>
 </div>
 <script>
-var slidesContainer = document.querySelector(".slides-container");
-var slideWidth = slidesContainer.querySelector(".slide").clientWidth;
-var index = 1;
-function nextSlide() {
-  // console.log("index is " + index)
-  index += 1;
-  if (index > 3) {
-    index = 1;
-    slidesContainer.scrollLeft = 0;
-  } else {
-    slidesContainer.scrollLeft += slideWidth;
-  }
-}
-setInterval(nextSlide, 3000);
+  (() => {
+    var index = 1;
+    const slidesContainer = document.querySelector(".slides-container");
+    const slideWidth = slidesContainer.querySelector(".slide").clientWidth;
+    function nextSlide() {
+      // console.log("index is " + index)
+      index += 1;
+      if (index > 3) {
+        index = 1;
+        slidesContainer.scrollLeft = 0;
+      } else {
+        slidesContainer.scrollLeft += slideWidth;
+      }
+    }
+    document.addEventListener('DOMContentLoaded', (event) => {
+      // slideshow
+      setInterval(nextSlide, 3000);
+
+      // email 
+      const contactinfo = document.createTextNode('Kelley Drake at kdrak' + 'e@' + 'ifbt.' + 'farm')
+      document.querySelector('#contact').appendChild(contactinfo)
+    });
+  })();
 </script>
 {% endblock %}
