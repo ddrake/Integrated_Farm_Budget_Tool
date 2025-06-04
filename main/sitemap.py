@@ -8,7 +8,7 @@ class StaticViewSitemap(Sitemap):
 
     def items(self):
         return ["index", "privacy", "terms", "status",
-                "register", "login", "password_reset"]
+                "login", "password_reset"]
 
     def location(self, item):
         return reverse(item)
