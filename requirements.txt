@@ -16,3 +16,4 @@ psycopg2==2.9.10
 -e git+https://github.com/ddrake/reportlab-mirror@78616d99260ece93854ba65658afcc810d4d61ec#egg=reportlab
 sqlparse==0.5.3
 typing_extensions==4.13.2
+mailersend==0.6.0
