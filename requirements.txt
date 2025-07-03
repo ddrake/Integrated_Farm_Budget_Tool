@@ -11,7 +11,7 @@ django-tailwind==3.8.0
 gunicorn==23.0.0
 numpy==2.2.4
 packaging==25.0
-Pillow==11.2.1
+Pillow==11.3.0
 psycopg2==2.9.10
 -e git+https://github.com/ddrake/reportlab-mirror@78616d99260ece93854ba65658afcc810d4d61ec#egg=reportlab
 sqlparse==0.5.3
