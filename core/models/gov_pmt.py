@@ -22,12 +22,11 @@ class GovPmt():
     """
 
     BASE_TO_NET_PMT_FRAC = 0.85
-    CAP_ON_BMK_COUNTY_REV = 0.1
-    GUAR_REV_FRAC = 0.86
 
     def __init__(self, plc_base_acres, arcco_base_acres, plc_yield,
                  estimated_county_yield, effective_ref_price,
-                 natl_loan_rate, sens_mya_price, benchmark_revenue=None):
+                 natl_loan_rate, guar_rev_frac, cap_on_bmk_county_rev,
+                 sens_mya_price, benchmark_revenue=None):
         """
         All inputs are scalars, with the exceptions of estimated_county_yield
         and sens_mya_price, which may be either scalars or numpy arrays.
@@ -42,8 +41,12 @@ class GovPmt():
                           plc_yield * np.ones_like(estimated_county_yield))
         # pre-sensitized county yield
         self.estimated_county_yield = estimated_county_yield
+
         self.effective_ref_price = effective_ref_price
         self.natl_loan_rate = natl_loan_rate
+        self.guar_rev_frac = guar_rev_frac
+        self.cap_on_bmk_county_rev = cap_on_bmk_county_rev
+
         # pre-sensitized mya price
         self.sens_mya_price = sens_mya_price
         self.benchmark_revenue = benchmark_revenue
@@ -139,7 +142,7 @@ class GovPmt():
         Government Payments Y43:AA43: ARC 10 percent cap on Benchmark County Revenue.
         scalar
         """
-        return self.benchmark_revenue * GovPmt.CAP_ON_BMK_COUNTY_REV
+        return self.benchmark_revenue * self.cap_on_bmk_county_rev
 
     def revenue_shortfall(self):
         """
@@ -151,10 +154,10 @@ class GovPmt():
     def arc_guar_revenue(self):
         """
         Government Payments Y36:AA36: ARC Guarantee Revenue
-        (86 percent of Benchmark County revenue)
+        (a percent of Benchmark County revenue) a.k.a Coverage level
         scalar
         """
-        return (self.benchmark_revenue * GovPmt.GUAR_REV_FRAC)
+        return (self.benchmark_revenue * self.guar_rev_frac)
 
     def actual_crop_revenue(self):
         """

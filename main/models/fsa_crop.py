@@ -38,6 +38,13 @@ class FsaCrop(models.Model):
     def farm_crops(self):
         return [fc for mc in self.market_crops.all() for fc in mc.farm_crops.all()]
 
+    def cap_on_bmk_county_rev(self):
+        return 0.1 if self.farm_year.crop_year < 2025 else 0.12
+
+    def guar_rev_frac(self):
+        # ARC-CO guaranteed revenue fraction (a.k.a coverage level)
+        return 0.86 if self.farm_year.crop_year < 2025 else 0.90
+
     def price_factor(self):
         pa = self.planted_acres()
         return (1 if pa == 0 else
@@ -125,7 +132,10 @@ class FsaCrop(models.Model):
                     arcco_base_acres=self.arcco_base_acres, plc_yield=self.plc_yield,
                     estimated_county_yield=cty_yield,
                     effective_ref_price=self.effective_ref_price,
-                    natl_loan_rate=self.natl_loan_rate, sens_mya_price=sens_mya_price,
+                    natl_loan_rate=self.natl_loan_rate,
+                    guar_rev_frac=self.guar_rev_frac(),
+                    cap_on_bmk_county_rev=self.cap_on_bmk_county_rev(),
+                    sens_mya_price=sens_mya_price,
                     benchmark_revenue=self.benchmark_revenue(revenue_only=True))
         return gp.prog_pmt_pre_sequest()
 

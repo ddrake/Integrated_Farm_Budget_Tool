@@ -23,7 +23,6 @@ class FarmYear(models.Model):
     """
     IRR_PRACTICE = {2: 'Irrigated', 3: 'Non-Irrigated', 53: 'Non-Irrigated',
                     43: 'Non-Irrigated', 94: 'Irrigated', 95: 'Irrigated'}
-    FSA_PMT_CAP_PER_PRINCIPAL = 125000
     PRETAX_INCOME = 0
     PRETAX_CASH_FLOW = 1
     REPORT_TYPES = [(PRETAX_INCOME, 'Pre-tax income'),
@@ -160,6 +159,10 @@ class FarmYear(models.Model):
         return sum((fc.planted_acres for fc in self.farm_crops.all()
                     if not fc.farm_crop_type.is_fac))
 
+
+    def fsa_pmt_cap_per_principal(self):
+        return 125000 if self.crop_year < 2025 else 155000
+
     def add_insurable_farm_crops(self):
         """
         Add farm crops, market crops and fsa crops to the farm year based on the
@@ -221,7 +224,7 @@ class FarmYear(models.Model):
             total = sum((fc.gov_payment(sens_mya_price=mya_prices[i, :],
                                         cty_yield=cty_yields[i, :])
                          for i, fc in enumerate(self.fsa_crops.all())))
-        total_pmt = np.minimum(FarmYear.FSA_PMT_CAP_PER_PRINCIPAL *
+        total_pmt = np.minimum(self.fsa_pmt_cap_per_principal() *
                                self.eligible_persons_for_cap,
                                total * (1 - self.est_sequest_frac)).round()
         return total_pmt / self.total_planted_acres() if is_per_acre else total_pmt
