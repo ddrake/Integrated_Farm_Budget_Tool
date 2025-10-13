@@ -7,7 +7,7 @@ django-ckeditor==6.7.3
 django-impersonate==1.9.5
 django-crispy-forms==2.4
 django-js-asset==3.1.2
-django-tailwind==3.8.0
+django-tailwind==4.2.0
 gunicorn==23.0.0
 numpy==2.2.4
 packaging==25.0
