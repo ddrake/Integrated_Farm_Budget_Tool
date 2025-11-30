@@ -141,7 +141,9 @@ class FsaCrop(models.Model):
 
     def clean(self):
         field_crop_sco_use = any((fc.sco_use for fc in self.farm_crops()))
-        if self.arcco_base_acres > 0 and field_crop_sco_use:
+        if (self.arcco_base_acres > 0 and
+            field_crop_sco_use and
+            self.farm_year.crop_year < 2026):
             raise ValidationError({'arcco_base_acres': _(
                 "ARC-CO base acres must be zero if SCO is set for related farm crop")})
         if (self.arcco_base_acres > 0 and
