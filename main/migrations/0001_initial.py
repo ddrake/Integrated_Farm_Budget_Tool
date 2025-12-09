@@ -185,6 +185,6 @@ class Migration(migrations.Migration):
         ),
         migrations.AddConstraint(
             model_name='farmcrop',
-            constraint=models.CheckConstraint(check=models.Q(('prot_factor__gte', 0), ('prot_factor__lte', 1)), name='prot_factor_in_range'),
+            constraint=models.CheckConstraint(condition=models.Q(('prot_factor__gte', 0), ('prot_factor__lte', 1)), name='prot_factor_in_range'),
         ),
     ]
