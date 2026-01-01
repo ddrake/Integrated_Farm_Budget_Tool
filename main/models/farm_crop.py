@@ -725,7 +725,7 @@ class FarmCrop(models.Model):
     # ---------------------
     def clean(self):
         fsa_crop_has_arcco = (self.market_crop.fsa_crop.arcco_base_acres > 0)
-        if self.sco_use and fsa_crop_has_arcco:
+        if self.sco_use and fsa_crop_has_arcco and self.crop_year.farm_year < 2026:
             raise ValidationError({'sco_use': _(
                 "ARC-CO base acres must be zero if SCO is set for related farm crop")})
         # For now, allow users to set options freely.  The rules are not clear.

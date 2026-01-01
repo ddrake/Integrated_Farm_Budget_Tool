@@ -41,7 +41,8 @@
       .getElementById("coverage_type")
          .addEventListener("change", (event) => {
              updateBaseCoverageLevels(event.target.value);
-             manageScoAndProtFactor(event.target.value)
+             manageScoAndProtFactor(event.target.value,
+               {{ farmcrop.farm_year.crop_year }})
          });
     document
       .getElementById("id-farmcropform")

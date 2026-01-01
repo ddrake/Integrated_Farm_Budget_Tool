@@ -21,15 +21,18 @@
         document.getElementById("base_coverage_level").innerHTML = options;
     }
 
-    function manageScoAndProtFactor(value) {
+    function manageScoAndProtFactor(value, crop_year) {
+        let icropyear = parseInt(crop_year, 10)
         if (value !== '') {
             let scouse = document.getElementById("id_sco_use")
             let ecolevel = document.getElementById("eco_level")
             let prot = document.getElementById("id_prot_factor")
             if (value === '0') {
-                scouse.checked = false;
                 ecolevel.value = '';
-                scouse.setAttribute('disabled', '')
+                if (icropyear < 2026) {
+                  scouse.checked = false;
+                  scouse.setAttribute('disabled', '')
+                }
                 ecolevel.setAttribute('disabled', '')
                 prot.removeAttribute('disabled', '')
             } else {
