@@ -10,7 +10,7 @@ django-js-asset==3.1.2
 django-tailwind==4.4.2
 gunicorn==23.0.0
 numpy==2.4.0
-packaging==25.0
+packaging==26.0
 Pillow==12.0.0
 psycopg2==2.9.11
 -e git+https://github.com/ddrake/reportlab-mirror@78616d99260ece93854ba65658afcc810d4d61ec#egg=reportlab
