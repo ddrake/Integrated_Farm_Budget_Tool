@@ -451,28 +451,28 @@ class FarmCrop(models.Model):
         if self.sens_cty_expected_yield_mem is not None:
             return self.sens_cty_expected_yield_mem
         else:
-        is_rma_final = False
-        if not self.has_budget():
-            result = zero_like(yf)
-        else:
-            if yf is None:
-                yf = self.farmbudgetcrop.yield_factor
-            # we need this result as a fallback in case we're after the
-            # release date, but the data hasn't been integrated yet.
-            yieldfinal = self.farmbudgetcrop.is_farm_yield_final
-            ctyyield = self.farmbudgetcrop.county_yield
-            result = ctyyield * (one_like(yf) if yieldfinal else yf)
-            if self.farm_year.get_model_run_date() > self.cty_yield_final:
-                py = PriceYield.objects.get(
-                    crop_year=self.farm_year.crop_year,
-                    state_id=self.farm_year.state_id,
-                    county_code=self.farm_year.county_code,
-                    crop_id=self.farm_crop_type.ins_crop_id,
-                    crop_type_id=self.ins_crop_type_id,
-                    practice=self.ins_practice)
-                if py.final_yield is not None:
-                    result = py.final_yield * one_like(yf)
-                    is_rma_final = True
+            is_rma_final = False
+            if not self.has_budget():
+                result = zero_like(yf)
+            else:
+                if yf is None:
+                    yf = self.farmbudgetcrop.yield_factor
+                # we need this result as a fallback in case we're after the
+                # release date, but the data hasn't been integrated yet.
+                yieldfinal = self.farmbudgetcrop.is_farm_yield_final
+                ctyyield = self.farmbudgetcrop.county_yield
+                result = ctyyield * (one_like(yf) if yieldfinal else yf)
+                if self.farm_year.get_model_run_date() > self.cty_yield_final:
+                    py = PriceYield.objects.get(
+                        crop_year=self.farm_year.crop_year,
+                        state_id=self.farm_year.state_id,
+                        county_code=self.farm_year.county_code,
+                        crop_id=self.farm_crop_type.ins_crop_id,
+                        crop_type_id=self.ins_crop_type_id,
+                        practice=self.ins_practice)
+                    if py.final_yield is not None:
+                        result = py.final_yield * one_like(yf)
+                        is_rma_final = True
         self.sens_cty_expected_yield_mem = result, is_rma_final
         return result, is_rma_final
 
