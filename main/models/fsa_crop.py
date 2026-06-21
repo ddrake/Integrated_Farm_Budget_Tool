@@ -68,6 +68,8 @@ class FsaCrop(models.Model):
             yf = self.yield_factor()
         if len(self.farm_crops()) == 0:
             return (0 if scal(yf) else np.zeros_like(yf))
+
+        # DD: 6/21/26 change to exclude farm crops without budgets here
         yield_info = [fc.sens_cty_expected_yield(yf) for fc in self.farm_crops() if
                       fc.has_budget()]
         is_rma_final = len(yield_info) > 0 and all((yi[1] for yi in yield_info))
