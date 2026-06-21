@@ -140,7 +140,7 @@ class FarmCrop(models.Model):
         self.has_budget_mem = None
         self.indem_price_yield_data_scal_mem = None
         self.indem_price_yield_data_vec_mem = None
-        # self.sens_cty_expected_yield_mem = None
+        self.sens_cty_expected_yield_mem = None
 
         super().__init__(*args, **kwargs)
 
@@ -448,14 +448,9 @@ class FarmCrop(models.Model):
         3. Otherwise return the sensitized budget county_yield
         This needs to do the budget check because it's called from get_indemnities
         """
-        # Turn off caching of this for now.
-        # It seems not to be handling the is_rma_final
-        # condition correctly for 2025 soybeans after final county yields
-        # were released.  DD 6/21/26
-
-        # if self.sens_cty_expected_yield_mem is not None:
-        #     return self.sens_cty_expected_yield_mem
-        # else:
+        if self.sens_cty_expected_yield_mem is not None:
+            return self.sens_cty_expected_yield_mem
+        else:
         is_rma_final = False
         if not self.has_budget():
             result = zero_like(yf)
@@ -478,7 +473,7 @@ class FarmCrop(models.Model):
                 if py.final_yield is not None:
                     result = py.final_yield * one_like(yf)
                     is_rma_final = True
-        # self.sens_cty_expected_yield_mem = result, is_rma_final
+        self.sens_cty_expected_yield_mem = result, is_rma_final
         return result, is_rma_final
 
     def sens_production_bu(self, yf=None):
