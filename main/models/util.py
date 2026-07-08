@@ -1,6 +1,5 @@
 """ Module util -- utility functions for main model """
 import numbers
-from datetime import datetime
 from collections import defaultdict
 import numpy as np
 
@@ -12,16 +11,6 @@ def scal(factor):
     provide both an array of price factors and an array of yield factors
     """
     return factor is None or isinstance(factor, numbers.Number)
-
-
-def get_current_year():
-    """
-    Because we may want to test a farm year for a future crop year,
-    this utility should be used ONLY to set the defaults for a farm year.
-    It cannot easily be moved to the farm year model because migrations depend on
-    it being defined here.
-    """
-    return datetime.today().year
 
 
 def any_changed(instance, *fields):
@@ -90,12 +79,6 @@ def notify_users_of_budget_updates(budgetids, prevyr=False):
         user.email_user(
             "Updated Budget(s) Avaialable", body)
     return usernames
-
-
-def default_start_date():
-    """ Jan 1 of the current year is hereby the default start date for farm years. """
-    year = get_current_year()
-    return datetime(year, 1, 1)
 
 
 def one_like(var):

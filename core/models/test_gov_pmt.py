@@ -10,7 +10,8 @@ class GovPmtAllPLCMya4_80TestCase(TestCase):
         self.govpmt = GovPmt(
             plc_base_acres=4220, arcco_base_acres=0, plc_yield=160,
             estimated_county_yield=190, effective_ref_price=3.70,
-            natl_loan_rate=2.20, sens_mya_price=4.80, benchmark_revenue=801.09)
+            natl_loan_rate=2.20, guar_rev_frac=0.9, cap_on_bmk_county_rev=0.12,
+            sens_mya_price=4.80, benchmark_revenue=801.09)
 
     def test_with_default_values(self):
         pmt = self.govpmt.prog_pmt_pre_sequest()
@@ -24,7 +25,8 @@ class GovPmtAllPLCMya3_80TestCase(TestCase):
         self.govpmt = GovPmt(
             plc_base_acres=4220, arcco_base_acres=0, plc_yield=160,
             estimated_county_yield=190, effective_ref_price=3.70,
-            natl_loan_rate=2.20, sens_mya_price=3.80, benchmark_revenue=801.09)
+            natl_loan_rate=2.20, guar_rev_frac=0.9, cap_on_bmk_county_rev=0.12,
+            sens_mya_price=3.80, benchmark_revenue=801.09)
 
     def test_with_default_values(self):
         pmt = self.govpmt.prog_pmt_pre_sequest()
@@ -38,7 +40,8 @@ class GovPmtAllPLCMya3_20TestCase(TestCase):
         self.govpmt = GovPmt(
             plc_base_acres=4220, arcco_base_acres=0, plc_yield=160,
             estimated_county_yield=190, effective_ref_price=3.70,
-            natl_loan_rate=2.20, sens_mya_price=3.20, benchmark_revenue=801.09)
+            natl_loan_rate=2.20, guar_rev_frac=0.9, cap_on_bmk_county_rev=0.12,
+            sens_mya_price=3.20, benchmark_revenue=801.09)
 
     def test_with_default_values(self):
         pmt = self.govpmt.prog_pmt_pre_sequest()
@@ -52,7 +55,8 @@ class GovPmtAllPLCMya2_80TestCase(TestCase):
         self.govpmt = GovPmt(
             plc_base_acres=4220, arcco_base_acres=0, plc_yield=160,
             estimated_county_yield=190, effective_ref_price=3.70,
-            natl_loan_rate=2.20, sens_mya_price=2.80, benchmark_revenue=801.09)
+            natl_loan_rate=2.20, guar_rev_frac=0.9, cap_on_bmk_county_rev=0.12,
+            sens_mya_price=2.80, benchmark_revenue=801.09)
 
     def test_with_default_values(self):
         pmt = self.govpmt.prog_pmt_pre_sequest()
@@ -66,7 +70,8 @@ class GovPmtAllARCCOTestCase(TestCase):
         self.govpmt = GovPmt(
             plc_base_acres=0, arcco_base_acres=4220, plc_yield=160,
             estimated_county_yield=190, effective_ref_price=3.70,
-            natl_loan_rate=2.20, sens_mya_price=4.80, benchmark_revenue=801.09)
+            natl_loan_rate=2.20, guar_rev_frac=0.9, cap_on_bmk_county_rev=0.12,
+            sens_mya_price=4.80, benchmark_revenue=801.09)
 
     def test_with_default_values(self):
         pmt = self.govpmt.prog_pmt_pre_sequest()

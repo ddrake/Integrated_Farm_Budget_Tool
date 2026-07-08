@@ -11,7 +11,7 @@ downloaded for a crop year here:
 https://www.fsa.usda.gov/programs-and-services/arcplc_program/arcplc-program-data/index
 in the form of two spreadsheets, e.g. 2023_erp.xls and arcco_2023_data_2023-02-16.xlsx
 """
-import numbers
+from .util import scal
 import numpy as np
 
 
@@ -37,7 +37,7 @@ class GovPmt():
             benchmark_revenue = 0
         self.plc_base_acres = plc_base_acres
         self.arcco_base_acres = arcco_base_acres
-        self.plc_yield = (plc_yield if isinstance(estimated_county_yield, float) else
+        self.plc_yield = (plc_yield if scal(estimated_county_yield) else
                           plc_yield * np.ones_like(estimated_county_yield))
         # pre-sensitized county yield
         self.estimated_county_yield = estimated_county_yield
@@ -61,7 +61,7 @@ class GovPmt():
         scalar or 2d array
         """
         result = (round(self.arc_pmt_pre_sequest() + self.plc_pmt_pre_sequest(), 2)
-                  if isinstance(self.plc_yield, float) else
+                  if scal(self.plc_yield) else
                   (self.arc_pmt_pre_sequest() + self.plc_pmt_pre_sequest()).round(2))
 
         return result
@@ -74,7 +74,7 @@ class GovPmt():
         scalar or array(np, ny)
         """
         return (self.plc_payment_rate() * self.net_payment_acres_plc() *
-                self.plc_yield if isinstance(self.plc_yield, float) else
+                self.plc_yield if scal(self.plc_yield) else
                 np.outer(self.plc_payment_rate() * self.net_payment_acres_plc(),
                          self.plc_yield))
 
@@ -165,7 +165,7 @@ class GovPmt():
         revenue for the crop.
         scalar or array(np, ny)
         """
-        if isinstance(self.sens_mya_price, numbers.Number):
+        if scal(self.sens_mya_price):
             return (max(self.sens_mya_price, self.natl_loan_rate) *
                     self.estimated_county_yield)
         else:

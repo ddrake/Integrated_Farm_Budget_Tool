@@ -11,6 +11,21 @@ from ext.models import (
     InsuranceDates, ReferencePrices)
 from . import util
 
+# 
+def get_current_year():
+    """
+    Because we may want to test a farm year for a future crop year,
+    this utility should be used ONLY to set the defaults for a farm year.
+    It cannot easily be moved to the farm year model because migrations depend on
+    it being defined here.
+    """
+    return datetime.today().year
+
+def default_start_date():
+    """ Jan 1 of the current year is hereby the default start date for farm years. """
+    year = get_current_year()
+    return datetime(year, 1, 1)
+
 
 class FarmYear(models.Model):
     """
@@ -32,7 +47,7 @@ class FarmYear(models.Model):
     county_code = models.SmallIntegerField(
         verbose_name="primary county",
         help_text="The county where most farm acres are located")
-    crop_year = models.SmallIntegerField(default=util.get_current_year)
+    crop_year = models.SmallIntegerField(default=get_current_year)
     cropland_acres_owned = models.FloatField(
         default=0, validators=[MinVal(0), MaxVal(99999)])
     variable_rented_acres = models.FloatField(
@@ -81,7 +96,7 @@ class FarmYear(models.Model):
     is_model_run_date_manual = models.BooleanField(
         default=False,
         help_text='Use the manually-set model run date (advanced).')
-    first_date = models.DateField(default=util.default_start_date)
+    first_date = models.DateField(default=default_start_date)
     basis_increment = models.FloatField(
         default=0.1, validators=[MinVal(0), MaxVal(0.5)],
         help_text=_('increment to noncontract basis for basis sensitivity<br>' +
@@ -276,3 +291,4 @@ class FarmYear(models.Model):
             models.UniqueConstraint('farm_name', 'user', 'crop_year',
                                     name='farm_name_unique_for_user_crop_year'), ]
         ordering = ['-crop_year', 'farm_name']
+

@@ -3,6 +3,7 @@ Module util
 
 Definitions used by many classes
 """
+import numbers
 from enum import IntEnum
 from functools import wraps
 
@@ -84,3 +85,15 @@ def get_postgres_rows(*args):
                                   for arg in arglist)))
         rows = cur.fetchall()
     return rows
+
+def scal(factor):
+    """
+    check whether a price or yield factor is a scalar or an array
+    Rests on the assumption that calls from the sensitivity table will always
+    provide both an array of price factors and an array of yield factors
+    Note: this implementation is slightly different from main.scal since it
+    assumes factor is not Null
+    """
+    return isinstance(factor, numbers.Number)
+
+
