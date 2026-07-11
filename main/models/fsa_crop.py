@@ -66,27 +66,31 @@ class FsaCrop(models.Model):
         """
         if yf is None:
             yf = self.yield_factor()
-        if len(self.farm_crops()) == 0:
-            return (0 if scal(yf) else np.zeros_like(yf))
 
-        # DD: 6/21/26 change to exclude farm crops without budgets here
         yield_info = [fc.sens_cty_expected_yield(yf) for fc in self.farm_crops() if
                       fc.has_budget()]
-        is_rma_final = len(yield_info) > 0 and all((yi[1] for yi in yield_info))
-        if is_rma_final:
-            return ((yf if scal(yf) else np.ones_like(yf)) *
-                    yield_info[0][0], is_rma_final)
 
-        acres = [fc.planted_acres for fc in self.farm_crops()]
+        # Handle case of no farm crops with budgets
+        if len(yield_info) == 0:
+            return (0 if scal(yf) else np.zeros_like(yf))
+
+        is_rma_final = all((yi[1] for yi in yield_info))
+
+        # Handle case where all county expected yields are final. County yields for
+        # full and dc soybeans will always match, though full might be finalized before dc.
+        if is_rma_final:
+            return ((yf if scal(yf) else np.ones_like(yf)) * yield_info[0][0], is_rma_final)
+
+        acres = [fc.planted_acres for fc in self.farm_crops() if fc.has_budget()]
         pairs = list(zip(acres, [yi[0] for yi in yield_info]))
-        if scal(yf):
-            pairs = [p for p in pairs if p != (0, 0)]
-        else:
-            pairs = [p for p in pairs if p[0] != 0 or not np.all(p[1]) == 0]
+
+        # Handle simple cases of zero or one pair
         if len(pairs) == 0:
             return (0 if scal(yf) else np.zeros_like(yf)), is_rma_final
         if len(pairs) == 1:
             return pairs[0][1], is_rma_final
+
+        # Estimate expected yield by weighted average over (e.g. full and dc soybean yields)
         acres, weight = zip(*((ac, ac*yld) for ac, yld in pairs))
         totacres = sum(acres)
         if scal(yf):
