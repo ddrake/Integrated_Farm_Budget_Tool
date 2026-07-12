@@ -10,11 +10,50 @@ from django.urls import reverse
 
 from .models.farm_year import FarmYear
 from .models.farm_crop import FarmCrop
+from .models.fsa_crop import cty_expected_yield_helper
 from .models.budget_table import BudgetManager
 from .models.sens_table import SensTableGroup
 
 np.set_printoptions(threshold=sys.maxsize)
 
+class CtyExpectedYieldHelper(TestCase):
+    def setUp(self):
+        self.vec_yf = np.array([.5, .6, .7, .8, .9, .95, 1.0, 1.05, 1.1])
+
+    def test_with_scalar_nonfinal_inputs(self):
+       yield_info, acres, yf = [(80, False), (40, False)], [1500, 500], .9
+       self.assertEqual(cty_expected_yield_helper(
+           yield_info, acres, yf), (70, False))
+
+    def test_with_vector_nonfinal_inputs(self):
+       yield_info = [(80*self.vec_yf, False), (40*self.vec_yf, False)] 
+       acres, yf = [1500, 500], self.vec_yf
+       ylds, isFinal = cty_expected_yield_helper(yield_info, acres, yf)
+       self.assertTrue(np.all(abs(ylds - 70*yf)) < .01)
+       self.assertEqual(isFinal, False)
+
+    def test_with_zero_fs_acres(self):
+        yield_info, acres, yf = [(80, False), (40, False)], [0, 500], .9
+        self.assertEqual(cty_expected_yield_helper(
+            yield_info, acres, yf), (40, False))
+
+    def test_with_zero_acres(self):
+        yield_info, acres, yf = [(80, False), (40, False)], [0, 0], .9
+        self.assertEqual(cty_expected_yield_helper(
+            yield_info, acres, yf), (0, False))
+
+    def test_with_vector_empty_list(self):
+        yield_info, acres, yf = [], [], self.vec_yf
+        ylds, isFinal = cty_expected_yield_helper(
+            yield_info, acres, yf)
+        self.assertTrue(np.all(ylds) == 0)
+        self.assertEqual(isFinal, False)
+
+    def test_with_vector_single_list(self):
+        yield_info, acres, yf = [(200*self.vec_yf, True)], [900], self.vec_yf
+        ylds, isFinal = cty_expected_yield_helper(yield_info, acres, yf)
+        self.assertTrue(np.all(ylds - 200) == 0)
+        self.assertEqual(isFinal, True)
 
 class FarmYearTestCase(TestCase):
     def setUp(self):
