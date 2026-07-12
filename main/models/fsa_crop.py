@@ -8,7 +8,40 @@ from ext.models import (FsaCropType, MyaPreEstimate, MyaPost,
                         BenchmarkRevenue)
 from core.models.gov_pmt import GovPmt
 from .farm_year import FarmYear
-from .util import scal
+from .util import scal, zero_like, one_like
+
+
+def cty_expected_yield_helper(yield_info, acres, yf):
+    """
+    yield_info: A list of pairs (yield, is_final), with each pair associated with
+      a field crop, where the yields have the shape of yf (scalar or 1d array).
+    acres: A list of planted acres for each field crop.
+    yf: A yield factor (None, a scalar or an array), used only to determine the output
+      shape in edge cases
+
+    Returns a pair (yields, is_final) where yields has the shape as yf
+    """
+    # Handle case of no farm crops with budgets
+    if len(yield_info) == 0:
+        return zero_like(yf), False
+
+    is_rma_final = all((yi[1] for yi in yield_info))
+
+    # Handle case where all county expected yields are final. County yields for
+    # full and dc soybeans will always match, though full might be finalized before dc.
+    if is_rma_final:
+        return yield_info[0][0] * one_like(yf), is_rma_final
+
+    pairs = list(zip(acres, [yi[0] for yi in yield_info]))
+
+    # Handle simple case of one pair
+    if len(pairs) == 1:
+        return pairs[0][1], is_rma_final
+
+    # Estimate expected yield by weighted average over (e.g. full and dc soybean yields)
+    acres, weight = zip(*((ac, ac*yld) for ac, yld in pairs))
+    totacres = sum(acres)
+    return zero_like(yf) if totacres == 0 else sum(weight) / totacres, is_rma_final
 
 
 class FsaCrop(models.Model):
@@ -61,45 +94,23 @@ class FsaCrop(models.Model):
 
     def cty_expected_yield(self, yf=None):
         """
-        Get weighted average of farm crop county yields, along with final status
-        Note: fc.sens_cty_expected_yield(yf) considers RMA final yields
+        Get a county expected yield, along with final status, either from
+        RMA final yields if available or from budget county yields. Farm crops
+        without budgets are ignored.
         """
         if yf is None:
             yf = self.yield_factor()
 
         yield_info = [fc.sens_cty_expected_yield(yf) for fc in self.farm_crops() if
                       fc.has_budget()]
-
-        # Handle case of no farm crops with budgets
-        if len(yield_info) == 0:
-            return (0 if scal(yf) else np.zeros_like(yf))
-
-        is_rma_final = all((yi[1] for yi in yield_info))
-
-        # Handle case where all county expected yields are final. County yields for
-        # full and dc soybeans will always match, though full might be finalized before dc.
-        if is_rma_final:
-            return ((yf if scal(yf) else np.ones_like(yf)) * yield_info[0][0], is_rma_final)
-
         acres = [fc.planted_acres for fc in self.farm_crops() if fc.has_budget()]
-        pairs = list(zip(acres, [yi[0] for yi in yield_info]))
-
-        # Handle simple cases of zero or one pair
-        if len(pairs) == 0:
-            return (0 if scal(yf) else np.zeros_like(yf)), is_rma_final
-        if len(pairs) == 1:
-            return pairs[0][1], is_rma_final
-
-        # Estimate expected yield by weighted average over (e.g. full and dc soybean yields)
-        acres, weight = zip(*((ac, ac*yld) for ac, yld in pairs))
-        totacres = sum(acres)
-        if scal(yf):
-            return (0 if totacres == 0 else sum(weight) / totacres), is_rma_final
-        else:
-            return (np.zeros_like(yf) if totacres == 0 else
-                    sum(weight) / totacres), is_rma_final
+        return cty_expected_yield_helper(yield_info, acres, yf)
 
     def is_irrigated(self):
+        """
+        False if all acres are zero, otherwise the irrigation status
+        of the crop with the most acres.
+        """
         pairs = [(fc.is_irrigated(), fc.planted_acres) for fc in self.farm_crops()]
         return (False if max((pr[1] for pr in pairs)) == 0 else
                 sorted(pairs, key=lambda p: p[1]*10+(0 if p[0] else 1),
