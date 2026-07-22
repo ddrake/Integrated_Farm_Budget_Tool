@@ -151,6 +151,9 @@ class FarmCrop(models.Model):
     def is_irrigated(self):
         return FarmYear.IRR_PRACTICE[self.ins_practice] == 'Irrigated'
 
+    def is_fac(self):
+        return self.farm_crop_type.is_fac
+
     def allowed_subcounties(self):
         values = SubcountyAvail.objects.filter(
             state_id=self.farm_year.state_id, county_code=self.farm_year.county_code,
@@ -661,7 +664,7 @@ class FarmCrop(models.Model):
     def owned_land_costs(self):
         """ scalar used only by sensitivity table """
         tot_acres = self.farm_year.total_farm_acres()
-        return (0 if self.farm_crop_type.is_fac or tot_acres == 0 else
+        return (0 if self.is_fac() or tot_acres == 0 else
                 (self.farm_year.total_owned_land_expense() / tot_acres))
 
     def land_costs(self, pf=None, yf=None):
