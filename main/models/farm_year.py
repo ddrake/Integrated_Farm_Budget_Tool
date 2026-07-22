@@ -242,7 +242,7 @@ class FarmYear(models.Model):
         total_pmt = np.minimum(self.fsa_pmt_cap_per_principal() *
                                self.eligible_persons_for_cap,
                                total * (1 - self.est_sequest_frac)).round()
-        return total_pmt / self.total_planted_acres() if is_per_acre else total_pmt
+        return total_pmt / self.total_farm_acres() if is_per_acre else total_pmt
 
     # -----------------------
     # Expense-related methods
