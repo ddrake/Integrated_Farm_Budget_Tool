@@ -60,6 +60,8 @@ class SensTableGroup(object):
         self.pfrange = array([.5, .6, .7, .8, .9, .95, 1, 1.05,
                               1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7])
         self.yfrange = array([.5, .6, .7, .8, .9, .95, 1, 1.05, 1.1])
+        self.lp = len(self.pfrange)
+        self.ly = len(self.yfrange)
 
         self.nincr = 5  # the number of increments (should be odd)
         self.basis_incr = self.farm_year.basis_increment
@@ -276,10 +278,11 @@ class SensTableGroup(object):
         """ set apportioned gov pmt in dollars (optimization)
             array(np, ny)
         """
-        totgovpmt = self.farm_year.calc_gov_pmt(mya_prices=self.mya_prices,
+        totgovpmt = self.farm_year.calc_gov_pmt(is_per_acre=True, mya_prices=self.mya_prices,
                                                 cty_yields=self.cty_yields)
-        self.gov_pmts = np.array([totgovpmt * ac / self.total_acres
-                                  for ac in self.acres])
+        self.gov_pmts = np.array([(zeros((self.lp, self.ly)) if fc.is_fac() else
+                                   totgovpmt * fc.planted_acres)
+                                  for fc in self.farm_crops])
 
     # -----------------------------------------------------------------------
     # return cached value or compute a 3D numpy array of values in kilodollars

@@ -295,18 +295,18 @@ class BudgetTable(object):
         self.bushels = [fc.sens_production_bu() for fc in self.farm_crops]
         self.acres = [fc.planted_acres for fc in self.farm_crops]
         self.farm_crop_types = [fc.farm_crop_type for fc in self.farm_crops]
-        self.fsacres = [0 if fc.farm_crop_type.is_fac else fc.planted_acres
+        self.fsacres = [0 if fc.is_fac() else fc.planted_acres
                         for fc in self.farm_crops]
         self.total_planted_acres = sum(self.acres)
         self.total_rented_acres = self.farm_year.total_rented_acres()
         self.total_owned_acres = self.farm_year.cropland_acres_owned
         self.total_farm_acres = self.total_rented_acres + self.total_owned_acres
         self.rented_acres = [
-            (0 if (fc.farm_crop_type.is_fac or self.total_farm_acres == 0) else
+            (0 if (fc.is_fac() or self.total_farm_acres == 0) else
              fc.planted_acres * self.total_rented_acres / self.total_farm_acres)
             for fc in self.farm_crops]
         self.owned_acres = [
-            (0 if (fc.farm_crop_type.is_fac or self.total_farm_acres == 0) else
+            (0 if (fc.is_fac() or self.total_farm_acres == 0) else
              fc.planted_acres * self.total_owned_acres / self.total_farm_acres)
             for fc in self.farm_crops]
         self.blank_before_rows = [0, 1, 6, 14, 21, 29, 32, 33, 36, 38, 39, 40]
@@ -321,7 +321,7 @@ class BudgetTable(object):
 
     def get_tables(self):
         # Calculate overall gov pmt
-        self.farmyear_gov_pmt = self.farm_year.calc_gov_pmt()
+        self.farmyear_gov_pmt = self.farm_year.calc_gov_pmt(is_per_acre=True)
         if self.data is None:
             self.set_data()
         results = {'kd': self.make_thousands(),
@@ -446,7 +446,7 @@ class BudgetTable(object):
             rev*1000 for rev
             in self.revenue_details.data['total_crop_revenue']]
         self.data['gov_pmt'] = [
-            self.farmyear_gov_pmt * fc.planted_acres / self.total_planted_acres
+            (0 if fc.is_fac() else self.farmyear_gov_pmt * fc.planted_acres)
             for fc in self.farm_crops]
         self.data['other_gov_pmts'] = [
             gp * ac for gp, ac in zip((fc.farmbudgetcrop.other_gov_pmts
