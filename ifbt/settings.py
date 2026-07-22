@@ -211,5 +211,7 @@ CKEDITOR_CONFIGS = {
     },
 }
 
+SILENCED_SYSTEM_CHECKS = ['ckeditor.W001']
+
 # Location-specific settings
 from .settings_local import *  # noqa
