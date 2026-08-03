@@ -219,7 +219,6 @@ class FarmYear(models.Model):
                 market_crop_type_id=mktct.id, crop_year=self.crop_year)
             cty_yield_final = datetime(self.crop_year+1,
                                        (4 if mktct.id in (3, 4) else 6), 16).date()
-            found = False
             practices = [p for p in row.practices if self.IRR_PRACTICE[p] == 'Non-Irrigated']
             FarmCrop.objects.create(
                 farm_year=self, ins_crop_type_id=row.crop_type_id,
