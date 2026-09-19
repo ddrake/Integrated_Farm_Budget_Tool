@@ -70,8 +70,6 @@ class FarmYearUpdateForm(ModelForm):
                      Field('var_rent_cap_floor_frac', css_class="percent")),
             Fieldset('Non-grain revenue and expense',
                      'other_nongrain_income', 'other_nongrain_expense'),
-            Fieldset('Farm Level Title Settings', 'eligible_persons_for_cap',
-                     Field('est_sequest_frac', css_class="percent")),
             Fieldset('Report Controls',
                      'is_model_run_date_manual', 'manual_model_run_date',
                      'basis_increment'),
@@ -84,7 +82,7 @@ class FarmYearUpdateForm(ModelForm):
                 annual_land_principal_pmt property_taxes land_repairs
                 eligible_persons_for_cap other_nongrain_income
                 other_nongrain_expense manual_model_run_date
-                is_model_run_date_manual est_sequest_frac basis_increment'''.split()
+                is_model_run_date_manual basis_increment'''.split()
         widgets = {
             'cropland_acres_owned': forms.NumberInput(
                 attrs={'step': 100, 'min': 0, 'max': 100000}),
@@ -110,8 +108,6 @@ class FarmYearUpdateForm(ModelForm):
                 attrs={'step': 1000, 'min': 0, 'max': 1000000}),
             'basis_increment': forms.NumberInput(
                 attrs={'step': 0.1, 'min': 0, 'max': 0.5}),
-            'est_sequest_frac': forms.NumberInput(
-                attrs={'step': 0.1, 'min': 0, 'max': 10}),
         }
 
 
@@ -122,19 +118,13 @@ class FarmYearUpdateFormForTitle(ModelForm):
         self.helper.attrs = {"novalidate": ''}
         self.helper.add_input(Submit('submit', 'Update'))
         self.helper.form_id = 'farmyearform'
-        self.helper.layout = Layout(
-            Fieldset('Farm Level Title Settings', 'eligible_persons_for_cap',
-                     Field('est_sequest_frac', css_class="percent")),
-        )
 
     class Meta:
         model = FarmYear
-        fields = '''eligible_persons_for_cap est_sequest_frac'''.split()
+        fields = '''eligible_persons_for_cap'''.split()
         widgets = {
             'eligible_persons_for_cap': forms.NumberInput(
                 attrs={'step': 1, 'min': 0, 'max': 10}),
-            'est_sequest_frac': forms.NumberInput(
-                attrs={'step': 0.1, 'min': 0, 'max': 10}),
         }
 
 

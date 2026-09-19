@@ -8,7 +8,7 @@ from django.db import models
 from django.utils.translation import gettext_lazy as _
 from ext.models import (
     State, County, InsurableCropsForCty, FarmCropType, MarketCropType, FsaCropType,
-    InsuranceDates, ReferencePrices)
+    InsuranceDates, ReferencePrices, CropYearVars)
 from . import util
 
 # 
@@ -78,7 +78,7 @@ class FarmYear(models.Model):
         help_text="Annual land repair costs in dollars")
     eligible_persons_for_cap = models.SmallIntegerField(
         default=1, validators=[MinVal(0), MaxVal(10)],
-        verbose_name="# entities for FSA cap",
+        verbose_name="Number of entities for FSA cap",
         help_text="Number of eligible entities for FSA payment cap")
     other_nongrain_income = models.FloatField(
         default=0, validators=[MinVal(0), MaxVal(999999)],
@@ -104,13 +104,7 @@ class FarmYear(models.Model):
     sensitivity_data = models.JSONField(null=True, blank=True)
     sensitivity_diff = models.JSONField(null=True, blank=True)
     sensitivity_text = models.JSONField(null=True, blank=True)
-    # NOTE: the hard-coded default value may change from year to year.
-    est_sequest_frac = models.FloatField(
-        default=0.057, validators=[
-            MinVal(0),
-            MaxVal(0.1, message="Ensure this value is less than or equal to 10")],
-        verbose_name='estimated sequestration percent',
-        help_text='Estimated reduction to computed total pre-cap title payment')
+
     # Dict of numerical data For computing variance or displaying benchmark budget.
     current_budget_data = models.JSONField(null=True, blank=True)
     # If the user sets or updates the benchmark, we copy current budget data here.
@@ -174,9 +168,11 @@ class FarmYear(models.Model):
         return sum((fc.planted_acres for fc in self.farm_crops.all()
                     if not fc.farm_crop_type.is_fac))
 
+    def est_sequest_frac(self):
+        return CropYearVars.objects.get(crop_year=self.crop_year).sequest_frac
 
     def fsa_pmt_cap_per_principal(self):
-        return 125000 if self.crop_year < 2025 else 155000
+        return CropYearVars.objects.get(crop_year=self.crop_year).per_entity_cap
 
     def add_insurable_farm_crops(self):
         """
@@ -242,7 +238,7 @@ class FarmYear(models.Model):
                          for i, fc in enumerate(self.fsa_crops.all())))
         total_pmt = np.minimum(self.fsa_pmt_cap_per_principal() *
                                self.eligible_persons_for_cap,
-                               total * (1 - self.est_sequest_frac)).round()
+                               total * (1 - self.est_sequest_frac())).round()
         return total_pmt / self.total_farm_acres() if is_per_acre else total_pmt
 
     # -----------------------

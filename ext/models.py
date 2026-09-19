@@ -181,6 +181,18 @@ class ReferencePrices(models.Model):
         indexes = [models.Index('crop_year', name='ref_prices_crop_year'), ]
 
 
+class CropYearVars(models.Model):
+    """
+    Misc per-cropyear variables needed to compute government payments
+    """
+    crop_year = models.SmallIntegerField()
+    sequest_frac = models.FloatField()
+    per_entity_cap = models.FloatField()
+
+    class Meta:
+        managed = False
+        db_table = 'ext_cropyearvars'
+    
 class MyaPreEstimate(models.Model):
     """
     Used to get sensitized MYA prices when the model_run_date is before
