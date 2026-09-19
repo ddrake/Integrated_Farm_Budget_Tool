@@ -9,7 +9,7 @@ django-crispy-forms==2.7
 django-js-asset==4.1.0
 django-tailwind==4.5.0
 gunicorn==26.2.0
-numpy==2.5.2
+numpy==2.5.3
 packaging==26.3
 Pillow==12.3.0
 psycopg2==2.9.12
