@@ -70,6 +70,7 @@ class FarmYearUpdateForm(ModelForm):
                      Field('var_rent_cap_floor_frac', css_class="percent")),
             Fieldset('Non-grain revenue and expense',
                      'other_nongrain_income', 'other_nongrain_expense'),
+            Fieldset('Farm Level Title Settings', 'eligible_persons_for_cap'),
             Fieldset('Report Controls',
                      'is_model_run_date_manual', 'manual_model_run_date',
                      'basis_increment'),
