@@ -8,7 +8,7 @@ django-impersonate==1.9.5
 django-crispy-forms==2.7
 django-js-asset==5.0.0
 django-tailwind==4.6.0
-gunicorn==26.2.0
+gunicorn==27.0.1
 numpy==2.5.5
 packaging==26.3
 Pillow==13.0.0
